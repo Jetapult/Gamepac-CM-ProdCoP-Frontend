@@ -1,0 +1,17 @@
+.navbar{
+background: #f1efe7;
+}
+.logo{
+color: #000;
+font-family: Inter;
+font-size: 40px;
+font-weight: 400;
+line-height: normal;
+}
+.nav-item{
+    color: #000;
+font-size: 32px;
+font-style: normal;
+font-weight: 300;
+line-height: normal;
+}
