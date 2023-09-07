@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import Test from './test';
 
 
 const ActionPage = () => {
@@ -27,6 +28,13 @@ const ActionPage = () => {
         console.error('Error fetching action data:', error);
       });
   }, [id]);
+
+  const getDataForGoogleDoc = () => {
+    return {
+      summary,
+      todos
+    };
+  };
 
   return (
     <div className='mx-auto p-4'>
@@ -71,6 +79,9 @@ const ActionPage = () => {
       </div>
   </div>
 )}
+<div className='mx-auto p-4'>
+      <Test getDataForGoogleDoc={getDataForGoogleDoc} />
+    </div>
 
     </div>
   );

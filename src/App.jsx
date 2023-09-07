@@ -14,6 +14,7 @@ import Smart from './components/Smart';
 import Assistant from './components/Assistant';
 import Nav from './components/Nav';
 import Record from './components/Record';
+import Test from './components/test';
 
 function App() {
   return (
@@ -34,13 +35,14 @@ function App() {
     <Route path="/smart" element={<Smart/>}/>
     <Route path="/assistant" element={<Assistant/>}/>
     <Route path="/recorder" element={<Record />}/>
+    <Route path="/test" element={<Test/>}/>
     </Routes>
     </Router>
-    <Router>
-      <Routes>
-        <Route path ="/test" element={<Nav/>}/>
-      </Routes>
-    </Router>
+    {/* <Router>
+      // {/* <Routes>
+      //   <Route path ="/test" element={<Nav/>}/>
+      // </Routes> */}
+    {/* </Router> */}
     </>
      </div>
    
