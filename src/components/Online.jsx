@@ -40,16 +40,7 @@ const Online = () => {
     };    
     fetchUsers();
   }, [token]);
-  // useEffect(() => {
-  //   // Fetch the list of users from your backend
-  //   axios.get('http://localhost:3000/users')
-  //     .then((response) => {
-  //       setContributors(response.data);
-  //     })
-  //     .catch((error) => {
-  //       console.error('Error fetching contributors:', error);
-  //     });
-  // }, []);
+  
 
   const id = userId;
 
