@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Test from './test';
+import api from '../api';
 
 
 const ActionPage = () => {
@@ -14,7 +13,7 @@ const ActionPage = () => {
 
   useEffect(() => {
     // Fetch the data for the given ID from the backend
-    axios.get(`http://localhost:3000/data/${id}`)
+    api.get(`/data/${id}`)
       .then((response) => {
         const data = response.data;
         console.log(data);

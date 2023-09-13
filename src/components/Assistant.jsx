@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import googlePlayIcon from '../assets/google-play_318-566073.avif';
 import appleIcon from '../assets/icon_appstore__ev0z770zyxoy_large_2x.png';
+import api from '../api';
 
 const Assistant=()=>{
 
@@ -39,7 +39,7 @@ const Assistant=()=>{
     
       const handleFetchReply = async (comment) => {
         try {
-          const response = await axios.post('http://localhost:3000/replyAssistant', {
+          const response = await api.post('/replyAssistant', {
             comment: comment,
           });
     

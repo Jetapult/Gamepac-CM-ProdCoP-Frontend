@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { initializeApp } from "firebase/app";
 import {getAuth,GoogleAuthProvider,signInWithPopup} from "firebase/auth";
+import api from './api';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -24,7 +25,7 @@ export const signInWithGogle = () => {
   signInWithPopup(auth, provider).then((result) => {
     const user = result.user;
       // Send user information to the backend API for Adding to db
-      axios.post('http://localhost:3000/api/login', {
+      api.post('/api/login', {
         uid:user.uid,
         email: user.email,
         name: user.displayName // Use Firebase user ID as a substitute for the password in the backend

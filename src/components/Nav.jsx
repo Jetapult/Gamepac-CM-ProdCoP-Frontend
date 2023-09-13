@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getIdToken } from 'firebase/auth';
+import api from '../api';
 import { useState,useEffect } from 'react';
 import { auth } from "../config";
 
@@ -21,7 +21,7 @@ const t=token;
     event.preventDefault();
     try {
       if (t) {
-        const userResponse = await axios.get('http://localhost:3000/users',{
+        const userResponse = await api.get('/users',{
           headers:{
             Authorization: 'Bearer ' + token
           }

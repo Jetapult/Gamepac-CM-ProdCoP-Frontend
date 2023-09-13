@@ -1,9 +1,9 @@
 import React, { useState,useEffect } from 'react';
 import { auth } from "../config";
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { useReactMediaRecorder } from 'react-media-recorder';
 import micImg from '../assets/podcast-6781921-5588632.png';
+import api from '../api';
 
 const Record = () => {
   const { status, startRecording, stopRecording, mediaBlobUrl, clearBlobUrl } =
@@ -48,7 +48,7 @@ const Record = () => {
       const formData = new FormData();
       formData.append('file', audioBlob, 'recorded_audio.wav');
         // Step 1: Transcribe the audio
-      const responseFromBackend = await axios.post('http://localhost:3000/recorder', formData, {
+      const responseFromBackend = await api.post('/recorder', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -57,7 +57,7 @@ const Record = () => {
       console.log(t);
       setTranscription(responseFromBackend.data.transcription);
         // Step 2: Get the summary
-        const summaryResponse = await axios.post('http://localhost:3000/summary', {
+        const summaryResponse = await api.post('/summary', {
           transcription: t,
         },{
           headers: {
@@ -66,7 +66,7 @@ const Record = () => {
         });
         const sum = summaryResponse.data.summary;
         console.log(sum);
-        const todoresponse = await axios.post('http://localhost:3000/todos', {
+        const todoresponse = await api.post('/todos', {
             transcription:t,
           },{
             headers: {
@@ -74,7 +74,7 @@ const Record = () => {
             }
           });
         const todosList = todoresponse.data.todos;
-        const saveData=await axios.post('http://localhost:3000/data',{id,transcription:t,sum,todosList,p:"Offline Recording",flag:"true",c:"BztHvB5KyJbR4vixf8r4HaRhb3D3"});
+        const saveData=await api.post('/data',{id,transcription:t,sum,todosList,p:"Offline Recording",flag:"true",c:"BztHvB5KyJbR4vixf8r4HaRhb3D3"});
         const resId=saveData.data.actionId;
         console.log(resId);
         setActionId(resId);

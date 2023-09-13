@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import api from '../api';
 import { useNavigate } from 'react-router-dom';
 import googlePlayIcon from '../assets/google-play_318-566073.avif';
 import appleIcon from '../assets/icon_appstore__ev0z770zyxoy_large_2x.png'
@@ -29,7 +30,7 @@ const Smart=()=>{
          // Add your content here
         }
   
-        const response = await axios.post('http://localhost:3000/smartTranscribe', { comments: fileContent, game: selectedGame,});
+        const response = await api.post('/smartTranscribe', { comments: fileContent, game: selectedGame,});
   
         const generatedSummary = response.data.summary;
         const todoItems = generatedSummary.split('\n\n');
@@ -139,16 +140,6 @@ const Smart=()=>{
             />
             <span>{item}</span>
           </label>
-          {/* <FontAwesomeIcon
-            icon={['far', 'check-square']}
-            className="text-red-600 ml-2 cursor-pointer"
-            onClick={() => handleTodoCheck(index)}
-          />
-          <FontAwesomeIcon
-            icon={['far', 'square']}
-            className="text-red-600 ml-2 cursor-pointer"
-            onClick={() => handleTodoCheck(index)}
-          /> */}
         </li>
       ))}
     </ul>

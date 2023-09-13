@@ -144,40 +144,10 @@ const handleToggleMenu = () => {
               </a>
             </li>
       </ul>
-      {/* <a href="/home" className="text-lg md:text-xl font-light hover:text-gray-500 transition-colors duration-200">
-        <div className="flex items-center space-x-1">
-          <img src={audioImg} className="w-4 h-4 md:w-6 md:h-6" alt="Audio" />
-          Audio
-        </div>
-      </a> */}
-      {/* <a href="/online" className="text-lg md:text-xl font-light hover:text-gray-500 transition-colors duration-200">
-        <div className="flex items-center space-x-1">
-          <img src={textImg} className="w-4 h-4 md:w-6 md:h-6" alt="Text" />
-          Text
-        </div>
-      </a> */}
-      {/* <a href="/history" className="text-lg md:text-xl font-light hover:text-gray-500 transition-colors duration-200">
-        <div className="flex items-center space-x-1">
-          <img src={historyImg} className="w-4 h-4 md:w-6 md:h-6" alt="History" />
-          History
-        </div>
-      </a> */}
-      {/* <div
-        className="whitespace-nowrap text-lg md:text-xl font-light cursor-pointer hover:text-gray-500 transition-colors duration-200"
-        onClick={handleLogout}
-      >
-        <div className="flex items-center space-x-1">
-          <img src={logoutImg} className="w-4 h-4 md:w-6 md:h-6" alt="Logout" />
-          Logout
-        </div>
-      
-      </div> */}
       
     </>
   ) : (
-    // <a href="/" className="whitespace-nowrap text-lg md:text-xl font-light hover:text-gray-500 transition-colors duration-200">
-    //   Login
-    // </a>
+
     <a href="/" className="block">
     <div className="flex gap-2 items-center">
               <img src={loginImg} className="w-6 h-6" />

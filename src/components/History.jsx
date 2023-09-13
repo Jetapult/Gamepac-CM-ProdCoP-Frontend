@@ -1,9 +1,9 @@
 import { useState ,useEffect } from "react";
 import on from '../assets/icons8-online-64.png';
 import off from '../assets/icons8-phonelink-ring-40.png';
-import axios from "axios";
 import { auth,signInWithGogle } from "../config";
 import { useNavigate } from 'react-router-dom';
+import api from "../api";
 
 
 
@@ -23,7 +23,7 @@ const History=()=>{
     useEffect(() => {
         if (user) {
           // Fetch data from the backend for the logged-in user's UID
-          axios.get(`http://localhost:3000/user/${user.uid}`)
+          api.get(`/user/${user.uid}`)
             .then((response) => {
               setUserData(response.data);
             })

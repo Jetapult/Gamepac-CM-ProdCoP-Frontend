@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../config';
 
@@ -28,7 +28,7 @@ const Online = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/users', {
+        const response = await api.get('/users', {
           headers: {
             Authorization: 'Bearer ' + token
           }
@@ -79,7 +79,7 @@ const Online = () => {
 
       try {
         // Step 1: Get the summary
-        const summaryResponse = await axios.post('http://localhost:3000/summary', {
+        const summaryResponse = await api.post('/summary', {
           transcription,
         },{
           headers: {
@@ -89,7 +89,7 @@ const Online = () => {
         const sum = summaryResponse.data.summary;
         console.log(sum);
         
-        const response = await axios.post('http://localhost:3000/todos', {
+        const response = await api.post('/todos', {
           transcription,
         },{
           headers: {
@@ -109,7 +109,7 @@ const Online = () => {
           c,
         };
 
-        const saveData = await axios.post('http://localhost:3000/data', data);
+        const saveData = await api.post('/data', data);
         const resId = saveData.data.actionId;
         setActionId(resId);
         setIsLoading(false);

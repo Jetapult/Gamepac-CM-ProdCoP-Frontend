@@ -1,9 +1,8 @@
 import React, { useState, useEffect} from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { auth } from "../config";
-import RecordView from './RecordView';
 import Record from './Record';
+import api from '../api';
 
 const Home = () => {
   const [file, setFile] = useState(null);
@@ -34,7 +33,7 @@ const Home = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/users', {
+        const response = await api.get('/users', {
           headers: {
             Authorization: 'Bearer ' + token
           }
@@ -77,7 +76,7 @@ const Home = () => {
 
     try {
       // Step 1: Transcribe the audio
-      const transcribeResponse = await axios.post('http://localhost:3000/transcribe', formData,{
+      const transcribeResponse = await api.post('/transcribe', formData,{
         headers: {
           Authorization: 'Bearer ' + token
         }
@@ -87,7 +86,7 @@ const Home = () => {
       console.log(transcription);
 
       // Step 2: Get the summary
-      const summaryResponse = await axios.post('http://localhost:3000/summary', {
+      const summaryResponse = await api.post('/summary', {
         transcription,
       },{
         headers: {
@@ -98,7 +97,7 @@ const Home = () => {
       console.log(sum);
       // Step 3: Set the summary in the state
       setSummary(sum);
-      const response = await axios.post('http://localhost:3000/todos', {
+      const response = await api.post('/todos', {
           transcription,
         },{
           headers: {
@@ -106,7 +105,7 @@ const Home = () => {
           }
         });
         const todosList = response.data.todos;
-      const saveData=await axios.post('http://localhost:3000/data',{id,transcription,sum,todosList,p,flag:"true",c});
+      const saveData=await api.post('/data',{id,transcription,sum,todosList,p,flag:"true",c});
       const resId=saveData.data.actionId;
       console.log(resId);
       setActionId(resId);
