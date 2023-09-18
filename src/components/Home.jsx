@@ -17,6 +17,7 @@ const Home = () => {
   const [contributors, setContributors] = useState([]);
   const [selectedContributors, setSelectedContributors] = useState('');
   const [token,setToken]=useState('');
+  const [label, setLabel] = useState('');
  
 
   useEffect(() => {
@@ -56,7 +57,9 @@ const Home = () => {
     const selectedFile = event.target.files[0];
     setFile(selectedFile);
   };
-
+  const handleLabelChange = (event) => {
+    setLabel(event.target.value);
+  };
   const handleContributorsChange = (event) => {
     console.log(event.target.value);
     setSelectedContributors(event.target.value);
@@ -164,6 +167,20 @@ const Home = () => {
         <label  htmlFor="mp3Recording" className="block text-sm font-medium text-gray-800">Recorded File</label>
         <input type="file" className="mt-1 w-full" accept=".mp3" onChange={handleFileChange}   required/>
       </div>
+      <div className="mb-4">
+            <label htmlFor="label" className="block text-sm font-medium text-gray-800">
+              Label
+            </label>
+            <input
+              id="label"
+              name="label"
+              type="text"
+              value={label}
+              onChange={handleLabelChange}
+              className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-blue-400"
+              required
+            />
+          </div>
       <button type="submit" className="w-full bg-[#f58174] text-white py-2 px-4 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:border-gray-400" >Give Action Items</button>
       
     </form>
@@ -174,7 +191,7 @@ const Home = () => {
 ) :null}
        {actionId && (
 
-          <button className="w-full  bg-[#f1efe7] py-2 px-4 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:border-red-600" onClick={()=>navigate(`/actions/${actionId}`)}>View Action Items</button>
+          <button className="w-full  bg-[#f1efe7] py-2 px-4 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:border-red-600" onClick={()=>navigate(`/actions/${actionId}`, { state: { label } })}>View Action Items</button>
       )}
 
   </div>

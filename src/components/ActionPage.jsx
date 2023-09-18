@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import Test from './test';
 import api from '../api';
 
 
 const ActionPage = () => {
+  const location = useLocation();
+  const label = location.state?.label || '';
   const { id } = useParams();
   const [transcription, setTranscription] = useState('');
   const [summary, setSummary] = useState('');
@@ -30,6 +33,7 @@ const ActionPage = () => {
 
   const getDataForGoogleDoc = () => {
     return {
+      label,
       summary,
       todos
     };

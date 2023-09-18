@@ -14,6 +14,7 @@ const Online = () => {
   const [contributors, setContributors] = useState([]);
   const [selectedContributors, setSelectedContributors] = useState('');
   const [token,setToken]=useState('');
+  const [label, setLabel] = useState('');
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -58,6 +59,9 @@ const Online = () => {
   };
   const c=selectedContributors;
 
+  const handleLabelChange = (event) => {
+    setLabel(event.target.value);
+  };
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsLoading(true);
@@ -178,6 +182,20 @@ const Online = () => {
               required
             />
           </div>
+          <div className="mb-4">
+            <label htmlFor="label" className="block text-sm font-medium text-gray-800">
+              Label
+            </label>
+            <input
+              id="label"
+              name="label"
+              type="text"
+              value={label}
+              onChange={handleLabelChange}
+              className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-blue-400"
+              required
+            />
+          </div>
           <button
             type="submit"
             className="w-full bg-[#f58174] text-white py-2 px-4 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:border-gray-400"
@@ -193,7 +211,7 @@ const Online = () => {
         {actionId && (
           <button
             className="w-full bg-[#f1efe7]  py-2 px-4 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:bg-[#eaa399]"
-            onClick={() => navigate(`/actions/${actionId}`)}
+            onClick={() => navigate(`/actions/${actionId}`, { state: { label } })}
           >
             View Action Items
           </button>

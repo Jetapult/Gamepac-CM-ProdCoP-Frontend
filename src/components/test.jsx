@@ -6,7 +6,7 @@ const Test = ({ getDataForGoogleDoc }) => {
     const [googleDocId, setGoogleDocId] = useState('');
   
     const createEmptyGoogleDoc = () => {
-      const { summary, todos } = getDataForGoogleDoc();
+      const { label,summary, todos } = getDataForGoogleDoc();
   
       gapi.load('client:auth2', () => {
         gapi.client.init({
@@ -19,7 +19,7 @@ const Test = ({ getDataForGoogleDoc }) => {
               gapi.client.load('docs', 'v1', () => {
                 gapi.auth2.getAuthInstance().signIn().then(() => {
                   const request = {
-                    title: 'Empty Document',
+                    title: label,
                   };
           
                   // Create an empty Google Doc
