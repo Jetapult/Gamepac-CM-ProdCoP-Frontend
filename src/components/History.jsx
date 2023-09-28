@@ -33,6 +33,15 @@ const History=()=>{
         }
       }, [user]);
 
+      const formatTimestamp = (timestamp) => {
+        const date = new Date(timestamp);
+        const options={
+          timeZone: 'Asia/Kolkata' // Set the timezone to Indian Standard Time (IST)
+        }
+        const formattedDate = date.toLocaleDateString();
+        const formattedTime = date.toLocaleTimeString();
+        return `${formattedDate} ${formattedTime}`;
+      };
 
     return (
         <div>
@@ -48,12 +57,13 @@ const History=()=>{
         <thead>
           <tr className="bg-[#eaa399] text-white">
             <th className="px-4 py-2">Sl No</th>
+            <th className="px-4 py-2">Title</th>
+            <th className="px-4 py-2">Created At</th>
             <th className="px-4 py-2">Uploader</th>
             <th className="px-4 py-2">Purpose</th>
             <th className="px-4 py-2">Action Items</th>
-            <th className="px-4 py-2">Created At</th>
             <th className="px-4 py-2">Contributor</th>
-            <th className="px-4 py-2">Mode</th>
+            
           </tr>
         </thead>
         <tbody>
@@ -61,6 +71,8 @@ const History=()=>{
             <tr key={data.data_id} className={index % 2 === 0 ? 'bg-gray-100' : ''}>
               <td className="border px-4 py-2">{index + 1}</td>
               {/* <td className="border px-4 py-2">{user.displayName}</td> */}
+              <td className="border px-4 py-2">{data.title}</td>
+              <td className="border px-4 py-2">{formatTimestamp(data.timestamp)}</td>
               <td className="border px-4 py-2">{data.uploader_name}</td>
               <td className="border px-4 py-2">{data.purpose}</td>
               <td className="border px-4 py-2">
@@ -71,15 +83,8 @@ const History=()=>{
                   View Action
                 </button>
               </td>
-              <td className="border px-4 py-2">{data.timestamp}</td>
               <td className="border px-4 py-2">{data.contributor_name}</td>
-              <td className="border px-4 py-2">
-                {data.flag ? (
-                  <img src={off} alt="Offline" title="Offline" width="20" height="20" />
-                ) : (
-                  <img src={on} alt="Online" title="Online" width="20" height="20" />
-                )}
-              </td>
+              
              
             </tr>
           ))}

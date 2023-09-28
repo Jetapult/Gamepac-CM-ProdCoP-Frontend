@@ -2,10 +2,11 @@ import React, { useState,useEffect } from 'react';
 import { auth } from "../config";
 import { useNavigate } from 'react-router-dom';
 import { useReactMediaRecorder } from 'react-media-recorder';
+import './recording.css'
 import micImg from '../assets/podcast-6781921-5588632.png';
 import api from '../api';
 
-const Record = () => {
+const Record = (props) => {
   const { status, startRecording, stopRecording, mediaBlobUrl, clearBlobUrl } =
     useReactMediaRecorder({
       audio: true,
@@ -74,7 +75,15 @@ const Record = () => {
             }
           });
         const todosList = todoresponse.data.todos;
-        const saveData=await api.post('/data',{id,transcription:t,sum,todosList,p:"Offline Recording",flag:"true",c:"BztHvB5KyJbR4vixf8r4HaRhb3D3"});
+        const titleResponse = await api.post('/title', {
+          transcription,
+        },{
+          headers: {
+            Authorization: 'Bearer ' + token
+          }
+        });
+        const title=titleResponse.data.title;
+        const saveData=await api.post('/data',{id,transcription:t,sum,todosList,p:props.selectedPurpose,flag:"true",c:props.selectedContributors,title});
         const resId=saveData.data.actionId;
         console.log(resId);
         setActionId(resId);
@@ -90,22 +99,28 @@ const Record = () => {
     stopRecording();
     clearBlobUrl();
   };
+  const label=props.label;
 
   return (
-    <div className="border rounded-lg p-8 shadow-md mx-auto">
+    <div className=" border rounded-lg p-8 shadow-md mx-auto">
       <div className="flex flex-col items-center gap-4">
         <img src={micImg} alt="Microphone Icon" className="h-24 text-gray-600" />
         <div className="flex items-center gap-4">
           {status === 'recording' ? (
+            <div className='flex'>
+            <div class="contain">
+            <div class="recording-circle"></div>
+          </div>
             <button
               className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-transform hover:scale-105"
               onClick={handleStopRecording}
             >
               Stop Recording
             </button>
+            </div>
           ) : (
             <button
-              className="bg-[#eaa399] hover:bg-[#f1efe7] hover:text-black text-white px-4 py-2 rounded transition-transform hover:scale-105"
+              className=" bg-[#f58174] hover:bg-[#f1efe7] hover:text-black text-white px-4 py-2 rounded transition-transform hover:scale-105"
               onClick={startRecording}
             >
               Start Recording
@@ -118,7 +133,7 @@ const Record = () => {
           </button>
         ) : null}
          {actionId && (
-<button className="w-full  bg-[#f1efe7] py-2 px-4 w-52 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:border-red-600" onClick={()=>navigate(`/actions/${actionId}`)}>View Action Items</button>
+<button className="w-full  bg-[#f1efe7] py-2 px-4 w-52 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:border-red-600" onClick={()=>navigate(`/actions/${actionId}`,{ state: { label } })}>View Action Items</button>
 )}
       </div>
     </div>

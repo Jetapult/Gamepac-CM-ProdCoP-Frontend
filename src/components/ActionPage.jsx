@@ -13,7 +13,8 @@ const ActionPage = () => {
   const [summary, setSummary] = useState('');
   const [todos, setTodos] = useState([]);
   const [showTranscript, setShowTranscript] = useState(false);
-
+  const [title,setTitle]=useState('');
+  const [purpose,setPurpose]=useState('');
   useEffect(() => {
     // Fetch the data for the given ID from the backend
     api.get(`/data/${id}`)
@@ -22,6 +23,8 @@ const ActionPage = () => {
         console.log(data);
         setTranscription(data.transcript);
         setSummary(data.summary);
+        setTitle(data.title);
+        setPurpose(data.purpose);
         const todosList = data.todos;
         const todoItems = todosList.split('\n');
         setTodos(todoItems);
@@ -30,12 +33,14 @@ const ActionPage = () => {
         console.error('Error fetching action data:', error);
       });
   }, [id]);
-
+console.log(title);
   const getDataForGoogleDoc = () => {
     return {
       label,
       summary,
-      todos
+      todos,
+      title,
+      purpose,
     };
   };
 
@@ -80,9 +85,10 @@ const ActionPage = () => {
           </div>
         )}
       </div>
+     
   </div>
 )}
-<div className='mx-auto p-4'>
+<div className='mt -3 mx-auto p-4 flex justify-center'>
       <Test getDataForGoogleDoc={getDataForGoogleDoc} />
     </div>
 

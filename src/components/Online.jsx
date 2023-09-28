@@ -101,6 +101,14 @@ const Online = () => {
           }
         });
         const todosList = response.data.todos;
+        const titleResponse = await api.post('/title', {
+          transcription,
+        },{
+          headers: {
+            Authorization: 'Bearer ' + token
+          }
+        });
+        const title=titleResponse.data.title;
 
         // Step 2: Save the data to the data table
         const data = {
@@ -111,6 +119,7 @@ const Online = () => {
           p: selectedPurpose,
           flag:"false",
           c,
+          title,
         };
 
         const saveData = await api.post('/data', data);

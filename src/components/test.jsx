@@ -1,12 +1,15 @@
 import React from 'react';
 import { useState } from 'react';
 import { gapi } from 'gapi-script';
+import docs from '../assets/docs.png';
 
 const Test = ({ getDataForGoogleDoc }) => {
     const [googleDocId, setGoogleDocId] = useState('');
+    const [loading, setLoading] = useState(false);
   
     const createEmptyGoogleDoc = () => {
-      const { label,summary, todos } = getDataForGoogleDoc();
+      const { label,summary, todos ,purpose,} = getDataForGoogleDoc();
+      setLoading(true);
   
       gapi.load('client:auth2', () => {
         gapi.client.init({
@@ -66,6 +69,7 @@ const Test = ({ getDataForGoogleDoc }) => {
                       resource: { requests: content },
                     }).then(() => {
                       setGoogleDocId(docId);
+                      setLoading(false); // Set loading state to false
                     });
                   });
                 });
@@ -75,24 +79,41 @@ const Test = ({ getDataForGoogleDoc }) => {
           
     return (
       <div>
-        <button onClick={createEmptyGoogleDoc}>Convert to Google Doc</button>
-        {googleDocId && (
-          <p>
-            Document created!{' '}
-            <a
-              href={`https://docs.google.com/document/d/${googleDocId}`}
-              target="_blank"
-              rel="noopener noreferrer"
+      {googleDocId ? (
+        
+
+        <button
+  className="bg-[#f1efe7] py-2 px-4 rounded-md hover:scale-105 focus:outline-none focus:ring focus:border-gray-400"
+  onClick={() => window.open(`https://docs.google.com/document/d/${googleDocId}`, '_blank')}
+>
+<span style={{ display: 'flex', alignItems: 'center' }}>
+    <img src={docs} alt="Google Docs Logo" style={{ width: '20px', marginRight: '5px' }} />
+    Doc Created!{' '}
+          </span>
+</button>
+      ) :  (
+        <div>
+          {loading ? (
+            <button className="bg-[#f1efe7] py-2 px-4 rounded-md hover:scale-105 focus:outline-none focus:ring focus:border-gray-400" disabled>
+              <span style={{ display: 'flex', alignItems: 'center' }}>
+                Creating...
+              </span>
+            </button>
+          ) : (
+            <button
+              className="bg-[#f1efe7] py-2 px-4 rounded-md hover:scale-105 focus:outline-none focus:ring focus:border-gray-400"
+              onClick={createEmptyGoogleDoc}
             >
-              Open Google Doc
-            </a>
-          </p>
-        )}
-      </div>
+              <span style={{ display: 'flex', alignItems: 'center' }}>
+                <img src={docs} alt="Google Docs Logo" style={{ width: '20px', marginRight: '5px' }} />
+                Convert to Google Doc
+              </span>
+            </button>
+          )}
+        </div>
+      )}
+    </div>
     );
   };
-  
-//   export default Test;
-  
 
 export default Test;

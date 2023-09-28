@@ -72,6 +72,7 @@ const Home = () => {
     setIsLoading(true);
     if (!file) {
       alert('Please select an MP3 file.');
+      setIsLoading(false);
       return;
     }
     const formData = new FormData();
@@ -108,7 +109,16 @@ const Home = () => {
           }
         });
         const todosList = response.data.todos;
-      const saveData=await api.post('/data',{id,transcription,sum,todosList,p,flag:"true",c});
+        const titleResponse = await api.post('/title', {
+          transcription,
+        },{
+          headers: {
+            Authorization: 'Bearer ' + token
+          }
+        });
+        const title=titleResponse.data.title;
+        console.log(title);
+      const saveData=await api.post('/data',{id,transcription,sum,todosList,p,flag:"true",c,title});
       const resId=saveData.data.actionId;
       console.log(resId);
       setActionId(resId);
@@ -121,76 +131,89 @@ const Home = () => {
 
 
     return (
+     
         
     <div className="flex justify-center pt-10">
-    {/* <RecordView/> */}
-    <Record/>
-        <div className="bg-white p-8 rounded-md shadow-md w-96 mx-auto">
-        <h2 className="text-2xl font-bold mb-4">Speech to Brief</h2>
-    <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-            <label htmlFor="contributors" className="block text-sm font-medium text-gray-800">
-              Contributors
-            </label>
-            {contributors.length > 0 && (
-            <select
-              id="contributors"
-              name="contributors"
-              value={selectedContributors}
-              onChange={handleContributorsChange}
-              className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-blue-400">
-              <option value="">Select a contributor</option>
-              
-              {contributors.map((contributor) => (
-                <option key={contributor.uid} value={contributor.uid}>
-                  {contributor.email}
-                </option>
-              ))}
-            </select>
-            )}
-          </div>
-      <div className="mb-4">
-  <label htmlFor="purpose" className="block text-sm font-medium text-gray-800">Purpose</label>
-  <select id="purpose"
-              name="purpose"
-              value={selectedPurpose}
-              onChange={handlePurposeChange} className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-blue-400">
-    <option value="">Select a purpose</option>
-    <option value="Investment">Investment</option>
-    <option value="Hiring">Hiring</option>
-    <option value="Game Analysis">Game Analysis</option>
-    <option value="Share Holders Connect">Share Holders Connect</option>
-  </select>
-</div>
-
-      <div className="mb-4">
-        <label  htmlFor="mp3Recording" className="block text-sm font-medium text-gray-800">Recorded File</label>
-        <input type="file" className="mt-1 w-full" accept=".mp3" onChange={handleFileChange}   required/>
+       <div className="bg-white p-8 rounded-md shadow-md max-w-2xl mx-auto">
+    <h2 className="text-2xl font-bold mb-4">Meeting Details</h2>
+    <div className="mb-4">
+      <label htmlFor="contributors" className="block text-sm font-medium text-gray-800">
+        Contributors
+      </label>
+      {contributors.length > 0 && (
+        <select
+          id="contributors"
+          name="contributors"
+          value={selectedContributors}
+          onChange={handleContributorsChange}
+          className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-blue-400"
+        >
+          <option value="">Select a contributor</option>
+          {contributors.map((contributor) => (
+            <option key={contributor.uid} value={contributor.uid}>
+              {contributor.email}
+            </option>
+          ))}
+        </select>
+      )}
+    </div>
+    <div className="mb-4">
+      <label htmlFor="purpose" className="block text-sm font-medium text-gray-800">
+        Purpose
+      </label>
+      <select
+        id="purpose"
+        name="purpose"
+        value={selectedPurpose}
+        onChange={handlePurposeChange}
+        className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-blue-400"
+      >
+        <option value="">Select a purpose</option>
+        <option value="Investment">Investment</option>
+        <option value="Hiring">Hiring</option>
+        <option value="Game Analysis">Game Analysis</option>
+        <option value="Share Holders Connect">Share Holders Connect</option>
+      </select>
+    </div>
+    <div className="mb-4">
+      <label htmlFor="label" className="block text-sm font-medium text-gray-800">
+        Label
+      </label>
+      <input
+        id="label"
+        name="label"
+        type="text"
+        value={label}
+        onChange={handleLabelChange}
+        className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-blue-400"
+        required
+      />
       </div>
-      <div className="mb-4">
-            <label htmlFor="label" className="block text-sm font-medium text-gray-800">
-              Label
-            </label>
-            <input
-              id="label"
-              name="label"
-              type="text"
-              value={label}
-              onChange={handleLabelChange}
-              className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-blue-400"
-              required
-            />
-          </div>
-      <button type="submit" className="w-full bg-[#f58174] text-white py-2 px-4 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:border-gray-400" >Give Action Items</button>
-      
+      <div className="flex items-center justify-between">
+  <div className="mb-2 mt-2 border rounded-lg p-8 shadow-md mx-3">
+    <form onSubmit={handleSubmit}>
+    <div className="mb-4">
+        <label  htmlFor="mp3Recording" className="block text-sm font-medium text-gray-800">Recorded File</label>
+        <input type="file" className="mt-1 w-full" accept=".mp3" onChange={handleFileChange} />
+      </div>
+      <button type="submit" className="w-1/2 bg-[#f58174] text-white py-2 px-4 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:border-gray-400" >Give Action Items</button>
     </form>
   </div>
+  <Record 
+  id={id}
+  selectedContributors={selectedContributors}
+  selectedPurpose={selectedPurpose}
+  label={label}
+  />
+</div>
+    {/* <RecordView/> */}
+  </div>
+   
     <div>
     {isLoading? (
   <button className="w-full bg-[#f1efe7] py-2 px-4 rounded-md cursor-not-allowed opacity-50" disabled>Loading...</button>
 ) :null}
        {actionId && (
-
           <button className="w-full  bg-[#f1efe7] py-2 px-4 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:border-red-600" onClick={()=>navigate(`/actions/${actionId}`, { state: { label } })}>View Action Items</button>
       )}
 

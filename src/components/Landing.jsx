@@ -1,12 +1,21 @@
 import icon from '../assets/icon.svg'
+import { useState,useEffect } from 'react';
 import './landing.css';
 import { signInWithGogle } from "../config";
+import { auth } from "../config";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 // import image from '../assets/istockphoto-1190152805-612x612.jpg';
 import image from '../assets/2002.i515.009_contemporary_workspace_flat_icons-07.jpg';
-function Landing(){
 
+function Landing(){
+  const [user,setUser]=useState('')
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => { 
+        setUser(user);
+    });
+    return () => unsubscribe();
+}, []);
 
     return (
         <div className="flex flex-col  justify-center">
@@ -21,6 +30,7 @@ function Landing(){
         style={{ width: '450px', height: '450px' }}
         className="min-h-0 min-w-0 self-center mb-4"
       />
+      {!user&&
       <div className="flex space-x-10 justify-center space-between">
       {/* <button className="google-button rounded-md shadow-md hover:shadow-lg transition-shadow" onClick={signInWithGogle}></button> */}
       <button
@@ -30,6 +40,8 @@ function Landing(){
       <span className="font-medium text-lg">Sign in with Google</span>
     </button>
      </div>
+      }
+      
     </div>
        
     )
