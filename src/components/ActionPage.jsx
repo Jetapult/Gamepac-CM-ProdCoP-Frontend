@@ -10,7 +10,8 @@ const ActionPage = () => {
   const label = location.state?.label || '';
   const { id } = useParams();
   const [transcription, setTranscription] = useState('');
-  const [summary, setSummary] = useState('');
+  // const [summary, setSummary] = useState('');
+  const[summaryList,setSummaryList]=useState([]);
   const [todos, setTodos] = useState([]);
   const [showTranscript, setShowTranscript] = useState(false);
   const [title,setTitle]=useState('');
@@ -22,7 +23,9 @@ const ActionPage = () => {
         const data = response.data;
         console.log(data);
         setTranscription(data.transcript);
-        setSummary(data.summary);
+        const summary=data.summary;
+        const summaryItems=summary.split('\n');
+        setSummaryList(summaryItems);
         setTitle(data.title);
         setPurpose(data.purpose);
         const todosList = data.todos;
@@ -37,7 +40,7 @@ console.log(title);
   const getDataForGoogleDoc = () => {
     return {
       label,
-      summary,
+      summaryList,
       todos,
       title,
       purpose,
@@ -49,7 +52,12 @@ console.log(title);
       <div className="mt-6">
         <h1 className="text-1xl font-bold mb-2">Summary:</h1>
         <div className="bg-[#f1efe7] p-4 rounded-md shadow-md">
-          <p className="text-gray-800">{summary}</p>
+          {/* <p className="text-gray-800">{summary}</p> */}
+          <ul className="list-disc list-inside">
+      {summaryList.map((item, index) => (
+        <li key={index} className="text-gray-800">{item}</li>
+      ))}
+    </ul>
         </div>
       </div>
       {todos.length > 0 && (
