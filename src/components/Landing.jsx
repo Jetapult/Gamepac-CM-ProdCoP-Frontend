@@ -6,8 +6,8 @@ import { auth } from "../config";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 // import image from '../assets/istockphoto-1190152805-612x612.jpg';
-import image from '../assets/2002.i515.009_contemporary_workspace_flat_icons-07.jpg';
-
+// import image from '../assets/2002.i515.009_contemporary_workspace_flat_icons-07.jpg';
+import image from '../assets/meeting.webp';
 function Landing(){
   const [user,setUser]=useState('')
   useEffect(() => {
@@ -27,7 +27,7 @@ function Landing(){
       <img
         src={image}
         // src={istockphoto-1190152805-612x612}
-        style={{ width: '450px', height: '450px' }}
+        style={{ width: '650px', height: '450px' }}
         className="min-h-0 min-w-0 self-center mb-4"
       />
       {!user&&
