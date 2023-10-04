@@ -8,7 +8,7 @@ const Test = ({ getDataForGoogleDoc }) => {
     const [loading, setLoading] = useState(false);
   
     const createEmptyGoogleDoc = () => {
-      const { label,summary, todos ,purpose,} = getDataForGoogleDoc();
+      const { label,summaryList, todos ,purpose,} = getDataForGoogleDoc();
       setLoading(true);
   
       gapi.load('client:auth2', () => {
@@ -28,42 +28,58 @@ const Test = ({ getDataForGoogleDoc }) => {
                   // Create an empty Google Doc
                   gapi.client.docs.documents.create(request).then((response) => {
                     const docId = response.result.documentId;
-          
-                    // Initialize content array
-                    const content = [
-                      {
-                        insertText: {
-                          location: { index: 1 },
-                          text: 'Summary:\n',
-                        },
-                      },
-                      {
-                        insertText: {
-                          location: { index: 9 },
-                          text: `${summary}`+'\n',
-                        },
-                      },
-                      {
-                        insertText: {
-                          location: { index: 10 + summary.length },
-                          text: 'Todo List:'+'\n',
-                        },
-                      },
-                    ];
-                    const reversedTodos = [...todos].reverse();
+      // Initialize content array
+const content = [
+  {
+    insertText: {
+      location: { index: 1 },
+      text: 'Summary:\n',
+    },
+  },
+];
 
-                    // Add each item in the reversed todos list as a bullet point
-                    reversedTodos.forEach((todo, index) => {
-                      content.push(
-                        {
-                          insertText: {
-                            location: { index: 20 + summary.length + index },
-                            text: `- ${todo}\n`,
-                          },
-                        }
-                      );
-                    });
-                
+let currentIndex ='Summary:\n'.length;
+
+
+// Add each item in the summary list as a bullet point
+summaryList.forEach((summaryItem) => {
+  const text = `- ${summaryItem}\n`;
+  content.push(
+    {
+      insertText: {
+        location: { index: currentIndex },
+        text: text,
+      },
+    }
+  );
+  currentIndex += text.length;
+});
+
+const todoListTitle = '\nTodo List:\n';
+content.push(
+  {
+    insertText: {
+      location: { index: currentIndex },
+      text: todoListTitle,
+    },
+  },
+);
+
+currentIndex += todoListTitle.length;
+
+// Add each item in the todos list as a bullet point
+todos.forEach((todo) => {
+  const text = `- ${todo}\n`;
+  content.push(
+    {
+      insertText: {
+        location: { index: currentIndex },
+        text: text,
+      },
+    }
+  );
+  currentIndex += text.length;
+});
                     gapi.client.docs.documents.batchUpdate({
                       documentId: docId,
                       resource: { requests: content },
