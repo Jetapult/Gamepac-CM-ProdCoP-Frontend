@@ -193,7 +193,7 @@ const Home = () => {
   <div className="mb-2 mt-2 border rounded-lg p-8 shadow-md mx-3">
     <form onSubmit={handleSubmit}>
     <div className="mb-4">
-        <label  htmlFor="mp3Recording" className="block text-sm font-medium text-gray-800">Recorded File</label>
+        <label  htmlFor="mp3Recording" className="block text-sm font-medium text-gray-800">Recorded File (m4a,mp3)</label>
         <input type="file" className="mt-1 w-full" accept=".mp3, .m4a" onChange={handleFileChange} />
       </div>
       <button type="submit" className="w-1/2 bg-[#f58174] text-white py-2 px-4 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:border-gray-400" >Give Action Items</button>
