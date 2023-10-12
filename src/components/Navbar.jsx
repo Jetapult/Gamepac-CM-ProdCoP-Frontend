@@ -20,6 +20,8 @@ function Navbar(){
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [closeDropdownTimeout, setCloseDropdownTimeout] = useState(null);
+
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => { 
       setUser(user);
@@ -34,7 +36,16 @@ const handleLogout = () => {
   });
 };
 
+const handleOpenDropdown = () => {
+  if (closeDropdownTimeout) clearTimeout(closeDropdownTimeout);
+  setDropdownOpen(true);
+};
 
+const handleCloseDropdown = () => {
+  setCloseDropdownTimeout(setTimeout(() => {
+    setDropdownOpen(false);
+  }, 1000)); // 300ms delay before closing dropdown
+};
 const handleToggleMobileMenu = () => {
   setMobileMenuOpen(!mobileMenuOpen);
 };
@@ -63,10 +74,8 @@ const handleToggleMenu = () => {
       <div className="relative" >
         <button
           className="text-gray-700 justify-end items-center space-y-6 md:flex md:space-x-6 md:space-y-0 md:text-gray-600 md:font-medium"
-          onMouseEnter={handleToggleDropdown}
-          onMouseLeave={() => setTimeout(() => handleToggleDropdown(false), 500)}
-          // onClick={handleToggleDropdown}
-        >
+           onMouseEnter={handleOpenDropdown} 
+           onMouseLeave={handleCloseDropdown}>
           <div className="flex gap-2 items-center" >
             <img src={socialsImg} className="w-6 h-6" alt="Socials" />
             Socials
@@ -86,26 +95,22 @@ const handleToggleMenu = () => {
           </div>
         </button>
         {dropdownOpen && (
-          <ul className="absolute bg-white border border-gray-300 mt-1 py-1 w-36 text-gray-800 rounded-lg shadow-lg whitespace-nowrap">
-            <li>
-              <button
-                className="block px-2 md:px-4 py-2 hover:bg-gray-200 transition duration-200 w-full text-left"
-                onClick={() => {navigate('/smart')}}
-              >
-                Smart Actions
-              </button>
-            </li>
-            <li>
-              <button
-                className="block px-2 md:px-4 py-2 hover:bg-gray-200 transition duration-200 w-full text-left"
-                onClick={() => navigate('/assistant')}
-              >
-                Reply Assistant
-              </button>
-            </li>
-          </ul>
-        )}
-      </div>
+    <div className={`absolute bg-white border border-gray-300 mt-1 py-1 w-36 text-gray-800 rounded-lg shadow-lg whitespace-nowrap ${dropdownOpen ? 'opacity-100' : 'opacity-0'}`} style={{ transition: 'opacity 0.3s' }}>
+      <button
+        className="block px-2 md:px-4 py-2 hover:bg-gray-200 transition duration-200 w-full text-left"
+        onClick={() => { navigate('/smart'); handleToggleDropdown(); }}
+      >
+        Smart Actions
+      </button>
+      <button
+        className="block px-2 md:px-4 py-2 hover:bg-gray-200 transition duration-200 w-full text-left"
+        onClick={() => { navigate('/assistant'); handleToggleDropdown(); }}
+      >
+        Reply Assistant
+      </button>
+    </div>
+  )}
+</div>
       <ul className="text-gray-700 justify-end items-center space-y-6 md:flex md:space-x-6 md:space-y-0 md:text-gray-600 md:font-medium">
           <li className="duration-150 hover:text-gray-900">
           <a href="/home" className="block">

@@ -50,7 +50,7 @@ const Assistant=()=>{
       ];
       
       const handleFetchComments = async () => {
-        try {
+        try { 
           setLoading(true);
           let response;
           if (selectedApp === 'google') {
@@ -191,7 +191,7 @@ const Assistant=()=>{
 
           </div>
           <button
-            className="bg-[#f58174] hover:bg-[#eaa399] text-white px-4 py-2 rounded mb-4"
+            className="bg-[#f58174] hover:bg-[#f26555] text-white px-4 py-2 rounded mb-4"
             onClick={handleFetchComments}
           >
             Fetch Comments

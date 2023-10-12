@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import api from '../api';
 import googlePlayIcon from '../assets/google-play_318-566073.avif';
 import appleIcon from '../assets/icon_appstore__ev0z770zyxoy_large_2x.png'
+import loadingIcon from '../assets/Spinner-1s-200px.svg'
+
 
 const Smart=()=>{
     const [response, setResponse] = useState('');
@@ -9,6 +11,7 @@ const Smart=()=>{
     const [selectedGame, setSelectedGame] = useState(null);
     const [selectedApp, setSelectedApp] = useState('');
     const [todos, setTodos] = useState([]);
+    const [selectedTimeline,setSelectedTimeline]=useState('');
 
     const gameOptions = [
       { name: 'My Home Design: Makeover Games', packageName: 'com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating' },
@@ -48,7 +51,22 @@ const Smart=()=>{
       try {
         setIsLoading(true); // Set loading state
         let fileContent = '';
-  
+        
+        if (!selectedApp) {
+          alert('Please select an App'); // Alert if timeline is not selected for Google app
+          return;
+        }
+
+    if (selectedApp === 'google' && !selectedGame) {
+      alert('Please select a Game'); // Alert if timeline is not selected for Google app
+      return;
+    }
+
+    if (selectedApp === 'apple' && !selectedGame) {
+      alert('Please select a game.'); // Alert if game is not selected for Apple app
+      return;
+    }
+
         if (selectedApp === 'apple') {
            const response =await api.post('/fetchAppleComments',{appId: selectedGame.appId});
             console.log(response.data);
@@ -113,30 +131,27 @@ const Smart=()=>{
         <img src={appleIcon} alt="Apple Play Icon" className="w-5 h-5 mr-1 inline" /> Apple Store
       </button>
           </div>
-          {/* <div className="flex space-x-4">
-            <div className="flex-1">
-              <label htmlFor="start-date" className="font-semibold block">
-                Start Date:
-              </label>
-              <input
-                type="date"
-                id="start-date"
-                name="start-date"
-                className="border rounded p-2 w-full"
-              />
-            </div>
-            <div className="flex-1">
-              <label htmlFor="end-date" className="font-semibold block">
-                End Date:
-              </label>
-              <input
-                type="date"
-                id="end-date"
-                name="end-date"
-                className="border rounded p-2 w-full"
-              />
-            </div>
-          </div> */}
+          <div className="mb-4">
+          <label className="font-semibold block">Select Timeline:</label>
+          {selectedApp=='google'?(
+         
+         <select 
+         name="google-dropdown" id="" className="border rounded p-2 w-full"
+         onChange={(e)=>setSelectedTimeline(e.target.value)}>
+         <option value="week"> Weekly </option>
+         <option value="all">All Time</option>
+         </select>
+          ):(
+            <select name="google-dropdown" id="" className="border rounded p-2 w-full"
+            onChange={(e)=>setSelectedTimeline(e.target.value)}>
+            <option value="all">All Time</option>
+            <option value="week"> Last Week</option>
+            <option value="month"> Last Month</option>
+            <option value="3-months"> Last 3 Months</option>
+            </select>
+            
+          )}
+          </div>
           <div className="flex-1">
     <label htmlFor="game-select" className="font-semibold block">
       Select Game:
@@ -152,6 +167,7 @@ const Smart=()=>{
     const game = gameOptions.find((game) => game.name === selectedGameName);
     setSelectedGame(game);
   }}
+  required
 >
   <option value="">Select a game</option>
   {gameOptions.map((game, index) => (
@@ -179,17 +195,22 @@ const Smart=()=>{
 )}
   </div>
         <button
-          className="bg-[#f58174] hover:bg-[#eaa399] text-white px-6 py-3 rounded w-full"
+          className="bg-[#f58174] hover:bg-[#f26555] text-white px-6 py-3 rounded w-full"
           type="button"
           onClick={handleSmartActions}
         >
-          {isLoading ? 'Loading...' : 'Smart Actions'}
+          {isLoading ? 'Loading...' : 'Get Smart Actions'}
         </button>
       </form>
-      {response && (
-        <div className="mt-4">
+      {isLoading ? (
+  <div className="flex  items-center justify-center mt-3 ">
+    <img src={loadingIcon} alt="Loading" className="w-12 h-12 mr-2" />
+  </div>
+) : (
+  <div>
+    {response && (
+     <div className="mt-4">
           <h2 className="text-lg font-semibold mb-2">Generated Actions:</h2>
-          {/* <p>{response}</p> */}
           <div className="mt-4 mb-3">
     <h3 className="text-1xl font-bold mb-2">{selectedGame.name}</h3>
     <ul className="list-disc list-inside">
@@ -208,10 +229,12 @@ const Smart=()=>{
     </ul>
     </div>
         </div>
-      )}
+)}
       </div>
 
-  );
+  )}
+  </div>
+    );
 };
 
 export default Smart;
