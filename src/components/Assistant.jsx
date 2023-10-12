@@ -69,7 +69,27 @@ const Assistant=()=>{
       
       const formatComments = (data) => {
         if (selectedApp === 'google') {
-          return data.map(comment => ({ ...comment, reply: null }));
+          return data.map(comment => {
+            let formattedComment;
+            if (comment.originalLang) {
+              formattedComment = {
+                ...comment,
+                comment: comment.originalLang,
+                translatedComment: comment.comment,
+                reviewId: comment.reviewId, // Store the reviewId
+
+              };
+            } else {
+              formattedComment = {
+                ...comment,
+                translatedComment: null,
+                reviewId: comment.reviewId, // Store the reviewId
+
+              };
+            }
+            return formattedComment;
+          });
+          // return data.map(comment => ({ ...comment, reply: null }));
         } else if (selectedApp === 'apple') {
           return data.data.map((comment) => ({
             userName: comment.attributes.reviewerNickname,
@@ -103,11 +123,26 @@ const Assistant=()=>{
         }
       };
     
-      const handlePostReply = (index) => {
-        const updatedReplies = [...replies];
-        updatedReplies[index].posted = true;
-        setReplies(updatedReplies);
-        // Call the post functionality here
+      const handlePostReply = async (index) => {
+        const comment = comments[index];
+        const { reviewId, reply } = comment;        // Get the reviewId and reply
+        const packageName = selectedGame.packageName; // Get the selected game's package name
+        console.log(reviewId,packageName,reply);
+          // Call the post functionality here, including the reviewId, packageName, and reply
+          try {
+            // Call the post functionality here, including the reviewId, packageName, and reply
+            const response = await api.post('/postReply', {
+              reviewId: reviewId,
+              packageName: packageName,
+              reply: reply,
+            });
+            // Display the response
+            console.log(response.data);
+          } catch (error) {
+            // Handle the error
+            console.error('Error posting reply:', error);
+          }
+
       };
     
       return (
@@ -207,7 +242,11 @@ const Assistant=()=>{
                 <p>User: {comment.userName}</p>
                 <p>Rating: {comment.userRating}</p>
                 <p>Comment: {comment.comment}</p>
+                {comment.translatedComment && (
+      <p>Translated Comment: {comment.translatedComment}</p>
+    )}
                 <p>Date:  {comment.date}</p>
+                
                 {loadingReplyIndex === index && <img src={loadingIcon} alt="Loading..." className="w-6 h-6 mr-2"/>}
                 {comment.reply && <p className="text-gray-600 mt-1">Assistant: {comment.reply}</p>}
     <div className="flex mt-2">
