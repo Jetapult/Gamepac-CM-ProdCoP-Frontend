@@ -215,15 +215,9 @@ const Smart=()=>{
     <h3 className="text-1xl font-bold mb-2">{selectedGame.name}</h3>
     <ul className="list-disc list-inside">
       {todos.map((item, index) => (
-        <li key={index} className="mb-2 flex items-center">
-          <label htmlFor={`todo-${index}`} className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              id={`todo-${index}`}
-              className="form-checkbox text-red-600 mr-2"
-            />
+        <li key={index} className="mb-2 ">
             <span>{item}</span>
-          </label>
+
         </li>
       ))}
     </ul>

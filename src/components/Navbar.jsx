@@ -96,18 +96,19 @@ const handleToggleMenu = () => {
         </button>
         {dropdownOpen && (
     <div className={`absolute bg-white border border-gray-300 mt-1 py-1 w-36 text-gray-800 rounded-lg shadow-lg whitespace-nowrap ${dropdownOpen ? 'opacity-100' : 'opacity-0'}`} style={{ transition: 'opacity 0.3s' }}>
+     <button
+        className="block px-2 md:px-4 py-2 hover:bg-gray-200 transition duration-200 w-full text-left"
+        onClick={() => { navigate('/assistant'); handleToggleDropdown(); }}
+      >
+        Reply Assistant
+      </button>
       <button
         className="block px-2 md:px-4 py-2 hover:bg-gray-200 transition duration-200 w-full text-left"
         onClick={() => { navigate('/smart'); handleToggleDropdown(); }}
       >
         Smart Actions
       </button>
-      <button
-        className="block px-2 md:px-4 py-2 hover:bg-gray-200 transition duration-200 w-full text-left"
-        onClick={() => { navigate('/assistant'); handleToggleDropdown(); }}
-      >
-        Reply Assistant
-      </button>
+   
     </div>
   )}
 </div>
