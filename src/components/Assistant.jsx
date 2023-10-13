@@ -15,6 +15,7 @@ const Assistant=()=>{
       const [loading, setLoading] = useState(false);
       const [loadingReplyIndex, setLoadingReplyIndex] = useState(null);
       const [filteredComments,setFilteredComments]=useState([]);
+      const [posting,setPosting]=useState(false);
       const gameOptions = [
         { name: 'My Home Design: Makeover Games', packageName: 'com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating' },
         { name: 'Design Home Dream House Games', packageName: 'com.holycowstudio.my.design.home.makeover.word.house.life.games.mansion.decorate.decor.masters' },
@@ -124,24 +125,38 @@ const Assistant=()=>{
       };
     
       const handlePostReply = async (index) => {
+        if(selectedApp==='google')
+        {
+          setPosting(true);
         const comment = comments[index];
         const { reviewId, reply } = comment;        // Get the reviewId and reply
-        const packageName = selectedGame.packageName; // Get the selected game's package name
-        console.log(reviewId,packageName,reply);
-          // Call the post functionality here, including the reviewId, packageName, and reply
-          try {
-            // Call the post functionality here, including the reviewId, packageName, and reply
-            const response = await api.post('/postReply', {
-              reviewId: reviewId,
-              packageName: packageName,
-              reply: reply,
-            });
-            // Display the response
-            console.log(response.data);
-          } catch (error) {
-            // Handle the error
-            console.error('Error posting reply:', error);
-          }
+         const packageName = selectedGame.packageName; // Get the selected game's package name
+         console.log(reviewId,packageName,reply);
+         // Call the post functionality here, including the reviewId, packageName, and reply
+         try {
+           // Call the post functionality here, including the reviewId, packageName, and reply
+           const response = await api.post('/postReply', {
+             reviewId: reviewId,
+             packageName: packageName,
+             reply: reply,
+           });
+           // Display the response
+           console.log(response.data);
+           setPosting(false);
+         } catch (error) {
+           // Handle the error
+           console.error('Error posting reply:', error);
+           setPosting(false);
+         }
+        }
+         else if (selectedApp === 'apple') {
+         {  setPosting(true);
+            console.log("apple posting not enabled");
+            setPosting(false);
+         }
+
+        }
+
 
       };
     
@@ -261,7 +276,8 @@ const Assistant=()=>{
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
           onClick={() => handlePostReply(index)}
         >
-          Post
+          {posting? 'Posting' : 'Post'  }
+          
         </button>
       )}
     </div>
