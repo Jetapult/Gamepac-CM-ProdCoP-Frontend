@@ -97,6 +97,7 @@ const Assistant=()=>{
             userRating: comment.attributes.rating,
             comment: comment.attributes.body,
             date: new Date(comment.attributes.createdDate).toLocaleDateString('en-GB'),
+            reviewId: comment.id,
             reply: null,
           }));
         }
@@ -109,7 +110,6 @@ const Assistant=()=>{
           const response = await api.post('/replyAssistant', {
             comment: comment.comment,
           });
-    
           const reply = response.data.reply;
     setComments(prevComments => {
       const newComments = [...prevComments];
@@ -151,11 +151,26 @@ const Assistant=()=>{
         }
          else if (selectedApp === 'apple') {
          {  setPosting(true);
-            console.log("apple posting not enabled");
-            setPosting(false);
-         }
-
+          const comment = comments[index];
+         const { reviewId, reply } = comment;        // Get the reviewId and reply for the apple comment
+         console.log(reviewId,reply);
+         // Call the post functionality here, including the reviewId, packageName, and reply
+         try {
+           // Call the post functionality here, including the reviewId, packageName, and reply
+           const response = await api.post('/postAppleReply', {
+             reviewId: reviewId,
+             reply: reply,
+           });
+           // Display the response
+           console.log(response.data);
+           setPosting(false);
+         }catch (error) {
+          // Handle the error
+          console.error('Error posting reply:', error);
+          setPosting(false);
         }
+      }
+    }
 
 
       };
