@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { useReactMediaRecorder } from 'react-media-recorder';
 import './recording.css'
 import micImg from '../assets/podcast-6781921-5588632.png';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import api from '../api';
 
 const Record = (props) => {
+  console.log(process.env.REACT_APP_AWS_BUCKET_NAME);
   const { status, startRecording, stopRecording, mediaBlobUrl, clearBlobUrl } =
     useReactMediaRecorder({
       audio: true,
@@ -14,6 +16,19 @@ const Record = (props) => {
         // This callback will receive the blobUrl when recording stops
         console.log('Recording stopped. Blob URL:', blobUrl);
         sendAudioToBackend(blobUrl);
+      },
+    });
+    const config = {
+      bucketName: process.env.REACT_APP_AWS_BUCKET_NAME,
+      dirName: 'audio',
+      region: process.env.REACT_APP_AWS_BUCKET_REGION,
+    };
+ 
+    const s3Client = new S3Client({
+      region: process.env.REACT_APP_AWS_BUCKET_REGION,
+      credentials: {
+        accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY,
+        secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY,
       },
     });
 
@@ -36,24 +51,35 @@ const Record = (props) => {
           return () => unsubscribe();
       }, []);
    const id=userId;
+   const uploadFileToS3 = async (bucketName, key, body, contentType) => {
+    const params = {
+      Bucket: bucketName,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    };
+  
+    try {
+      const command = new PutObjectCommand(params);
+      const response = await s3Client.send(command);
+      console.log("File uploaded successfully:", response);
+      return response;
+    } catch (error) {
+      console.error("Error uploading file to S3:", error);
+      throw error;
+    }
+  };
   const sendAudioToBackend = async (audioBlobUrl) => {
     try {
       setIsLoading(true);
-
-      // Fetch the Blob from the audioBlobUrl
       const response = await fetch(audioBlobUrl);
       const audioBlob = await response.blob();
-      console.log(audioBlob);
-
-      // Create a FormData with the audioBlob
-      const formData = new FormData();
-      formData.append('file', audioBlob, 'recorded_audio.wav');
-        // Step 1: Transcribe the audio
-      const responseFromBackend = await api.post('/recorder', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const audioFileName = `recorded_audio_${Date.now()}.wav`;
+      console.log((audioBlob.size/ (1024 * 1024)).toFixed(2) + ' MB');
+      const uploadResult = await uploadFileToS3(config.bucketName, audioFileName, audioBlob, 'audio/wav');
+      const s3Key=audioFileName;
+      console.log(s3Key);
+      const responseFromBackend = await api.post('/recorder', {s3Key:s3Key});
       const t=responseFromBackend.data.transcription;
       console.log(t);
       setTranscription(responseFromBackend.data.transcription);
