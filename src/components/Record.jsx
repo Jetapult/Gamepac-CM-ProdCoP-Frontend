@@ -8,7 +8,6 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import api from '../api';
 
 const Record = (props) => {
-  console.log(process.env.REACT_APP_AWS_BUCKET_NAME);
   const { status, startRecording, stopRecording, mediaBlobUrl, clearBlobUrl } =
     useReactMediaRecorder({
       audio: true,
@@ -19,16 +18,15 @@ const Record = (props) => {
       },
     });
     const config = {
-      bucketName: process.env.REACT_APP_AWS_BUCKET_NAME,
+      bucketName: import.meta.env.VITE_APP_AWS_BUCKET_NAME,
       dirName: 'audio',
-      region: process.env.REACT_APP_AWS_BUCKET_REGION,
+      region: import.meta.env.VITE_APP_AWS_BUCKET_REGION,
     };
- 
     const s3Client = new S3Client({
-      region: process.env.REACT_APP_AWS_BUCKET_REGION,
+      region: import.meta.env.VITE_APP_AWS_BUCKET_REGION,
       credentials: {
-        accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY,
-        secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY,
+        accessKeyId: import.meta.env.VITE_APP_AWS_ACCESS_KEY,
+        secretAccessKey: import.meta.env.VITE_APP_AWS_SECRET_ACCESS_KEY,
       },
     });
 
