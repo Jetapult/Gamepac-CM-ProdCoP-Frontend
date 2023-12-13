@@ -8,7 +8,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import api from '../api';
 
 const Record = (props) => {
-  const { status, startRecording, stopRecording, mediaBlobUrl, clearBlobUrl } =
+  const { status, startRecording, stopRecording, mediaBlobUrl, pauseRecording, resumeRecording, clearBlobUrl } =
     useReactMediaRecorder({
       audio: true,
       onStop: (blobUrl) => {
@@ -123,25 +123,50 @@ const Record = (props) => {
     stopRecording();
     clearBlobUrl();
   };
+  const handlePauseRecording =()=>{
+    pauseRecording();
+    console.log("paused")
+  }
+  const handleResumeRecording =()=>{
+    resumeRecording();
+    console.log("resumed")
+  }
   const label=props.label;
 
   return (
     <div className=" border rounded-lg p-8 shadow-md mx-auto">
       <div className="flex flex-col items-center gap-4">
-        <img src={micImg} alt="Microphone Icon" className="h-24 text-gray-600" />
+      <img 
+          src={micImg} 
+          alt="Microphone Icon" 
+          className={`h-24 text-gray-600 ${status === 'paused' ? 'hidden' : ''}`} 
+        />
         <div className="flex items-center gap-4">
-          {status === 'recording' ? (
+          {status === 'recording' || status === 'paused' ? (
             <div className='flex'>
-            <div class="contain">
-            <div class="recording-circle"></div>
+            <div className="contain">
+            <div className="recording-circle"></div>
           </div>
             <button
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-transform hover:scale-105"
+              className="bg-[#5d576b] hover:bg-[#14142A] text-white px-2 py-1 rounded transition-transform hover:scale-105"
               onClick={handleStopRecording}
             >
               Stop Recording
             </button>
-            </div>
+            <button
+               className="bg-[#FCD757] hover:bg-yellow-600 text-white px-2 py-1 rounded transition-transform hover:scale-105"
+               onClick={handlePauseRecording}
+             >
+               {status === 'paused' ? 'Paused' : 'Pause Recording'}
+               
+             </button>
+              <button
+                 className="bg-[#5d576b] hover:bg-[#14142A] text-white px-2 py-1 rounded transition-transform hover:scale-105"
+                 onClick={handleResumeRecording}
+               >
+                Resume Recording
+              </button>
+              </div>
           ) : (
             <button
               className=" bg-[#f58174] hover:bg-[#f1efe7] hover:text-black text-white px-4 py-2 rounded transition-transform hover:scale-105"
