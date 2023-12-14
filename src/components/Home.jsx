@@ -172,7 +172,11 @@ const Home = () => {
         <option value="Investment">Investment</option>
         <option value="Hiring">Hiring</option>
         <option value="Game Analysis">Game Analysis</option>
-        <option value="Share Holders Connect">Share Holders Connect</option>
+        <option value="Product Analysis">Product Analysis</option>
+        <option value="Brainstorming">Brainstorming</option>
+        <option value="Marketing">Marketing</option>
+        <option value="Performance Review">Performance Review</option>
+        
       </select>
     </div>
     <div className="mb-4">

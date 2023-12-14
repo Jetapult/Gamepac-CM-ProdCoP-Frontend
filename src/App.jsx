@@ -12,9 +12,9 @@ import Online from "./components/Online";
 import RecordView from './components/RecordView';
 import Smart from './components/Smart';
 import Assistant from './components/Assistant';
-import Nav from './components/Nav';
 import Record from './components/Record';
 import Test from './components/test';
+import ImageAssets from './components/ImageAssets';
 
 function App() {
   return (
@@ -36,13 +36,9 @@ function App() {
     <Route path="/assistant" element={<Assistant/>}/>
     <Route path="/recorder" element={<Record />}/>
     <Route path="/test" element={<Test/>}/>
+    <Route path="/image" element={<ImageAssets />}/>
     </Routes>
     </Router>
-    {/* <Router>
-      // {/* <Routes>
-      //   <Route path ="/test" element={<Nav/>}/>
-      // </Routes> */}
-    {/* </Router> */}
     </>
      </div>
    

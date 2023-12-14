@@ -12,6 +12,7 @@ import historyImg from '../assets/icons8-history-48.png'
 import socialsImg from '../assets/icons8-social-50.png'
 import holycowImg from '../assets/2x_Retina.png';
 import loginImg from '../assets/icons8-login-50.png'
+import img from '../assets/im.png'
 
 function Navbar(){
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -132,11 +133,18 @@ const handleToggleMenu = () => {
               </a>
             </li>
             <li className="duration-150 hover:text-gray-900">
+          <a href="/image" className="block">
+          <div className="flex gap-2 items-center">
+                    <img src={img} className="w-6 h-6" />
+                      Image       
+              </div>
+              </a>
+            </li>
+            <li className="duration-150 hover:text-gray-900">
           <a href="/history" className="block">
           <div className="flex gap-2 items-center">
                     <img src={historyImg} className="w-6 h-6" />
                      History
-                     
               </div>
               </a>
             </li>
@@ -145,7 +153,6 @@ const handleToggleMenu = () => {
           <div className="flex gap-2 items-center" onClick={handleLogout}>
                     <img src={logoutImg} className="w-6 h-6" />
                       Logout
-                     
               </div>
               </a>
             </li>
