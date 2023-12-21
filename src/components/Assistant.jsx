@@ -16,6 +16,8 @@ const Assistant=()=>{
       const [loadingReplyIndex, setLoadingReplyIndex] = useState(null);
       const [filteredComments,setFilteredComments]=useState([]);
       const [posting,setPosting]=useState(false);
+      const [isEditing, setIsEditing] = useState(false);
+      const [editingIndex, setEditingIndex] = useState(null);
       const gameOptions = [
         { name: 'My Home Design: Makeover Games', packageName: 'com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating' },
         { name: 'Design Home Dream House Games', packageName: 'com.holycowstudio.my.design.home.makeover.word.house.life.games.mansion.decorate.decor.masters' },
@@ -278,7 +280,43 @@ const Assistant=()=>{
                 <p>Date:  {comment.date}</p>
                 
                 {loadingReplyIndex === index && <img src={loadingIcon} alt="Loading..." className="w-6 h-6 mr-2"/>}
-                {comment.reply && <p className="text-gray-600 mt-1">Assistant: {comment.reply}</p>}
+                {comment.reply && (
+       <div>
+         {editingIndex !== index ? (
+           <div>
+             <p className="text-gray-600 mt-1">Assistant: {comment.reply}</p>
+             <button
+               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+               onClick={() => setEditingIndex(index)}
+             >
+               Edit
+             </button>
+           </div>
+         ) : (
+           <div>
+             <textarea
+               rows="4"
+               cols="100"
+               value={comment.reply}
+               onChange={(e) => {
+                 const newReply = e.target.value;
+                 setComments((prevComments) => {
+                   const newComments = [...prevComments];
+                   newComments[index] = { ...newComments[index], reply: newReply };
+                   return newComments;
+                 });
+               }}
+             />
+             <button
+               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 ml-3 rounded"
+               onClick={() => setEditingIndex(null)}
+             >
+               Save
+             </button>
+           </div>
+         )}
+       </div>
+        )}
     <div className="flex mt-2">
       <button
         className="bg-[#f58174] hover:bg-[#eaa399] text-white px-4 py-2 rounded mr-2"
