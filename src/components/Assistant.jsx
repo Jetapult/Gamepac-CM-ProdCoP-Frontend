@@ -16,8 +16,8 @@ const Assistant=()=>{
       const [loadingReplyIndex, setLoadingReplyIndex] = useState(null);
       const [filteredComments,setFilteredComments]=useState([]);
       const [posting,setPosting]=useState(false);
-      const [isEditing, setIsEditing] = useState(false);
       const [editingIndex, setEditingIndex] = useState(null);
+      const [postingIndex, setPostingIndex] = useState(null);
       const gameOptions = [
         { name: 'My Home Design: Makeover Games', packageName: 'com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating' },
         { name: 'Design Home Dream House Games', packageName: 'com.holycowstudio.my.design.home.makeover.word.house.life.games.mansion.decorate.decor.masters' },
@@ -80,6 +80,7 @@ const Assistant=()=>{
                 comment: comment.originalLang,
                 translatedComment: comment.comment,
                 reviewId: comment.reviewId, // Store the reviewId
+                postedReply: comment.postedReply
 
               };
             } else {
@@ -87,6 +88,8 @@ const Assistant=()=>{
                 ...comment,
                 translatedComment: null,
                 reviewId: comment.reviewId, // Store the reviewId
+                postedReply: comment.postedReply
+
 
               };
             }
@@ -127,53 +130,35 @@ const Assistant=()=>{
       };
     
       const handlePostReply = async (index) => {
-        if(selectedApp==='google')
-        {
-          setPosting(true);
+        setPostingIndex(index); // Set the index of the comment being posted
+        setPosting(true);
         const comment = comments[index];
-        const { reviewId, reply } = comment;        // Get the reviewId and reply
-         const packageName = selectedGame.packageName; // Get the selected game's package name
-         console.log(reviewId,packageName,reply);
-         // Call the post functionality here, including the reviewId, packageName, and reply
-         try {
-           // Call the post functionality here, including the reviewId, packageName, and reply
-           const response = await api.post('/postReply', {
-             reviewId: reviewId,
-             packageName: packageName,
-             reply: reply,
-           });
-           // Display the response
-           console.log(response.data);
-           setPosting(false);
-         } catch (error) {
-           // Handle the error
-           console.error('Error posting reply:', error);
-           setPosting(false);
-         }
-        }
-         else if (selectedApp === 'apple') {
-         {  setPosting(true);
-          const comment = comments[index];
-         const { reviewId, reply } = comment;        // Get the reviewId and reply for the apple comment
-         console.log(reviewId,reply);
-         // Call the post functionality here, including the reviewId, packageName, and reply
-         try {
-           // Call the post functionality here, including the reviewId, packageName, and reply
-           const response = await api.post('/postAppleReply', {
-             reviewId: reviewId,
-             reply: reply,
-           });
-           // Display the response
-           console.log(response.data);
-           setPosting(false);
-         }catch (error) {
-          // Handle the error
-          console.error('Error posting reply:', error);
+        const { reviewId, reply } = comment;
+        try {
+          let response;
+          if (selectedApp === 'google') {
+            response = await api.post('/postReply', {
+              reviewId: reviewId,
+              packageName: selectedGame.packageName,
+              reply: reply,
+            });
+          } else if (selectedApp === 'apple') {
+            response = await api.post('/postAppleReply', {
+              reviewId: reviewId,
+              reply: reply,
+            });
+          }
+          // Update the comment to indicate that the reply has been posted
+          setComments(prevComments => {
+            const newComments = [...prevComments];
+            newComments[index] = { ...newComments[index], isPosted: true };
+            return newComments;
+          });
           setPosting(false);
+        } catch (error) {
+          console.error('Error posting reply:', error);
         }
-      }
-    }
-
+        setPostingIndex(null); // Reset the posting index regardless of success or error
 
       };
     
@@ -278,6 +263,9 @@ const Assistant=()=>{
       <p>Translated Comment: {comment.translatedComment}</p>
     )}
                 <p>Date:  {comment.date}</p>
+                {comment.postedReply && (
+      <p>Posted Reply: {comment.postedReply}</p>
+    )}
                 
                 {loadingReplyIndex === index && <img src={loadingIcon} alt="Loading..." className="w-6 h-6 mr-2"/>}
                 {comment.reply && (
@@ -324,16 +312,23 @@ const Assistant=()=>{
       >
         Ask Assistant
       </button>
-      {comment.reply && !comment.reply.posted && (
-        <button
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-          onClick={() => handlePostReply(index)}
-        >
-          {posting? 'Posting' : 'Post'  }
-          
-        </button>
-      )}
-    </div>
+      {comment.isPosted ? (
+            <button
+            className="text-white bg-green-500 px-4 py-2 rounded cursor-default"
+            disabled={true}
+          >
+            Posted
+          </button>
+        ) : (
+          <button
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+            onClick={() => handlePostReply(index)}
+            disabled={postingIndex === index}
+          >
+            {postingIndex === index ? 'Posting...' : 'Post'}
+          </button>
+        )}
+            </div>
               </div>
             ))}
           </div>
