@@ -11,13 +11,19 @@ const Assistant=()=>{
       const [selectedGame, setSelectedGame] = useState(null);
       const [selectedTimeline,setSelectedTimeline]=useState('');
       const [comments, setComments] = useState([]);
-      const [replies, setReplies] = useState([]);
       const [loading, setLoading] = useState(false);
       const [loadingReplyIndex, setLoadingReplyIndex] = useState(null);
-      const [filteredComments,setFilteredComments]=useState([]);
       const [posting,setPosting]=useState(false);
       const [editingIndex, setEditingIndex] = useState(null);
       const [postingIndex, setPostingIndex] = useState(null);
+      const [ratingFilter, setRatingFilter] = useState(null);
+
+      const replyTemplates=[
+        {reviewType: 'positive', reviewReply: (userName) =>`Hello ${userName}, Thank you so much for taking out your time to write a review. If you like the game, please rate us 5 stars! It really helps the team a lot and motivates them to send fun updates in the future! Thanks!`},
+        {reviewType: 'ads/complaints', reviewReply: (userName) =>`Hello ${userName}, it's understandable that ads can get annoying. Unfortunately, we need the revenue from ads to keep our games free to play. You can purchase to remove ads for just $0.99. If you have any questions or comments, you can send us an email at feedback@theholycowstudio.com`},
+        {reviewType: 'bugs/glitches', reviewReply: (userName) =>`Hello ${userName}, our development team will definitely consider your opinion and make the game better. Please email us more specific suggestions at feedback@theholycowstudio.com`},
+        {reviewType: 'loading/installing', reviewReply: (userName) =>`Hi ${userName}, Sorry that you are facing this problem. Could you please restart your device once and try again? Also please make sure you have enough space on your device. Thank you!`}
+      ]
       const gameOptions = [
         { name: 'My Home Design: Makeover Games', packageName: 'com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating' },
         { name: 'Design Home Dream House Games', packageName: 'com.holycowstudio.my.design.home.makeover.word.house.life.games.mansion.decorate.decor.masters' },
@@ -242,7 +248,26 @@ const Assistant=()=>{
           )}
 
           </div>
-          <button
+            {/* Add the filter dropdown here */}
+          <div className="w-64 mb-4 mr-2">
+          <label className="font-semibold block">Apply Filter :</label>
+            <select 
+              className="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline" 
+              value={ratingFilter} 
+              onChange={(e) => setRatingFilter(e.target.value)}
+            >
+              <option value="">All Ratings</option>
+              <option value="1">1 Star</option>
+              <option value="2">2 Stars</option>
+              <option value="3">3 Stars</option>
+              <option value="4">4 Stars</option>
+              <option value="5">5 Stars</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            </div>
+          </div>
+        <button
             className="bg-[#f58174] hover:bg-[#f26555] text-white px-4 py-2 rounded mb-4"
             onClick={handleFetchComments}
           >
@@ -254,7 +279,9 @@ const Assistant=()=>{
           </div>
           ):(
           <div>
-            {comments.map((comment, index) => (
+            {comments
+              .filter((comment) => !ratingFilter || comment.userRating.toString() === ratingFilter)
+              .map((comment, index) => (
               <div key={index} className="bg-gray-100 p-4 mb-2 rounded-md">
                 <p>User: {comment.userName}</p>
                 <p>Rating: {comment.userRating}</p>
@@ -312,6 +339,30 @@ const Assistant=()=>{
       >
         Ask Assistant
       </button>
+      <select
+  className="border rounded p-2 mr-2"
+  value={comment.selectedTemplateIndex}
+  onChange={(e) => {
+    const selectedTemplateIndex = e.target.value;
+    const selectedTemplate = replyTemplates[selectedTemplateIndex].reviewReply;
+    setComments((prevComments) => {
+      const newComments = [...prevComments];
+      newComments[index] = {
+        ...newComments[index],
+        reply: selectedTemplate(comment.userName),
+        selectedTemplateIndex: selectedTemplateIndex,
+      };
+      return newComments;
+    });
+  }}
+>
+  <option value="">Select a template</option>
+  {replyTemplates.map((template, index) => (
+    <option key={index} value={index}>
+      {template.reviewType}
+    </option>
+  ))}
+</select>
       {comment.isPosted ? (
             <button
             className="text-white bg-green-500 px-4 py-2 rounded cursor-default"
