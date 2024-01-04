@@ -17,6 +17,14 @@ const Assistant=()=>{
       const [editingIndex, setEditingIndex] = useState(null);
       const [postingIndex, setPostingIndex] = useState(null);
       const [ratingFilter, setRatingFilter] = useState(null);
+      const [startDate,setStartDate]=useState(null);
+      const [endDate,setEndDate]=useState(null);
+      const [viewingDetailsIndex, setViewingDetailsIndex] = useState(null);
+
+      useEffect(() => {
+        // Clear comments when selectedGame changes
+        setComments([]);
+      }, [selectedGame]); 
 
       const replyTemplates=[
         {reviewType: 'positive', reviewReply: (userName) =>`Hello ${userName}, Thank you so much for taking out your time to write a review. If you like the game, please rate us 5 stars! It really helps the team a lot and motivates them to send fun updates in the future! Thanks!`},
@@ -63,11 +71,22 @@ const Assistant=()=>{
           setLoading(true);
           let response;
           if (selectedApp === 'google') {
-            response = await api.post('/fetchComments', { packageName: selectedGame.packageName });
+            response = await api.post('/getGoogleData', { packageName: selectedGame.packageName });
           } else if (selectedApp === 'apple') {
             response = await api.post('/fetchAppleComments', { appId: selectedGame.appId});
           }
-          const comments = formatComments(response.data);
+          // When formatting comments initially
+          let comments = formatComments(response.data);
+              // Filter comments based on the selected start and end dates
+           if (startDate && endDate) {
+             const start = new Date(startDate);
+             const end = new Date(endDate);
+            comments = comments.filter(comment => {
+              const commentDate = new Date(comment.date);
+              const localCommentDate = new Date(commentDate.getTime() - commentDate.getTimezoneOffset() * 60000);
+              return localCommentDate >= start && localCommentDate <= end;
+            });
+           }
           setComments(comments);
           setLoading(false);
         } catch (error) {
@@ -86,8 +105,8 @@ const Assistant=()=>{
                 comment: comment.originalLang,
                 translatedComment: comment.comment,
                 reviewId: comment.reviewId, // Store the reviewId
-                postedReply: comment.postedReply
-
+                postedReply: comment.postedReply,
+                formattedDate: new Date(comment.date).toLocaleDateString('en-US')
               };
             } else {
               formattedComment = {
@@ -114,58 +133,73 @@ const Assistant=()=>{
         }
       };
       
+      
     
-      const handleFetchReply = async (comment, index) => {
+      const handleFetchReply = async (reviewId) => {
+        // Find the comment using the reviewId
+        const comment = comments.find(c => c.reviewId === reviewId);
+        if (!comment) {
+          console.error('Comment not found');
+          return;
+        }
+      
+        setLoadingReplyIndex(reviewId); // Use reviewId to indicate loading
         try {
-          setLoadingReplyIndex(index);
           const response = await api.post('/replyAssistant', {
             comment: comment.comment,
           });
           const reply = response.data.reply;
-    setComments(prevComments => {
-      const newComments = [...prevComments];
-      newComments[index] = { ...newComments[index], reply };
-      return newComments;
-    });
-    setLoadingReplyIndex(null);
-          // setReplies([...replies, { comment, reply, posted: false }]);
+          setComments(prevComments => prevComments.map(c => {
+            if (c.reviewId === reviewId) {
+              return { ...c, reply };
+            }
+            return c;
+          }));
+          setLoadingReplyIndex(null);
         } catch (error) {
           console.error('Error fetching reply:', error);
           setLoadingReplyIndex(null);
         }
       };
     
-      const handlePostReply = async (index) => {
-        setPostingIndex(index); // Set the index of the comment being posted
+      const handlePostReply = async (reviewId) => {
         setPosting(true);
-        const comment = comments[index];
-        const { reviewId, reply } = comment;
+        setPostingIndex(reviewId); // Set the postingIndex to the current reviewId
+        // Find the comment using the reviewId
+        const comment = comments.find(c => c.reviewId === reviewId);
+        if (!comment) {
+          console.error('Comment not found');
+          setPosting(false);
+          setPostingIndex(null); // Reset the postingIndex to null
+          return;
+        }
+      
         try {
           let response;
           if (selectedApp === 'google') {
             response = await api.post('/postReply', {
               reviewId: reviewId,
               packageName: selectedGame.packageName,
-              reply: reply,
+              reply: comment.reply,
             });
           } else if (selectedApp === 'apple') {
             response = await api.post('/postAppleReply', {
               reviewId: reviewId,
-              reply: reply,
+              reply: comment.reply,
             });
           }
           // Update the comment to indicate that the reply has been posted
-          setComments(prevComments => {
-            const newComments = [...prevComments];
-            newComments[index] = { ...newComments[index], isPosted: true };
-            return newComments;
-          });
-          setPosting(false);
+          setComments(prevComments => prevComments.map(c => {
+            if (c.reviewId === reviewId) {
+              return { ...c, isPosted: true };
+            }
+            return c;
+          }));
         } catch (error) {
           console.error('Error posting reply:', error);
         }
-        setPostingIndex(null); // Reset the posting index regardless of success or error
-
+        setPosting(false);
+        setPostingIndex(null); // Reset the postingIndex to null after posting is done
       };
     
       return (
@@ -192,13 +226,26 @@ const Assistant=()=>{
           <div className="mb-4">
           <label className="font-semibold block">Select Timeline:</label>
           {selectedApp=='google'?(
-         
-         <select 
-         name="google-dropdown" id="" className="border rounded p-2 w-full"
-         onChange={(e)=>setSelectedTimeline(e.target.value)}>
-         <option value="week"> Weekly </option>
-         <option value="all">All Time</option>
-         </select>
+            <div className="flex">
+  <div>
+    <label className="font-semibold">Start Date:</label>
+    <input
+      type="date"
+      className="border rounded p-2 mr-2"
+      value={startDate}
+      onChange={(e) => setStartDate(e.target.value)}
+    />
+  </div>
+  <div>
+    <label className="font-semibold">End Date:</label>
+    <input
+      type="date"
+      className="border rounded p-2"
+      value={endDate}
+      onChange={(e) => setEndDate(e.target.value)}
+    />
+  </div>
+</div>
           ):(
             <select name="google-dropdown" id="" className="border rounded p-2 w-full"
             onChange={(e)=>setSelectedTimeline(e.target.value)}>
@@ -281,28 +328,54 @@ const Assistant=()=>{
           <div>
             {comments
               .filter((comment) => !ratingFilter || comment.userRating.toString() === ratingFilter)
-              .map((comment, index) => (
-              <div key={index} className="bg-gray-100 p-4 mb-2 rounded-md">
+              .map((comment) => (
+              <div key={comment.reviewId} className="bg-gray-100 p-4 mb-2 rounded-md">
                 <p>User: {comment.userName}</p>
                 <p>Rating: {comment.userRating}</p>
                 <p>Comment: {comment.comment}</p>
                 {comment.translatedComment && (
       <p>Translated Comment: {comment.translatedComment}</p>
     )}
-                <p>Date:  {comment.date}</p>
+                <p>Date:  {new Date(comment.date).toLocaleDateString('en-GB')}</p>
                 {comment.postedReply && (
       <p>Posted Reply: {comment.postedReply}</p>
     )}
+      <button
+        className="bg-blue-200 hover:bg-blue-300 text-blue-700 px-4 py-2 rounded"
+        onClick={() => {
+          if (viewingDetailsIndex === comment.reviewId) {
+            setViewingDetailsIndex(null);
+          } else {
+            setViewingDetailsIndex(comment.reviewId);
+          }
+        }}
+      >
+        {viewingDetailsIndex === comment.reviewId ? 'See Less' : 'See More'}
+      </button>
+      {viewingDetailsIndex === comment.reviewId && (
+        <div>
+    {comment.productName && <p>Device: {comment.productName}</p>}
+    {comment.androidOsVersion && <p>Android OS Version: {comment.androidOsVersion} </p>}
+    {comment.appVersionName && <p>App Version Name : {comment.appVersionName}</p>}
+    {comment.thumbsDownCount !== null && <p> Thumbs Down Count  : {comment.thumbsDownCount}</p>}
+    {comment.thumbsUpCount !== null && <p>Thumbs Up Count  : {comment.thumbsUpCount}</p>}
+    {comment.screenWidthPx && <p>Screen Width : {comment.screenWidthPx}</p>}
+    {comment.screenHeightPx && <p>Screen Height : {comment.screenHeightPx}</p>}
+    {comment.nativePlatform && <p>Native Platform : {comment.nativePlatform}</p>}
+    {comment.ramMb && <p>Ram : {(comment.ramMb/1024).toFixed(2)} </p>}
+
+        </div>
+              )}
                 
-                {loadingReplyIndex === index && <img src={loadingIcon} alt="Loading..." className="w-6 h-6 mr-2"/>}
+                {loadingReplyIndex === comment.reviewId && <img src={loadingIcon} alt="Loading..." className="w-6 h-6 mr-2"/>}
                 {comment.reply && (
        <div>
-         {editingIndex !== index ? (
+         {editingIndex !== comment.reviewId ? (
            <div>
              <p className="text-gray-600 mt-1">Assistant: {comment.reply}</p>
              <button
                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-               onClick={() => setEditingIndex(index)}
+               onClick={() => setEditingIndex(comment.reviewId)}
              >
                Edit
              </button>
@@ -317,7 +390,8 @@ const Assistant=()=>{
                  const newReply = e.target.value;
                  setComments((prevComments) => {
                    const newComments = [...prevComments];
-                   newComments[index] = { ...newComments[index], reply: newReply };
+                   const commentIndex = newComments.findIndex(c => c.reviewId === comment.reviewId);
+                   newComments[commentIndex] = { ...newComments[commentIndex], reply: newReply };
                    return newComments;
                  });
                }}
@@ -335,30 +409,32 @@ const Assistant=()=>{
     <div className="flex mt-2">
       <button
         className="bg-[#f58174] hover:bg-[#eaa399] text-white px-4 py-2 rounded mr-2"
-        onClick={() => handleFetchReply(comment, index)}
+        onClick={() => handleFetchReply(comment.reviewId)}
       >
         Ask Assistant
       </button>
       <select
   className="border rounded p-2 mr-2"
-  value={comment.selectedTemplateIndex}
+  value={comment.selectedTemplateIndex || ''}
   onChange={(e) => {
-    const selectedTemplateIndex = e.target.value;
-    const selectedTemplate = replyTemplates[selectedTemplateIndex].reviewReply;
-    setComments((prevComments) => {
-      const newComments = [...prevComments];
-      newComments[index] = {
-        ...newComments[index],
-        reply: selectedTemplate(comment.userName),
-        selectedTemplateIndex: selectedTemplateIndex,
-      };
-      return newComments;
-    });
+    const newSelectedTemplateIndex = e.target.value === '' ? null : e.target.value;
+    const newSelectedTemplateReply = newSelectedTemplateIndex !== null ? replyTemplates[newSelectedTemplateIndex].reviewReply(comment.userName) : '';
+
+    setComments(prevComments => prevComments.map((c) => {
+      if (c.reviewId === comment.reviewId) { // Use unique identifier instead of index
+        return {
+          ...c,
+          reply: newSelectedTemplateReply,
+          selectedTemplateIndex: newSelectedTemplateIndex,
+        };
+      }
+      return c;
+    }));
   }}
 >
   <option value="">Select a template</option>
-  {replyTemplates.map((template, index) => (
-    <option key={index} value={index}>
+  {replyTemplates.map((template, idx) => (
+    <option key={idx} value={idx}>
       {template.reviewType}
     </option>
   ))}
@@ -373,10 +449,10 @@ const Assistant=()=>{
         ) : (
           <button
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-            onClick={() => handlePostReply(index)}
-            disabled={postingIndex === index}
+            onClick={() => handlePostReply(comment.reviewId)}
+            disabled={postingIndex === comment.reviewId}
           >
-            {postingIndex === index ? 'Posting...' : 'Post'}
+            {postingIndex === comment.reviewId ? 'Posting...' : 'Post'}
           </button>
         )}
             </div>
