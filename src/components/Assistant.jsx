@@ -191,7 +191,7 @@ const Assistant=()=>{
           // Update the comment to indicate that the reply has been posted
           setComments(prevComments => prevComments.map(c => {
             if (c.reviewId === reviewId) {
-              return { ...c, isPosted: true };
+              return { ...c, postedReply: c.reply, isPosted: true };
             }
             return c;
           }));
@@ -201,7 +201,35 @@ const Assistant=()=>{
         setPosting(false);
         setPostingIndex(null); // Reset the postingIndex to null after posting is done
       };
-    
+      // Modify the handleTranslateTemplate function to accept the comment and the selected template index
+      const handleTranslateTemplate = async (comment, templateIndex) => {
+        if (templateIndex === null || templateIndex === '') {
+          alert('Please select a template first.');
+          return;
+        }
+      
+        const templateText = replyTemplates[templateIndex].reviewReply(comment.userName);
+        setLoadingReplyIndex(comment.reviewId); // Indicate loading
+        console.log(comment.comment)
+        try {
+          const response = await api.post('/translateTemplate', {
+            review: comment.comment,
+            template: templateText,
+          });
+          const translatedReply = response.data.translatedReply;
+        
+          setComments(prevComments => prevComments.map(c => {
+            if (c.reviewId === comment.reviewId) {
+              return { ...c, reply: translatedReply };
+            }
+            return c;
+          }));
+        } catch (error) {
+          console.error('Error translating template:', error);
+        } finally {
+          setLoadingReplyIndex(null); // Stop loading indication
+        }
+      };
       return (
         <div className="container mt-10 mx-auto p-6 bg-white rounded-lg shadow">
           <h1 className="text-3xl font-semibold text-center mb-6">Reply Assistant</h1>
@@ -330,7 +358,7 @@ const Assistant=()=>{
               .filter((comment) => !ratingFilter || comment.userRating.toString() === ratingFilter)
               .map((comment) => (
               <div key={comment.reviewId} className="bg-gray-100 p-4 mb-2 rounded-md">
-                <p>User: {comment.userName}</p>
+                <p className='text-lg font-semibold'>User: {comment.userName}</p>
                 <p>Rating: {comment.userRating}</p>
                 <p>Comment: {comment.comment}</p>
                 {comment.translatedComment && (
@@ -338,34 +366,11 @@ const Assistant=()=>{
     )}
                 <p>Date:  {new Date(comment.date).toLocaleDateString('en-GB')}</p>
                 {comment.postedReply && (
+                  <div className='mb-4 p-4 bg-blue-100 rounded-lg'>
       <p>Posted Reply: {comment.postedReply}</p>
+      </div>
     )}
-      <button
-        className="bg-blue-200 hover:bg-blue-300 text-blue-700 px-4 py-2 rounded"
-        onClick={() => {
-          if (viewingDetailsIndex === comment.reviewId) {
-            setViewingDetailsIndex(null);
-          } else {
-            setViewingDetailsIndex(comment.reviewId);
-          }
-        }}
-      >
-        {viewingDetailsIndex === comment.reviewId ? 'See Less' : 'See More'}
-      </button>
-      {viewingDetailsIndex === comment.reviewId && (
-        <div>
-    {comment.productName && <p>Device: {comment.productName}</p>}
-    {comment.androidOsVersion && <p>Android OS Version: {comment.androidOsVersion} </p>}
-    {comment.appVersionName && <p>App Version Name : {comment.appVersionName}</p>}
-    {comment.thumbsDownCount !== null && <p> Thumbs Down Count  : {comment.thumbsDownCount}</p>}
-    {comment.thumbsUpCount !== null && <p>Thumbs Up Count  : {comment.thumbsUpCount}</p>}
-    {comment.screenWidthPx && <p>Screen Width : {comment.screenWidthPx}</p>}
-    {comment.screenHeightPx && <p>Screen Height : {comment.screenHeightPx}</p>}
-    {comment.nativePlatform && <p>Native Platform : {comment.nativePlatform}</p>}
-    {comment.ramMb && <p>Ram : {(comment.ramMb/1024).toFixed(2)} </p>}
 
-        </div>
-              )}
                 
                 {loadingReplyIndex === comment.reviewId && <img src={loadingIcon} alt="Loading..." className="w-6 h-6 mr-2"/>}
                 {comment.reply && (
@@ -374,7 +379,7 @@ const Assistant=()=>{
            <div>
              <p className="text-gray-600 mt-1">Assistant: {comment.reply}</p>
              <button
-               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded mb-3"
                onClick={() => setEditingIndex(comment.reviewId)}
              >
                Edit
@@ -406,6 +411,34 @@ const Assistant=()=>{
          )}
        </div>
         )}
+              {viewingDetailsIndex === comment.reviewId && (
+        <div className="bg-white mb-3 p-3 rounded">
+    {comment.productName && <p>Device: {comment.productName}</p>}
+    {comment.reviewerLanguage && <p>Device Lang: {comment.reviewerLanguage}</p>}
+    {comment.androidOsVersion && <p>Android OS Version: {comment.androidOsVersion} </p>}
+    {comment.appVersionName && <p>App Version Name : {comment.appVersionName}</p>}
+    {comment.thumbsDownCount !== null && <p> Thumbs Down Count  : {comment.thumbsDownCount}</p>}
+    {comment.thumbsUpCount !== null && <p>Thumbs Up Count  : {comment.thumbsUpCount}</p>}
+    {comment.screenWidthPx && <p>Screen Width : {comment.screenWidthPx}</p>}
+    {comment.screenHeightPx && <p>Screen Height : {comment.screenHeightPx}</p>}
+    {comment.nativePlatform && <p>Native Platform : {comment.nativePlatform}</p>}
+    {comment.ramMb && <p>Ram : {(comment.ramMb/1024).toFixed(2)} </p>}
+
+        </div>
+              )}
+<div className="flex items-center justify-between">
+<button
+        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+        onClick={() => {
+          if (viewingDetailsIndex === comment.reviewId) {
+            setViewingDetailsIndex(null);
+          } else {
+            setViewingDetailsIndex(comment.reviewId);
+          }
+        }}
+      >
+        {viewingDetailsIndex === comment.reviewId ? 'See Less' : 'See More'}
+      </button>
     <div className="flex mt-2">
       <button
         className="bg-[#f58174] hover:bg-[#eaa399] text-white px-4 py-2 rounded mr-2"
@@ -439,6 +472,12 @@ const Assistant=()=>{
     </option>
   ))}
 </select>
+<button
+  className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded mr-2"
+  onClick={() => handleTranslateTemplate(comment, comment.selectedTemplateIndex)}
+>
+  Translate Template
+</button>
       {comment.isPosted ? (
             <button
             className="text-white bg-green-500 px-4 py-2 rounded cursor-default"
@@ -455,6 +494,7 @@ const Assistant=()=>{
             {postingIndex === comment.reviewId ? 'Posting...' : 'Post'}
           </button>
         )}
+          </div>
             </div>
               </div>
             ))}
