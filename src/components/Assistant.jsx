@@ -4,6 +4,8 @@ import appleIcon from '../assets/icon_appstore__ev0z770zyxoy_large_2x.png';
 import api from '../api';
 import axios from 'axios';
 import loadingIcon from '../assets/Spinner-1s-200px.svg'
+import bellIcon from '../assets/bell-icon.png'
+import UpdatedComments from './UpdatedComments';
 
 const Assistant=()=>{
 
@@ -20,6 +22,9 @@ const Assistant=()=>{
       const [startDate,setStartDate]=useState(null);
       const [endDate,setEndDate]=useState(null);
       const [viewingDetailsIndex, setViewingDetailsIndex] = useState(null);
+      const [showOriginalCommentDetails, setShowOriginalCommentDetails] = useState({});
+      const [updateCount, setUpdateCount] = useState(0);
+      const [showUpdatedComments, setShowUpdatedComments] = useState(false);
 
       useEffect(() => {
         // Clear comments when selectedGame changes
@@ -28,7 +33,7 @@ const Assistant=()=>{
 
       const replyTemplates=[
         {reviewType: 'positive', reviewReply: (userName) =>`Hello ${userName}, Thank you so much for taking out your time to write a review. If you like the game, please rate us 5 stars! It really helps the team a lot and motivates them to send fun updates in the future! Thanks!`},
-        {reviewType: 'ads/complaints', reviewReply: (userName) =>`Hello ${userName}, it's understandable that ads can get annoying. Unfortunately, we need the revenue from ads to keep our games free to play. You can purchase to remove ads for just $0.99. If you have any questions or comments, you can send us an email at feedback@theholycowstudio.com`},
+        {reviewType: 'ads/complaints', reviewReply: (userName) =>`Hello ${userName}, it's understandable that ads can get annoying. Unfortunately, we need the revenue from ads to keep our games free to play. You can purchase to remove ads for just $1.99. If you have any questions or comments, you can send us an email at feedback@theholycowstudio.com`},
         {reviewType: 'bugs/glitches', reviewReply: (userName) =>`Hello ${userName}, our development team will definitely consider your opinion and make the game better. Please email us more specific suggestions at feedback@theholycowstudio.com`},
         {reviewType: 'loading/installing', reviewReply: (userName) =>`Hi ${userName}, Sorry that you are facing this problem. Could you please restart your device once and try again? Also please make sure you have enough space on your device. Thank you!`}
       ]
@@ -201,20 +206,17 @@ const Assistant=()=>{
         setPosting(false);
         setPostingIndex(null); // Reset the postingIndex to null after posting is done
       };
-      // Modify the handleTranslateTemplate function to accept the comment and the selected template index
-      const handleTranslateTemplate = async (comment, templateIndex) => {
-        if (templateIndex === null || templateIndex === '') {
-          alert('Please select a template first.');
+      const handleTranslateReply = async (comment) => {
+        if (!comment.reply || comment.reply.trim() === '') {
+          alert('Please write a reply first.');
           return;
         }
       
-        const templateText = replyTemplates[templateIndex].reviewReply(comment.userName);
         setLoadingReplyIndex(comment.reviewId); // Indicate loading
-        console.log(comment.comment)
         try {
           const response = await api.post('/translateTemplate', {
             review: comment.comment,
-            template: templateText,
+            template: comment.reply, // Use the current reply for translation
           });
           const translatedReply = response.data.translatedReply;
         
@@ -225,10 +227,20 @@ const Assistant=()=>{
             return c;
           }));
         } catch (error) {
-          console.error('Error translating template:', error);
+          console.error('Error translating reply:', error);
         } finally {
           setLoadingReplyIndex(null); // Stop loading indication
         }
+      };
+
+      useEffect(() => {
+        // Calculate the number of comments with updates available
+        const count = comments.reduce((acc, comment) => acc + (comment.lastUpdated && comment.lastUpdated !== comment.date ? 1 : 0), 0);
+        setUpdateCount(count);
+      }, [comments]);
+    
+      const handleShowUpdatedComments = () => {
+        setShowUpdatedComments(!showUpdatedComments);
       };
       return (
         <div className="container mt-10 mx-auto p-6 bg-white rounded-lg shadow">
@@ -354,22 +366,68 @@ const Assistant=()=>{
           </div>
           ):(
           <div>
-            {comments
+            {comments.length>0 &&(
+                          <div className="relative inline-block w-full text-right">
+                          <div className="inline-flex items-center justify-end">
+                            <img
+                              src={bellIcon}
+                              alt="Bell Icon"
+                              className="w-6 h-6 cursor-pointer"
+                              onClick={handleShowUpdatedComments}
+                            />
+                          {updateCount > 0 && (
+                            <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                              {updateCount}
+                            </span>
+                          )}
+                          </div>
+                        </div>
+            )}
+            {showUpdatedComments ? (
+            <UpdatedComments
+                            comments={comments.filter(comment => comment.lastUpdated && comment.lastUpdated !== comment.date)}
+                            onClose={() => setShowUpdatedComments(false)}
+                          />)
+              :(
+              comments
               .filter((comment) => !ratingFilter || comment.userRating.toString() === ratingFilter)
               .map((comment) => (
-              <div key={comment.reviewId} className="bg-gray-100 p-4 mb-2 rounded-md">
+              <div key={comment.reviewId} className="bg-gray-100 p-4 mb-2 rounded-md relative">
+                 {comment.lastUpdated && comment.lastUpdated !== comment.date && (
+        <button type="button" className="text-white bg-gradient-to-br from-pink-500 to-orange-400 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-pink-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 rounded absolute top-0 right-0 m-2 mt-3"
+          // className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded absolute top-0 right-0 m-2"
+          onClick={() => {
+            // Toggle the visibility of the original comment details
+            setShowOriginalCommentDetails(prev => ({
+              ...prev,
+              [comment.reviewId]: !prev[comment.reviewId]
+            }));
+          }}
+        >
+          {showOriginalCommentDetails[comment.reviewId] ? 'Hide Details' : 'Update Available'}
+        </button>
+      )}
                 <p className='text-lg font-semibold'>User: {comment.userName}</p>
                 <p>Rating: {comment.userRating}</p>
                 <p>Comment: {comment.comment}</p>
                 {comment.translatedComment && (
       <p>Translated Comment: {comment.translatedComment}</p>
     )}
-                <p>Date:  {new Date(comment.date).toLocaleDateString('en-GB')}</p>
+                <p>Date:  {new Date(comment.date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
                 {comment.postedReply && (
                   <div className='mb-4 p-4 bg-blue-100 rounded-lg'>
       <p>Posted Reply: {comment.postedReply}</p>
       </div>
     )}
+
+      {/* Conditionally render the original comment details */}
+      {showOriginalCommentDetails[comment.reviewId] && (
+        <div className='mb-4 p-4 bg-yellow-200 rounded-lg'>
+          {comment.originalComment && <p>Original Comment: {comment.originalComment}</p>}
+          {comment.originalRating  &&<p>Original Rating: {comment.originalRating}</p>}
+          {comment.lastUpdated &&<p>Last Updated: {new Date(comment.lastUpdated).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>}
+        </div>
+      )}
 
                 
                 {loadingReplyIndex === comment.reviewId && <img src={loadingIcon} alt="Loading..." className="w-6 h-6 mr-2"/>}
@@ -423,6 +481,7 @@ const Assistant=()=>{
     {comment.screenHeightPx && <p>Screen Height : {comment.screenHeightPx}</p>}
     {comment.nativePlatform && <p>Native Platform : {comment.nativePlatform}</p>}
     {comment.ramMb && <p>Ram : {(comment.ramMb/1024).toFixed(2)} </p>}
+    {comment.lastUpdated && <p>Last Updated : {new Date(comment.lastUpdated).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} </p>}
 
         </div>
               )}
@@ -474,9 +533,9 @@ const Assistant=()=>{
 </select>
 <button
   className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded mr-2"
-  onClick={() => handleTranslateTemplate(comment, comment.selectedTemplateIndex)}
+  onClick={() => handleTranslateReply(comment)}
 >
-  Translate Template
+  Translate Reply
 </button>
       {comment.isPosted ? (
             <button
@@ -497,7 +556,8 @@ const Assistant=()=>{
           </div>
             </div>
               </div>
-            ))}
+            ))
+              )}
           </div>
            )}
         </div>
