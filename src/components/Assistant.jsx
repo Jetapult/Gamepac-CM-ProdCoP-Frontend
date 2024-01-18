@@ -6,6 +6,7 @@ import axios from 'axios';
 import loadingIcon from '../assets/Spinner-1s-200px.svg'
 import bellIcon from '../assets/bell-icon.png'
 import UpdatedComments from './UpdatedComments';
+import { comment } from 'postcss';
 
 const Assistant=()=>{
 
@@ -232,12 +233,17 @@ const Assistant=()=>{
           setLoadingReplyIndex(null); // Stop loading indication
         }
       };
+      const isCommentUpdated = (comment) => {
+        const commentToCompare = comment.translatedComment || comment.comment;
+        return comment.originalComment !== commentToCompare || 
+               comment.originalRating !== comment.userRating;
+      };
 
-      useEffect(() => {
-        // Calculate the number of comments with updates available
-        const count = comments.reduce((acc, comment) => acc + (comment.lastUpdated && comment.lastUpdated !== comment.date ? 1 : 0), 0);
-        setUpdateCount(count);
-      }, [comments]);
+    useEffect(() => {
+      // Calculate the number of comments with updates available using the new logic
+      const count = comments.reduce((acc, comment) => acc + (isCommentUpdated(comment) ? 1 : 0), 0);
+      setUpdateCount(count);
+    }, [comments]);
     
       const handleShowUpdatedComments = () => {
         setShowUpdatedComments(!showUpdatedComments);
@@ -385,7 +391,7 @@ const Assistant=()=>{
             )}
             {showUpdatedComments ? (
             <UpdatedComments
-                            comments={comments.filter(comment => comment.lastUpdated && comment.lastUpdated !== comment.date)}
+                            comments={(comments)}
                             onClose={() => setShowUpdatedComments(false)}
                           />)
               :(
@@ -393,7 +399,7 @@ const Assistant=()=>{
               .filter((comment) => !ratingFilter || comment.userRating.toString() === ratingFilter)
               .map((comment) => (
               <div key={comment.reviewId} className="bg-gray-100 p-4 mb-2 rounded-md relative">
-                 {comment.lastUpdated && comment.lastUpdated !== comment.date && (
+                 {isCommentUpdated(comment) && (
         <button type="button" className="text-white bg-gradient-to-br from-pink-500 to-orange-400 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-pink-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 rounded absolute top-0 right-0 m-2 mt-3"
           // className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded absolute top-0 right-0 m-2"
           onClick={() => {
