@@ -421,8 +421,8 @@ const Assistant=()=>{
                 {comment.translatedComment && (
       <p>Translated Comment: {comment.translatedComment}</p>
     )}
-                <p>Last Updated:  {new Date(comment.lastUpdated).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
-                {comment.postedReply && (
+<p>Date: {comment.lastUpdated ? new Date(comment.lastUpdated).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : new Date(comment.date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>              
+ {comment.postedReply && (
                   <div className='mb-4 p-4 bg-blue-100 rounded-lg'>
       <p>Posted Reply: {comment.postedReply}</p>
       </div>
@@ -433,7 +433,7 @@ const Assistant=()=>{
         <div className='mb-4 p-4 bg-yellow-200 rounded-lg'>
           {comment.originalComment && <p>Original Comment: {comment.originalComment}</p>}
           {comment.originalRating  &&<p>Original Rating: {comment.originalRating}</p>}
-          {comment.date &&<p>Last Updated: {new Date(comment.date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>}
+          {comment.date &&<p>Original Date: {new Date(comment.date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>}
         </div>
       )}
 
