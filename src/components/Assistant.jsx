@@ -26,6 +26,8 @@ const Assistant=()=>{
       const [showOriginalCommentDetails, setShowOriginalCommentDetails] = useState({});
       const [updateCount, setUpdateCount] = useState(0);
       const [showUpdatedComments, setShowUpdatedComments] = useState(false);
+      // Add a new state variable for character count
+      const [charCount, setCharCount] = useState(0);
 
       useEffect(() => {
         // Clear comments when selectedGame changes
@@ -459,6 +461,7 @@ const Assistant=()=>{
                value={comment.reply}
                onChange={(e) => {
                  const newReply = e.target.value;
+                 setCharCount(newReply.length);
                  setComments((prevComments) => {
                    const newComments = [...prevComments];
                    const commentIndex = newComments.findIndex(c => c.reviewId === comment.reviewId);
@@ -467,6 +470,7 @@ const Assistant=()=>{
                  });
                }}
              />
+             <p>Character Count: {charCount}/350 </p>
              <button
                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 ml-3 rounded"
                onClick={() => setEditingIndex(null)}
