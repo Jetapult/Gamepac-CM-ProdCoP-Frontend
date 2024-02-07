@@ -159,6 +159,7 @@ const Assistant=()=>{
             comment: comment.comment,
           });
           const reply = response.data.reply;
+          setCharCount(reply.length)
           setComments(prevComments => prevComments.map(c => {
             if (c.reviewId === reviewId) {
               return { ...c, reply };
@@ -524,6 +525,7 @@ const Assistant=()=>{
     const newSelectedTemplateIndex = e.target.value === '' ? null : e.target.value;
     const newSelectedTemplateReply = newSelectedTemplateIndex !== null ? replyTemplates[newSelectedTemplateIndex].reviewReply(comment.userName) : '';
 
+    setCharCount(newSelectedTemplateReply.length); // Update the character count here
     setComments(prevComments => prevComments.map((c) => {
       if (c.reviewId === comment.reviewId) { // Use unique identifier instead of index
         return {
