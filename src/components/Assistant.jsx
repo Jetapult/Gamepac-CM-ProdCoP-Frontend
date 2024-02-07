@@ -425,11 +425,14 @@ const Assistant=()=>{
       <p>Translated Comment: {comment.translatedComment}</p>
     )}
 <p>Date: {comment.lastUpdated ? new Date(comment.lastUpdated).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : new Date(comment.date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>              
- {comment.postedReply && (
-                  <div className='mb-4 p-4 bg-blue-100 rounded-lg'>
-      <p>Posted Reply: {comment.postedReply}</p>
-      </div>
-    )}
+{comment.postedReply && (
+  <div className='mb-4 p-4 bg-blue-100 rounded-lg relative'>
+    <p>Posted Reply: {comment.postedReply}</p>
+    {comment.postedDate && (
+      <p className="">Posted Date: {new Date(comment.postedDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
+    )}      
+  </div>
+)}
 
       {/* Conditionally render the original comment details */}
       {showOriginalCommentDetails[comment.reviewId] && (
