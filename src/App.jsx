@@ -15,6 +15,7 @@ import Assistant from './components/Assistant';
 import Record from './components/Record';
 import Test from './components/test';
 import ImageAssets from './components/ImageAssets';
+import ImagePipeline from './components/ImagePipeline';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
     <Route path="/recorder" element={<Record />}/>
     <Route path="/test" element={<Test/>}/>
     <Route path="/image" element={<ImageAssets />}/>
+    <Route path="/assets" element={<ImagePipeline />}/>
     </Routes>
     </Router>
     </>

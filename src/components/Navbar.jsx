@@ -133,7 +133,7 @@ const handleToggleMenu = () => {
               </a>
             </li>
             <li className="duration-150 hover:text-gray-900">
-          <a href="/image" className="block">
+          <a href="/assets" className="block">
           <div className="flex gap-2 items-center">
                     <img src={img} className="w-6 h-6" />
                       Image       
