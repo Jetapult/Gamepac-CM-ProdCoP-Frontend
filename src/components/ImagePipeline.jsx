@@ -47,7 +47,10 @@ const ImagePipeline = () => {
         // colorVariations.forEach(color => formData.append('color_variations[]', color));
         console.log(formData);
         try {
-            const result = await axios.post('https://papi.gamepacai.com/process-image', formData);
+            const result = await axios.post('https://papi.gamepacai.com/process-image', formData,{
+                timeout: 600000, // Timeout after 60000ms or 600 seconds
+
+            });
             console.log(result.data);
             setImagesBase64(result.data); // Step 2: Set the base64 images
             setLoading(false);

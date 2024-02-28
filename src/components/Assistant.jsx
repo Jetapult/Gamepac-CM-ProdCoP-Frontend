@@ -41,21 +41,21 @@ const Assistant=()=>{
         {reviewType: 'loading/installing', reviewReply: (userName) =>`Hi ${userName}, Sorry that you are facing this problem. Could you please restart your device once and try again? Also please make sure you have enough space on your device. Thank you!`}
       ]
       const gameOptions = [
-        {name: 'Home Design Dreams house games', packageName: 'com.holycowstudio.homedesigndreams' },
-        {name: 'My Home Makeover: House Games',packageName: 'com.holycowstudio.myhomemakeoverdesigndreamsdecorate'},
-        {name: 'My Home Design Makeover Games',packageName: 'com.holycowstudio.my.home.design.makeover.blast.house.games.toy.masters.decorate.mansion.toon.dream'},
-        {name: 'Design My Home: Makeover Games',packageName: 'com.holycowstudio.design.my.home.makeover.word.life' },
-        {name: 'My Home Makeover Design: Games',packageName: 'com.holycowstudio.my.home.makeover.design.word.house.life'},
-        {name: 'Design Home Dream House Games',packageName:'com.holycowstudio.my.design.home.makeover.word.house.life.games.mansion.decorate.decor.masters'},
-        {name: 'My Home Design: My House Games',packageName:'com.holycowstudio.my.home.design.makeover.luxury.interiors.word.dream.million.dollar.house.renovation'},
-        {name: 'My Home Design: Makeover Games', packageName: 'com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating' },
-        {name: 'Video Game Tycoon idle clicker', packageName: 'com.holycowstudio.gamedevtycoon' },
-        {name: 'Hotel Tycoon Empire: Idle game', packageName: 'com.holycowstudio.idle.hotel.tycoon.clicker.tap.empire.incremental.games' },
-        {name: 'Smartphone Tycoon: Idle Phone', packageName: 'com.ns.idlesmartphonetycoon' },
-        {name: 'Oil Tycoon idle tap miner game', packageName: 'com.romit.sheikhoiltycoon' },
-        {name: 'Oil Tycoon 2: Idle Miner Game', packageName: 'com.holycowstudio.oiltycoon2' },
-        {name: 'Idle Cafe Tycoon: Coffee Shop', packageName: 'com.holycowstudio.coffeetycoon' },
-        {name: 'Tube Tycoon - Tubers Simulator', packageName: 'com.theholycowstudio.youtubertycoon' },
+        {name: 'Home Design Dreams house games (HDD)', packageName: 'com.holycowstudio.homedesigndreams' },
+        {name: 'My Home Makeover: House Games (MHM)',packageName: 'com.holycowstudio.myhomemakeoverdesigndreamsdecorate'},
+        {name: 'My Home Design Makeover Games (HDB)',packageName: 'com.holycowstudio.my.home.design.makeover.blast.house.games.toy.masters.decorate.mansion.toon.dream'},
+        {name: 'Design My Home: Makeover Games (HDW)',packageName: 'com.holycowstudio.design.my.home.makeover.word.life' },
+        {name: 'My Home Makeover Design: Games (HDW2)',packageName: 'com.holycowstudio.my.home.makeover.design.word.house.life'},
+        {name: 'Design Home Dream House Games (HDW3)',packageName:'com.holycowstudio.my.design.home.makeover.word.house.life.games.mansion.decorate.decor.masters'},
+        {name: 'My Home Design: My House Games (HDW4)',packageName:'com.holycowstudio.my.home.design.makeover.luxury.interiors.word.dream.million.dollar.house.renovation'},
+        {name: 'My Home Design: Makeover Games (HDW5)', packageName: 'com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating' },
+        {name: 'Video Game Tycoon idle clicker (VGT)', packageName: 'com.holycowstudio.gamedevtycoon' },
+        {name: 'Hotel Tycoon Empire: Idle game (HT)', packageName: 'com.holycowstudio.idle.hotel.tycoon.clicker.tap.empire.incremental.games' },
+        {name: 'Smartphone Tycoon: Idle Phone (SPT)', packageName: 'com.ns.idlesmartphonetycoon' },
+        {name: 'Oil Tycoon idle tap miner game (OT)', packageName: 'com.romit.sheikhoiltycoon' },
+        {name: 'Oil Tycoon 2: Idle Miner Game (OT2)', packageName: 'com.holycowstudio.oiltycoon2' },
+        {name: 'Idle Cafe Tycoon: Coffee Shop (CT)', packageName: 'com.holycowstudio.coffeetycoon' },
+        {name: 'Tube Tycoon - Tubers Simulator (TT)', packageName: 'com.theholycowstudio.youtubertycoon' },
         {name: 'Mystery Island lost magic city', packageName: 'com.holycowstudio.mystery.island.design.match.decoration.lost.adventure' },
         {name: 'Cat Home Design: Makeover Game', packageName: 'com.holycowstudio.designyourcatroom' },
       ];  
@@ -562,6 +562,7 @@ const Assistant=()=>{
             Posted
           </button>
         ) : (
+          comment.userRating !== 5 && ( // To disable posting for reviews with userRating as 5. 
           <button
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
             onClick={() => handlePostReply(comment.reviewId)}
@@ -569,6 +570,7 @@ const Assistant=()=>{
           >
             {postingIndex === comment.reviewId ? 'Posting...' : 'Post'}
           </button>
+          )
         )}
           </div>
             </div>
