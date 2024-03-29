@@ -28,6 +28,7 @@ const Assistant=()=>{
       const [showUpdatedComments, setShowUpdatedComments] = useState(false);
       // Add a new state variable for character count
       const [charCount, setCharCount] = useState(0);
+      const [charCountLimitErr, setCharCountLimitErr] = useState("");
 
       useEffect(() => {
         // Clear comments when selectedGame changes
@@ -159,7 +160,8 @@ const Assistant=()=>{
             comment: comment.comment,
           });
           const reply = response.data.reply;
-          setCharCount(reply.length)
+          setCharCount(reply.length);
+          setCharCountLimitErr(reply.length > 350 ? reply.reviewId : "");
           setComments(prevComments => prevComments.map(c => {
             if (c.reviewId === reviewId) {
               return { ...c, reply };
@@ -174,6 +176,9 @@ const Assistant=()=>{
       };
     
       const handlePostReply = async (reviewId) => {
+        if(charCountLimitErr){
+          return
+        }
         setPosting(true);
         setPostingIndex(reviewId); // Set the postingIndex to the current reviewId
         // Find the comment using the reviewId
@@ -199,13 +204,25 @@ const Assistant=()=>{
               reply: comment.reply,
             });
           }
-          // Update the comment to indicate that the reply has been posted
-          setComments(prevComments => prevComments.map(c => {
-            if (c.reviewId === reviewId) {
-              return { ...c, postedReply: c.reply, isPosted: true };
-            }
-            return c;
-          }));
+          if (response.status === 200) {
+            // Update the comment to indicate that the reply has been posted
+            setComments((prevComments) =>
+              prevComments.map((c) => {
+                if (c.reviewId === reviewId) {
+                  return {
+                    ...c,
+                    postedReply: c.reply,
+                    isPosted: true,
+                    selectedTemplateIndex: "",
+                    reply: '',
+                    postedDate: new Date().toISOString()
+                  };
+                }
+                return c;
+              })
+            );
+          }
+          
         } catch (error) {
           console.error('Error posting reply:', error);
         }
@@ -347,9 +364,10 @@ const Assistant=()=>{
 
           </div>
             {/* Add the filter dropdown here */}
-          <div className="w-64 mb-4 mr-2">
+          <div className="w-64 mb-4 mr-2 relative">
           <label className="font-semibold block">Apply Filter :</label>
-            <select 
+          <div className='flex items-center'>
+          <select 
               className="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline" 
               value={ratingFilter} 
               onChange={(e) => setRatingFilter(e.target.value)}
@@ -361,9 +379,10 @@ const Assistant=()=>{
               <option value="4">4 Stars</option>
               <option value="5">5 Stars</option>
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <div className="pointer-events-none absolute inset-y-0 right-0 px-2 text-gray-700 top-[35px]">
               <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
             </div>
+          </div>
           </div>
         <button
             className="bg-[#f58174] hover:bg-[#f26555] text-white px-4 py-2 rounded mb-4"
@@ -424,7 +443,8 @@ const Assistant=()=>{
                 {comment.translatedComment && (
       <p>Translated Comment: {comment.translatedComment}</p>
     )}
-<p>Date: {comment.lastUpdated ? new Date(comment.lastUpdated).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : new Date(comment.date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>              
+<p>Date: {new Date(comment.date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
+{comment.lastUpdated && <p className='mb-2'>Last updated date: {new Date(comment.lastUpdated).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>}       
 {comment.postedReply && (
   <div className='mb-4 p-4 bg-blue-100 rounded-lg relative'>
     <p>Posted Reply: {comment.postedReply}</p>
@@ -466,6 +486,7 @@ const Assistant=()=>{
                onChange={(e) => {
                  const newReply = e.target.value;
                  setCharCount(newReply.length);
+                 setCharCountLimitErr(newReply.length > 350 ? comment.reviewId : "");
                  setComments((prevComments) => {
                    const newComments = [...prevComments];
                    const commentIndex = newComments.findIndex(c => c.reviewId === comment.reviewId);
@@ -473,8 +494,10 @@ const Assistant=()=>{
                    return newComments;
                  });
                }}
+               className={`outline-none ${charCountLimitErr ? 'border-red-500 border rounded' : ''} p-3`}
              />
-             <p>Character Count: {charCount}/350 </p>
+             <p className={`${charCountLimitErr ? 'text-red-500' : ''}`}>Character Count: {charCount}/350 </p>
+             {charCountLimitErr && <p className="text-red-500">Max 350 characters allowed</p>}
              <button
                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 ml-3 rounded"
                onClick={() => setEditingIndex(null)}
@@ -527,8 +550,8 @@ const Assistant=()=>{
   onChange={(e) => {
     const newSelectedTemplateIndex = e.target.value === '' ? null : e.target.value;
     const newSelectedTemplateReply = newSelectedTemplateIndex !== null ? replyTemplates[newSelectedTemplateIndex].reviewReply(comment.userName) : '';
-
     setCharCount(newSelectedTemplateReply.length); // Update the character count here
+    setCharCountLimitErr(newSelectedTemplateReply.length > 350 ? comment.reviewId : "")
     setComments(prevComments => prevComments.map((c) => {
       if (c.reviewId === comment.reviewId) { // Use unique identifier instead of index
         return {
@@ -564,7 +587,7 @@ const Assistant=()=>{
         ) : (
           comment.userRating !== 5 && ( // To disable posting for reviews with userRating as 5. 
           <button
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+            className={`text-white px-4 py-2 rounded ${charCountLimitErr === comment.reviewId ? 'cursor-not-allowed bg-gray-300 ' : 'bg-blue-500 hover:bg-blue-600'}`}
             onClick={() => handlePostReply(comment.reviewId)}
             disabled={postingIndex === comment.reviewId}
           >
