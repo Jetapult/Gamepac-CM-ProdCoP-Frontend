@@ -7,6 +7,7 @@ import loadingIcon from '../assets/Spinner-1s-200px.svg'
 import bellIcon from '../assets/bell-icon.png'
 import UpdatedComments from './UpdatedComments';
 import { comment } from 'postcss';
+import Pagination from './Pagination';
 
 const Assistant=()=>{
 
@@ -19,9 +20,9 @@ const Assistant=()=>{
       const [posting,setPosting]=useState(false);
       const [editingIndex, setEditingIndex] = useState(null);
       const [postingIndex, setPostingIndex] = useState(null);
-      const [ratingFilter, setRatingFilter] = useState(null);
-      const [startDate,setStartDate]=useState(null);
-      const [endDate,setEndDate]=useState(null);
+      const [ratingFilter, setRatingFilter] = useState("");
+      const [startDate,setStartDate]=useState("");
+      const [endDate,setEndDate]=useState("");
       const [viewingDetailsIndex, setViewingDetailsIndex] = useState(null);
       const [showOriginalCommentDetails, setShowOriginalCommentDetails] = useState({});
       const [updateCount, setUpdateCount] = useState(0);
@@ -29,6 +30,9 @@ const Assistant=()=>{
       // Add a new state variable for character count
       const [charCount, setCharCount] = useState(0);
       const [charCountLimitErr, setCharCountLimitErr] = useState("");
+      const [totalReviews, setTotalReviews] = useState(0);
+      const [currentPage, setCurrentPage] = useState(1);
+      const limit = 10;
 
       useEffect(() => {
         // Clear comments when selectedGame changes
@@ -81,15 +85,25 @@ const Assistant=()=>{
         try { 
           setLoading(true);
           let response;
-          if (selectedApp === 'google') {
-            response = await api.post('/getGoogleData', { packageName: selectedGame.packageName });
-          } else if (selectedApp === 'apple') {
-            response = await api.post('/fetchAppleComments', { appId: selectedGame.appId});
+          if (selectedApp === "google") {
+            response = await api.post("/getGoogleData", {
+              packageName: selectedGame.packageName,
+            });
+          } else if (selectedApp === "apple") {
+            response = await api.get(
+              `/v1/organic-ua/fetch-app-store-reviews?appId=${
+                selectedGame.appId
+              }&current_page=${currentPage}&limit=${limit}${
+                ratingFilter ? `&rating=${ratingFilter}` : ""
+              } ${startDate ? `&startDate=${startDate}` : ""}${
+                endDate ? `&endDate=${endDate}` : ""
+              }`
+            );
           }
           // When formatting comments initially
           let comments = formatComments(response.data);
               // Filter comments based on the selected start and end dates
-           if (startDate && endDate) {
+           if (startDate && endDate && selectedApp === 'google') {
              const start = new Date(startDate);
              const end = new Date(endDate);
             comments = comments.filter(comment => {
@@ -100,6 +114,7 @@ const Assistant=()=>{
            }
           setComments(comments);
           setLoading(false);
+          setTotalReviews(response.data.totalReviews);
         } catch (error) {
           console.error('Error fetching comments:', error);
           setLoading(false);
@@ -134,12 +149,15 @@ const Assistant=()=>{
           // return data.map(comment => ({ ...comment, reply: null }));
         } else if (selectedApp === 'apple') {
           return data.data.map((comment) => ({
-            userName: comment.attributes.reviewerNickname,
-            userRating: comment.attributes.rating,
-            comment: comment.attributes.body,
-            date: new Date(comment.attributes.createdDate).toLocaleDateString('en-GB'),
-            reviewId: comment.id,
+            userName: comment.reviewernickname,
+            userRating: comment.rating,
+            comment: comment.body,
+            date: new Date(comment.createddate),
+            reviewId: comment.appstorereviewid,
             reply: null,
+            postedReply: comment.responsebody,
+            responsestate: comment.responsestate,
+            postedDate: comment.lastmodifieddate
           }));
         }
       };
@@ -206,7 +224,7 @@ const Assistant=()=>{
           }
           if (response.status === 200) {
             // Update the comment to indicate that the reply has been posted
-            setComments((prevComments) =>
+            selectedApp === "google" && setComments((prevComments) =>
               prevComments.map((c) => {
                 if (c.reviewId === reviewId) {
                   return {
@@ -266,6 +284,12 @@ const Assistant=()=>{
       const count = comments.reduce((acc, comment) => acc + (isCommentUpdated(comment) ? 1 : 0), 0);
       setUpdateCount(count);
     }, [comments]);
+
+    useEffect(() => {
+      if(selectedGame && selectedApp === "apple"){
+        handleFetchComments();
+      }
+    }, [currentPage, selectedGame, ratingFilter, endDate, startDate, selectedApp]);
     
       const handleShowUpdatedComments = () => {
         setShowUpdatedComments(!showUpdatedComments);
@@ -279,7 +303,7 @@ const Assistant=()=>{
              className={`bg-${selectedApp === 'google' ? '[#f58174]' : 'gray-500'} hover:bg-${selectedApp === 'google' ? 'bg-[#eaa399]' : 'gray-600'} text-white px-4 py-2 rounded transition-transform flex items-center ${selectedApp === 'google' ? 'scale-150' : ''}`}
              onClick={() => setSelectedApp('google')}
             >
-            <img src={googlePlayIcon} alt="Google Play Icon" className="w-6 h-6 mr-2" inline /> Google Play
+            <img src={googlePlayIcon} alt="Google Play Icon" className="w-6 h-6 mr-2" inline="true" /> Google Play
             </button>
 
           <button
@@ -292,8 +316,7 @@ const Assistant=()=>{
 
           </div>
           <div className="mb-4">
-          <label className="font-semibold block">Select Timeline:</label>
-          {selectedApp=='google'?(
+          <label className="font-semibold block">Select Timeline:</label>       
             <div className="flex">
   <div>
     <label className="font-semibold">Start Date:</label>
@@ -314,16 +337,6 @@ const Assistant=()=>{
     />
   </div>
 </div>
-          ):(
-            <select name="google-dropdown" id="" className="border rounded p-2 w-full"
-            onChange={(e)=>setSelectedTimeline(e.target.value)}>
-            <option value="all">All Time</option>
-            <option value="week"> Last Week</option>
-            <option value="month"> Last Month</option>
-            <option value="3-months"> Last 3 Months</option>
-            </select>
-            
-          )}
           </div>
           <div className="mb-4">
             <label className="font-semibold block">Select Game:</label>
@@ -335,6 +348,7 @@ const Assistant=()=>{
                 const selectedGameName=e.target.value;
                 const game=gameOptions.find((game)=>game.name===selectedGameName);
                 setSelectedGame(game);
+                setCurrentPage(1);
                 }}
             >
               <option value="">Select a game</option>
@@ -370,7 +384,7 @@ const Assistant=()=>{
           <select 
               className="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline" 
               value={ratingFilter} 
-              onChange={(e) => setRatingFilter(e.target.value)}
+              onChange={(e) => {setCurrentPage(1);setRatingFilter(e.target.value)}}
             >
               <option value="">All Ratings</option>
               <option value="1">1 Star</option>
@@ -384,12 +398,12 @@ const Assistant=()=>{
             </div>
           </div>
           </div>
-        <button
+       {selectedApp === "google" && <button
             className="bg-[#f58174] hover:bg-[#f26555] text-white px-4 py-2 rounded mb-4"
             onClick={handleFetchComments}
           >
             Fetch Comments
-          </button>
+          </button>}
           {loading ? (
             <div className="flex items-center justify-center">
             <img src={loadingIcon} alt="Loading" className="w-12 h-12 mr-2" />
@@ -450,7 +464,9 @@ const Assistant=()=>{
     <p>Posted Reply: {comment.postedReply}</p>
     {comment.postedDate && (
       <p className="">Posted Date: {new Date(comment.postedDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
-    )}      
+    )}
+    {comment.responsestate && <p>Response State: {comment.responsestate}</p>}
+    {comment.responsestate === "PENDING_PUBLISH" && <p>Responses don’t appear in the App Store instantly. Allow some time for the App Store to publish the response.</p>}    
   </div>
 )}
 
@@ -602,6 +618,7 @@ const Assistant=()=>{
               )}
           </div>
            )}
+          {totalReviews > 0 && selectedApp === "apple" && <Pagination totalReviews={totalReviews} currentPage={currentPage} limit={limit} setCurrentPage={setCurrentPage} />}
         </div>
       );
     };
