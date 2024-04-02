@@ -45,7 +45,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
                 <a
                   aria-current="page"
                   key={i}
-                  className={`relative z-10 inline-flex items-center ${currentPage === i + 1 ? 'bg-[#f58174]' : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'} px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600`}
+                  className={`relative z-10 inline-flex items-center ${currentPage === i + 1 ? 'bg-[#f58174] text-white' : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'} px-4 py-2 text-sm font-semibold focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600`}
                   onClick={() => setCurrentPage(i + 1)}
                 >
                   {i + 1}
