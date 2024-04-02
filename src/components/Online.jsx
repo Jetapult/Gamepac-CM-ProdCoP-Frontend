@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import api from '../api';
-import { useNavigate } from 'react-router-dom';
-import { auth } from '../config';
+import React, { useState, useEffect } from "react";
+import api from "../api";
+import { useNavigate } from "react-router-dom";
+import { auth } from "../config";
 
 const Online = () => {
   const [file, setFile] = useState(null);
@@ -9,39 +9,38 @@ const Online = () => {
   const [user, setUser] = useState(null);
   const [userId, setUserId] = useState(null);
   const [actionId, setActionId] = useState(null);
-  const [selectedPurpose, setSelectedPurpose] = useState('');
+  const [selectedPurpose, setSelectedPurpose] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [contributors, setContributors] = useState([]);
-  const [selectedContributors, setSelectedContributors] = useState('');
-  const [token,setToken]=useState('');
-  const [label, setLabel] = useState('');
+  const [selectedContributors, setSelectedContributors] = useState("");
+  const [token, setToken] = useState("");
+  const [label, setLabel] = useState("");
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
       setUserId(user.uid);
-      user.getIdToken().then((token)=>{
+      user.getIdToken().then((token) => {
         setToken(token);
-      })
+      });
     });
     return () => unsubscribe();
   }, []);
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await api.get('/users', {
+        const response = await api.get("/users", {
           headers: {
-            Authorization: 'Bearer ' + token
-          }
+            Authorization: "Bearer " + token,
+          },
         });
         setContributors(response.data);
       } catch (error) {
-        console.error('Error fetching contributors:', error);
+        console.error("Error fetching contributors:", error);
       }
-    };    
+    };
     fetchUsers();
   }, [token]);
-  
 
   const id = userId;
 
@@ -57,7 +56,7 @@ const Online = () => {
     console.log(event.target.value);
     setSelectedContributors(event.target.value);
   };
-  const c=selectedContributors;
+  const c = selectedContributors;
 
   const handleLabelChange = (event) => {
     setLabel(event.target.value);
@@ -66,7 +65,7 @@ const Online = () => {
     event.preventDefault();
     setIsLoading(true);
     if (!file) {
-      alert('Please select a text file.');
+      alert("Please select a text file.");
       return;
     }
 
@@ -74,41 +73,53 @@ const Online = () => {
     const reader = new FileReader();
     reader.onload = async (event) => {
       const transcription = event.target.result;
-    //   setSummary(transcription);
+      //   setSummary(transcription);
 
       if (!selectedPurpose) {
-        alert('Please select a purpose.');
+        alert("Please select a purpose.");
         return;
       }
 
       try {
         // Step 1: Get the summary
-        const summaryResponse = await api.post('/summary', {
-          transcription,
-        },{
-          headers: {
-            Authorization: 'Bearer ' + token
+        const summaryResponse = await api.post(
+          "/summary",
+          {
+            transcription,
+          },
+          {
+            headers: {
+              Authorization: "Bearer " + token,
+            },
           }
-        });
+        );
         const sum = summaryResponse.data.summary;
         console.log(sum);
-        
-        const response = await api.post('/todos', {
-          transcription,
-        },{
-          headers: {
-            Authorization: 'Bearer ' + token
+
+        const response = await api.post(
+          "/todos",
+          {
+            transcription,
+          },
+          {
+            headers: {
+              Authorization: "Bearer " + token,
+            },
           }
-        });
+        );
         const todosList = response.data.todos;
-        const titleResponse = await api.post('/title', {
-          transcription,
-        },{
-          headers: {
-            Authorization: 'Bearer ' + token
+        const titleResponse = await api.post(
+          "/title",
+          {
+            transcription,
+          },
+          {
+            headers: {
+              Authorization: "Bearer " + token,
+            },
           }
-        });
-        const title=titleResponse.data.title;
+        );
+        const title = titleResponse.data.title;
 
         // Step 2: Save the data to the data table
         const data = {
@@ -117,21 +128,21 @@ const Online = () => {
           sum,
           todosList,
           p: selectedPurpose,
-          flag:"false",
+          flag: "false",
           c,
           title,
         };
 
-        const saveData = await api.post('/data', data);
+        const saveData = await api.post("/data", data);
         const resId = saveData.data.actionId;
         setActionId(resId);
         setIsLoading(false);
       } catch (error) {
-        console.error('Error summarizing text:', error);
-        alert('Error summarizing text. Please try again.');
+        console.error("Error summarizing text:", error);
+        alert("Error summarizing text. Please try again.");
       }
     };
-    reader.readAsText(file, 'UTF-8');
+    reader.readAsText(file, "UTF-8");
   };
 
   return (
@@ -139,28 +150,35 @@ const Online = () => {
       <div className="bg-white p-8  font-['League Spartan'] rounded-md shadow-md w-96 mx-auto ">
         <h2 className="text-2xl font-bold mb-4">Text to Brief</h2>
         <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-            <label htmlFor="contributors" className="block font-['League Spartan'] text-sm font-medium text-gray-800">
+          <div className="mb-4">
+            <label
+              htmlFor="contributors"
+              className="block font-['League Spartan'] text-sm font-medium text-gray-800"
+            >
               Contributors
             </label>
             {contributors.length > 0 && (
-            <select
-              id="contributors"
-              name="contributors"
-              value={selectedContributors}
-              onChange={handleContributorsChange}
-              className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-red-400">
-              <option value="">Select a contributor</option>
-              {contributors.map((contributor) => (
-                <option key={contributor.uid} value={contributor.uid}>
-                  {contributor.email}
-                </option>
-              ))}
-            </select>
+              <select
+                id="contributors"
+                name="contributors"
+                value={selectedContributors}
+                onChange={handleContributorsChange}
+                className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-red-400"
+              >
+                <option value="">Select a contributor</option>
+                {contributors.map((contributor) => (
+                  <option key={contributor.uid} value={contributor.uid}>
+                    {contributor.email}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
           <div className="mb-4">
-            <label htmlFor="purpose" className="block text-sm font-medium text-gray-800">
+            <label
+              htmlFor="purpose"
+              className="block text-sm font-medium text-gray-800"
+            >
               Purpose
             </label>
             <select
@@ -174,12 +192,17 @@ const Online = () => {
               <option value="Investment">Investment</option>
               <option value="Hiring">Hiring</option>
               <option value="Game Analysis">Game Analysis</option>
-              <option value="Share Holders Connect">Share Holders Connect</option>
+              <option value="Share Holders Connect">
+                Share Holders Connect
+              </option>
             </select>
           </div>
 
           <div className="mb-4">
-            <label htmlFor="textFile" className="block text-sm font-medium text-gray-800">
+            <label
+              htmlFor="textFile"
+              className="block text-sm font-medium text-gray-800"
+            >
               Upload Text File
             </label>
             <input
@@ -192,7 +215,10 @@ const Online = () => {
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="label" className="block text-sm font-medium text-gray-800">
+            <label
+              htmlFor="label"
+              className="block text-sm font-medium text-gray-800"
+            >
               Label
             </label>
             <input
@@ -214,19 +240,25 @@ const Online = () => {
         </form>
       </div>
       <div>
-      {isLoading? (
-  <button className="w-full bg-[#f1efe7]  py-2 px-4 rounded-md cursor-not-allowed opacity-50" disabled>Loading...</button>
-) :null}
+        {isLoading ? (
+          <button
+            className="w-full bg-[#f1efe7]  py-2 px-4 rounded-md cursor-not-allowed opacity-50"
+            disabled
+          >
+            Loading...
+          </button>
+        ) : null}
         {actionId && (
           <button
             className="w-full bg-[#f1efe7]  py-2 px-4 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:bg-[#eaa399]"
-            onClick={() => navigate(`/actions/${actionId}`, { state: { label } })}
+            onClick={() =>
+              navigate(`/actions/${actionId}`, { state: { label } })
+            }
           >
             View Action Items
           </button>
         )}
       </div>
-
     </div>
   );
 };
