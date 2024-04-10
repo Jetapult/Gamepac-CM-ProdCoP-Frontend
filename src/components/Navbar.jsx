@@ -12,8 +12,11 @@ import socialsImg from "../assets/icons8-social-50.png";
 import holycowImg from "../assets/2x_Retina.png";
 import loginImg from "../assets/icons8-login-50.png";
 import img from "../assets/im.png";
+import { useSelector } from "react-redux";
+import { isAuthenticated, logout } from "../auth";
 
 function Navbar() {
+  const userData = useSelector((state) => state.user.user);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [state, setState] = useState(false);
   const [user, setUser] = useState(null);
@@ -22,21 +25,9 @@ function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [closeDropdownTimeout, setCloseDropdownTimeout] = useState(null);
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
   const handleLogout = () => {
-    auth
-      .signOut()
-      .then(() => {
-        window.location.href = "./";
-      })
-      .catch((error) => {
-        console.log(error.message);
-      });
+    logout();
+    window.location.reload();
   };
 
   const handleOpenDropdown = () => {
@@ -74,8 +65,17 @@ function Navbar() {
         </div>
       </a>
       <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
-        {user ? (
+        {isAuthenticated() ? (
           <>
+            {userData?.studio_type?.includes("studio_manager") && (
+              <ul className="text-gray-700">
+                <li className="duration-150 hover:text-gray-900">
+                  <a href="/admin/studios" className="block">
+                    Studios
+                  </a>
+                </li>
+              </ul>
+            )}
             <div className="relative">
               <button
                 className="text-gray-700 justify-end items-center space-y-6 md:flex md:space-x-6 md:space-y-0 md:text-gray-600 md:font-medium"
@@ -162,20 +162,18 @@ function Navbar() {
                 </a>
               </li>
               <li className="duration-150 hover:text-gray-900">
-                <a href="/logout" className="block">
-                  <div
-                    className="flex gap-2 items-center"
-                    onClick={handleLogout}
-                  >
-                    <img src={logoutImg} className="w-6 h-6" />
-                    Logout
-                  </div>
-                </a>
+                <div
+                  className="flex gap-2 items-center cursor-pointer"
+                  onClick={handleLogout}
+                >
+                  <img src={logoutImg} className="w-6 h-6" />
+                  Logout
+                </div>
               </li>
             </ul>
           </>
         ) : (
-          <a href="/" className="block">
+          <a href="/login" className="block">
             <div className="flex gap-2 items-center">
               <img src={loginImg} className="w-6 h-6" />
               Login

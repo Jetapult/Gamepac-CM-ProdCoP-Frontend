@@ -1,0 +1,6 @@
+.admin-sidebar {
+  height: calc(100vh - 80px);
+}
+.content-hld{
+    height: calc(100vh - 104px); 
+}

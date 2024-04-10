@@ -10,12 +10,12 @@ import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import image from "../assets/meeting.webp";
 function Landing() {
   const [user, setUser] = useState("");
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
+  // useEffect(() => {
+  //   const unsubscribe = auth.onAuthStateChanged((user) => {
+  //     setUser(user);
+  //   });
+  //   return () => unsubscribe();
+  // }, []);
 
   return (
     <div className="flex flex-col  justify-center">
@@ -30,9 +30,8 @@ function Landing() {
         style={{ width: "650px", height: "450px" }}
         className="min-h-0 min-w-0 self-center mb-4"
       />
-      {!user && (
+      {/* {!user && (
         <div className="flex space-x-10 justify-center space-between">
-          {/* <button className="google-button rounded-md shadow-md hover:shadow-lg transition-shadow" onClick={signInWithGogle}></button> */}
           <button
             className="bg-white text-gray-800 px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-colors flex items-center gap-2 border border-gray-300 focus:outline-none focus:border-blue-400"
             onClick={signInWithGogle}
@@ -44,7 +43,7 @@ function Landing() {
             <span className="font-medium text-lg">Sign in with Google</span>
           </button>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
