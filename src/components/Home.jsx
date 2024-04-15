@@ -3,14 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { auth } from "../config";
 import Record from "./Record";
 import api from "../api";
+import { useSelector } from "react-redux";
 
 const Home = () => {
+  const userData = useSelector((state) => state.user.user);
   const [file, setFile] = useState(null);
   const [summary, setSummary] = useState("");
   const [copy, setCopy] = useState("");
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [userId, setUserId] = useState(null);
   const [actionId, setActionId] = useState(null);
   const [selectedPurpose, setSelectedPurpose] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -19,34 +20,32 @@ const Home = () => {
   const [token, setToken] = useState("");
   const [label, setLabel] = useState("");
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-      setUserId(user.uid);
-      user.getIdToken().then((token) => {
-        setToken(token);
-      });
-    });
-    return () => unsubscribe();
-  }, []);
+  // useEffect(() => {
+  //   const unsubscribe = auth.onAuthStateChanged((user) => {
+  //     setUser(user);
+  //     setUserId(user.id);
+  //     user.getIdToken().then((token) => {
+  //       setToken(token);
+  //     });
+  //   });
+  //   return () => unsubscribe();
+  // }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await api.get("/users", {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        });
-        setContributors(response.data);
+        const response = await api.get(
+          `/v1/users/studio/${userData.studio_id}?current_page=1&limit=100`
+        );
+        setContributors(response.data.data);
       } catch (error) {
         console.error("Error fetching contributors:", error);
       }
     };
-
-    fetchUsers();
-  }, [token]);
-  const id = userId;
+    if (userData?.studio_id) {
+      fetchUsers();
+    }
+  }, [userData]);
   const handlePurposeChange = (event) => {
     setSelectedPurpose(event.target.value);
   };
@@ -68,6 +67,11 @@ const Home = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsLoading(true);
+    if(selectedContributors === ''){
+      alert('Please select a contributor');
+      setIsLoading(false);
+      return;
+    }
     if (!file) {
       alert("Please select an MP3 file.");
       setIsLoading(false);
@@ -78,74 +82,51 @@ const Home = () => {
 
     try {
       // Step 1: Transcribe the audio
-      const transcribeResponse = await api.post("/transcribe", formData, {
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      });
+      const transcribeResponse = await api.post("/transcribe", formData);
       const transcription = transcribeResponse.data.transcription;
       setCopy(transcription);
       console.log(transcription);
-
-      // Step 2: Get the summary
-      const summaryResponse = await api.post(
-        "/summary",
-        {
-          transcription,
-        },
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
-      );
-      const sum = summaryResponse.data.summary;
-      console.log(sum);
-      // Step 3: Set the summary in the state
-      setSummary(sum);
-      const response = await api.post(
-        "/todos",
-        {
-          transcription,
-        },
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
-      );
-      const todosList = response.data.todos;
-      const titleResponse = await api.post(
-        "/title",
-        {
-          transcription,
-        },
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
-      );
-      const title = titleResponse.data.title;
-      console.log(title);
-      const saveData = await api.post("/data", {
-        id,
-        transcription,
-        sum,
-        todosList,
-        p,
-        flag: "true",
-        c,
-        title,
-      });
-      const resId = saveData.data.actionId;
-      console.log(resId);
-      setActionId(resId);
-      setIsLoading(false);
+      getSummaryTodosTitleandSave(transcription);
     } catch (error) {
       console.error("Error transcribing audio:", error);
       alert("Error transcribing audio. Please try again.");
     }
+  };
+
+  const getSummaryTodosTitleandSave = async (transcription) => {
+    // Step 2: Get the summary
+    const summaryResponse = await api.post("/summary", {
+      transcription,
+    });
+    const sum = summaryResponse.data.summary;
+    console.log(sum);
+    // Step 3: Set the summary in the state
+    setSummary(sum);
+    const response = await api.post("/todos", {
+      transcription: transcription,
+    });
+    const todosList = response.data.todos;
+    const titleResponse = await api.post("/title", {
+      transcription: transcription,
+    });
+    const title = titleResponse.data.title;
+    console.log(title);
+    console.log(selectedContributors,'selectedContributors')
+    const saveData = await api.post("/data", {
+      user_id: userData.id,
+      contributor_id: selectedContributors,
+      transcription,
+      sum,
+      todosList,
+      p,
+      flag: "true",
+      c,
+      title,
+    });
+    const resId = saveData.data.actionId;
+    console.log(resId);
+    setActionId(resId);
+    setIsLoading(false);
   };
 
   return (
@@ -169,7 +150,7 @@ const Home = () => {
             >
               <option value="">Select a contributor</option>
               {contributors.map((contributor) => (
-                <option key={contributor.uid} value={contributor.uid}>
+                <option key={contributor.id} value={contributor.id}>
                   {contributor.email}
                 </option>
               ))}
@@ -243,10 +224,13 @@ const Home = () => {
             </form>
           </div>
           <Record
-            id={id}
             selectedContributors={selectedContributors}
             selectedPurpose={selectedPurpose}
             label={label}
+            user_id={userData.id}
+            getSummaryTodosTitleandSave={getSummaryTodosTitleandSave}
+            isLoading={isLoading}
+            setIsLoading={setIsLoading}
           />
         </div>
         {/* <RecordView/> */}

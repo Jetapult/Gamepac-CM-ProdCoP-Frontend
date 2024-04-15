@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../config";
+import { useSelector } from "react-redux";
 
 const Online = () => {
+  const userData = useSelector((state) => state.user.user);
   const [file, setFile] = useState(null);
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -13,34 +15,21 @@ const Online = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [contributors, setContributors] = useState([]);
   const [selectedContributors, setSelectedContributors] = useState("");
-  const [token, setToken] = useState("");
   const [label, setLabel] = useState("");
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-      setUserId(user.uid);
-      user.getIdToken().then((token) => {
-        setToken(token);
-      });
-    });
-    return () => unsubscribe();
-  }, []);
-  useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await api.get("/users", {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        });
+        const response = await api.get(`/v1/users/studio/${userData.studio_id}?current_page=1&limit=100`);
         setContributors(response.data);
       } catch (error) {
         console.error("Error fetching contributors:", error);
       }
     };
-    fetchUsers();
-  }, [token]);
+    if(userData.studio_id){
+      fetchUsers();
+    }
+  }, [userData]);
 
   const id = userId;
 
@@ -86,11 +75,6 @@ const Online = () => {
           "/summary",
           {
             transcription,
-          },
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
           }
         );
         const sum = summaryResponse.data.summary;
@@ -100,11 +84,6 @@ const Online = () => {
           "/todos",
           {
             transcription,
-          },
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
           }
         );
         const todosList = response.data.todos;
@@ -112,11 +91,6 @@ const Online = () => {
           "/title",
           {
             transcription,
-          },
-          {
-            headers: {
-              Authorization: "Bearer " + token,
-            },
           }
         );
         const title = titleResponse.data.title;
@@ -167,7 +141,7 @@ const Online = () => {
               >
                 <option value="">Select a contributor</option>
                 {contributors.map((contributor) => (
-                  <option key={contributor.uid} value={contributor.uid}>
+                  <option key={contributor.id} value={contributor.id}>
                     {contributor.email}
                   </option>
                 ))}

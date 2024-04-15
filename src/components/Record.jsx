@@ -8,6 +8,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import api from "../api";
 
 const Record = (props) => {
+  const { user_id, getSummaryTodosTitleandSave, isLoading, setIsLoading } = props;
   const {
     status,
     startRecording,
@@ -38,24 +39,20 @@ const Record = (props) => {
   });
 
   const [transcription, setTranscription] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [actionId, setActionId] = useState(null);
   const [user, setUser] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [token, setToken] = useState("");
 
   const navigate = useNavigate();
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-      setUserId(user.uid);
-      user.getIdToken().then((token) => {
-        setToken(token);
-      });
-    });
-    return () => unsubscribe();
-  }, []);
-  const id = userId;
+  // useEffect(() => {
+  //   const unsubscribe = auth.onAuthStateChanged((user) => {
+  //     setUser(user);
+  //     setUserId(user.id);
+  //     user.getIdToken().then((token) => {
+  //       setToken(token);
+  //     });
+  //   });
+  //   return () => unsubscribe();
+  // }, []);
   const uploadFileToS3 = async (bucketName, key, body, contentType) => {
     const params = {
       Bucket: bucketName,
@@ -94,57 +91,40 @@ const Record = (props) => {
       console.log(t);
       setTranscription(responseFromBackend.data.transcription);
       // Step 2: Get the summary
-      const summaryResponse = await api.post(
-        "/summary",
-        {
-          transcription: t,
-        },
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
-      );
-      const sum = summaryResponse.data.summary;
-      console.log(sum);
-      const todoresponse = await api.post(
-        "/todos",
-        {
-          transcription: t,
-        },
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
-      );
-      const todosList = todoresponse.data.todos;
-      const titleResponse = await api.post(
-        "/title",
-        {
-          transcription,
-        },
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
-      );
-      const title = titleResponse.data.title;
-      const saveData = await api.post("/data", {
-        id,
-        transcription: t,
-        sum,
-        todosList,
-        p: props.selectedPurpose,
-        flag: "true",
-        c: props.selectedContributors,
-        title,
-      });
-      const resId = saveData.data.actionId;
-      console.log(resId);
-      setActionId(resId);
-      setIsLoading(false);
+      getSummaryTodosTitleandSave(t);
+      // const summaryResponse = await api.post(
+      //   "/summary",
+      //   {
+      //     transcription: t,
+      //   });
+      // const sum = summaryResponse.data.summary;
+      // console.log(sum);
+      // const todoresponse = await api.post(
+      //   "/todos",
+      //   {
+      //     transcription: t,
+      //   });
+      // const todosList = todoresponse.data.todos;
+      // const titleResponse = await api.post(
+      //   "/title",
+      //   {
+      //     transcription,
+      //   });
+      // const title = titleResponse.data.title;
+      // const saveData = await api.post("/data", {
+      //   user_id: user_id,
+      //   transcription: t,
+      //   sum,
+      //   todosList,
+      //   p: props.selectedPurpose,
+      //   flag: "true",
+      //   c: props.selectedContributors,
+      //   title,
+      // });
+      // const resId = saveData.data.actionId;
+      // console.log(resId);
+      // setActionId(resId);
+      // setIsLoading(false);
       // setIsLoading(false);
     } catch (error) {
       console.error("Error sending audio to backend:", error);

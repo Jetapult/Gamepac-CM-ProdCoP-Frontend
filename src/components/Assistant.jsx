@@ -2,17 +2,16 @@ import React, { useState, useEffect } from "react";
 import googlePlayIcon from "../assets/google-play_318-566073.avif";
 import appleIcon from "../assets/icon_appstore__ev0z770zyxoy_large_2x.png";
 import api from "../api";
-import axios from "axios";
 import loadingIcon from "../assets/Spinner-1s-200px.svg";
 import bellIcon from "../assets/bell-icon.png";
 import UpdatedComments from "./UpdatedComments";
-import { comment } from "postcss";
 import Pagination from "./Pagination";
+import { useSelector } from "react-redux";
 
 const Assistant = () => {
+  const userData = useSelector((state) => state.user.user);
   const [selectedApp, setSelectedApp] = useState("google");
   const [selectedGame, setSelectedGame] = useState(null);
-  const [selectedTimeline, setSelectedTimeline] = useState("");
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingReplyIndex, setLoadingReplyIndex] = useState(null);
@@ -33,6 +32,7 @@ const Assistant = () => {
   const [charCountLimitErr, setCharCountLimitErr] = useState("");
   const [totalReviews, setTotalReviews] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [games, setGames] = useState([]);
   const limit = 10;
 
   useEffect(() => {
@@ -158,36 +158,27 @@ const Assistant = () => {
   const handleFetchComments = async () => {
     try {
       setLoading(true);
-      let response;
-      if (selectedApp === "google") {
-        response = await api.post("/getGoogleData", {
-          packageName: selectedGame.packageName,
-        });
-      } else if (selectedApp === "apple") {
-        response = await api.get(
-          `/v1/organic-ua/fetch-app-store-reviews?appId=${
-            selectedGame.appId
-          }&current_page=${currentPage}&limit=${limit}${
-            ratingFilter ? `&rating=${ratingFilter}` : ""
-          } ${startDate ? `&startDate=${startDate}` : ""}${
-            endDate ? `&endDate=${endDate}` : ""
-          }`
-        );
+      const paramData = {
+        current_page: currentPage,
+        limit: limit,
+        game_id: selectedGame.id,
+      };
+      if (ratingFilter) {
+        paramData.rating = ratingFilter;
       }
+      if (startDate) {
+        paramData.startDate = startDate;
+      }
+      if (endDate) {
+        paramData.endDate = endDate;
+      }
+      const url =
+        selectedApp === "google"
+          ? `/v1/organic-ua/google-reviews/${userData.studio_id}`
+          : `/v1/organic-ua/fetch-app-store-reviews/${userData.studio_id}`;
+      const response = await api.get(url, { params: paramData });
       // When formatting comments initially
-      let comments = formatComments(response.data);
-      // Filter comments based on the selected start and end dates
-      if (startDate && endDate && selectedApp === "google") {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        comments = comments.filter((comment) => {
-          const commentDate = new Date(comment.date);
-          const localCommentDate = new Date(
-            commentDate.getTime() - commentDate.getTimezoneOffset() * 60000
-          );
-          return localCommentDate >= start && localCommentDate <= end;
-        });
-      }
+      let comments = formatComments(response.data.data);
       setComments(comments);
       setLoading(false);
       setTotalReviews(response.data.totalReviews);
@@ -222,7 +213,7 @@ const Assistant = () => {
       });
       // return data.map(comment => ({ ...comment, reply: null }));
     } else if (selectedApp === "apple") {
-      return data.data.map((comment) => ({
+      return data.map((comment) => ({
         userName: comment.reviewernickname,
         userRating: comment.rating,
         comment: comment.body,
@@ -287,7 +278,7 @@ const Assistant = () => {
       if (selectedApp === "google") {
         response = await api.post("/postReply", {
           reviewId: reviewId,
-          packageName: selectedGame.packageName,
+          packageName: selectedGame.package_name,
           reply: comment.reply,
         });
       } else if (selectedApp === "apple") {
@@ -366,8 +357,28 @@ const Assistant = () => {
     setUpdateCount(count);
   }, [comments]);
 
+  const getGamesByStudioId = async () => {
+    try {
+      const games_response = await api.get(
+        `/v1/games/studio/${
+          userData.studio_id
+        }?current_page=1&limit=50&game_type=${
+          selectedApp === "apple" ? "appstore" : "playstore"
+        }`
+      );
+      setGames(games_response.data.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
   useEffect(() => {
-    if (selectedGame && selectedApp === "apple") {
+    if (userData.studio_id) {
+      getGamesByStudioId();
+    }
+  }, [userData]);
+
+  useEffect(() => {
+    if (selectedGame?.id) {
       handleFetchComments();
     }
   }, [
@@ -446,46 +457,25 @@ const Assistant = () => {
       </div>
       <div className="mb-4">
         <label className="font-semibold block">Select Game:</label>
-        {selectedApp === "google" ? (
-          <select
-            className="border rounded p-2 w-full"
-            value={selectedGame ? selectedGame.name : ""}
-            onChange={(e) => {
-              const selectedGameName = e.target.value;
-              const game = gameOptions.find(
-                (game) => game.name === selectedGameName
-              );
-              setSelectedGame(game);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="">Select a game</option>
-            {gameOptions.map((game, index) => (
-              <option key={index} value={game.name}>
-                {game.name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <select
-            className="border rounded p-2 w-full"
-            value={selectedGame ? selectedGame.name : ""}
-            onChange={(e) => {
-              const selectedGameName = e.target.value;
-              const game = appleGameOptions.find(
-                (game) => game.name === selectedGameName
-              );
-              setSelectedGame(game);
-            }}
-          >
-            <option value="">Select a game</option>
-            {appleGameOptions.map((game, index) => (
-              <option key={index} value={game.name}>
-                {game.name}
-              </option>
-            ))}
-          </select>
-        )}
+        <select
+          className="border rounded p-2 w-full"
+          value={selectedGame ? selectedGame.game_name : ""}
+          onChange={(e) => {
+            const selectedGameName = e.target.value;
+            const game = games.find(
+              (game) => game.game_name === selectedGameName
+            );
+            setSelectedGame(game);
+            setCurrentPage(1);
+          }}
+        >
+          <option value="">Select a game</option>
+          {games.map((game, index) => (
+            <option key={index} value={game.game_name}>
+              {game.game_name} {game.short_names ? `(${game.short_names})` : ""}
+            </option>
+          ))}
+        </select>
       </div>
       {/* Add the filter dropdown here */}
       <div className="w-64 mb-4 mr-2 relative">
@@ -517,14 +507,6 @@ const Assistant = () => {
           </div>
         </div>
       </div>
-      {selectedApp === "google" && (
-        <button
-          className="bg-[#f58174] hover:bg-[#f26555] text-white px-4 py-2 rounded mb-4"
-          onClick={handleFetchComments}
-        >
-          Fetch Comments
-        </button>
-      )}
       {loading ? (
         <div className="flex items-center justify-center">
           <img src={loadingIcon} alt="Loading" className="w-12 h-12 mr-2" />
@@ -866,7 +848,7 @@ const Assistant = () => {
           )}
         </div>
       )}
-      {totalReviews > 0 && selectedApp === "apple" && (
+      {totalReviews > 0 && (
         <Pagination
           totalReviews={totalReviews}
           currentPage={currentPage}

@@ -4,27 +4,28 @@ import off from "../assets/icons8-phonelink-ring-40.png";
 import { auth, signInWithGogle } from "../config";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
+import { useSelector } from "react-redux";
 
 const History = () => {
-  const [user, setUser] = useState(null);
+  const user = useSelector((state) => state.user.user);
   const [display, setDisplay] = useState("");
   const [userData, setUserData] = useState([]);
   const [cName, setC] = useState("");
   const navigate = useNavigate();
+  // useEffect(() => {
+  //   const unsubscribe = auth.onAuthStateChanged((user) => {
+  //     setUser(user);
+  //     setDisplay(user.displayName || "User");
+  //   });
+  //   return () => unsubscribe();
+  // }, []);
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-      setDisplay(user.displayName || "User");
-    });
-    return () => unsubscribe();
-  }, []);
-  useEffect(() => {
-    if (user) {
+    if (user.id) {
       // Fetch data from the backend for the logged-in user's UID
       api
-        .get(`/user/${user.uid}`)
+        .get(`/notes/${user.id}`)
         .then((response) => {
-          setUserData(response.data);
+          setUserData(response.data.data);
         })
         .catch((error) => {
           console.error("Error fetching user data:", error);
@@ -70,7 +71,7 @@ const History = () => {
           <tbody>
             {userData.map((data, index) => (
               <tr
-                key={data.data_id}
+                key={data.id}
                 className={index % 2 === 0 ? "bg-gray-100" : ""}
               >
                 <td className="border px-4 py-2">{index + 1}</td>
@@ -84,7 +85,7 @@ const History = () => {
                 <td className="border px-4 py-2">
                   <button
                     className="bg-[#eaa399] hover:bg-[#f58174] text-white px-2 py-1 rounded"
-                    onClick={() => navigate(`/actions/${data.data_id}`)}
+                    onClick={() => navigate(`/actions/${data.id}`)}
                   >
                     View Action
                   </button>
