@@ -25,6 +25,7 @@ import Studios from "./pages/Admin/Studios";
 import StudioDetails from "./pages/Admin/StudioDetails";
 import UnprotectedRoute from "./auth/UnprotectedRoute";
 import PrivateRoute from "./auth/PrivateRoute";
+import Weaver from './components/Weaver';
 import { isAuthenticated } from "./auth";
 
 function App() {
@@ -209,6 +210,12 @@ function App() {
                 <PrivateRoute>
                   <StudioDetails />
                 </PrivateRoute>
+              }
+            />
+            <Route
+              path="/aistories"
+              element={
+                  <Weaver />
               }
             />
           </Routes>
