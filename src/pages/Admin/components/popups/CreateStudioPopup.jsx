@@ -1,14 +1,13 @@
 import { XMarkIcon } from "@heroicons/react/20/solid";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import api from "../../../../api";
 import { emailRegex } from "../../../../utils";
+import loadingIcon from "../../../../assets/transparent-spinner.svg";
 
 const CreateStudioPopup = ({
   setShowModal,
   setToastMessage,
-  setStudios,
-  selectedStudio,
-  setSelectedStudio,
+  setStudios
 }) => {
   const [domains, setDomains] = useState([]);
   const [domainText, setDomainText] = useState("");
@@ -19,10 +18,10 @@ const CreateStudioPopup = ({
   const [emailError, setEmailError] = useState(false);
   const [phoneError, setPhoneError] = useState(false);
   const [domainsError, setDomainsError] = useState(false);
+  const [submitLoader, setSubmitLoader] = useState(false);
 
   const closePopup = () => {
     setShowModal(false);
-    setSelectedStudio({});
   };
 
   const onNameChange = (e) => {
@@ -40,7 +39,7 @@ const CreateStudioPopup = ({
   const handleKeyDown = (e) => {
     if (e.key === "Enter" || e.key === " " || e.key === ",") {
       if (e.target.value.length > 2) {
-        setDomains(prev => [...prev, e.target.value]);
+        setDomains((prev) => [...prev, e.target.value]);
         setDomainText("");
         setDomainsError(false);
       }
@@ -70,37 +69,29 @@ const CreateStudioPopup = ({
         setDomainsError(true);
         return;
       }
+      setSubmitLoader(true);
       const requestbody = {
         studio_name: name,
         contact_email: email,
-        studio_type: selectedStudio?.id ? selectedStudio.studio_type : ["studio"],
+        studio_type: ["studio"],
         phone: phone,
         domains: domains,
       };
-      const create_studio_response = selectedStudio?.id
-        ? await api.put(`v1/game-studios/${selectedStudio?.id}`, requestbody)
-        : await api.post("v1/game-studios", requestbody);
+      const create_studio_response = await api.post("v1/game-studios", requestbody);
       setToastMessage({
         show: true,
         message: "Studio created successfully",
         type: "success",
       });
       if (create_studio_response.data.data) {
-        selectedStudio?.id
-          ? setStudios((prev) =>
-              prev.map((studio) =>
-                studio.id === selectedStudio.id
-                  ? create_studio_response.data.data
-                  : studio
-              )
-            )
-          : setStudios((prev) => [...prev, create_studio_response.data.data]);
+        setStudios((prev) => [...prev, create_studio_response.data.data]);
         setEmail("");
         setPhone("");
         setName("");
         setDomains([]);
         setDomainText("");
         closePopup();
+        setSubmitLoader(false);
       }
     } catch (err) {
       console.log(err);
@@ -111,17 +102,10 @@ const CreateStudioPopup = ({
           type: "error",
         });
       }
+      setSubmitLoader(false);
     }
   };
 
-  useEffect(() => {
-    if (selectedStudio?.id) {
-      setName(selectedStudio.studio_name);
-      setEmail(selectedStudio.contact_email);
-      setPhone(selectedStudio.phone);
-      setDomains(selectedStudio.domains);
-    }
-  }, [selectedStudio]);
   return (
     <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-40 outline-none focus:outline-none bg-[#12111157]">
       <div className="relative w-auto my-6 mx-auto max-w-3xl w-[500px]">
@@ -130,7 +114,7 @@ const CreateStudioPopup = ({
           {/*header*/}
           <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
             <h3 className="text-2xl font-semibold">
-              {selectedStudio?.id ? "Edit" : "Create"} Studio
+              Create Studio
             </h3>
             <button
               className="p-1 ml-auto border-0 text-black float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
@@ -174,7 +158,6 @@ const CreateStudioPopup = ({
                 type="email"
                 value={email}
                 onChange={onEmailChange}
-                disabled={selectedStudio?.id}
               />
               {emailError && (
                 <span className="text-[#f58174] text-[12px]">
@@ -241,13 +224,22 @@ const CreateStudioPopup = ({
           </form>
           {/*footer*/}
           <div className="flex items-center p-6 border-t border-solid border-blueGray-200 rounded-b">
-            <button
-              className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-              type="button"
-              onClick={createStudio}
-            >
-              {selectedStudio?.id ? "Save" : "Add"}
-            </button>
+            {submitLoader ? (
+              <button
+                className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-1.5 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                type="button"
+              >
+                <img src={loadingIcon} alt="loading" className="w-8 h-8" />
+              </button>
+            ) : (
+              <button
+                className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                type="button"
+                onClick={createStudio}
+              >
+                Add
+              </button>
+            )}
           </div>
         </div>
       </div>

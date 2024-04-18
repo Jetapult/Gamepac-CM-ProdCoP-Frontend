@@ -14,16 +14,15 @@ import loginImg from "../assets/icons8-login-50.png";
 import img from "../assets/im.png";
 import { useSelector } from "react-redux";
 import { isAuthenticated, logout } from "../auth";
+import AnalyticsPopup from "./AnalyticsPopup";
+import { ChartBarSquareIcon } from "@heroicons/react/20/solid";
 
 function Navbar() {
   const userData = useSelector((state) => state.user.user);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [state, setState] = useState(false);
-  const [user, setUser] = useState(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [closeDropdownTimeout, setCloseDropdownTimeout] = useState(null);
+  const [showAnalyticsPopup, setShowAnalyticsPopup] = useState(false);
+  const studioSlug = localStorage.getItem("selectedStudio");
 
   const handleLogout = () => {
     logout();
@@ -31,136 +30,159 @@ function Navbar() {
   };
 
   const handleOpenDropdown = () => {
-    if (closeDropdownTimeout) clearTimeout(closeDropdownTimeout);
     setDropdownOpen(true);
   };
 
   const handleCloseDropdown = () => {
-    setCloseDropdownTimeout(
-      setTimeout(() => {
-        setDropdownOpen(false);
-      }, 1000)
-    ); // 300ms delay before closing dropdown
-  };
-  const handleToggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
+    setDropdownOpen(false);
   };
   const handleToggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
   };
 
-  const handleToggleMenu = () => {
-    setMenuOpen(!menuOpen);
-  };
   return (
-    <div className="navbar bg-white flex justify-between items-end h-20 py-5 px-16">
+    <div className="navbar bg-white flex justify-between items-center h-20 py-5 px-16 shadow-lg relative">
       <a href="/" className="flex items-center">
-        <div className="text-4xl bg-transparent">
-          <img
-            src={image}
-            alt="Icon"
-            className="h-12 w-auto mr-2 text-gray-600 inline"
-            style={{ marginBottom: "0 rem" }} // Adjust the margin as needed
-          />
-        </div>
+        <img
+          src={image}
+          alt="Icon"
+          className="h-12 w-auto mr-2 text-gray-600 inline"
+          style={{ marginBottom: "0 rem" }} // Adjust the margin as needed
+        />
       </a>
       <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
         {isAuthenticated() ? (
           <>
             {userData?.studio_type?.includes("studio_manager") && (
               <ul className="text-gray-700">
+                {/* {(!studioSlug || studioSlug === userData?.slug) && ( */}
                 <li className="duration-150 hover:text-gray-900">
-                  <a href="/admin/studios" className="block">
-                    Studios
+                  <a
+                    href={`/${studioSlug || userData?.slug}/dashboard`}
+                    className="block"
+                  >
+                    Dashboard
                   </a>
                 </li>
+                {/* )} */}
               </ul>
             )}
-            <div className="relative">
-              <button
-                className="text-gray-700 justify-end items-center space-y-6 md:flex md:space-x-6 md:space-y-0 md:text-gray-600 md:font-medium"
-                onMouseEnter={handleOpenDropdown}
-                onMouseLeave={handleCloseDropdown}
-              >
-                <div className="flex gap-2 items-center">
-                  <img src={socialsImg} className="w-6 h-6" alt="Socials" />
-                  Socials
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 md:h-5 md:w-5 inline"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M6.293 6.293a1 1 0 011.414 0L10 8.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-              </button>
-              {dropdownOpen && (
-                <div
-                  className={`absolute bg-white border border-gray-300 mt-1 py-1 w-36 text-gray-800 rounded-lg shadow-lg whitespace-nowrap ${
-                    dropdownOpen ? "opacity-100" : "opacity-0"
-                  }`}
-                  style={{ transition: "opacity 0.3s" }}
-                >
-                  <button
-                    className="block px-2 md:px-4 py-2 hover:bg-gray-200 transition duration-200 w-full text-left"
-                    onClick={() => {
-                      navigate("/assistant");
-                      handleToggleDropdown();
-                    }}
-                  >
-                    Reply Assistant
-                  </button>
-                  <button
-                    className="block px-2 md:px-4 py-2 hover:bg-gray-200 transition duration-200 w-full text-left"
-                    onClick={() => {
-                      navigate("/smart");
-                      handleToggleDropdown();
-                    }}
-                  >
-                    Smart Actions
-                  </button>
-                </div>
+            {userData?.studio_type?.includes("studio_manager") &&
+              studioSlug === "holy-cow-studio" && (
+                <ul>
+                  <li className="duration-150 hover:text-gray-900">
+                    <a
+                      className="block"
+                      onClick={() => setShowAnalyticsPopup(true)}
+                    >
+                      <div className="flex gap-2 items-center cursor-pointer">
+                        <ChartBarSquareIcon className="w-5 h-5" />
+                        Analytics
+                      </div>
+                    </a>
+                  </li>
+                </ul>
               )}
-            </div>
+            {!userData?.studio_type?.includes("studio_manager") ||
+            (studioSlug &&
+              studioSlug !== userData?.slug &&
+              userData?.studio_type?.includes("studio_manager")) ? (
+              <div className="relative">
+                <button
+                  className="text-gray-700 justify-end items-center space-y-6 md:flex md:space-x-6 md:space-y-0 md:text-gray-600 md:font-medium"
+                  onMouseEnter={handleOpenDropdown}
+                >
+                  <div className="flex gap-2 items-center">
+                    <img src={socialsImg} className="w-6 h-6" alt="Socials" />
+                    Socials
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 md:h-5 md:w-5 inline"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M6.293 6.293a1 1 0 011.414 0L10 8.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                </button>
+                {dropdownOpen && (
+                  <div
+                    className={`absolute bg-white border border-gray-300 mt-1 py-1 w-36 text-gray-800 rounded-lg shadow-lg whitespace-nowrap ${
+                      dropdownOpen ? "opacity-100" : "opacity-0"
+                    }`}
+                    style={{ transition: "opacity 0.3s" }}
+                    onMouseLeave={handleCloseDropdown}
+                  >
+                    <button
+                      className="block px-2 md:px-4 py-2 hover:bg-gray-200 transition duration-200 w-full text-left"
+                      onClick={() => {
+                        navigate(
+                          studioSlug ? `/${studioSlug}/assistant` : "/assistant"
+                        );
+                        handleToggleDropdown();
+                      }}
+                    >
+                      Reply Assistant
+                    </button>
+                    <button
+                      className="block px-2 md:px-4 py-2 hover:bg-gray-200 transition duration-200 w-full text-left"
+                      onClick={() => {
+                        navigate(
+                          studioSlug ? `/${studioSlug}/smart` : "/smart"
+                        );
+                        handleToggleDropdown();
+                      }}
+                    >
+                      Smart Actions
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <></>
+            )}
             <ul className="text-gray-700 justify-end items-center space-y-6 md:flex md:space-x-6 md:space-y-0 md:text-gray-600 md:font-medium">
-              <li className="duration-150 hover:text-gray-900">
-                <a href="/home" className="block">
-                  <div className="flex gap-2 items-center">
-                    <img src={audioImg} className="w-6 h-6" />
-                    Audio
-                  </div>
-                </a>
-              </li>
-              <li className="duration-150 hover:text-gray-900">
-                <a href="/online" className="block">
-                  <div className="flex gap-2 items-center">
-                    <img src={textImg} className="w-6 h-6" />
-                    Text
-                  </div>
-                </a>
-              </li>
-              <li className="duration-150 hover:text-gray-900">
-                <a href="/assets" className="block">
-                  <div className="flex gap-2 items-center">
-                    <img src={img} className="w-6 h-6" />
-                    Image
-                  </div>
-                </a>
-              </li>
-              <li className="duration-150 hover:text-gray-900">
-                <a href="/history" className="block">
-                  <div className="flex gap-2 items-center">
-                    <img src={historyImg} className="w-6 h-6" />
-                    History
-                  </div>
-                </a>
-              </li>
+              {(!studioSlug || studioSlug === userData?.slug) && (
+                <>
+                  <li className="duration-150 hover:text-gray-900">
+                    <a href="/home" className="block">
+                      <div className="flex gap-2 items-center">
+                        <img src={audioImg} className="w-6 h-6" />
+                        Audio
+                      </div>
+                    </a>
+                  </li>
+                  <li className="duration-150 hover:text-gray-900">
+                    <a href="/online" className="block">
+                      <div className="flex gap-2 items-center">
+                        <img src={textImg} className="w-6 h-6" />
+                        Text
+                      </div>
+                    </a>
+                  </li>
+                  <li className="duration-150 hover:text-gray-900">
+                    <a href="/assets" className="block">
+                      <div className="flex gap-2 items-center">
+                        <img src={img} className="w-6 h-6" />
+                        Image
+                      </div>
+                    </a>
+                  </li>
+                  <li className="duration-150 hover:text-gray-900">
+                    <a href="/history" className="block">
+                      <div className="flex gap-2 items-center">
+                        <img src={historyImg} className="w-6 h-6" />
+                        History
+                      </div>
+                    </a>
+                  </li>
+                </>
+              )}
               <li className="duration-150 hover:text-gray-900">
                 <div
                   className="flex gap-2 items-center cursor-pointer"
@@ -181,6 +203,9 @@ function Navbar() {
           </a>
         )}
       </div>
+      {showAnalyticsPopup && (
+        <AnalyticsPopup setShowModal={setShowAnalyticsPopup} />
+      )}
     </div>
   );
 }

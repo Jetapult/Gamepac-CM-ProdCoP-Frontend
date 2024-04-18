@@ -4,6 +4,7 @@ import googlePlayIcon from "../assets/google-play_318-566073.avif";
 import appleIcon from "../assets/icon_appstore__ev0z770zyxoy_large_2x.png";
 import loadingIcon from "../assets/Spinner-1s-200px.svg";
 import { useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
 
 const Smart = () => {
   const userData = useSelector((state) => state.user.user);
@@ -15,96 +16,12 @@ const Smart = () => {
   const [games, setGames] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const params = useParams();
+  const studio_slug = params.studio_slug;
 
-  const gameOptions = [
-    {
-      name: "My Home Design: Makeover Games",
-      packageName:
-        "com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating",
-    },
-    {
-      name: "Design Home Dream House Games",
-      packageName:
-        "com.holycowstudio.my.design.home.makeover.word.house.life.games.mansion.decorate.decor.masters",
-    },
-    {
-      name: "Design My Home: Makeover Games",
-      packageName: "com.holycowstudio.design.my.home.makeover.word.life",
-    },
-    {
-      name: "Home Design Dreams house games",
-      packageName: "com.holycowstudio.homedesigndreams",
-    },
-    {
-      name: "Video Game Tycoon idle clicker",
-      packageName: "com.holycowstudio.gamedevtycoon",
-    },
-    {
-      name: "My Home Design: Makeover Games",
-      packageName:
-        "com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating",
-    },
-    {
-      name: "Smartphone Tycoon: Idle Phone",
-      packageName: "com.ns.idlesmartphonetycoon",
-    },
-    {
-      name: "My Home Design: My House Games",
-      packageName:
-        "com.holycowstudio.my.home.design.makeover.luxury.interiors.word.dream.million.dollar.house.renovation",
-    },
-    {
-      name: "Tube Tycoon - Tubers Simulator",
-      packageName: "com.theholycowstudio.youtubertycoon",
-    },
-    {
-      name: "Hotel Tycoon Empire: Idle game",
-      packageName:
-        "com.holycowstudio.idle.hotel.tycoon.clicker.tap.empire.incremental.games",
-    },
-    {
-      name: "Oil Tycoon 2: Idle Miner Game",
-      packageName: "com.holycowstudio.oiltycoon2",
-    },
-    {
-      name: "Idle Cafe Tycoon: Coffee Shop",
-      packageName: "com.holycowstudio.coffeetycoon",
-    },
-    {
-      name: "Mystery Island lost magic city",
-      packageName:
-        "com.holycowstudio.mystery.island.design.match.decoration.lost.adventure",
-    },
-    {
-      name: "Oil Tycoon idle tap miner game",
-      packageName: "com.romit.sheikhoiltycoon",
-    },
-    {
-      name: "Cat Home Design: Makeover Game",
-      packageName: "com.holycowstudio.designyourcatroom",
-    },
-  ];
-  const appleGameOptions = [
-    { name: "My Home Design Makeover Games", appId: "1613281084" },
-    { name: "My Home Design: Makeover Games", appId: "1665012099" },
-    { name: "My Home Design Luxury Makeover", appId: "1577895438" },
-    { name: "My Design Home Makeover: Words", appId: "1548087220" },
-    { name: "Hotel Tycoon Empire: Idle Game", appId: "1466034711" },
-    { name: "My Home Makeover Design: Words", appId: "1533382410" },
-    { name: "Design My Home Makeover: Words", appId: "1513798819" },
-    { name: "Mystery Island: Decor & Match3", appId: "1506174960" },
-    { name: "My Home Makeover: Dream Design", appId: "1481534752" },
-    { name: "Cat Home Design: Kitten House", appId: "1390206308" },
-    { name: "Smartphone Tycoon: Idle Empire", appId: "1429667316" },
-    { name: "My Room Design: Your Home 2019", appId: "1444542924" },
-    { name: "Oil Tycoon 2: Idle Empire Game", appId: "1441938955" },
-    { name: "Home Design Dreams: Your House", appId: "1432729968" },
-    { name: "Cafe Tycoon: Idle Empire Story", appId: "1294573637" },
-  ];
   const handleSmartActions = async () => {
     try {
-      setIsLoading(true); // Set loading state
-      let fileContent = "";
+      setIsLoading(true);
 
       if (!selectedApp) {
         alert("Please select an App"); // Alert if timeline is not selected for Google app
@@ -134,8 +51,8 @@ const Smart = () => {
 
       const commentsResponse = await api.get(
         selectedApp === "apple"
-          ? `/v1/organic-ua/fetch-app-store-reviews/${userData.studio_id}`
-          : `/v1/organic-ua/google-reviews/${userData.studio_id}`,
+          ? `/v1/organic-ua/fetch-app-store-reviews/${studio_slug || userData.studio_id}`
+          : `/v1/organic-ua/google-reviews/${studio_slug || userData.studio_id}`,
         { params: paramData }
       );
       const comments = commentsResponse.data.data
@@ -166,7 +83,7 @@ const Smart = () => {
     try {
       const games_response = await api.get(
         `/v1/games/studio/${
-          userData.studio_id
+          studio_slug || userData.studio_id
         }?current_page=1&limit=50&game_type=${
           selectedApp === "apple" ? "appstore" : "playstore"
         }`
@@ -176,8 +93,14 @@ const Smart = () => {
       console.log(err);
     }
   };
+
   useEffect(() => {
-    if (userData.studio_id) {
+    if(studio_slug) {
+      getGamesByStudioId();
+    }
+  },[studio_slug])
+  useEffect(() => {
+    if (userData.studio_id && !studio_slug) {
       getGamesByStudioId();
     }
   }, [userData]);

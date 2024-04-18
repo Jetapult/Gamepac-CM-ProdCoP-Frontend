@@ -24,6 +24,7 @@ const CreateGamePopup = ({
     studio_id: studio_id,
     pod_owner: "",
     pod_owner_email: "",
+    generateweeklyreport: "none"
   });
 
   const [error, setError] = useState({
@@ -34,6 +35,7 @@ const CreateGamePopup = ({
     appstore_link: "",
     app_id: "",
     package_name: "",
+    pod_owner: ""
   });
 
   const onhandleChange = (event) => {
@@ -100,6 +102,14 @@ const CreateGamePopup = ({
         return;
       }
 
+      if(gameData.pod_owner && !emailRegex.test(gameData.pod_owner)){
+        setError((prev) => ({
+          ...prev,
+          pod_owner: "Please enter a valid email address",
+        }));
+        return;
+      }
+
       if (Object.values(error).every((value) => value === "")) {
         const create_game_response = selectedGame?.id
           ? await api.put(`/v1/games/${selectedGame?.id}`, gameData)
@@ -156,7 +166,7 @@ const CreateGamePopup = ({
   }, [selectedGame]);
   return (
     <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-[#12111157]">
-      <div className="relative w-auto my-6 mx-auto max-w-3xl w-[500px]">
+      <div className="relative my-6 mx-auto max-w-3xl w-[500px]">
         <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
           <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
             <h3 className="text-2xl font-semibold">
@@ -324,7 +334,20 @@ const CreateGamePopup = ({
               >
                 Pod owner
               </label>
-              <Menu as="div" className="relative text-left">
+              <input
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-7000 leading-tight focus:outline-none focus:shadow-outline"
+                id="pod_owner"
+                name="pod_owner"
+                type="email"
+                value={gameData.pod_owner}
+                onChange={onhandleChange}
+              />
+              {error.pod_owner && (
+                <span className="text-[#f58174] text-[12px]">
+                  {error.pod_owner}
+                </span>
+              )}
+              {/* <Menu as="div" className="relative text-left">
                 <Menu.Button className="border rounded py-2 px-3 h-10 w-full text-start shadow">
                   {gameData.pod_owner_email}
                 </Menu.Button>
@@ -366,7 +389,7 @@ const CreateGamePopup = ({
                     </div>
                   </Menu.Items>
                 </Transition>
-              </Menu>
+              </Menu> */}
             </div>
 
             {error.links && (

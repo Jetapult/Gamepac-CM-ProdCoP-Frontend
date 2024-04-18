@@ -64,7 +64,7 @@ const CreateUserPopup = ({
       };
       const create_studio_response = selectedUser?.id
         ? await api.put(`/v1/users/${selectedUser?.id}`, requestbody)
-        : await api.post("v1/auth/send-invite", requestbody);
+        : await api.post("v1/auth/add-user", requestbody);
       setToastMessage({
         show: true,
         message: selectedUser.id
@@ -106,7 +106,7 @@ const CreateUserPopup = ({
   }, [selectedUser]);
   return (
     <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-[#12111157]">
-      <div className="relative w-auto my-6 mx-auto max-w-3xl w-[500px]">
+      <div className="relative my-6 mx-auto max-w-3xl w-[500px]">
         <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
           <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
             <h3 className="text-2xl font-semibold">

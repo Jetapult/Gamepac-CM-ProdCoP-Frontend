@@ -6,13 +6,17 @@ import Pagination from "../../../../components/Pagination";
 import CreateUserPopup from "../popups/CreateUserPopup";
 import { classNames } from "../../../../utils";
 import CreateGamePopup from "../popups/CreateGamePopup";
+import SendWeeklyReportPopup from "../popups/SendWeeklyReportPopup";
+import EnableAutoReplyPopup from "../popups/EnableAutoReplyPopup";
 
-const StudioGames = ({ studio_id, setToastMessage, users }) => {
+const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
   const [games, setGames] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalGames, setTotalGames] = useState(0);
   const [showAddUserPopup, setShowAddUserPopup] = useState(false);
   const [selectedGame, setSelectedGame] = useState({});
+  const [showSendReportPopup, setShowSendReportPopup] = useState(false);
+  const [showAutoReplyEnablePopup, setShowAutoReplyEnablePopup] = useState(false);
   const limit = 10;
 
   const onEditGame = (game) => {
@@ -23,17 +27,19 @@ const StudioGames = ({ studio_id, setToastMessage, users }) => {
   const getGamesByStudioId = async () => {
     try {
       const games_response = await api.get(
-        `/v1/games/studio/${studio_id}?current_page=${currentPage}&limit=10`
+        `/v1/games/studio/${studioData.slug}?current_page=${currentPage}&limit=10`
       );
       setGames(games_response.data.data);
       setTotalGames(games_response.data.totalGames);
     } catch (err) {
       console.log(err);
+      setGames([]);
+      setTotalGames(0);
     }
   };
   useEffect(() => {
     getGamesByStudioId();
-  }, [currentPage]);
+  }, [currentPage, studio_id]);
   return (
     <div>
       <div className="flex justify-between items-center">
@@ -65,7 +71,7 @@ const StudioGames = ({ studio_id, setToastMessage, users }) => {
         <div className="col-span-2">
           <p>Package name</p>
         </div>
-        <div className="col-span-2">
+        <div className="col-span-2 px-1">
           <p>Pod owner</p>
         </div>
         <div className="">
@@ -84,7 +90,7 @@ const StudioGames = ({ studio_id, setToastMessage, users }) => {
             <p className="col-span-2">{game.game_type}</p>
             <p className="col-span-1">{game.app_id}</p>
             <p className="col-span-2 break-all">{game.package_name}</p>
-            <p className="col-span-2 break-all">{game.pod_owner_email}</p>
+            <p className="col-span-2 break-all px-1">{game.pod_owner}</p>
             <Menu as="div" className="relative inline-block text-left">
               <div>
                 <Menu.Button
@@ -106,6 +112,42 @@ const StudioGames = ({ studio_id, setToastMessage, users }) => {
               >
                 <Menu.Items className="absolute right-0 z-10 mt-2 w-36 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                   <div className="py-1">
+                  <Menu.Item>
+                      {({ active }) => (
+                        <a
+                          className={classNames(
+                            active
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-gray-700",
+                            "block px-4 py-2 text-sm"
+                          )}
+                          onClick={() => {
+                            setSelectedGame(game);
+                            setShowAutoReplyEnablePopup(!showAutoReplyEnablePopup);
+                          }}
+                        >
+                          Enable Auto Reply
+                        </a>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <a
+                          className={classNames(
+                            active
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-gray-700",
+                            "block px-4 py-2 text-sm"
+                          )}
+                          onClick={() => {
+                            setSelectedGame(game);
+                            setShowSendReportPopup(!showSendReportPopup);
+                          }}
+                        >
+                          Send weekly report
+                        </a>
+                      )}
+                    </Menu.Item>
                     <Menu.Item>
                       {({ active }) => (
                         <a
@@ -160,6 +202,22 @@ const StudioGames = ({ studio_id, setToastMessage, users }) => {
           setSelectedGame={setSelectedGame}
           studio_id={studio_id}
           users={users}
+        />
+      )}
+      {showSendReportPopup && (
+        <SendWeeklyReportPopup
+          setShowSendReportPopup={setShowSendReportPopup}
+          selectedGame={selectedGame}
+          setSelectedGame={setSelectedGame}
+          setGames={setGames}
+        />
+      )}
+      {showAutoReplyEnablePopup && (
+        <EnableAutoReplyPopup
+          setShowAutoReplyEnablePopup={setShowAutoReplyEnablePopup}
+          selectedGame={selectedGame}
+          setSelectedGame={setSelectedGame}
+          setGames={setGames}
         />
       )}
     </div>
