@@ -8,7 +8,12 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import api from "../api";
 
 const Record = (props) => {
-  const { user_id, getSummaryTodosTitleandSave, isLoading, setIsLoading } = props;
+  const {
+    user_id,
+    getSummaryTodosTitleandSave,
+    isLoading,
+    setIsLoading,
+  } = props;
   const {
     status,
     startRecording,

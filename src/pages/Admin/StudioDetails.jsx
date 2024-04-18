@@ -121,6 +121,7 @@ const StudioDetails = () => {
         <StudioSettings
           studioData={adminData}
           setToastMessage={setToastMessage}
+          setSelectedTab={setSelectedTab}
         />
       )}
 

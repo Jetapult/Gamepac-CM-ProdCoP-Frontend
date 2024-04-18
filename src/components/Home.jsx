@@ -35,7 +35,7 @@ const Home = () => {
     const fetchUsers = async () => {
       try {
         const response = await api.get(
-          `/v1/users/studio/${userData.studio_id}?current_page=1&limit=100`
+          `/v1/users`
         );
         setContributors(response.data.data);
       } catch (error) {
@@ -67,11 +67,6 @@ const Home = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsLoading(true);
-    if(selectedContributors === ''){
-      alert('Please select a contributor');
-      setIsLoading(false);
-      return;
-    }
     if (!file) {
       alert("Please select an MP3 file.");
       setIsLoading(false);
@@ -211,7 +206,7 @@ const Home = () => {
                 <input
                   type="file"
                   className="mt-1 w-full"
-                  accept=".mp3, .m4a"
+                  accept=".mp3, .m4a, .mp4"
                   onChange={handleFileChange}
                 />
               </div>

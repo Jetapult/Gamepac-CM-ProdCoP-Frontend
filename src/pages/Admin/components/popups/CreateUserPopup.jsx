@@ -3,6 +3,7 @@ import React, { Fragment, useEffect, useState } from "react";
 import api from "../../../../api";
 import { Menu, Transition } from "@headlessui/react";
 import { classNames } from "../../../../utils";
+import loadingIcon from "../../../../assets/transparent-spinner.svg";
 
 const userRoles = ["user", "admin", "manager", "owner"];
 
@@ -20,6 +21,7 @@ const CreateUserPopup = ({
   const [nameError, setNameError] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [rolesError, setRolesError] = useState(false);
+  const [submitLoader, setSubmitLoader] = useState(false);
 
   const closePopup = () => {
     setShowModal(false);
@@ -55,6 +57,7 @@ const CreateUserPopup = ({
         setRolesError(true);
         return;
       }
+      setSubmitLoader(true);
       const requestbody = {
         name: name,
         email: email,
@@ -76,15 +79,21 @@ const CreateUserPopup = ({
         selectedUser?.id
           ? setUsers((prev) =>
               prev.map((studio) =>
-                studio.id === selectedUser.id ? {...requestbody, id: selectedUser.id} : studio
+                studio.id === selectedUser.id
+                  ? { ...requestbody, id: selectedUser.id }
+                  : studio
               )
             )
-          : setUsers((prev) => [...prev, {...requestbody, id: create_studio_response.data.data.id}]);
+          : setUsers((prev) => [
+              ...prev,
+              { ...requestbody, id: create_studio_response.data.data.id },
+            ]);
         setEmail("");
         setName("");
         setRoles([]);
         closePopup();
       }
+      setSubmitLoader(false);
     } catch (err) {
       console.log(err);
       if (err.response.data.message) {
@@ -94,6 +103,7 @@ const CreateUserPopup = ({
           type: "error",
         });
       }
+      setSubmitLoader(false);
     }
   };
 
@@ -227,13 +237,22 @@ const CreateUserPopup = ({
             </div>
           </form>
           <div className="flex items-center p-6 border-t border-solid border-blueGray-200 rounded-b">
-            <button
-              className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-              type="button"
-              onClick={createStudio}
-            >
-              {selectedUser?.id ? "Save" : "Add"}
-            </button>
+            {submitLoader ? (
+              <button
+                className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-1.5 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                type="button"
+              >
+                <img src={loadingIcon} alt="loading" className="w-8 h-8" />
+              </button>
+            ) : (
+              <button
+                className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                type="button"
+                onClick={createStudio}
+              >
+                {selectedUser?.id ? "Save" : "Add"}
+              </button>
+            )}
           </div>
         </div>
       </div>

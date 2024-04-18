@@ -8,6 +8,7 @@ import { classNames } from "../../../../utils";
 import CreateGamePopup from "../popups/CreateGamePopup";
 import SendWeeklyReportPopup from "../popups/SendWeeklyReportPopup";
 import EnableAutoReplyPopup from "../popups/EnableAutoReplyPopup";
+import ConfirmationPopup from "../../../../components/ConfirmationPopup";
 
 const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
   const [games, setGames] = useState([]);
@@ -16,8 +17,42 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
   const [showAddUserPopup, setShowAddUserPopup] = useState(false);
   const [selectedGame, setSelectedGame] = useState({});
   const [showSendReportPopup, setShowSendReportPopup] = useState(false);
-  const [showAutoReplyEnablePopup, setShowAutoReplyEnablePopup] = useState(false);
+  const [showAutoReplyEnablePopup, setShowAutoReplyEnablePopup] =
+    useState(false);
+  const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const limit = 10;
+
+  const deleteGame = async () => {
+    try {
+      const response = await api.delete(`/v1/games/${selectedGame.id}`);
+      if (response.data.data) {
+        setToastMessage({
+          show: true,
+          message: "Game deleted successfully",
+          type: "success",
+        });
+        setShowConfirmationPopup(false);
+        setGames((prev) =>
+          prev.filter((game) => {
+            if (game.id === selectedGame.id) {
+              return game.id !== selectedGame.id;
+            }
+            return prev;
+          })
+        );
+        setSelectedGame({});
+      }
+    } catch (err) {
+      console.log(err);
+      if (err.response.data.message) {
+        setToastMessage({
+          show: true,
+          message: err.response.data.message,
+          type: "error",
+        });
+      }
+    }
+  };
 
   const onEditGame = (game) => {
     setShowAddUserPopup(!showAddUserPopup);
@@ -112,7 +147,7 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
               >
                 <Menu.Items className="absolute right-0 z-10 mt-2 w-36 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                   <div className="py-1">
-                  <Menu.Item>
+                    <Menu.Item>
                       {({ active }) => (
                         <a
                           className={classNames(
@@ -123,7 +158,9 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
                           )}
                           onClick={() => {
                             setSelectedGame(game);
-                            setShowAutoReplyEnablePopup(!showAutoReplyEnablePopup);
+                            setShowAutoReplyEnablePopup(
+                              !showAutoReplyEnablePopup
+                            );
                           }}
                         >
                           Enable Auto Reply
@@ -166,13 +203,16 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
                     <Menu.Item>
                       {({ active }) => (
                         <a
-                          href="#"
                           className={classNames(
                             active
                               ? "bg-gray-100 text-gray-900"
                               : "text-gray-700",
                             "block px-4 py-2 text-sm"
                           )}
+                          onClick={() => {
+                            setSelectedGame(game);
+                            setShowConfirmationPopup(!showConfirmationPopup);
+                          }}
                         >
                           Delete
                         </a>
@@ -218,6 +258,14 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
           selectedGame={selectedGame}
           setSelectedGame={setSelectedGame}
           setGames={setGames}
+        />
+      )}
+      {showConfirmationPopup && (
+        <ConfirmationPopup
+          heading="Delete Game"
+          subHeading="Are you sure you want to delete this game? on deleting all the reviews under this game will be deleted and cannot be retrieved."
+          onCancel={() => setShowConfirmationPopup(!showConfirmationPopup)}
+          onConfirm={deleteGame}
         />
       )}
     </div>

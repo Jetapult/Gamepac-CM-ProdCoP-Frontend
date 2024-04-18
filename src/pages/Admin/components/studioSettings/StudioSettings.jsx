@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import api from "../../../../api";
 import { XMarkIcon } from "@heroicons/react/20/solid";
 import { emailRegex } from "../../../../utils";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addStudioData } from "../../../../store/reducer/adminSlice";
 import ConfirmationPopup from "../../../../components/ConfirmationPopup";
+import { useNavigate } from "react-router-dom";
 
-const StudioSettings = ({ studioData, setToastMessage }) => {
+const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
+  const userData = useSelector((state) => state.user.user);
   const [domains, setDomains] = useState([]);
   const [domainText, setDomainText] = useState("");
   const [name, setName] = useState("");
@@ -18,6 +20,7 @@ const StudioSettings = ({ studioData, setToastMessage }) => {
   const [domainsError, setDomainsError] = useState(false);
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const deleteStudio = async () => {
     try {
@@ -31,6 +34,9 @@ const StudioSettings = ({ studioData, setToastMessage }) => {
           message: "Studio deleted successfully",
           type: "success",
         });
+        setShowConfirmationPopup(!showConfirmationPopup);
+        setSelectedTab("overview");
+        navigate(`/${userData.slug}/dashboard`);
         window.location.reload();
       }
     } catch (err) {
@@ -127,7 +133,7 @@ const StudioSettings = ({ studioData, setToastMessage }) => {
       setPhone(studioData.phone);
       setDomains(studioData.domains);
     }
-  }, [studioData.id]);
+  }, [studioData?.id]);
   return (
     <div className="w-[500px]">
       <form className="px-8 pt-6 pb-8">
@@ -237,21 +243,28 @@ const StudioSettings = ({ studioData, setToastMessage }) => {
           Save
         </button>
       </form>
+      {!studioData?.studio_type?.includes("studio_manager") && (
+        <>
+          <h1 className="mb-4 text-base">Delete Studio</h1>
+          <button
+            className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 mt-4"
+            type="button"
+            onClick={() => setShowConfirmationPopup(!showConfirmationPopup)}
+          >
+            Delete
+          </button>
+        </>
+      )}
 
-      <h1 className="mb-4 text-base">Delete Studio</h1>
-      <button
-        className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 mt-4"
-        type="button"
-        onClick={() => setShowConfirmationPopup(!showConfirmationPopup)}
-      >
-        Delete
-      </button>
-      {showConfirmationPopup && <ConfirmationPopup
-        heading="Delete Studio"
-        subHeading="Are you sure you want to delete this studio?"
-        onCancel={() => setShowConfirmationPopup(!showConfirmationPopup)}
-        onConfirm={deleteStudio}
-      />}
+      {showConfirmationPopup && (
+        <ConfirmationPopup
+          heading="Delete Studio"
+          subHeading="Are you sure you want to delete this studio?
+        On Delete, all the games,users and reviews under this studio will be deleted."
+          onCancel={() => setShowConfirmationPopup(!showConfirmationPopup)}
+          onConfirm={deleteStudio}
+        />
+      )}
     </div>
   );
 };

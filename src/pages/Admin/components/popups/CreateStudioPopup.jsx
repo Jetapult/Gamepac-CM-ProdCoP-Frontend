@@ -3,6 +3,7 @@ import { useState } from "react";
 import api from "../../../../api";
 import { emailRegex } from "../../../../utils";
 import loadingIcon from "../../../../assets/transparent-spinner.svg";
+import { useNavigate } from "react-router-dom";
 
 const CreateStudioPopup = ({
   setShowModal,
@@ -19,6 +20,7 @@ const CreateStudioPopup = ({
   const [phoneError, setPhoneError] = useState(false);
   const [domainsError, setDomainsError] = useState(false);
   const [submitLoader, setSubmitLoader] = useState(false);
+  const navigate = useNavigate();
 
   const closePopup = () => {
     setShowModal(false);
@@ -84,6 +86,7 @@ const CreateStudioPopup = ({
         type: "success",
       });
       if (create_studio_response.data.data) {
+        navigate(`/${create_studio_response.data.data.slug}/dashboard`)
         setStudios((prev) => [...prev, create_studio_response.data.data]);
         setEmail("");
         setPhone("");

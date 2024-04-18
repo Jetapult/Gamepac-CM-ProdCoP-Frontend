@@ -31,10 +31,10 @@ const StudioDashboard = ({ studioData }) => {
   };
 
   useEffect(() => {
-    if (studioData.id) {
+    if (studioData?.id) {
       getStudiosOverview();
     }
-  }, [studioData.id]);
+  }, [studioData?.id]);
   return (
     <div className="grid grid-cols-12 gap-10 mt-10">
       {data.map((item) => (

@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState } from "react";
 import api from "../../../../api";
 import { XMarkIcon } from "@heroicons/react/20/solid";
 import { classNames, emailRegex } from "../../../../utils";
-import { Menu, Transition } from "@headlessui/react";
+import loadingIcon from "../../../../assets/transparent-spinner.svg";
 
 const CreateGamePopup = ({
   setShowModal,
@@ -24,7 +24,7 @@ const CreateGamePopup = ({
     studio_id: studio_id,
     pod_owner: "",
     pod_owner_email: "",
-    generateweeklyreport: "none"
+    generateweeklyreport: "none",
   });
 
   const [error, setError] = useState({
@@ -35,8 +35,9 @@ const CreateGamePopup = ({
     appstore_link: "",
     app_id: "",
     package_name: "",
-    pod_owner: ""
+    pod_owner: "",
   });
+  const [submitLoader, setSubmitLoader] = useState(false);
 
   const onhandleChange = (event) => {
     const { name, value } = event.target;
@@ -102,7 +103,7 @@ const CreateGamePopup = ({
         return;
       }
 
-      if(gameData.pod_owner && !emailRegex.test(gameData.pod_owner)){
+      if (gameData.pod_owner && !emailRegex.test(gameData.pod_owner)) {
         setError((prev) => ({
           ...prev,
           pod_owner: "Please enter a valid email address",
@@ -111,6 +112,7 @@ const CreateGamePopup = ({
       }
 
       if (Object.values(error).every((value) => value === "")) {
+        setSubmitLoader(true);
         const create_game_response = selectedGame?.id
           ? await api.put(`/v1/games/${selectedGame?.id}`, gameData)
           : await api.post("v1/games", gameData);
@@ -121,6 +123,7 @@ const CreateGamePopup = ({
             : "Game added successfully",
           type: "success",
         });
+        setSubmitLoader(false);
         if (create_game_response.status === 201) {
           selectedGame?.id
             ? setUsers((prev) =>
@@ -149,6 +152,7 @@ const CreateGamePopup = ({
       }
     } catch (err) {
       console.log(err, "err");
+      setSubmitLoader(false);
       if (err?.response?.data?.message) {
         setToastMessage({
           show: true,
@@ -397,13 +401,22 @@ const CreateGamePopup = ({
             )}
           </form>
           <div className="flex items-center p-6 border-t border-solid border-blueGray-200 rounded-b">
-            <button
-              className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-              type="button"
-              onClick={createStudio}
-            >
-              {selectedGame?.id ? "Save" : "Add"}
-            </button>
+            {submitLoader ? (
+              <button
+                className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-1.5 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                type="button"
+              >
+                <img src={loadingIcon} alt="loading" className="w-8 h-8" />
+              </button>
+            ) : (
+              <button
+                className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                type="button"
+                onClick={createStudio}
+              >
+                {selectedGame?.id ? "Save" : "Add"}
+              </button>
+            )}
           </div>
         </div>
       </div>

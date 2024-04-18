@@ -5,6 +5,7 @@ import { Menu, Transition } from "@headlessui/react";
 import Pagination from "../../../../components/Pagination";
 import CreateUserPopup from "../popups/CreateUserPopup";
 import { classNames } from "../../../../utils";
+import ConfirmationPopup from "../../../../components/ConfirmationPopup";
 
 const StudioUsers = ({
   studio_id,
@@ -19,7 +20,40 @@ const StudioUsers = ({
 }) => {
   const [showAddUserPopup, setShowAddUserPopup] = useState(false);
   const [selectedUser, setSelectedUser] = useState({});
+  const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const limit = 10;
+
+  const deleteUser = async () => {
+    try {
+      const response = await api.delete(`/v1/users/${selectedUser.id}`);
+      if (response.data.data) {
+        setToastMessage({
+          show: true,
+          message: "User deleted successfully",
+          type: "success",
+        });
+        setShowConfirmationPopup(false);
+        setUsers((prev) =>
+          prev.filter((user) => {
+            if (user.id === selectedUser.id) {
+              return user.id !== selectedUser.id;
+            }
+            return prev;
+          })
+        );
+        setSelectedUser({});
+      }
+    } catch (err) {
+      console.log(err);
+      if (err.response.data.message) {
+        setToastMessage({
+          show: true,
+          message: err.response.data.message,
+          type: "error",
+        });
+      }
+    }
+  };
 
   const InviteUser = async (user) => {
     try {
@@ -150,13 +184,16 @@ const StudioUsers = ({
                     <Menu.Item>
                       {({ active }) => (
                         <a
-                          href="#"
                           className={classNames(
                             active
                               ? "bg-gray-100 text-gray-900"
                               : "text-gray-700",
                             "block px-4 py-2 text-sm"
                           )}
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowConfirmationPopup(!showConfirmationPopup);
+                          }}
                         >
                           Delete
                         </a>
@@ -185,6 +222,14 @@ const StudioUsers = ({
           selectedUser={selectedUser}
           setSelectedUser={setSelectedUser}
           studio_id={studio_id}
+        />
+      )}
+      {showConfirmationPopup && (
+        <ConfirmationPopup
+          heading="Delete User"
+          subHeading="Are you sure you want to delete this user? Deleting this user will remove them from this studio."
+          onCancel={() => setShowConfirmationPopup(!showConfirmationPopup)}
+          onConfirm={deleteUser}
         />
       )}
     </div>
