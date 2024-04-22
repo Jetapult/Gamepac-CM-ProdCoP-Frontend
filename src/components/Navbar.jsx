@@ -41,10 +41,10 @@ function Navbar() {
   };
 
   return (
-    <div className="navbar bg-white flex justify-between items-center h-20 py-5 px-16 shadow-lg relative">
+    <div className="navbar bg-white flex justify-between items-center h-20 py-5 px-8 shadow-lg fixed top-0 left-0 right-0">
       <a href="/" className="flex items-center">
         <img
-          src={image}
+          src={userData?.studio_logo || image}
           alt="Icon"
           className="h-12 w-auto mr-2 text-gray-600 inline"
           style={{ marginBottom: "0 rem" }} // Adjust the margin as needed
@@ -53,20 +53,16 @@ function Navbar() {
       <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
         {isAuthenticated() ? (
           <>
-            {userData?.studio_type?.includes("studio_manager") && (
-              <ul className="text-gray-700">
-                {/* {(!studioSlug || studioSlug === userData?.slug) && ( */}
-                <li className="duration-150 hover:text-gray-900">
-                  <a
-                    href={`/${studioSlug || userData?.slug}/dashboard`}
-                    className="block"
-                  >
-                    Dashboard
-                  </a>
-                </li>
-                {/* )} */}
-              </ul>
-            )}
+            <ul className="text-gray-700">
+              <li className="duration-150 hover:text-gray-900">
+                <a
+                  href={`/${studioSlug || userData?.slug}/dashboard`}
+                  className="block"
+                >
+                  Dashboard
+                </a>
+              </li>
+            </ul>
             {userData?.studio_type?.includes("studio_manager") &&
               studioSlug === "holy-cow-studio" && (
                 <ul>

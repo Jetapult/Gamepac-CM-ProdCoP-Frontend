@@ -215,9 +215,9 @@ function App() {
             <Route
               path="/:studio_slug/dashboard"
               element={
-                <AdminRoute>
+                <PrivateRoute>
                   <AdminLandingPage />
-                </AdminRoute>
+                </PrivateRoute>
               }
             />
             <Route

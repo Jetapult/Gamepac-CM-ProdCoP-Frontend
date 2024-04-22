@@ -5,7 +5,7 @@ import { Menu, Transition } from "@headlessui/react";
 import { classNames } from "../../../../utils";
 import loadingIcon from "../../../../assets/transparent-spinner.svg";
 
-const userRoles = ["user", "admin", "manager", "owner"];
+const userRoles = ["user", "manager", "admin", "owner"];
 
 const CreateUserPopup = ({
   setShowModal,

@@ -6,6 +6,8 @@ import Pagination from "../../../../components/Pagination";
 import CreateUserPopup from "../popups/CreateUserPopup";
 import { classNames } from "../../../../utils";
 import ConfirmationPopup from "../../../../components/ConfirmationPopup";
+import { useSelector } from "react-redux";
+import BulkUploadPopup from "../popups/BulkUploadPopup";
 
 const StudioUsers = ({
   studio_id,
@@ -17,10 +19,13 @@ const StudioUsers = ({
   totalUsers,
   searchTerm,
   setSearchTerm,
+  getUsersBystudioSlug,
 }) => {
+  const userData = useSelector((state) => state.user.user);
   const [showAddUserPopup, setShowAddUserPopup] = useState(false);
   const [selectedUser, setSelectedUser] = useState({});
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
+  const [showBulkUploadPopup, setShowBulkUploadPopup] = useState(false);
   const limit = 10;
 
   const deleteUser = async () => {
@@ -93,12 +98,20 @@ const StudioUsers = ({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         /> */}
-        <button
-          className="bg-[#f58174] text-white px-4 py-2 rounded-md"
-          onClick={() => setShowAddUserPopup(!showAddUserPopup)}
-        >
-          <PlusIcon className="h-5 w-5 inline mr-1" /> New
-        </button>
+        <div className="">
+          <button
+            className="bg-[#f58174] text-white px-4 py-2 rounded-md mr-3"
+            onClick={() => setShowBulkUploadPopup(!showBulkUploadPopup)}
+          >
+            Upload CSV
+          </button>
+          <button
+            className="bg-[#f58174] text-white px-4 py-2 rounded-md"
+            onClick={() => setShowAddUserPopup(!showAddUserPopup)}
+          >
+            <PlusIcon className="h-5 w-5 inline mr-1" /> New
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-12 border-y-[0.5px] border-[#e5e5e5] py-3 items-center bg-[#f5e7e6] px-3 mt-4">
@@ -183,20 +196,26 @@ const StudioUsers = ({
                     </Menu.Item>
                     <Menu.Item>
                       {({ active }) => (
-                        <a
-                          className={classNames(
-                            active
-                              ? "bg-gray-100 text-gray-900"
-                              : "text-gray-700",
-                            "block px-4 py-2 text-sm"
+                        <>
+                          {userData.id !== user.id && (
+                            <a
+                              className={classNames(
+                                active
+                                  ? "bg-gray-100 text-gray-900"
+                                  : "text-gray-700",
+                                "block px-4 py-2 text-sm"
+                              )}
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setShowConfirmationPopup(
+                                  !showConfirmationPopup
+                                );
+                              }}
+                            >
+                              Delete
+                            </a>
                           )}
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowConfirmationPopup(!showConfirmationPopup);
-                          }}
-                        >
-                          Delete
-                        </a>
+                        </>
                       )}
                     </Menu.Item>
                   </div>
@@ -230,6 +249,13 @@ const StudioUsers = ({
           subHeading="Are you sure you want to delete this user? Deleting this user will remove them from this studio."
           onCancel={() => setShowConfirmationPopup(!showConfirmationPopup)}
           onConfirm={deleteUser}
+        />
+      )}
+      {showBulkUploadPopup && (
+        <BulkUploadPopup
+          setShowModal={setShowBulkUploadPopup}
+          studio_id={studio_id}
+          getUsersBystudioSlug={getUsersBystudioSlug}
         />
       )}
     </div>

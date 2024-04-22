@@ -44,12 +44,12 @@ const StudioDetails = () => {
     type: "success",
   });
 
-  const getUsersBystudioId = async () => {
+  const getUsersBystudioSlug = async (pageNum) => {
     try {
       const users_response = await api.get(
         `/v1/users/studio/${
           adminData.slug
-        }?current_page=${currentPage}&limit=10${
+        }?current_page=${pageNum ? pageNum : currentPage}&limit=10${
           searchTerm ? "&searchTerm=" + searchTerm : ""
         }`
       );
@@ -61,7 +61,7 @@ const StudioDetails = () => {
   };
   useEffect(() => {
     if (adminData?.id) {
-      getUsersBystudioId();
+      getUsersBystudioSlug();
     }
   }, [currentPage, adminData?.id]);
 
@@ -97,7 +97,7 @@ const StudioDetails = () => {
       {selectedTab === "overview" && <StudioDashboard studioData={adminData} />}
       {selectedTab === "users" && (
         <StudioUsers
-          studio_id={adminData.id}
+          studio_id={adminData?.id}
           setToastMessage={setToastMessage}
           users={users}
           setUsers={setUsers}
@@ -106,11 +106,12 @@ const StudioDetails = () => {
           totalUsers={totalUsers}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
+          getUsersBystudioSlug={getUsersBystudioSlug}
         />
       )}
       {selectedTab === "games" && (
         <StudioGames
-          studio_id={adminData.id}
+          studio_id={adminData?.id}
           setToastMessage={setToastMessage}
           users={users}
           studioData={adminData}

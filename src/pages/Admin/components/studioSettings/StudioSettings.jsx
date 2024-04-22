@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import api from "../../../../api";
-import { XMarkIcon } from "@heroicons/react/20/solid";
 import { emailRegex } from "../../../../utils";
 import { useDispatch, useSelector } from "react-redux";
 import { addStudioData } from "../../../../store/reducer/adminSlice";
@@ -9,18 +8,22 @@ import { useNavigate } from "react-router-dom";
 
 const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
   const userData = useSelector((state) => state.user.user);
-  const [domains, setDomains] = useState([]);
-  const [domainText, setDomainText] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [logo, setLogo] = useState({});
   const [nameError, setNameError] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [phoneError, setPhoneError] = useState(false);
-  const [domainsError, setDomainsError] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const onImageUpload = (e) => {
+    setLogo(e.target.files[0]);
+    setLogoError(false);
+  };
 
   const deleteStudio = async () => {
     try {
@@ -63,20 +66,6 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
     setPhone(e.target.value);
     setPhoneError(false);
   };
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" || e.key === " " || e.key === ",") {
-      if (e.target.value.length > 2) {
-        setDomains((prev) => [...prev, e.target.value]);
-        setDomainText("");
-        setDomainsError(false);
-      }
-    }
-  };
-  const deleteDomain = (index) => {
-    const newDomains = [...domains];
-    newDomains.splice(index, 1);
-    setDomains(newDomains);
-  };
 
   const updateStudio = async () => {
     try {
@@ -92,20 +81,21 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
         setPhoneError(true);
         return;
       }
-      if (domains.length < 1) {
-        setDomainsError(true);
+      if (logo === "" || (typeof logo === "object" && !logo.size)) {
+        setLogoError(true);
         return;
       }
-      const requestbody = {
-        studio_name: name,
-        contact_email: email,
-        studio_type: studioData.studio_type,
-        phone: phone,
-        domains: domains,
-      };
+      const formData = new FormData();
+      formData.append("studio_name", name);
+      formData.append("contact_email", email);
+      formData.append("phone", phone);
+      formData.append("studio_logo", logo);
+      studioData.studio_type.map((item) =>
+        formData.append("studio_type", item)
+      );
       const create_studio_response = await api.put(
-        `v1/game-studios/${studioData?.id}`,
-        requestbody
+        `v1/game-studios/${studioData?.slug}`,
+        formData
       );
       if (create_studio_response.data.data) {
         setToastMessage({
@@ -113,6 +103,9 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
           message: "Studio created successfully",
           type: "success",
         });
+        setName(create_studio_response.data.data.contact_email);
+        setPhone(create_studio_response.data.data.phone);
+        setLogo(create_studio_response.data.data.studio_logo);
       }
     } catch (err) {
       console.log(err);
@@ -131,8 +124,9 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
       setName(studioData.studio_name);
       setEmail(studioData.contact_email);
       setPhone(studioData.phone);
-      setDomains(studioData.domains);
+      setLogo(studioData.studio_logo || {});
     }
+    console.log(studioData, "studioData");
   }, [studioData?.id]);
   return (
     <div className="w-[500px]">
@@ -199,39 +193,25 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
             </span>
           )}
         </div>
-        <div className="">
+        <div>
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="Domains"
+            htmlFor="Phone"
           >
-            Your Company domains
-            <span className="text-[#a5a4aa] text-[12px] pl-2">
-              (type your domain and press ENTER to add multiple domains)
-            </span>
+            Company Logo<span className="text-red-500">*</span>
           </label>
-          {domains?.map((domain, index) => (
-            <span
-              key={index}
-              className="bg-[#e6e6e6] py-1 px-2 rounded-full mr-2 mb-2 inline-block"
-            >
-              {domain}
-              <XMarkIcon
-                className="w-5 h-5 text-[#a5a4aa] inline-block ml-2 cursor-pointer"
-                onClick={() => deleteDomain(index)}
-              />
-            </span>
-          ))}
+          {studioData.studio_logo && (
+            <img src={studioData.studio_logo} className="" alt="logo" />
+          )}
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="domains"
-            type="text"
-            onKeyDown={handleKeyDown}
-            value={domainText}
-            onChange={(e) => setDomainText(e.target.value)}
+            type="file"
+            className="mt-1 w-full"
+            accept="image/*"
+            onChange={onImageUpload}
           />
-          {domainsError && (
+          {logoError && (
             <span className="text-[#f58174] text-[12px]">
-              Please enter at least one domain
+              This Field is required
             </span>
           )}
         </div>
@@ -243,18 +223,19 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
           Save
         </button>
       </form>
-      {!studioData?.studio_type?.includes("studio_manager") && (
-        <>
-          <h1 className="mb-4 text-base">Delete Studio</h1>
-          <button
-            className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 mt-4"
-            type="button"
-            onClick={() => setShowConfirmationPopup(!showConfirmationPopup)}
-          >
-            Delete
-          </button>
-        </>
-      )}
+      {userData?.studio_type?.includes("studio_manager") &&
+        !studioData?.studio_type?.includes("studio_manager") && (
+          <>
+            <h1 className="mb-4 text-base">Delete Studio</h1>
+            <button
+              className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 mt-4"
+              type="button"
+              onClick={() => setShowConfirmationPopup(!showConfirmationPopup)}
+            >
+              Delete
+            </button>
+          </>
+        )}
 
       {showConfirmationPopup && (
         <ConfirmationPopup

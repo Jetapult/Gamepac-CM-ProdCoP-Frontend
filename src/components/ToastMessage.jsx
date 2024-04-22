@@ -1,4 +1,13 @@
+import { useEffect } from "react";
+
 const ToastMessage = ({ message, setToastMessage }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setToastMessage(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
   return (
     <div
       id="toast-success"
