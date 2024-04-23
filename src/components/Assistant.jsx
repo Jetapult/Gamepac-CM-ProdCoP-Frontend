@@ -7,6 +7,7 @@ import bellIcon from "../assets/bell-icon.png";
 import UpdatedComments from "./UpdatedComments";
 import Pagination from "./Pagination";
 import { useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
 
 const Assistant = () => {
   const userData = useSelector((state) => state.user.user);
@@ -34,6 +35,8 @@ const Assistant = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [games, setGames] = useState([]);
   const limit = 10;
+  const params = useParams();
+  const studio_slug = params.studio_slug;
 
   useEffect(() => {
     // Clear comments when selectedGame changes
@@ -62,98 +65,6 @@ const Assistant = () => {
         `Hi ${userName}, Sorry that you are facing this problem. Could you please restart your device once and try again? Also please make sure you have enough space on your device. Thank you!`,
     },
   ];
-  const gameOptions = [
-    {
-      name: "Home Design Dreams house games (HDD)",
-      packageName: "com.holycowstudio.homedesigndreams",
-    },
-    {
-      name: "My Home Makeover: House Games (MHM)",
-      packageName: "com.holycowstudio.myhomemakeoverdesigndreamsdecorate",
-    },
-    {
-      name: "My Home Design Makeover Games (HDB)",
-      packageName:
-        "com.holycowstudio.my.home.design.makeover.blast.house.games.toy.masters.decorate.mansion.toon.dream",
-    },
-    {
-      name: "Design My Home: Makeover Games (HDW)",
-      packageName: "com.holycowstudio.design.my.home.makeover.word.life",
-    },
-    {
-      name: "My Home Makeover Design: Games (HDW2)",
-      packageName: "com.holycowstudio.my.home.makeover.design.word.house.life",
-    },
-    {
-      name: "Design Home Dream House Games (HDW3)",
-      packageName:
-        "com.holycowstudio.my.design.home.makeover.word.house.life.games.mansion.decorate.decor.masters",
-    },
-    {
-      name: "My Home Design: My House Games (HDW4)",
-      packageName:
-        "com.holycowstudio.my.home.design.makeover.luxury.interiors.word.dream.million.dollar.house.renovation",
-    },
-    {
-      name: "My Home Design: Makeover Games (HDW5)",
-      packageName:
-        "com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating",
-    },
-    {
-      name: "Video Game Tycoon idle clicker (VGT)",
-      packageName: "com.holycowstudio.gamedevtycoon",
-    },
-    {
-      name: "Hotel Tycoon Empire: Idle game (HT)",
-      packageName:
-        "com.holycowstudio.idle.hotel.tycoon.clicker.tap.empire.incremental.games",
-    },
-    {
-      name: "Smartphone Tycoon: Idle Phone (SPT)",
-      packageName: "com.ns.idlesmartphonetycoon",
-    },
-    {
-      name: "Oil Tycoon idle tap miner game (OT)",
-      packageName: "com.romit.sheikhoiltycoon",
-    },
-    {
-      name: "Oil Tycoon 2: Idle Miner Game (OT2)",
-      packageName: "com.holycowstudio.oiltycoon2",
-    },
-    {
-      name: "Idle Cafe Tycoon: Coffee Shop (CT)",
-      packageName: "com.holycowstudio.coffeetycoon",
-    },
-    {
-      name: "Tube Tycoon - Tubers Simulator (TT)",
-      packageName: "com.theholycowstudio.youtubertycoon",
-    },
-    {
-      name: "Mystery Island lost magic city",
-      packageName:
-        "com.holycowstudio.mystery.island.design.match.decoration.lost.adventure",
-    },
-    {
-      name: "Cat Home Design: Makeover Game",
-      packageName: "com.holycowstudio.designyourcatroom",
-    },
-  ];
-  const appleGameOptions = [
-    { name: "My Home Design: Makeover Games", appId: "1665012099" },
-    { name: "My Home Design Luxury Makeover", appId: "1577895438" },
-    { name: "My Design Home Makeover: Words", appId: "1548087220" },
-    { name: "Hotel Tycoon Empire: Idle Game", appId: "1466034711" },
-    { name: "My Home Makeover Design: Words", appId: "1533382410" },
-    { name: "Design My Home Makeover: Words", appId: "1513798819" },
-    { name: "Mystery Island: Decor & Match3", appId: "1506174960" },
-    { name: "My Home Makeover: Dream Design", appId: "1481534752" },
-    { name: "Cat Home Design: Kitten House", appId: "1390206308" },
-    { name: "Smartphone Tycoon: Idle Empire", appId: "1429667316" },
-    { name: "My Room Design: Your Home 2019", appId: "1444542924" },
-    { name: "Oil Tycoon 2: Idle Empire Game", appId: "1441938955" },
-    { name: "Home Design Dreams: Your House", appId: "1432729968" },
-    { name: "Cafe Tycoon: Idle Empire Story", appId: "1294573637" },
-  ];
 
   const handleFetchComments = async () => {
     try {
@@ -174,8 +85,8 @@ const Assistant = () => {
       }
       const url =
         selectedApp === "google"
-          ? `/v1/organic-ua/google-reviews/${userData.studio_id}`
-          : `/v1/organic-ua/fetch-app-store-reviews/${userData.studio_id}`;
+          ? `/v1/organic-ua/google-reviews/${studio_slug || userData.studio_id}`
+          : `/v1/organic-ua/fetch-app-store-reviews/${studio_slug || userData.studio_id}`;
       const response = await api.get(url, { params: paramData });
       // When formatting comments initially
       let comments = formatComments(response.data.data);
@@ -359,20 +270,28 @@ const Assistant = () => {
 
   const getGamesByStudioId = async () => {
     try {
-      const games_response = await api.get(
-        `/v1/games/studio/${
-          userData.studio_id
-        }?current_page=1&limit=50&game_type=${
-          selectedApp === "apple" ? "appstore" : "playstore"
-        }`
-      );
+      const url = studio_slug
+        ? `/v1/games/studio/${studio_slug}`
+        : `/v1/games/studio/${userData.studio_id}`;
+      const paramData = {
+        current_page: 1,
+        limit: 50,
+        game_type: selectedApp === "apple" ? "appstore" : "playstore",
+      };
+      const games_response = await api.get(url, { params: paramData });
       setGames(games_response.data.data);
     } catch (err) {
       console.log(err);
     }
   };
   useEffect(() => {
-    if (userData.studio_id) {
+    if (studio_slug) {
+      getGamesByStudioId();
+    }
+  }, [studio_slug]);
+
+  useEffect(() => {
+    if (userData.studio_id && !studio_slug) {
       getGamesByStudioId();
     }
   }, [userData]);

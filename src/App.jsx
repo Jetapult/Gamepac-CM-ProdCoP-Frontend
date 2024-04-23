@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Landing from "./components/Landing";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
@@ -21,12 +21,13 @@ import { parseJwt } from "./utils";
 import api from "./api";
 import { useDispatch } from "react-redux";
 import { addUserData } from "./store/reducer/userSlice";
-import Studios from "./pages/Admin/Studios";
-import StudioDetails from "./pages/Admin/StudioDetails";
 import UnprotectedRoute from "./auth/UnprotectedRoute";
 import PrivateRoute from "./auth/PrivateRoute";
 import Weaver from './components/Weaver';
 import { isAuthenticated } from "./auth";
+import AdminLandingPage from "./pages/Admin/AdminLandingPage";
+import AdminRoute from "./auth/AdminRoute";
+import PageNotFound from "./components/PageNotFound";
 
 function App() {
   const userTokenData = localStorage.getItem("jwt");
@@ -54,7 +55,7 @@ function App() {
     }
   }, []);
   return (
-    <div className="h-screen bg-[#f58174]">
+    <div className="h-screen bg-[#f6f6f7]">
       <>
         <Router>
           <Navbar />
@@ -157,11 +158,27 @@ function App() {
               }
             />
             <Route
+              path="/:studio_slug/smart"
+              element={
+                <AdminRoute>
+                  <Smart />
+                </AdminRoute>
+              }
+            />
+            <Route
               path="/assistant"
               element={
                 <PrivateRoute>
                   <Assistant />
                 </PrivateRoute>
+              }
+            />
+            <Route
+              path="/:studio_slug/assistant"
+              element={
+                <AdminRoute>
+                  <Assistant />
+                </AdminRoute>
               }
             />
             <Route
@@ -197,20 +214,16 @@ function App() {
               }
             />
             <Route
-              path="/admin/studios"
+              path="/:studio_slug/dashboard"
               element={
                 <PrivateRoute>
-                  <Studios />
+                  <AdminLandingPage />
                 </PrivateRoute>
               }
             />
             <Route
-              path="/admin/studios/:studio_id"
-              element={
-                <PrivateRoute>
-                  <StudioDetails />
-                </PrivateRoute>
-              }
+              path="*"
+              element={<PageNotFound />}
             />
             <Route
               path="/aistories"

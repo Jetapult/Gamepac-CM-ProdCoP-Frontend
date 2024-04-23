@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
-import { auth } from "../config";
 import { useSelector } from "react-redux";
+import Select from "react-select";
 
 const Online = () => {
   const userData = useSelector((state) => state.user.user);
@@ -14,19 +14,21 @@ const Online = () => {
   const [selectedPurpose, setSelectedPurpose] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [contributors, setContributors] = useState([]);
-  const [selectedContributors, setSelectedContributors] = useState("");
+  const [selectedContributors, setSelectedContributors] = useState({});
   const [label, setLabel] = useState("");
 
   useEffect(() => {
     const fetchUsers = async () => {
-      try {
-        const response = await api.get(`/v1/users/studio/${userData.studio_id}?current_page=1&limit=100`);
-        setContributors(response.data);
-      } catch (error) {
-        console.error("Error fetching contributors:", error);
-      }
+      const response = await api.get(`/v1/users`);
+      response.data.data.map((studio) => {
+        studio.options.map((user) => {
+          user.label = user.name || user.email;
+          user.value = user.id;
+        });
+      });
+      setContributors(response.data.data);
     };
-    if(userData.studio_id){
+    if (userData.studio_id) {
       fetchUsers();
     }
   }, [userData]);
@@ -45,7 +47,7 @@ const Online = () => {
     console.log(event.target.value);
     setSelectedContributors(event.target.value);
   };
-  const c = selectedContributors;
+  const c = selectedContributors.value;
 
   const handleLabelChange = (event) => {
     setLabel(event.target.value);
@@ -71,33 +73,24 @@ const Online = () => {
 
       try {
         // Step 1: Get the summary
-        const summaryResponse = await api.post(
-          "/summary",
-          {
-            transcription,
-          }
-        );
+        const summaryResponse = await api.post("/summary", {
+          transcription,
+        });
         const sum = summaryResponse.data.summary;
         console.log(sum);
 
-        const response = await api.post(
-          "/todos",
-          {
-            transcription,
-          }
-        );
+        const response = await api.post("/todos", {
+          transcription,
+        });
         const todosList = response.data.todos;
-        const titleResponse = await api.post(
-          "/title",
-          {
-            transcription,
-          }
-        );
+        const titleResponse = await api.post("/title", {
+          transcription,
+        });
         const title = titleResponse.data.title;
 
         // Step 2: Save the data to the data table
         const data = {
-          id,
+          user_id: userData?.id,
           transcription,
           sum,
           todosList,
@@ -105,6 +98,7 @@ const Online = () => {
           flag: "false",
           c,
           title,
+          contributor_id: selectedContributors?.value
         };
 
         const saveData = await api.post("/data", data);
@@ -131,7 +125,7 @@ const Online = () => {
             >
               Contributors
             </label>
-            {contributors.length > 0 && (
+            {/* {contributors.length > 0 && (
               <select
                 id="contributors"
                 name="contributors"
@@ -146,7 +140,12 @@ const Online = () => {
                   </option>
                 ))}
               </select>
-            )}
+            )} */}
+            <Select
+              options={contributors}
+              value={selectedContributors}
+              onChange={(val) => setSelectedContributors(val)}
+            />
           </div>
           <div className="mb-4">
             <label
@@ -212,8 +211,7 @@ const Online = () => {
             Give Action Items
           </button>
         </form>
-      </div>
-      <div>
+        <div className="mt-4">
         {isLoading ? (
           <button
             className="w-full bg-[#f1efe7]  py-2 px-4 rounded-md cursor-not-allowed opacity-50"
@@ -232,6 +230,7 @@ const Online = () => {
             View Action Items
           </button>
         )}
+      </div>
       </div>
     </div>
   );

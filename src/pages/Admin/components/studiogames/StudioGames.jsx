@@ -6,14 +6,53 @@ import Pagination from "../../../../components/Pagination";
 import CreateUserPopup from "../popups/CreateUserPopup";
 import { classNames } from "../../../../utils";
 import CreateGamePopup from "../popups/CreateGamePopup";
+import SendWeeklyReportPopup from "../popups/SendWeeklyReportPopup";
+import EnableAutoReplyPopup from "../popups/EnableAutoReplyPopup";
+import ConfirmationPopup from "../../../../components/ConfirmationPopup";
 
-const StudioGames = ({ studio_id, setToastMessage, users }) => {
+const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
   const [games, setGames] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalGames, setTotalGames] = useState(0);
   const [showAddUserPopup, setShowAddUserPopup] = useState(false);
   const [selectedGame, setSelectedGame] = useState({});
+  const [showSendReportPopup, setShowSendReportPopup] = useState(false);
+  const [showAutoReplyEnablePopup, setShowAutoReplyEnablePopup] =
+    useState(false);
+  const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const limit = 10;
+
+  const deleteGame = async () => {
+    try {
+      const response = await api.delete(`/v1/games/${studio_id}/${selectedGame.id}`);
+      if (response.data.data) {
+        setToastMessage({
+          show: true,
+          message: "Game deleted successfully",
+          type: "success",
+        });
+        setShowConfirmationPopup(false);
+        setGames((prev) =>
+          prev.filter((game) => {
+            if (game.id === selectedGame.id) {
+              return game.id !== selectedGame.id;
+            }
+            return prev;
+          })
+        );
+        setSelectedGame({});
+      }
+    } catch (err) {
+      console.log(err);
+      if (err.response.data.message) {
+        setToastMessage({
+          show: true,
+          message: err.response.data.message,
+          type: "error",
+        });
+      }
+    }
+  };
 
   const onEditGame = (game) => {
     setShowAddUserPopup(!showAddUserPopup);
@@ -23,17 +62,19 @@ const StudioGames = ({ studio_id, setToastMessage, users }) => {
   const getGamesByStudioId = async () => {
     try {
       const games_response = await api.get(
-        `/v1/games/studio/${studio_id}?current_page=${currentPage}&limit=10`
+        `/v1/games/studio/${studioData.slug}?current_page=${currentPage}&limit=10`
       );
       setGames(games_response.data.data);
       setTotalGames(games_response.data.totalGames);
     } catch (err) {
       console.log(err);
+      setGames([]);
+      setTotalGames(0);
     }
   };
   useEffect(() => {
     getGamesByStudioId();
-  }, [currentPage]);
+  }, [currentPage, studio_id]);
   return (
     <div>
       <div className="flex justify-between items-center">
@@ -65,7 +106,7 @@ const StudioGames = ({ studio_id, setToastMessage, users }) => {
         <div className="col-span-2">
           <p>Package name</p>
         </div>
-        <div className="col-span-2">
+        <div className="col-span-2 px-1">
           <p>Pod owner</p>
         </div>
         <div className="">
@@ -73,18 +114,18 @@ const StudioGames = ({ studio_id, setToastMessage, users }) => {
         </div>
       </div>
       <div className="overflow-y-auto h-[calc(100vh-334px)]">
-        {games.map((game) => (
+        {games.map((game,index) => (
           <div
             className="grid grid-cols-12 px-3 py-3 border-b-[0.5px] border-[#e5e5e5] cursor-pointer"
             key={game.id}
           >
-            <p className="">{game.id}</p>
+            <p className="">{(currentPage - 1) * limit + index + 1}</p>
             <p className="col-span-2">{game.game_name}</p>
             <p className="col-span-1">{game.short_names}</p>
             <p className="col-span-2">{game.game_type}</p>
             <p className="col-span-1">{game.app_id}</p>
             <p className="col-span-2 break-all">{game.package_name}</p>
-            <p className="col-span-2 break-all">{game.pod_owner_email}</p>
+            <p className="col-span-2 break-all px-1">{game.pod_owner}</p>
             <Menu as="div" className="relative inline-block text-left">
               <div>
                 <Menu.Button
@@ -115,6 +156,44 @@ const StudioGames = ({ studio_id, setToastMessage, users }) => {
                               : "text-gray-700",
                             "block px-4 py-2 text-sm"
                           )}
+                          onClick={() => {
+                            setSelectedGame(game);
+                            setShowAutoReplyEnablePopup(
+                              !showAutoReplyEnablePopup
+                            );
+                          }}
+                        >
+                          Enable Auto Reply
+                        </a>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <a
+                          className={classNames(
+                            active
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-gray-700",
+                            "block px-4 py-2 text-sm"
+                          )}
+                          onClick={() => {
+                            setSelectedGame(game);
+                            setShowSendReportPopup(!showSendReportPopup);
+                          }}
+                        >
+                          Send weekly report
+                        </a>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <a
+                          className={classNames(
+                            active
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-gray-700",
+                            "block px-4 py-2 text-sm"
+                          )}
                           onClick={() => onEditGame(game)}
                         >
                           Edit
@@ -124,13 +203,16 @@ const StudioGames = ({ studio_id, setToastMessage, users }) => {
                     <Menu.Item>
                       {({ active }) => (
                         <a
-                          href="#"
                           className={classNames(
                             active
                               ? "bg-gray-100 text-gray-900"
                               : "text-gray-700",
                             "block px-4 py-2 text-sm"
                           )}
+                          onClick={() => {
+                            setSelectedGame(game);
+                            setShowConfirmationPopup(!showConfirmationPopup);
+                          }}
                         >
                           Delete
                         </a>
@@ -160,6 +242,30 @@ const StudioGames = ({ studio_id, setToastMessage, users }) => {
           setSelectedGame={setSelectedGame}
           studio_id={studio_id}
           users={users}
+        />
+      )}
+      {showSendReportPopup && (
+        <SendWeeklyReportPopup
+          setShowSendReportPopup={setShowSendReportPopup}
+          selectedGame={selectedGame}
+          setSelectedGame={setSelectedGame}
+          setGames={setGames}
+        />
+      )}
+      {showAutoReplyEnablePopup && (
+        <EnableAutoReplyPopup
+          setShowAutoReplyEnablePopup={setShowAutoReplyEnablePopup}
+          selectedGame={selectedGame}
+          setSelectedGame={setSelectedGame}
+          setGames={setGames}
+        />
+      )}
+      {showConfirmationPopup && (
+        <ConfirmationPopup
+          heading="Delete Game"
+          subHeading="Are you sure you want to delete this game? on deleting all the reviews under this game will be deleted and cannot be retrieved."
+          onCancel={() => setShowConfirmationPopup(!showConfirmationPopup)}
+          onConfirm={deleteGame}
         />
       )}
     </div>

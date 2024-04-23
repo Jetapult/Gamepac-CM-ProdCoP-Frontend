@@ -4,6 +4,7 @@ import { auth } from "../config";
 import Record from "./Record";
 import api from "../api";
 import { useSelector } from "react-redux";
+import Select from 'react-select';
 
 const Home = () => {
   const userData = useSelector((state) => state.user.user);
@@ -16,27 +17,20 @@ const Home = () => {
   const [selectedPurpose, setSelectedPurpose] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [contributors, setContributors] = useState([]);
-  const [selectedContributors, setSelectedContributors] = useState("");
+  const [selectedContributors, setSelectedContributors] = useState({});
   const [token, setToken] = useState("");
   const [label, setLabel] = useState("");
-
-  // useEffect(() => {
-  //   const unsubscribe = auth.onAuthStateChanged((user) => {
-  //     setUser(user);
-  //     setUserId(user.id);
-  //     user.getIdToken().then((token) => {
-  //       setToken(token);
-  //     });
-  //   });
-  //   return () => unsubscribe();
-  // }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await api.get(
-          `/v1/users/studio/${userData.studio_id}?current_page=1&limit=100`
-        );
+        const response = await api.get(`/v1/users`);
+        response.data.data.map(studio => {
+          studio.options.map((user) => {
+            user.label = user.name || user.email;
+            user.value = user.id;
+          })
+        })
         setContributors(response.data.data);
       } catch (error) {
         console.error("Error fetching contributors:", error);
@@ -62,16 +56,11 @@ const Home = () => {
     console.log(event.target.value);
     setSelectedContributors(event.target.value);
   };
-  const c = selectedContributors;
+  const c = selectedContributors.value;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsLoading(true);
-    if(selectedContributors === ''){
-      alert('Please select a contributor');
-      setIsLoading(false);
-      return;
-    }
     if (!file) {
       alert("Please select an MP3 file.");
       setIsLoading(false);
@@ -111,10 +100,10 @@ const Home = () => {
     });
     const title = titleResponse.data.title;
     console.log(title);
-    console.log(selectedContributors,'selectedContributors')
+    console.log(selectedContributors, "selectedContributors");
     const saveData = await api.post("/data", {
       user_id: userData.id,
-      contributor_id: selectedContributors,
+      contributor_id: selectedContributors.value,
       transcription,
       sum,
       todosList,
@@ -140,7 +129,7 @@ const Home = () => {
           >
             Contributors
           </label>
-          {contributors.length > 0 && (
+          {/* {contributors.length > 0 && (
             <select
               id="contributors"
               name="contributors"
@@ -155,7 +144,12 @@ const Home = () => {
                 </option>
               ))}
             </select>
-          )}
+          )} */}
+          <Select
+            options={contributors}
+            value={selectedContributors}
+            onChange={(val) => setSelectedContributors(val)}
+          />
         </div>
         <div className="mb-4">
           <label
@@ -211,7 +205,7 @@ const Home = () => {
                 <input
                   type="file"
                   className="mt-1 w-full"
-                  accept=".mp3, .m4a"
+                  accept=".mp3, .m4a, .mp4"
                   onChange={handleFileChange}
                 />
               </div>
@@ -234,9 +228,7 @@ const Home = () => {
           />
         </div>
         {/* <RecordView/> */}
-      </div>
-
-      <div>
+        <div className="mt-4">
         {isLoading ? (
           <button
             className="w-full bg-[#f1efe7] py-2 px-4 rounded-md cursor-not-allowed opacity-50"
@@ -245,7 +237,7 @@ const Home = () => {
             Loading...
           </button>
         ) : null}
-        {actionId && (
+        {!isLoading && actionId && (
           <button
             className="w-full  bg-[#f1efe7] py-2 px-4 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:border-red-600"
             onClick={() =>
@@ -256,6 +248,7 @@ const Home = () => {
           </button>
         )}
       </div>
+      </div>     
     </div>
   );
 };

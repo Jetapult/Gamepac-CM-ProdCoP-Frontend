@@ -18,8 +18,8 @@ export const isAuthenticated = () => {
     ) {
       localStorage.removeItem("jwt");
       localStorage.removeItem("loginTime");
-      localStorage.removeItem("lastUpdateProfilePopupTime");
-      window.location.replace("/feed");
+      localStorage.removeItem("selectedStudio");
+      window.location.replace("/");
     }
     return JSON.parse(localStorage.getItem("jwt"));
   } else {
@@ -31,5 +31,6 @@ export const logout = () => {
   if (typeof window !== "undefined") {
     localStorage.removeItem("jwt");
     localStorage.removeItem("loginTime");
+    localStorage.removeItem("selectedStudio");
   }
 };

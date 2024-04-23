@@ -3,8 +3,9 @@ import React, { Fragment, useEffect, useState } from "react";
 import api from "../../../../api";
 import { Menu, Transition } from "@headlessui/react";
 import { classNames } from "../../../../utils";
+import loadingIcon from "../../../../assets/transparent-spinner.svg";
 
-const userRoles = ["user", "admin", "manager", "owner"];
+const userRoles = ["user", "manager", "admin", "owner"];
 
 const CreateUserPopup = ({
   setShowModal,
@@ -20,6 +21,7 @@ const CreateUserPopup = ({
   const [nameError, setNameError] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [rolesError, setRolesError] = useState(false);
+  const [submitLoader, setSubmitLoader] = useState(false);
 
   const closePopup = () => {
     setShowModal(false);
@@ -55,16 +57,17 @@ const CreateUserPopup = ({
         setRolesError(true);
         return;
       }
+      setSubmitLoader(true);
       const requestbody = {
         name: name,
         email: email,
         roles: roles,
-        invite_status: "invited",
+        invite_status: selectedUser?.id ? selectedUser?.invite_status : "invited",
         studio_id: studio_id,
       };
       const create_studio_response = selectedUser?.id
         ? await api.put(`/v1/users/${selectedUser?.id}`, requestbody)
-        : await api.post("v1/auth/send-invite", requestbody);
+        : await api.post("v1/auth/add-user", requestbody);
       setToastMessage({
         show: true,
         message: selectedUser.id
@@ -76,15 +79,21 @@ const CreateUserPopup = ({
         selectedUser?.id
           ? setUsers((prev) =>
               prev.map((studio) =>
-                studio.id === selectedUser.id ? {...requestbody, id: selectedUser.id} : studio
+                studio.id === selectedUser.id
+                  ? { ...requestbody, id: selectedUser.id }
+                  : studio
               )
             )
-          : setUsers((prev) => [...prev, {...requestbody, id: create_studio_response.data.data.id}]);
+          : setUsers((prev) => [
+              ...prev,
+              { ...requestbody, id: create_studio_response.data.data.id },
+            ]);
         setEmail("");
         setName("");
         setRoles([]);
         closePopup();
       }
+      setSubmitLoader(false);
     } catch (err) {
       console.log(err);
       if (err.response.data.message) {
@@ -94,6 +103,7 @@ const CreateUserPopup = ({
           type: "error",
         });
       }
+      setSubmitLoader(false);
     }
   };
 
@@ -106,7 +116,7 @@ const CreateUserPopup = ({
   }, [selectedUser]);
   return (
     <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-[#12111157]">
-      <div className="relative w-auto my-6 mx-auto max-w-3xl w-[500px]">
+      <div className="relative my-6 mx-auto max-w-3xl w-[500px]">
         <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
           <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
             <h3 className="text-2xl font-semibold">
@@ -227,13 +237,22 @@ const CreateUserPopup = ({
             </div>
           </form>
           <div className="flex items-center p-6 border-t border-solid border-blueGray-200 rounded-b">
-            <button
-              className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-              type="button"
-              onClick={createStudio}
-            >
-              {selectedUser?.id ? "Save" : "Add"}
-            </button>
+            {submitLoader ? (
+              <button
+                className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-1.5 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                type="button"
+              >
+                <img src={loadingIcon} alt="loading" className="w-8 h-8" />
+              </button>
+            ) : (
+              <button
+                className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                type="button"
+                onClick={createStudio}
+              >
+                {selectedUser?.id ? "Save" : "Add"}
+              </button>
+            )}
           </div>
         </div>
       </div>
