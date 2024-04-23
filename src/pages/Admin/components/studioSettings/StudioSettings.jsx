@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { addStudioData } from "../../../../store/reducer/adminSlice";
 import ConfirmationPopup from "../../../../components/ConfirmationPopup";
 import { useNavigate } from "react-router-dom";
+import { updateUserData } from "../../../../store/reducer/userSlice";
 
 const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
   const userData = useSelector((state) => state.user.user);
@@ -103,9 +104,18 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
           message: "Studio created successfully",
           type: "success",
         });
-        setName(create_studio_response.data.data.contact_email);
+        setName(create_studio_response.data.data.studio_name);
         setPhone(create_studio_response.data.data.phone);
         setLogo(create_studio_response.data.data.studio_logo);
+        const studioData = {
+          studio_name: create_studio_response.data.data.studio_name,
+          contact_email: create_studio_response.data.data.contact_email,
+          phone: create_studio_response.data.data.phone,
+          studio_logo: create_studio_response.data.data.studio_logo,
+        };
+        if((userData?.studio_type?.includes("studio_manager") && create_studio_response.data.data.id === userData?.studio_id) || !userData?.studio_type?.includes("studio_manager")){
+          dispatch(updateUserData(studioData));
+        }
       }
     } catch (err) {
       console.log(err);
@@ -126,7 +136,6 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
       setPhone(studioData.phone);
       setLogo(studioData.studio_logo || {});
     }
-    console.log(studioData, "studioData");
   }, [studioData?.id]);
   return (
     <div className="w-[500px]">

@@ -152,7 +152,7 @@ const Record = (props) => {
   const label = props.label;
 
   return (
-    <div className=" border rounded-lg p-8 shadow-md mx-auto">
+    <div className=" border rounded-lg px-8 py-3 shadow-md mx-auto">
       <div className="flex flex-col items-center gap-4">
         <img
           src={micImg}
@@ -195,7 +195,7 @@ const Record = (props) => {
             </button>
           )}
         </div>
-        {isLoading ? (
+        {/* {isLoading ? (
           <button className="bg-gray-500 text-white px-4 py-2 rounded" disabled>
             Loading...
           </button>
@@ -209,7 +209,7 @@ const Record = (props) => {
           >
             View Action Items
           </button>
-        )}
+        )} */}
       </div>
     </div>
   );

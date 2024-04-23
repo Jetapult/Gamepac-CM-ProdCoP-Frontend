@@ -24,7 +24,7 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
 
   const deleteGame = async () => {
     try {
-      const response = await api.delete(`/v1/games/${selectedGame.id}`);
+      const response = await api.delete(`/v1/games/${studio_id}/${selectedGame.id}`);
       if (response.data.data) {
         setToastMessage({
           show: true,
@@ -114,12 +114,12 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
         </div>
       </div>
       <div className="overflow-y-auto h-[calc(100vh-334px)]">
-        {games.map((game) => (
+        {games.map((game,index) => (
           <div
             className="grid grid-cols-12 px-3 py-3 border-b-[0.5px] border-[#e5e5e5] cursor-pointer"
             key={game.id}
           >
-            <p className="">{game.id}</p>
+            <p className="">{(currentPage - 1) * limit + index + 1}</p>
             <p className="col-span-2">{game.game_name}</p>
             <p className="col-span-1">{game.short_names}</p>
             <p className="col-span-2">{game.game_type}</p>

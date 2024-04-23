@@ -21,7 +21,7 @@ const CreateGamePopup = ({
     appstore_link: "",
     app_id: "",
     package_name: "",
-    studio_id: studio_id,
+    studio_id: studio_id?.toString(),
     pod_owner: "",
     pod_owner_email: "",
     generateweeklyreport: "none",
@@ -114,7 +114,7 @@ const CreateGamePopup = ({
       if (Object.values(error).every((value) => value === "")) {
         setSubmitLoader(true);
         const create_game_response = selectedGame?.id
-          ? await api.put(`/v1/games/${selectedGame?.id}`, gameData)
+          ? await api.put(`/v1/games/${studio_id}/${selectedGame?.id}`, gameData)
           : await api.post("v1/games", gameData);
         setToastMessage({
           show: true,

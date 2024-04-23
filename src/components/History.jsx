@@ -47,7 +47,7 @@ const History = () => {
     <div>
       <div>
         {user ? (
-          <h1 className="font-['League Spartan'] text-center mt-3">
+          <h1 className="font-['League Spartan'] text-center pt-5">
             Hi {display}, you can access your Past Actions here!
           </h1>
         ) : (

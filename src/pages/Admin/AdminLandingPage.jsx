@@ -29,7 +29,7 @@ const AdminLandingPage = () => {
           <StudioDetails />
         </AdminLayout>
       ) : (
-        <div className="w-[1400px] mx-auto mt-10">
+        <div className="w-[1400px] mx-auto pt-10">
           <StudioDetails />
         </div>
       )}

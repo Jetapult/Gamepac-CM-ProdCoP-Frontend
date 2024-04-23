@@ -62,7 +62,7 @@ const CreateUserPopup = ({
         name: name,
         email: email,
         roles: roles,
-        invite_status: "invited",
+        invite_status: selectedUser?.id ? selectedUser?.invite_status : "invited",
         studio_id: studio_id,
       };
       const create_studio_response = selectedUser?.id

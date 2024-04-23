@@ -2,6 +2,7 @@ import { XMarkIcon } from "@heroicons/react/20/solid";
 import { useState } from "react";
 import api from "../../../../api";
 import loadingIcon from "../../../../assets/transparent-spinner.svg";
+// import SampleCSV from "../../../../sample-bulk-upload.csv";
 
 const BulkUploadPopup = ({ setShowModal, studio_id, getUsersBystudioSlug }) => {
   const [file, setFile] = useState({});
@@ -23,7 +24,7 @@ const BulkUploadPopup = ({ setShowModal, studio_id, getUsersBystudioSlug }) => {
       );
       setFileUploadResponse(response.data.data);
       setSubmitLoader(false);
-      if(response.data.data.userAddedCount){
+      if (response.data.data.userAddedCount) {
         getUsersBystudioSlug(1);
       }
     } catch (err) {
@@ -49,7 +50,15 @@ const BulkUploadPopup = ({ setShowModal, studio_id, getUsersBystudioSlug }) => {
             </button>
           </div>
           <div className="p-4">
+            <label
+              htmlFor="file"
+              className="block text-sm font-medium text-gray-800"
+            >
+              CSV File<span className="text-red-500">*</span>
+            </label>
+            {/* <a href={SampleCSV} className="text-[#0000EE] text-sm decoration-1 underline" download>sample csv file</a> */}
             <input
+              id="file"
               type="file"
               className="mt-1 w-full"
               accept=".csv"
@@ -58,20 +67,20 @@ const BulkUploadPopup = ({ setShowModal, studio_id, getUsersBystudioSlug }) => {
                 setFile(e.target.files[0]);
               }}
             />
-            {(fileUploadResponse?.userAddedCount || fileUploadResponse?.duplicateEmails) ? (
+            {fileUploadResponse?.userAddedCount ||
+            fileUploadResponse?.duplicateEmails ? (
               <p>
-                 successfully
-                added users - {fileUploadResponse?.userAddedCount}
+                successfully added users - {fileUploadResponse?.userAddedCount}
               </p>
             ) : (
               <></>
             )}
             {fileUploadResponse?.duplicateEmails?.length ? (
               <p className="text-[#e80707] text-[12px] break-all">
-                {fileUploadResponse?.duplicateEmails?.map((error) => (
+                {fileUploadResponse?.duplicateEmails?.map((error,index) => (
                   <span className="pr-1">
-                    {error}{" "}
-                    {fileUploadResponse?.duplicateEmails.length - 1 ? "" : ","}
+                    {error}
+                    {fileUploadResponse?.duplicateEmails.length - 1 === index  ? "" : ","}
                   </span>
                 ))}
                 these emails are already exists in our Directory

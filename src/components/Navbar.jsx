@@ -41,8 +41,8 @@ function Navbar() {
   };
 
   return (
-    <div className="navbar bg-white flex justify-between items-center h-20 py-5 px-8 shadow-lg fixed top-0 left-0 right-0">
-      <a href="/" className="flex items-center">
+    <div className="navbar bg-white flex justify-between items-center h-20 py-5 px-8 shadow-lg fixed top-0 left-0 right-0 z-50">
+      <a className="flex items-center cursor-pointer" onClick={() => navigate("/")}>
         <img
           src={userData?.studio_logo || image}
           alt="Icon"
@@ -56,8 +56,8 @@ function Navbar() {
             <ul className="text-gray-700">
               <li className="duration-150 hover:text-gray-900">
                 <a
-                  href={`/${studioSlug || userData?.slug}/dashboard`}
-                  className="block"
+                  className="block cursor-pointer"
+                  onClick={() => navigate(`/${studioSlug || userData?.slug}/dashboard`)}
                 >
                   Dashboard
                 </a>
@@ -146,7 +146,7 @@ function Navbar() {
               {(!studioSlug || studioSlug === userData?.slug) && (
                 <>
                   <li className="duration-150 hover:text-gray-900">
-                    <a href="/home" className="block">
+                    <a className="block cursor-pointer" onClick={() => navigate("/home")}>
                       <div className="flex gap-2 items-center">
                         <img src={audioImg} className="w-6 h-6" />
                         Audio
@@ -154,7 +154,7 @@ function Navbar() {
                     </a>
                   </li>
                   <li className="duration-150 hover:text-gray-900">
-                    <a href="/online" className="block">
+                    <a className="block cursor-pointer" onClick={() => navigate("/online")}>
                       <div className="flex gap-2 items-center">
                         <img src={textImg} className="w-6 h-6" />
                         Text
@@ -162,7 +162,7 @@ function Navbar() {
                     </a>
                   </li>
                   <li className="duration-150 hover:text-gray-900">
-                    <a href="/assets" className="block">
+                    <a className="block cursor-pointer" onClick={() => navigate("/assets")}>
                       <div className="flex gap-2 items-center">
                         <img src={img} className="w-6 h-6" />
                         Image
@@ -170,7 +170,7 @@ function Navbar() {
                     </a>
                   </li>
                   <li className="duration-150 hover:text-gray-900">
-                    <a href="/history" className="block">
+                    <a className="block cursor-pointer" onClick={() => navigate("/history")}>
                       <div className="flex gap-2 items-center">
                         <img src={historyImg} className="w-6 h-6" />
                         History

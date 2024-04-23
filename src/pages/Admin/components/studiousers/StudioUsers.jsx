@@ -30,7 +30,7 @@ const StudioUsers = ({
 
   const deleteUser = async () => {
     try {
-      const response = await api.delete(`/v1/users/${selectedUser.id}`);
+      const response = await api.delete(`/v1/users/${studio_id}/${selectedUser.id}`);
       if (response.data.data) {
         setToastMessage({
           show: true,
@@ -138,12 +138,12 @@ const StudioUsers = ({
         </div>
       </div>
       <div className="overflow-y-auto h-[calc(100vh-334px)]">
-        {users.map((user) => (
+        {users.map((user,index) => (
           <div
             className="grid grid-cols-12 px-3 py-3 border-b-[0.5px] border-[#e5e5e5] cursor-pointer"
             key={user.id}
           >
-            <p className="col-span-1">{user.id}</p>
+            <p className="col-span-1">{(currentPage - 1) * limit + index + 1}</p>
             <p className="col-span-2">{user.name}</p>
             <p className="col-span-3">{user.email}</p>
             <p className="col-span-2">{user.roles?.join(", ")}</p>
