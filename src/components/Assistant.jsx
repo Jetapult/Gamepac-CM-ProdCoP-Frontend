@@ -8,6 +8,7 @@ import UpdatedComments from "./UpdatedComments";
 import Pagination from "./Pagination";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
+import ToastMessage from "./ToastMessage";
 
 const Assistant = () => {
   const userData = useSelector((state) => state.user.user);
@@ -37,6 +38,12 @@ const Assistant = () => {
   const limit = 10;
   const params = useParams();
   const studio_slug = params.studio_slug;
+  const [toastMessage, setToastMessage] = useState({
+    show: false,
+    message: "",
+    duration: 3000,
+    type: "success",
+  });
 
   useEffect(() => {
     // Clear comments when selectedGame changes
@@ -219,6 +226,13 @@ const Assistant = () => {
       }
     } catch (error) {
       console.error("Error posting reply:", error);
+      if(error.response.data.message){
+        setToastMessage({
+          show: true,
+          message: error.response.data.message,
+          type: "error",
+        });
+      }
     }
     setPosting(false);
     setPostingIndex(null); // Reset the postingIndex to null after posting is done
@@ -773,6 +787,12 @@ const Assistant = () => {
           currentPage={currentPage}
           limit={limit}
           setCurrentPage={setCurrentPage}
+        />
+      )}
+      {toastMessage.show && (
+        <ToastMessage
+          message={toastMessage}
+          setToastMessage={setToastMessage}
         />
       )}
     </div>

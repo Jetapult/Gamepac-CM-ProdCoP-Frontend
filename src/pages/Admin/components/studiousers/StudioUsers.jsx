@@ -241,6 +241,7 @@ const StudioUsers = ({
           selectedUser={selectedUser}
           setSelectedUser={setSelectedUser}
           studio_id={studio_id}
+          userData={userData}
         />
       )}
       {showConfirmationPopup && (

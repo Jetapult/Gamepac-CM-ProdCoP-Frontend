@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { auth, signInWithGogle } from "../config";
 // import image from '../assets/jetapult-favicon.png'
 import image from "../assets/image.png";
@@ -22,12 +22,37 @@ function Navbar() {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showAnalyticsPopup, setShowAnalyticsPopup] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const studioSlug = localStorage.getItem("selectedStudio");
+  const wrapperRef = useRef(null);
+  useOutsideAlerter(wrapperRef);
+  function useOutsideAlerter(ref) {
+    useEffect(() => {
+      function handleClickOutside(event) {
+        if (ref.current && !ref.current.contains(event.target)) {
+          setShowUserDropdown(false);
+        }
+      }
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [ref]);
+  }
 
   const handleLogout = () => {
     logout();
     window.location.reload();
   };
+  function getInitials(name) {
+    if (name) {
+      const words = name?.split(/\s+|-/);
+      const initials = words
+        ?.filter((word) => word.length > 0)
+        .map((word) => word.charAt(0).toUpperCase());
+      return initials?.join("");
+    }
+  }
 
   const handleOpenDropdown = () => {
     setDropdownOpen(true);
@@ -42,7 +67,10 @@ function Navbar() {
 
   return (
     <div className="navbar bg-white flex justify-between items-center h-20 py-5 px-8 shadow-lg fixed top-0 left-0 right-0 z-50">
-      <a className="flex items-center cursor-pointer" onClick={() => navigate("/")}>
+      <a
+        className="flex items-center cursor-pointer"
+        onClick={() => navigate("/")}
+      >
         <img
           src={userData?.studio_logo || image}
           alt="Icon"
@@ -57,7 +85,9 @@ function Navbar() {
               <li className="duration-150 hover:text-gray-900">
                 <a
                   className="block cursor-pointer"
-                  onClick={() => navigate(`/${studioSlug || userData?.slug}/dashboard`)}
+                  onClick={() =>
+                    navigate(`/${studioSlug || userData?.slug}/dashboard`)
+                  }
                 >
                   Dashboard
                 </a>
@@ -146,7 +176,10 @@ function Navbar() {
               {(!studioSlug || studioSlug === userData?.slug) && (
                 <>
                   <li className="duration-150 hover:text-gray-900">
-                    <a className="block cursor-pointer" onClick={() => navigate("/home")}>
+                    <a
+                      className="block cursor-pointer"
+                      onClick={() => navigate("/home")}
+                    >
                       <div className="flex gap-2 items-center">
                         <img src={audioImg} className="w-6 h-6" />
                         Audio
@@ -154,7 +187,10 @@ function Navbar() {
                     </a>
                   </li>
                   <li className="duration-150 hover:text-gray-900">
-                    <a className="block cursor-pointer" onClick={() => navigate("/online")}>
+                    <a
+                      className="block cursor-pointer"
+                      onClick={() => navigate("/online")}
+                    >
                       <div className="flex gap-2 items-center">
                         <img src={textImg} className="w-6 h-6" />
                         Text
@@ -162,31 +198,63 @@ function Navbar() {
                     </a>
                   </li>
                   <li className="duration-150 hover:text-gray-900">
-                    <a className="block cursor-pointer" onClick={() => navigate("/assets")}>
+                    <a
+                      className="block cursor-pointer"
+                      onClick={() => navigate("/assets")}
+                    >
                       <div className="flex gap-2 items-center">
                         <img src={img} className="w-6 h-6" />
                         Image
                       </div>
                     </a>
                   </li>
-                  <li className="duration-150 hover:text-gray-900">
-                    <a className="block cursor-pointer" onClick={() => navigate("/history")}>
+                  {/* <li className="duration-150 hover:text-gray-900">
+                    <a
+                      className="block cursor-pointer"
+                      onClick={() => navigate("/history")}
+                    >
                       <div className="flex gap-2 items-center">
                         <img src={historyImg} className="w-6 h-6" />
                         History
                       </div>
                     </a>
-                  </li>
+                  </li> */}
                 </>
               )}
-              <li className="duration-150 hover:text-gray-900">
+
+              <li
+                className="duration-150 hover:text-gray-900 relative"
+                ref={wrapperRef}
+              >
                 <div
-                  className="flex gap-2 items-center cursor-pointer"
-                  onClick={handleLogout}
+                  className="bg-[#f1f1f0] w-10 h-10 rounded-full flex items-center justify-center cursor-pointer"
+                  onClick={() => setShowUserDropdown(!showUserDropdown)}
                 >
-                  <img src={logoutImg} className="w-6 h-6" />
-                  Logout
+                  <p className="text-xl font-bold">
+                    {getInitials(userData?.name)}
+                  </p>
                 </div>
+                {showUserDropdown && (
+                  <div className="absolute bg-white border border-[0.5px] border-[#e5e5e5] right-0 w-[200px] rounded shadow-lg">
+                    <div
+                      className="flex gap-2 items-center cursor-pointer p-3 border-b border-b-[0.5px]"
+                      onClick={() => {
+                        navigate("/history");
+                        setShowUserDropdown(false);
+                      }}
+                    >
+                      <img src={historyImg} className="w-6 h-6" />
+                      Note taker History
+                    </div>
+                    <div
+                      className="flex gap-2 items-center cursor-pointer p-3"
+                      onClick={handleLogout}
+                    >
+                      <img src={logoutImg} className="w-6 h-6" />
+                      Logout
+                    </div>
+                  </div>
+                )}
               </li>
             </ul>
           </>
