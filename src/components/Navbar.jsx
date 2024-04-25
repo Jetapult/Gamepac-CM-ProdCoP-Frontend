@@ -16,6 +16,7 @@ import { useSelector } from "react-redux";
 import { isAuthenticated, logout } from "../auth";
 import AnalyticsPopup from "./AnalyticsPopup";
 import { ChartBarSquareIcon } from "@heroicons/react/20/solid";
+import SparklesIcon from "../assets/sparkles.svg";
 
 function Navbar() {
   const userData = useSelector((state) => state.user.user);
@@ -236,6 +237,16 @@ function Navbar() {
                 </div>
                 {showUserDropdown && (
                   <div className="absolute bg-white border border-[0.5px] border-[#e5e5e5] right-0 w-[200px] rounded shadow-lg">
+                    <div
+                      className="flex gap-2 items-center cursor-pointer p-3 border-b border-b-[0.5px]"
+                      onClick={() => {
+                        // navigate("/history");
+                        setShowUserDropdown(false);
+                      }}
+                    >
+                      <img src={SparklesIcon} className="w-6 h-6" />
+                      Story weaver History
+                    </div>
                     <div
                       className="flex gap-2 items-center cursor-pointer p-3 border-b border-b-[0.5px]"
                       onClick={() => {
