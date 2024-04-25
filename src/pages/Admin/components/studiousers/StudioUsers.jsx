@@ -62,7 +62,7 @@ const StudioUsers = ({
 
   const InviteUser = async (user) => {
     try {
-      const send_invite_response = await api.post(`v1/auth/send-invite`, {
+      const send_invite_response = await api.post(`v1/auth/${studio_id}/send-invite`, {
         email: user.email,
       });
       if (send_invite_response.status === 201) {
@@ -71,6 +71,14 @@ const StudioUsers = ({
           message: "Invite email sent successfully",
           type: "success",
         });
+        setUsers((prev) =>
+          prev.filter((x) => {
+            if (x.id === user.id) {
+              return x.invite_status = "invited";
+            }
+            return prev;
+          })
+        );
       }
     } catch (err) {
       if (err.response.data.message) {
