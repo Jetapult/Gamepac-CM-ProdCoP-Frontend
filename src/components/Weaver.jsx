@@ -132,6 +132,7 @@ const Weaver = () => {
                 id="numberOfClues"
                 className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 placeholder="0"
+                max="50"
                 onChange={handleChange}
               />
             </div>
@@ -148,6 +149,7 @@ const Weaver = () => {
                 id="numberOfParts"
                 className="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 placeholder="0"
+                max="50"
                 onChange={handleChange}
               />
             </div>
