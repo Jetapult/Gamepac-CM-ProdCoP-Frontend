@@ -14,6 +14,7 @@ const CreateUserPopup = ({
   selectedUser,
   setSelectedUser,
   studio_id,
+  userData
 }) => {
   const [roles, setRoles] = useState([]);
   const [name, setName] = useState("");
@@ -60,13 +61,13 @@ const CreateUserPopup = ({
       setSubmitLoader(true);
       const requestbody = {
         name: name,
-        email: email,
+        email: email?.trim(),
         roles: roles,
         invite_status: selectedUser?.id ? selectedUser?.invite_status : "invited",
         studio_id: studio_id,
       };
       const create_studio_response = selectedUser?.id
-        ? await api.put(`/v1/users/${selectedUser?.id}`, requestbody)
+        ? await api.put(`/v1/users/${studio_id}/${selectedUser?.id}`, requestbody)
         : await api.post("v1/auth/add-user", requestbody);
       setToastMessage({
         show: true,
@@ -179,7 +180,7 @@ const CreateUserPopup = ({
                 Roles
               </label>
               <Menu as="div" className="relative text-left">
-                <Menu.Button className="border rounded py-2 px-3 h-10 w-full text-start shadow">
+                <Menu.Button className="border rounded py-2 px-3 h-10 w-full text-start shadow" disabled={userData.id === selectedUser.id}>
                   {roles.map((role, index) => (
                     <span
                       key={index}
@@ -188,7 +189,7 @@ const CreateUserPopup = ({
                       {role}{" "}
                       <XMarkIcon
                         className="w-5 h-5 inline cursor-pointer"
-                        onClick={() => deleteRole(index)}
+                        onClick={() => userData.id !== selectedUser.id && deleteRole(index)}
                       />
                     </span>
                   ))}

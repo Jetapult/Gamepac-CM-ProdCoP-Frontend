@@ -209,9 +209,10 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
           >
             Company Logo<span className="text-red-500">*</span>
           </label>
-          {studioData.studio_logo && (
+          {!logo.size && studioData.studio_logo && (
             <img src={studioData.studio_logo} className="" alt="logo" />
           )}
+          {logo.size && <img src={URL.createObjectURL(logo)} alt="logo" />}
           <input
             type="file"
             className="mt-1 w-full"

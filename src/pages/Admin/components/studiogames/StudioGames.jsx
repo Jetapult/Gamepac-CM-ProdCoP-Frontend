@@ -250,6 +250,7 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
           selectedGame={selectedGame}
           setSelectedGame={setSelectedGame}
           setGames={setGames}
+          studio_id={studio_id}
         />
       )}
       {showAutoReplyEnablePopup && (
@@ -258,6 +259,7 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
           selectedGame={selectedGame}
           setSelectedGame={setSelectedGame}
           setGames={setGames}
+          studio_id={studio_id}
         />
       )}
       {showConfirmationPopup && (

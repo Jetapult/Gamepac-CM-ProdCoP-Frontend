@@ -25,6 +25,7 @@ const SendWeeklyReportPopup = ({
   selectedGame,
   setSelectedGame,
   setGames,
+  studio_id
 }) => {
   const [selectedReportType, setSelectedReportType] = useState({});
 
@@ -43,7 +44,7 @@ const SendWeeklyReportPopup = ({
         generateweeklyreport: selectedReportType.value,
       };
       const sendWeeklyReportResponse = await api.put(
-        `/v1/games/${selectedGame?.id}`,
+        `/v1/games/${studio_id}/${selectedGame?.id}`,
         GameData
       );
       setGames((prev) =>

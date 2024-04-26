@@ -2,7 +2,7 @@ import { XMarkIcon } from "@heroicons/react/20/solid";
 import { useState } from "react";
 import api from "../../../../api";
 import loadingIcon from "../../../../assets/transparent-spinner.svg";
-// import SampleCSV from "../../../../sample-bulk-upload.csv";
+import { Link } from "react-router-dom";
 
 const BulkUploadPopup = ({ setShowModal, studio_id, getUsersBystudioSlug }) => {
   const [file, setFile] = useState({});
@@ -56,7 +56,7 @@ const BulkUploadPopup = ({ setShowModal, studio_id, getUsersBystudioSlug }) => {
             >
               CSV File<span className="text-red-500">*</span>
             </label>
-            {/* <a href={SampleCSV} className="text-[#0000EE] text-sm decoration-1 underline" download>sample csv file</a> */}
+            <Link to="/sample-bulk-upload.csv" className="text-[#0000EE] text-sm decoration-1 underline" target="_blank" download>sample csv file</Link>
             <input
               id="file"
               type="file"
@@ -77,13 +77,29 @@ const BulkUploadPopup = ({ setShowModal, studio_id, getUsersBystudioSlug }) => {
             )}
             {fileUploadResponse?.duplicateEmails?.length ? (
               <p className="text-[#e80707] text-[12px] break-all">
-                {fileUploadResponse?.duplicateEmails?.map((error,index) => (
-                  <span className="pr-1">
+                {fileUploadResponse?.duplicateEmails?.map((error, index) => (
+                  <span className="pr-1" key={index}>
                     {error}
-                    {fileUploadResponse?.duplicateEmails.length - 1 === index  ? "" : ","}
+                    {fileUploadResponse?.duplicateEmails.length - 1 === index
+                      ? ""
+                      : ","}
                   </span>
                 ))}
                 these emails are already exists in our Directory
+              </p>
+            ) : (
+              <></>
+            )}
+            {fileUploadResponse?.invalidEmails?.length ? (
+              <p className="text-[#e80707] text-[12px] break-all">
+                Invalid email formats - {fileUploadResponse?.invalidEmails?.map((error, index) => (
+                  <span className="pr-1" key={index}>
+                    {error}
+                    {fileUploadResponse?.invalidEmails.length - 1 === index
+                      ? ""
+                      : ","}
+                  </span>
+                ))}
               </p>
             ) : (
               <></>

@@ -50,7 +50,7 @@ const Login = () => {
     e.preventDefault();
     try {
       const requestbody = {
-        email,
+        email: email.trim(),
         password,
       };
       const login_response = await api.post(`/v1/auth/login`, requestbody);
