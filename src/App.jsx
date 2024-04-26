@@ -23,11 +23,14 @@ import { useDispatch } from "react-redux";
 import { addUserData } from "./store/reducer/userSlice";
 import UnprotectedRoute from "./auth/UnprotectedRoute";
 import PrivateRoute from "./auth/PrivateRoute";
-import Weaver from './components/Weaver';
+import Weaver from "./components/Weaver";
+import WeaverHistory from "./components/WeaverHistory";
+import StoryPage from "./components/StoryPage";
 import { isAuthenticated } from "./auth";
 import AdminLandingPage from "./pages/Admin/AdminLandingPage";
 import AdminRoute from "./auth/AdminRoute";
 import PageNotFound from "./components/PageNotFound";
+
 
 function App() {
   const userTokenData = localStorage.getItem("jwt");
@@ -225,12 +228,9 @@ function App() {
               path="*"
               element={<PageNotFound />}
             />
-            <Route
-              path="/aistories"
-              element={
-                  <Weaver />
-              }
-            />
+            <Route path="/aistories" element={<Weaver />} />
+            <Route path="/storiesHistory" element={<WeaverHistory />} />
+            <Route path ="/aiStories/:id" element={<StoryPage />}/>
           </Routes>
         </Router>
       </>
