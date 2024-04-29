@@ -30,6 +30,7 @@ import { isAuthenticated } from "./auth";
 import AdminLandingPage from "./pages/Admin/AdminLandingPage";
 import AdminRoute from "./auth/AdminRoute";
 import PageNotFound from "./components/PageNotFound";
+import Updates from "./pages/Updates/Updates";
 
 
 function App() {
@@ -224,13 +225,15 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route path="/updates" element={<Updates />} />
+            
+            <Route path="/aistories" element={<Weaver />} />
+            <Route path="/storiesHistory" element={<WeaverHistory />} />
+            <Route path ="/aiStories/:id" element={<StoryPage />}/>
             <Route
               path="*"
               element={<PageNotFound />}
             />
-            <Route path="/aistories" element={<Weaver />} />
-            <Route path="/storiesHistory" element={<WeaverHistory />} />
-            <Route path ="/aiStories/:id" element={<StoryPage />}/>
           </Routes>
         </Router>
       </>

@@ -41,7 +41,7 @@ const EnableAutoReplyPopup = ({
     try {
       const GameData = {
         ...selectedGame,
-        auto_reply_enabled: selectedType.value || "none",
+        auto_reply_enabled: selectedType?.value || "none",
       };
       const sendWeeklyReportResponse = await api.put(
         `/v1/games/${studio_id}/${selectedGame?.id}`,
