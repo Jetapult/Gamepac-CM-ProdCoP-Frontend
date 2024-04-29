@@ -31,6 +31,7 @@ import AdminLandingPage from "./pages/Admin/AdminLandingPage";
 import AdminRoute from "./auth/AdminRoute";
 import PageNotFound from "./components/PageNotFound";
 import Updates from "./pages/Updates/Updates";
+import AIToolsLanding from "./pages/AITools/AIToolsLanding";
 
 
 function App() {
@@ -74,6 +75,15 @@ function App() {
               }
             />
             <Route
+              exact
+              path="/ai-tools"
+              element={
+                <PrivateRoute>
+                  <AIToolsLanding />
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/login"
               element={
                 <UnprotectedRoute>
@@ -98,7 +108,7 @@ function App() {
               }
             />
             <Route
-              path="/home"
+              path="/note-taker"
               element={
                 <PrivateRoute>
                   <Home />
@@ -225,11 +235,19 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <AdminLandingPage />
+                </PrivateRoute>
+              }
+            />
             <Route path="/updates" element={<Updates />} />
             
-            <Route path="/aistories" element={<Weaver />} />
-            <Route path="/storiesHistory" element={<WeaverHistory />} />
-            <Route path ="/aiStories/:id" element={<StoryPage />}/>
+            <Route path="/aistories" element={<PrivateRoute><Weaver /></PrivateRoute>} />
+            <Route path="/storiesHistory" element={<PrivateRoute><WeaverHistory /></PrivateRoute>} />
+            <Route path ="/aiStories/:id" element={<PrivateRoute><StoryPage /></PrivateRoute>}/>
             <Route
               path="*"
               element={<PageNotFound />}
