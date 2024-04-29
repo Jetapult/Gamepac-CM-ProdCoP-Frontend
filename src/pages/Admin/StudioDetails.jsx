@@ -4,7 +4,7 @@ import StudioUsers from "./components/studiousers/StudioUsers";
 import StudioGames from "./components/studiogames/StudioGames";
 import api from "../../api";
 import StudioSettings from "./components/studioSettings/StudioSettings";
-import StudioDashboard from "./components/studioDashboard/studioDashboard";
+import StudioDashboard from "./components/studioDashboard/StudioDashboard";
 import { useSelector } from "react-redux";
 
 const tabs = [
