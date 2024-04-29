@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import ToastMessage from "../../components/ToastMessage";
 import StudioUsers from "./components/studiousers/StudioUsers";
 import StudioGames from "./components/studiogames/StudioGames";
@@ -6,29 +6,6 @@ import api from "../../api";
 import StudioSettings from "./components/studioSettings/StudioSettings";
 import StudioDashboard from "./components/studioDashboard/StudioDashboard";
 import { useSelector } from "react-redux";
-
-const tabs = [
-  {
-    id: "0",
-    label: "Overview",
-    value: "overview",
-  },
-  {
-    id: "1",
-    label: "Users",
-    value: "users",
-  },
-  {
-    id: "2",
-    label: "Games",
-    value: "games",
-  },
-  {
-    id: "3",
-    label: "Settings",
-    value: "settings",
-  },
-];
 
 const StudioDetails = () => {
   const adminData = useSelector((state) => state.admin.selectedStudio);
@@ -44,14 +21,39 @@ const StudioDetails = () => {
     type: "success",
   });
 
+  const tabs = [
+    {
+      id: "0",
+      label: "Overview",
+      value: "overview",
+      show: true,
+    },
+    {
+      id: "1",
+      label: "Users",
+      value: "users",
+      show: true,
+    },
+    {
+      id: "2",
+      label: "Games",
+      value: "games",
+      show: !adminData?.studio_type?.includes("studio_manager") ? true : false,
+    },
+    {
+      id: "3",
+      label: "Settings",
+      value: "settings",
+      show: true,
+    },
+  ];
+
   const getUsersBystudioSlug = async (pageNum) => {
     try {
       const users_response = await api.get(
-        `/v1/users/studio/${
-          adminData.slug
-        }?current_page=${pageNum ? pageNum : currentPage}&limit=10${
-          searchTerm ? "&searchTerm=" + searchTerm : ""
-        }`
+        `/v1/users/studio/${adminData.slug}?current_page=${
+          pageNum ? pageNum : currentPage
+        }&limit=10${searchTerm ? "&searchTerm=" + searchTerm : ""}`
       );
       setUsers(users_response.data.data);
       setTotalUsers(users_response.data.totalUsers);
@@ -78,20 +80,21 @@ const StudioDetails = () => {
     <>
       <div className="flex border-b-[0.5px] border-b-[#e5e5e5] my-3 pl-3">
         {tabs.map((tab) => (
-          <p
-            className={`mr-6 cursor-pointer text-lg ${
-              selectedTab === tab.value
-                ? "text-black border-b-[2px] border-black"
-                : "text-[#808080]"
-            }`}
-            key={tab.id}
-            onClick={() => {
-              setSelectedTab(tab.value);
-              setCurrentPage(1);
-            }}
-          >
-            {tab.label}
-          </p>
+          <React.Fragment key={tab.id}>
+            {tab.show && <p
+              className={`mr-6 cursor-pointer text-lg ${
+                selectedTab === tab.value
+                  ? "text-black border-b-[2px] border-black"
+                  : "text-[#808080]"
+              }`}
+              onClick={() => {
+                setSelectedTab(tab.value);
+                setCurrentPage(1);
+              }}
+            >
+              {tab.label}
+            </p>}
+          </React.Fragment>
         ))}
       </div>
       {selectedTab === "overview" && <StudioDashboard studioData={adminData} />}
