@@ -2,17 +2,18 @@ import React, { useState, useEffect } from "react";
 import googlePlayIcon from "../assets/google-play_318-566073.avif";
 import appleIcon from "../assets/icon_appstore__ev0z770zyxoy_large_2x.png";
 import api from "../api";
-import axios from "axios";
 import loadingIcon from "../assets/Spinner-1s-200px.svg";
 import bellIcon from "../assets/bell-icon.png";
 import UpdatedComments from "./UpdatedComments";
-import { comment } from "postcss";
 import Pagination from "./Pagination";
+import { useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+import ToastMessage from "./ToastMessage";
 
 const Assistant = () => {
+  const userData = useSelector((state) => state.user.user);
   const [selectedApp, setSelectedApp] = useState("google");
   const [selectedGame, setSelectedGame] = useState(null);
-  const [selectedTimeline, setSelectedTimeline] = useState("");
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingReplyIndex, setLoadingReplyIndex] = useState(null);
@@ -33,7 +34,16 @@ const Assistant = () => {
   const [charCountLimitErr, setCharCountLimitErr] = useState("");
   const [totalReviews, setTotalReviews] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [games, setGames] = useState([]);
   const limit = 10;
+  const params = useParams();
+  const studio_slug = params.studio_slug;
+  const [toastMessage, setToastMessage] = useState({
+    show: false,
+    message: "",
+    duration: 3000,
+    type: "success",
+  });
 
   useEffect(() => {
     // Clear comments when selectedGame changes
@@ -62,132 +72,31 @@ const Assistant = () => {
         `Hi ${userName}, Sorry that you are facing this problem. Could you please restart your device once and try again? Also please make sure you have enough space on your device. Thank you!`,
     },
   ];
-  const gameOptions = [
-    {
-      name: "Home Design Dreams house games (HDD)",
-      packageName: "com.holycowstudio.homedesigndreams",
-    },
-    {
-      name: "My Home Makeover: House Games (MHM)",
-      packageName: "com.holycowstudio.myhomemakeoverdesigndreamsdecorate",
-    },
-    {
-      name: "My Home Design Makeover Games (HDB)",
-      packageName:
-        "com.holycowstudio.my.home.design.makeover.blast.house.games.toy.masters.decorate.mansion.toon.dream",
-    },
-    {
-      name: "Design My Home: Makeover Games (HDW)",
-      packageName: "com.holycowstudio.design.my.home.makeover.word.life",
-    },
-    {
-      name: "My Home Makeover Design: Games (HDW2)",
-      packageName: "com.holycowstudio.my.home.makeover.design.word.house.life",
-    },
-    {
-      name: "Design Home Dream House Games (HDW3)",
-      packageName:
-        "com.holycowstudio.my.design.home.makeover.word.house.life.games.mansion.decorate.decor.masters",
-    },
-    {
-      name: "My Home Design: My House Games (HDW4)",
-      packageName:
-        "com.holycowstudio.my.home.design.makeover.luxury.interiors.word.dream.million.dollar.house.renovation",
-    },
-    {
-      name: "My Home Design: Makeover Games (HDW5)",
-      packageName:
-        "com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating",
-    },
-    {
-      name: "Video Game Tycoon idle clicker (VGT)",
-      packageName: "com.holycowstudio.gamedevtycoon",
-    },
-    {
-      name: "Hotel Tycoon Empire: Idle game (HT)",
-      packageName:
-        "com.holycowstudio.idle.hotel.tycoon.clicker.tap.empire.incremental.games",
-    },
-    {
-      name: "Smartphone Tycoon: Idle Phone (SPT)",
-      packageName: "com.ns.idlesmartphonetycoon",
-    },
-    {
-      name: "Oil Tycoon idle tap miner game (OT)",
-      packageName: "com.romit.sheikhoiltycoon",
-    },
-    {
-      name: "Oil Tycoon 2: Idle Miner Game (OT2)",
-      packageName: "com.holycowstudio.oiltycoon2",
-    },
-    {
-      name: "Idle Cafe Tycoon: Coffee Shop (CT)",
-      packageName: "com.holycowstudio.coffeetycoon",
-    },
-    {
-      name: "Tube Tycoon - Tubers Simulator (TT)",
-      packageName: "com.theholycowstudio.youtubertycoon",
-    },
-    {
-      name: "Mystery Island lost magic city",
-      packageName:
-        "com.holycowstudio.mystery.island.design.match.decoration.lost.adventure",
-    },
-    {
-      name: "Cat Home Design: Makeover Game",
-      packageName: "com.holycowstudio.designyourcatroom",
-    },
-  ];
-  const appleGameOptions = [
-    { name: "My Home Design: Makeover Games", appId: "1665012099" },
-    { name: "My Home Design Luxury Makeover", appId: "1577895438" },
-    { name: "My Design Home Makeover: Words", appId: "1548087220" },
-    { name: "Hotel Tycoon Empire: Idle Game", appId: "1466034711" },
-    { name: "My Home Makeover Design: Words", appId: "1533382410" },
-    { name: "Design My Home Makeover: Words", appId: "1513798819" },
-    { name: "Mystery Island: Decor & Match3", appId: "1506174960" },
-    { name: "My Home Makeover: Dream Design", appId: "1481534752" },
-    { name: "Cat Home Design: Kitten House", appId: "1390206308" },
-    { name: "Smartphone Tycoon: Idle Empire", appId: "1429667316" },
-    { name: "My Room Design: Your Home 2019", appId: "1444542924" },
-    { name: "Oil Tycoon 2: Idle Empire Game", appId: "1441938955" },
-    { name: "Home Design Dreams: Your House", appId: "1432729968" },
-    { name: "Cafe Tycoon: Idle Empire Story", appId: "1294573637" },
-  ];
 
   const handleFetchComments = async () => {
     try {
       setLoading(true);
-      let response;
-      if (selectedApp === "google") {
-        response = await api.post("/getGoogleData", {
-          packageName: selectedGame.packageName,
-        });
-      } else if (selectedApp === "apple") {
-        response = await api.get(
-          `/v1/organic-ua/fetch-app-store-reviews?appId=${
-            selectedGame.appId
-          }&current_page=${currentPage}&limit=${limit}${
-            ratingFilter ? `&rating=${ratingFilter}` : ""
-          } ${startDate ? `&startDate=${startDate}` : ""}${
-            endDate ? `&endDate=${endDate}` : ""
-          }`
-        );
+      const paramData = {
+        current_page: currentPage,
+        limit: limit,
+        game_id: selectedGame.id,
+      };
+      if (ratingFilter) {
+        paramData.rating = ratingFilter;
       }
+      if (startDate) {
+        paramData.startDate = startDate;
+      }
+      if (endDate) {
+        paramData.endDate = endDate;
+      }
+      const url =
+        selectedApp === "google"
+          ? `/v1/organic-ua/google-reviews/${studio_slug || userData.studio_id}`
+          : `/v1/organic-ua/fetch-app-store-reviews/${studio_slug || userData.studio_id}`;
+      const response = await api.get(url, { params: paramData });
       // When formatting comments initially
-      let comments = formatComments(response.data);
-      // Filter comments based on the selected start and end dates
-      if (startDate && endDate && selectedApp === "google") {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        comments = comments.filter((comment) => {
-          const commentDate = new Date(comment.date);
-          const localCommentDate = new Date(
-            commentDate.getTime() - commentDate.getTimezoneOffset() * 60000
-          );
-          return localCommentDate >= start && localCommentDate <= end;
-        });
-      }
+      let comments = formatComments(response.data.data);
       setComments(comments);
       setLoading(false);
       setTotalReviews(response.data.totalReviews);
@@ -222,7 +131,7 @@ const Assistant = () => {
       });
       // return data.map(comment => ({ ...comment, reply: null }));
     } else if (selectedApp === "apple") {
-      return data.data.map((comment) => ({
+      return data.map((comment) => ({
         userName: comment.reviewernickname,
         userRating: comment.rating,
         comment: comment.body,
@@ -287,7 +196,7 @@ const Assistant = () => {
       if (selectedApp === "google") {
         response = await api.post("/postReply", {
           reviewId: reviewId,
-          packageName: selectedGame.packageName,
+          packageName: selectedGame.package_name,
           reply: comment.reply,
         });
       } else if (selectedApp === "apple") {
@@ -317,6 +226,13 @@ const Assistant = () => {
       }
     } catch (error) {
       console.error("Error posting reply:", error);
+      if(error.response.data.message){
+        setToastMessage({
+          show: true,
+          message: error.response.data.message,
+          type: "error",
+        });
+      }
     }
     setPosting(false);
     setPostingIndex(null); // Reset the postingIndex to null after posting is done
@@ -366,8 +282,36 @@ const Assistant = () => {
     setUpdateCount(count);
   }, [comments]);
 
+  const getGamesByStudioId = async () => {
+    try {
+      const url = studio_slug
+        ? `/v1/games/studio/${studio_slug}`
+        : `/v1/games/studio/${userData.studio_id}`;
+      const paramData = {
+        current_page: 1,
+        limit: 50,
+        game_type: selectedApp === "apple" ? "appstore" : "playstore",
+      };
+      const games_response = await api.get(url, { params: paramData });
+      setGames(games_response.data.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
   useEffect(() => {
-    if (selectedGame && selectedApp === "apple") {
+    if (studio_slug) {
+      getGamesByStudioId();
+    }
+  }, [studio_slug]);
+
+  useEffect(() => {
+    if (userData.studio_id && !studio_slug) {
+      getGamesByStudioId();
+    }
+  }, [userData]);
+
+  useEffect(() => {
+    if (selectedGame?.id) {
       handleFetchComments();
     }
   }, [
@@ -446,46 +390,25 @@ const Assistant = () => {
       </div>
       <div className="mb-4">
         <label className="font-semibold block">Select Game:</label>
-        {selectedApp === "google" ? (
-          <select
-            className="border rounded p-2 w-full"
-            value={selectedGame ? selectedGame.name : ""}
-            onChange={(e) => {
-              const selectedGameName = e.target.value;
-              const game = gameOptions.find(
-                (game) => game.name === selectedGameName
-              );
-              setSelectedGame(game);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="">Select a game</option>
-            {gameOptions.map((game, index) => (
-              <option key={index} value={game.name}>
-                {game.name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <select
-            className="border rounded p-2 w-full"
-            value={selectedGame ? selectedGame.name : ""}
-            onChange={(e) => {
-              const selectedGameName = e.target.value;
-              const game = appleGameOptions.find(
-                (game) => game.name === selectedGameName
-              );
-              setSelectedGame(game);
-            }}
-          >
-            <option value="">Select a game</option>
-            {appleGameOptions.map((game, index) => (
-              <option key={index} value={game.name}>
-                {game.name}
-              </option>
-            ))}
-          </select>
-        )}
+        <select
+          className="border rounded p-2 w-full"
+          value={selectedGame ? selectedGame.game_name : ""}
+          onChange={(e) => {
+            const selectedGameName = e.target.value;
+            const game = games.find(
+              (game) => game.game_name === selectedGameName
+            );
+            setSelectedGame(game);
+            setCurrentPage(1);
+          }}
+        >
+          <option value="">Select a game</option>
+          {games.map((game, index) => (
+            <option key={index} value={game.game_name}>
+              {game.game_name} {game.short_names ? `(${game.short_names})` : ""}
+            </option>
+          ))}
+        </select>
       </div>
       {/* Add the filter dropdown here */}
       <div className="w-64 mb-4 mr-2 relative">
@@ -517,14 +440,6 @@ const Assistant = () => {
           </div>
         </div>
       </div>
-      {selectedApp === "google" && (
-        <button
-          className="bg-[#f58174] hover:bg-[#f26555] text-white px-4 py-2 rounded mb-4"
-          onClick={handleFetchComments}
-        >
-          Fetch Comments
-        </button>
-      )}
       {loading ? (
         <div className="flex items-center justify-center">
           <img src={loadingIcon} alt="Loading" className="w-12 h-12 mr-2" />
@@ -866,12 +781,18 @@ const Assistant = () => {
           )}
         </div>
       )}
-      {totalReviews > 0 && selectedApp === "apple" && (
+      {totalReviews > 0 && (
         <Pagination
           totalReviews={totalReviews}
           currentPage={currentPage}
           limit={limit}
           setCurrentPage={setCurrentPage}
+        />
+      )}
+      {toastMessage.show && (
+        <ToastMessage
+          message={toastMessage}
+          setToastMessage={setToastMessage}
         />
       )}
     </div>
