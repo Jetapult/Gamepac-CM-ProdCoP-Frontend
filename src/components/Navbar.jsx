@@ -201,11 +201,11 @@ function Navbar() {
                   <li className="duration-150 hover:text-gray-900">
                     <a
                       className="block cursor-pointer"
-                      onClick={() => navigate("/assets")}
+                      onClick={() => navigate("/aiStories")}
                     >
                       <div className="flex gap-2 items-center">
                         <img src={img} className="w-6 h-6" />
-                        Image
+                        Story Weaver 
                       </div>
                     </a>
                   </li>
@@ -240,7 +240,7 @@ function Navbar() {
                     <div
                       className="flex gap-2 items-center cursor-pointer p-3 border-b border-b-[0.5px]"
                       onClick={() => {
-                        // navigate("/history");
+                        navigate("/storiesHistory");
                         setShowUserDropdown(false);
                       }}
                     >
