@@ -130,11 +130,11 @@ const Updates = () => {
               <header className="bg-gradient-to-r from-[#6b3fa0] to-[#8b5cf6] py-12 px-4 md:px-6 lg:px-8">
                 <div className="container mx-auto max-w-5xl flex flex-col items-center">
                   <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl">
-                    Jetapult's AI News
+                    Jetapult AI Updates
                   </h1>
                   <p className="mt-3 text-sm text-gray-300">
-                    Bringing latest developments in tech @ Jetapult and keeping
-                    you updated with what's coming!.
+                    Bi-weekly updates on current and future AI developments at
+                    Jetapult
                   </p>
                 </div>
               </header>
