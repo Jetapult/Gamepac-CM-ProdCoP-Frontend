@@ -6,7 +6,7 @@ const AdminRoute = ({ children }) => {
   return isAuthenticated() && parseJwt(isAuthenticated().token)?.isAdmin ? (
     children
   ) : (
-    <Navigate to="/home" />
+    <Navigate to="/dashboard" />
   );
 };
 

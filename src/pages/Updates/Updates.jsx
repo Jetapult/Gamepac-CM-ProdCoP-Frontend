@@ -1,59 +1,100 @@
 import { useState } from "react";
 import ChevronDown from "../../assets/chevron-down.svg";
+import UpdatesPopup from "./UpdatesPopup";
 
 const data = [
   {
     id: "1",
-    title: "GamePac v2.0.0",
-    description: `StoryWeaver: AI-Powered Storytelling Revolutionized
-      Unleash your creativity with StoryWeaver, our platform for crafting immersive narratives and generating AI assets and Game Ready word search levels. Any user can now:
-      - Create their own captivating stories across multiple genres
-      - Leverage Midjourney prompts to generate stunning visual assets for their narratives
-      - Design engaging word search levels based on their stories for an interactive experience
-      AI Game Prototype
-      If you haven’t already played our game download it from here : https://drive.google.com/file/d/1fctHjUL9satveSDYWLWcDKSTC_APHybZ/view?usp=drivesdk
-      and new games can be made leveraging-> StoryWeaver.
-      GamePac AI: Empowering Studios with Multitenancy and More
-      GamePac AI continues to empower game studios with cutting-edge features:
-      - Multitenancy support: Studios can now leverage all our features with their own dedicated environments, ensuring privacy and customization.
-      - Streamlined UMX onboarding: Seamlessly onboard new users to your studio's environment.
-      - Roles and permissions: Assign granular access controls to team members for secure collaboration.
-      Plus, enjoy our comprehensive suite of tools, including social features, analytics, note-taking, and more, all tailored to drive your studio's success.
-      Embrace the future of game development with GamePac AI's innovative solutions.`,
+    title: "GamePac Version 2.0.0",
     feature: [
       {
         id: "1",
         update_type: "New Feature Launch",
-        title: "StoryWeaver: AI-Powered Storytelling Revolutionized",
-        description: `Unleash your creativity with StoryWeaver, our platform for crafting immersive narratives and generating AI assets and Game Ready word search levels. Any user can now:
-          - Create their own captivating stories across multiple genres
-          - Leverage Midjourney prompts to generate stunning visual assets for their narratives
-          - Design engaging word search levels based on their stories for an interactive experience`,
+        title: "Multitenancy Enabled GamePac Suite",
+        description: `<ul>
+        <li>- Multitenancy support: Studios can now leverage all our features with their own dedicated environments, ensuring privacy and customization.</li>
+        <li>- Streamlined studio onboarding: We can now seamlessly onboard new studios/users to studio's environment.</li>
+        <li>- Roles and permissions: We can assign granular access controls to team members for secure collaboration.</li>
+        </ul>
+        `,
       },
       {
         id: "2",
         update_type: "New Feature Launch",
-        title: "GamePac AI: Empowering Studios with Multitenancy and More",
-        description: `GamePac AI continues to empower game studios with cutting-edge features:
-          - Multitenancy support: Studios can now leverage all our features with their own dedicated environments, ensuring privacy and customization.
-          - Streamlined UMX onboarding: Seamlessly onboard new users to your studio's environment.
-          - Roles and permissions: Assign granular access controls to team members for secure collaboration.
-          Plus, enjoy our comprehensive suite of tools, including social features, analytics, note-taking, and more, all tailored to drive your studio's success.
-          Embrace the future of game development with GamePac AI's innovative solutions.`,
+        title: "StoryWeaver (Story Narrative Generator)",
+        description: `<ul><li>- Users can create their own captivating stories across multiple genres.</li>
+        <li>- Automatically generates Midjourney prompts to generate stunning visual assets for their narratives.</li>
+        <li>- Automatically generates engaging word search levels based on their stories for an interactive experience.</li></ul>`,
       },
       {
         id: "3",
         update_type: "New Game Launch",
-        title: "AI Game Prototype",
-        description: `If you haven’t already played our game download it from here : <a style="text-decoration: underline; color: #1a0dab;" href="https://drive.google.com/file/d/1fctHjUL9satveSDYWLWcDKSTC_APHybZ/view?usp=drivesdk" target="_blank">Click Link</a>
-          and new games can be made leveraging-> StoryWeaver.`,
+        title: "First AI Game Prototype ",
+        description: `<ul>
+        <li>- "Murder Mystery: Word Detective" MVP has been developed, and we're ready with a launch plan.</li>
+        <li>- We've also gathered feedback to improve the game and make it launch-ready.</li>
+        </ul>`,
+      },
+      {
+        id: "4",
+        update_type: "Improvements",
+        title: "Organic UA Email Improvements",
+        description: `<ul>
+        <li>- Organic UA Suite weekly emails now include game versions where bug fixes are required or users are facing problems </li>
+        </ul>`,
+      },
+      {
+        id: "5",
+        update_type: "Improvements",
+        title: "Organic UA automation",
+        description: `<ul>
+        <li>- Organic UA has been automated for 3 games (HDD, HDW5, HDW2) for the past month. We are monitoring the replies for bugs.</li>
+        </ul>`,
+      },
+      {
+        id: "6",
+        update_type: "R&D",
+        title: "HTML5 Playable Ads R&D ",
+        description: `<ul><li>- We have started HTML5 playable ads R&D. And looking to come up with a feasibility plus development pipeline. </li></ul>`,
+      },
+      {
+        id: "7",
+        update_type: "Improved Performance",
+        title: "AI Generated Word Levels Impact (HDW5)",
+        description: `<ul><li>- Portuguese levels doubled the Ad ARPDAU from 0.043 to 0.085 for a specific time period.</li>
+        <li>- Spanish levels helped significantly improve D1 and D7 metrics for Spanish players.</li></ul>`,
+      },
+      {
+        id: "8",
+        update_type: "Improved Performance",
+        title: "AI Generated Word Levels R&D (HDW)",
+        description: `<ul>
+        <li>- Following the impact of HDW5, HDW level generation for other languages is undergoing R&D. With Word Search solved, R&D for Arabic levels is in progress with QC.</li>
+        </ul>`,
+      },
+      {
+        id: "9",
+        update_type: "Game Personalisation",
+        title: "ML Models For In Game Personalisation",
+        description: `<ul>
+        <li>- Trained ML models relating to churn prediction and payer propensity. Planning activation strategies with Product team..</li>
+        </ul>`,
+      },
+      {
+        id: "10",
+        update_type: "Game Personalisation",
+        title: "Room Generation",
+        description: `<ul>
+        <li>- Working with Fastcode, we have developed an alternative art pipeline to make rooms quickly. We are improving the pipeline in the next iteration but we intend to introduce these AI generated rooms to players soon. <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://drive.google.com/file/d/13aXzMcSi61duoj4dVaDcT-3mims9qspX/view?usp=drive_link">Demo link.</a></li>
+        </ul>`,
       },
     ],
-    date: "2024-04-29",
+    date: "Released on 29th April 2024",
   },
 ];
 const Updates = () => {
   const [show, setShow] = useState("");
+  const [showUpdatePopup, setShowUpdatePopup] = useState({});
   const onExpand = (item) => {
     if (show === item.id) {
       setShow("");
@@ -63,41 +104,78 @@ const Updates = () => {
   };
   return (
     <div className="py-10 px-10 bg-white min-h-screen">
-      <p className="text-2xl font-bold pb-5">GamePac Updates</p>
+      <p className="text-2xl font-bold pb-5">What's New</p>
       {data?.map((item) => (
         <div
           key={item.id}
-          className="gap-2 py-4 px-4 border border-1 rounded cursor-pointer"
-          onClick={() => onExpand(item)}
+          className="gap-2 py-4 px-4 border border-1 rounded-md cursor-pointer"
         >
-          <p className="flex items-center justify-between">
-            {item?.title} - {item?.date}
-            <img src={ChevronDown} className={`w-5 h-5 ${show === item.id ? "rotate-180" : "animate-bounce"} transition-all duration-300`} />
-          </p>
-          {show === item.id && <div className=" font-inter">
-            <main className="mx-auto max-w-8xl py-8 px-4 md:px-6 lg:px-8">
-              <section className="mb-8">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {item.feature.map((feature) => (
-                    <div className="rounded-lg bg-white shadow-lg border-[0.5px] p-4" key={feature.id}>
-                      <h3 className="mb-2 text-md font-semibold">
-                        {feature.update_type}
-                      </h3>
-                      <h2 className="mb-2 text-xl font-semibold">{feature.title}</h2>
-                      <p
-                        className=" break-words"
-                        dangerouslySetInnerHTML={{
-                          __html: feature.description,
-                        }}
-                      ></p>
-                    </div>
-                  ))}
+          <div
+            className="flex items-center justify-between"
+            onClick={() => onExpand(item)}
+          >
+            <div className="">
+              <p className="">{item?.title}</p>
+              <span className="text-gray-400">{item?.date}</span>
+            </div>
+            <img
+              src={ChevronDown}
+              className={`w-5 h-5 ${
+                show === item.id ? "rotate-180" : "animate-bounce"
+              } transition-all duration-300`}
+            />
+          </div>
+          {show === item.id && (
+            <div className="bg-[#1a1a1a] text-white">
+              <header className="bg-gradient-to-r from-[#6b3fa0] to-[#8b5cf6] py-12 px-4 md:px-6 lg:px-8">
+                <div className="container mx-auto max-w-5xl flex flex-col items-center">
+                  <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl">
+                    Jetapult's AI News
+                  </h1>
+                  <p className="mt-3 text-sm text-gray-300">
+                    Bringing latest developments in tech @ Jetapult and keeping
+                    you updated with what's coming!.
+                  </p>
                 </div>
-              </section>
-            </main>
-          </div>}
+              </header>
+              <div className=" font-inter">
+                <main className="mx-auto max-w-8xl py-8 px-4 md:px-6 lg:px-8">
+                  <section className="mb-8">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                      {item.feature.map((feature) => (
+                        <div
+                          className="rounded-lg bg-[#262626] shadow-lg p-4"
+                          key={feature.id}
+                          onClick={() => setShowUpdatePopup(feature)}
+                        >
+                          <h3 className="mb-2 text-md font-semibold">
+                            {feature.update_type}
+                          </h3>
+                          <h2 className="mb-2 text-xl font-semibold">
+                            {feature.title}
+                          </h2>
+                          <p
+                            className="text-gray-400 break-words line-clamp-5"
+                            dangerouslySetInnerHTML={{
+                              __html: feature.description,
+                            }}
+                          ></p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </main>
+              </div>
+            </div>
+          )}
         </div>
       ))}
+      {Object.keys(showUpdatePopup).length > 0 && (
+        <UpdatesPopup
+          showUpdatePopup={showUpdatePopup}
+          setShowModal={setShowUpdatePopup}
+        />
+      )}
     </div>
   );
 };
