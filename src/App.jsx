@@ -27,6 +27,7 @@ import { isAuthenticated } from "./auth";
 import AdminLandingPage from "./pages/Admin/AdminLandingPage";
 import AdminRoute from "./auth/AdminRoute";
 import PageNotFound from "./components/PageNotFound";
+import Updates from "./pages/Updates/Updates";
 
 function App() {
   const userTokenData = localStorage.getItem("jwt");
@@ -220,10 +221,8 @@ function App() {
                 </PrivateRoute>
               }
             />
-            <Route
-              path="*"
-              element={<PageNotFound />}
-            />
+            <Route path="/updates" element={<Updates />} />
+            <Route path="*" element={<PageNotFound />} />
           </Routes>
         </Router>
       </>

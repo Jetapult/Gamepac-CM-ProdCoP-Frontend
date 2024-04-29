@@ -102,7 +102,7 @@ const Home = () => {
     console.log(title);
     console.log(selectedContributors, "selectedContributors");
     const saveData = await api.post("/data", {
-      user_id: userData.id,
+      user_id: userData.id.toString(),
       contributor_id: selectedContributors.value,
       transcription,
       sum,

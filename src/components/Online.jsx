@@ -90,7 +90,7 @@ const Online = () => {
 
         // Step 2: Save the data to the data table
         const data = {
-          user_id: userData?.id,
+          user_id: userData?.id?.toString(),
           transcription,
           sum,
           todosList,
