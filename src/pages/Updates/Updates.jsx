@@ -1,11 +1,12 @@
 import { useState } from "react";
-import ChevronDown from "../../assets/chevron-down.svg";
 import UpdatesPopup from "./UpdatesPopup";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { Helmet } from "react-helmet";
 
 const data = [
   {
     id: "1",
-    title: "GamePac Version 2.0.0",
+    title: "Jetapult AI Update - 29th April 2024",
     feature: [
       {
         id: "1",
@@ -104,6 +105,30 @@ const Updates = () => {
   };
   return (
     <div className="py-10 px-10 bg-white min-h-screen">
+      <Helmet>
+        <title>My Page Title</title>
+        <meta property="og:title" content="GamePAC AI | Updates" />
+        <meta
+          property="og:description"
+          content="Explore the latest updates on Gamepac AI, featuring new game developments, feature enhancements, and crucial bug fixes. Stay informed about our ongoing improvements and innovations in gaming technology."
+        />
+        <meta property="og:url" content="https://app.gamepacai.com/updates" />
+        <meta
+          property="og:image"
+          content="https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/gamepac-ai-updates-banner.png"
+        />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="GamePAC AI | Updates" />
+        <meta
+          name="twitter:description"
+          content="Explore the latest updates on Gamepac AI, featuring new game developments, feature enhancements, and crucial bug fixes. Stay informed about our ongoing improvements and innovations in gaming technology."
+        />
+        <meta
+          name="twitter:image"
+          content="https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/gamepac-ai-updates-banner.png"
+        />
+      </Helmet>
       <p className="text-2xl font-bold pb-5">What's New</p>
       {data?.map((item) => (
         <div
@@ -116,17 +141,18 @@ const Updates = () => {
           >
             <div className="">
               <p className="">{item?.title}</p>
-              <span className="text-gray-400">{item?.date}</span>
             </div>
-            <img
-              src={ChevronDown}
-              className={`w-5 h-5 ${
-                show === item.id ? "rotate-180" : "animate-bounce"
-              } transition-all duration-300`}
-            />
+            <button className="border rounded py-1 px-4">
+              View{" "}
+              <ChevronDownIcon
+                className={`w-5 h-5 ${
+                  show === item.id ? "rotate-180" : ""
+                } transition-all duration-300 inline`}
+              />
+            </button>
           </div>
           {show === item.id && (
-            <div className="bg-[#1a1a1a] text-white">
+            <div className="bg-[#1a1a1a] text-white mt-3">
               <header className="bg-gradient-to-r from-[#6b3fa0] to-[#8b5cf6] py-12 px-4 md:px-6 lg:px-8">
                 <div className="container mx-auto max-w-5xl flex flex-col items-center">
                   <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl">
@@ -179,133 +205,4 @@ const Updates = () => {
     </div>
   );
 };
-
-function AwardIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="8" r="6" />
-      <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
-    </svg>
-  );
-}
-
-function BriefcaseIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect width="20" height="14" x="2" y="7" rx="2" ry="2" />
-      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-    </svg>
-  );
-}
-
-function CloudIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
-    </svg>
-  );
-}
-
-function CpuIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="4" y="4" width="16" height="16" rx="2" />
-      <rect x="9" y="9" width="6" height="6" />
-      <path d="M15 2v2" />
-      <path d="M15 20v2" />
-      <path d="M2 15h2" />
-      <path d="M2 9h2" />
-      <path d="M20 15h2" />
-      <path d="M20 9h2" />
-      <path d="M9 2v2" />
-      <path d="M9 20v2" />
-    </svg>
-  );
-}
-
-function RocketIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
-      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
-      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
-      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
-    </svg>
-  );
-}
-
-function SettingsIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
 export default Updates;
