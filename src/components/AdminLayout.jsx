@@ -12,7 +12,7 @@ import { useDispatch, useSelector } from "react-redux";
 import CreateStudioPopup from "../pages/Admin/components/popups/CreateStudioPopup";
 import ToastMessage from "./ToastMessage";
 import { useNavigate, useParams } from "react-router-dom";
-import { addStudioData } from "../store/reducer/adminSlice";
+import { addStudioData, addTotalStudio } from "../store/reducer/adminSlice";
 
 const AdminLayout = ({ children }) => {
   const userData = useSelector((state) => state.user.user);
@@ -58,9 +58,10 @@ const AdminLayout = ({ children }) => {
   useEffect(() => {
     if (studios?.length) {
       const studio = studios.find(
-        (studio) => studio.slug === params.studio_slug
+        (studio) => studio.slug === (params.studio_slug || userData.slug)
       );
       dispatch(addStudioData(studio));
+      dispatch(addTotalStudio(studios.length));
       setSelectedStudio(studio);
     }
   }, [studios]);

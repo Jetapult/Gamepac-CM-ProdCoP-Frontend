@@ -8,6 +8,7 @@ import { classNames } from "../../../../utils";
 import ConfirmationPopup from "../../../../components/ConfirmationPopup";
 import { useSelector } from "react-redux";
 import BulkUploadPopup from "../popups/BulkUploadPopup";
+import loadingIcon from "../../../../assets/transparent-spinner.svg";
 
 const StudioUsers = ({
   studio_id,
@@ -26,6 +27,7 @@ const StudioUsers = ({
   const [selectedUser, setSelectedUser] = useState({});
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const [showBulkUploadPopup, setShowBulkUploadPopup] = useState(false);
+  const [inviteLoader, setInviteLoader] = useState("");
   const limit = 10;
 
   const deleteUser = async () => {
@@ -62,9 +64,11 @@ const StudioUsers = ({
 
   const InviteUser = async (user) => {
     try {
+      setInviteLoader(user.id);
       const send_invite_response = await api.post(`v1/auth/${studio_id}/send-invite`, {
         email: user.email,
       });
+      setInviteLoader("");
       if (send_invite_response.status === 201) {
         setToastMessage({
           show: true,
@@ -81,6 +85,7 @@ const StudioUsers = ({
         );
       }
     } catch (err) {
+      setInviteLoader("");
       if (err.response.data.message) {
         setToastMessage({
           show: true,
@@ -146,24 +151,41 @@ const StudioUsers = ({
         </div>
       </div>
       <div className="overflow-y-auto h-[calc(100vh-334px)]">
-        {users.map((user,index) => (
+        {users.map((user, index) => (
           <div
             className="grid grid-cols-12 px-3 py-3 border-b-[0.5px] border-[#e5e5e5] cursor-pointer"
             key={user.id}
           >
-            <p className="col-span-1">{(currentPage - 1) * limit + index + 1}</p>
+            <p className="col-span-1">
+              {(currentPage - 1) * limit + index + 1}
+            </p>
             <p className="col-span-2">{user.name}</p>
             <p className="col-span-3">{user.email}</p>
             <p className="col-span-2">{user.roles?.join(", ")}</p>
             <p className="col-span-2">{user.invite_status}</p>
             <p className="col-span-1">
               {user.invite_status !== "accepted" && (
-                <button
-                  className="bg-[#f58174] text-white px-4 py-1 rounded-md"
-                  onClick={() => InviteUser(user)}
-                >
-                  Invite
-                </button>
+                <>
+                  {inviteLoader === user.id ? (
+                    <button
+                      className="bg-[#f58174] text-white rounded-md font-bold uppercase text-sm px-4 py-0 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                      type="button"
+                    >
+                      <img
+                        src={loadingIcon}
+                        alt="loading"
+                        className="w-8 h-8"
+                      />
+                    </button>
+                  ) : (
+                    <button
+                      className="bg-[#f58174] text-white px-4 py-1 rounded-md"
+                      onClick={() => InviteUser(user)}
+                    >
+                      Invite
+                    </button>
+                  )}
+                </>
               )}
             </p>
             <Menu as="div" className="relative inline-block text-left">

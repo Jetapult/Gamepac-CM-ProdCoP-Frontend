@@ -20,7 +20,7 @@ function Landing() {
   return (
     <div className="flex flex-col  justify-center">
       <div className="flex flex-col justify-center h-24 shrink-0 ml-24 mr-16 px-1">
-        <div className="text-center text-white text-2xl font-light mt-5 mr-2 h-[40.33%] mb-3">
+        <div className="text-center text-2xl font-light mt-5 mr-2 h-[40.33%] mb-3">
           GamePAC AI
         </div>
       </div>
