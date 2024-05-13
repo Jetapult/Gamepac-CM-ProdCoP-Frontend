@@ -32,6 +32,9 @@ import AdminRoute from "./auth/AdminRoute";
 import PageNotFound from "./components/PageNotFound";
 import Updates from "./pages/Updates/Updates";
 import AIToolsLanding from "./pages/AITools/AIToolsLanding";
+import Match3Game from "./pages/HTML5Games/Match3Game";
+import WordSearchPuzzleGame from "./pages/HTML5Games/WordSearchPuzzleGame";
+import HTML5Games from "./pages/HTML5Games";
 
 
 function App() {
@@ -248,6 +251,9 @@ function App() {
             <Route path="/aistories" element={<PrivateRoute><Weaver /></PrivateRoute>} />
             <Route path="/storiesHistory" element={<PrivateRoute><WeaverHistory /></PrivateRoute>} />
             <Route path ="/aiStories/:id" element={<PrivateRoute><StoryPage /></PrivateRoute>}/>
+            <Route path ="/html5-games" element={<HTML5Games />}/>
+            <Route path ="/html5-games/match-3" element={<Match3Game />}/>
+            <Route path ="/html5-games/word-search-puzzle" element={<WordSearchPuzzleGame />}/>
             <Route
               path="*"
               element={<PageNotFound />}
