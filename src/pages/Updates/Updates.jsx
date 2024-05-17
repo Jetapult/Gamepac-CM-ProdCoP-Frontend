@@ -24,7 +24,7 @@ const data = [
         img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/Dialogue_1.jpg",
         update_type: "AI Game updates",
         title: "AI Game Launch Update",
-        description: `<ul><li>- Our intermediate release of the Murder Mystery AI Game. Please download here.   </li></ul>`,
+        description: `<ul><li>- Our intermediate release of the Murder Mystery AI Game. Please download here. <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://drive.google.com/file/d/1SC6hsr0Ku_k9z2sQJPm0ejArqsVQ1CRY/view?usp=drive_link">link</a>   </li></ul>`,
       },
       {
         id: "3",
@@ -67,7 +67,9 @@ const data = [
         img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/Masterlayer_Room1_SetA.png",
         update_type: "Game Developemnt",
         title: "Furniture Variation Generator ",
-        description: `<ul><li>- We have also developed and are testing a new furniture variation generator, working with Fastcode. </li>
+        description: `<ul>
+        <li>- <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://drive.google.com/drive/folders/10djeq2eU6IfOE2-c-a3qOx2PwSgQRlbf">View</a></li>
+        <li>- We have also developed and are testing a new furniture variation generator, working with Fastcode. </li>
         <li>- This will helps us monetise our furniture assets much better with more variety available.</li></ul>`,
       },
     ],
