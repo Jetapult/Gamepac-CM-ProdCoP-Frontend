@@ -51,8 +51,8 @@ const data = [
         img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/looker-studio-analytics.png",
         update_type: "Game Development",
         title: "Gaming Dashboards",
-        description: `<ul><li>- We have also developed and are testing a new furniture variation generator, working with Fastcode. </li>
-        <li>- This will helps us monetise our furniture assets much better with more variety available.</li></ul>`,
+        description: `<ul><li>- We have worked with an external agency to develop in gaming dashboards. Check them out here. <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://lookerstudio.google.com/u/0/reporting/b08e7772-0424-40c0-87f4-3210e5711377/page/p_35ykx5xegd">link</a> </li>
+       </ul>`,
       },
       {
         id: "6",
@@ -68,7 +68,7 @@ const data = [
         update_type: "Game Developemnt",
         title: "Furniture Variation Generator ",
         description: `<ul>
-        <li>- <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://drive.google.com/drive/folders/10djeq2eU6IfOE2-c-a3qOx2PwSgQRlbf">View</a></li>
+        <li>- <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://drive.google.com/drive/folders/10djeq2eU6IfOE2-c-a3qOx2PwSgQRlbf?usp=sharing">View</a></li>
         <li>- We have also developed and are testing a new furniture variation generator, working with Fastcode. </li>
         <li>- This will helps us monetise our furniture assets much better with more variety available.</li></ul>`,
       },
