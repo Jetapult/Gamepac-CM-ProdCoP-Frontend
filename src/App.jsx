@@ -35,6 +35,9 @@ import AIToolsLanding from "./pages/AITools/AIToolsLanding";
 import Match3Game from "./pages/HTML5Games/Match3Game";
 import WordSearchPuzzleGame from "./pages/HTML5Games/WordSearchPuzzleGame";
 import HTML5Games from "./pages/HTML5Games";
+import Analytics from "./pages/Analytics/Analytics";
+import Signup from "./pages/Login/Signup";
+import { addStudios } from "./store/reducer/adminSlice";
 
 
 function App() {
@@ -52,6 +55,16 @@ function App() {
       });
       if (studioData.status === 200) {
         dispatch(addUserData(studioData.data.data));
+        if (studioData.data.data.studio_type.includes("studio_manager")) {
+          await api
+            .get("/v1/game-studios")
+            .then((res) => {
+              dispatch(addStudios(res.data.data));
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+        }
       }
     } catch (err) {
       console.log(err, "err");
@@ -91,6 +104,14 @@ function App() {
               element={
                 <UnprotectedRoute>
                   <Login />
+                </UnprotectedRoute>
+              }
+            />
+            <Route
+              path="/signup"
+              element={
+                <UnprotectedRoute>
+                  <Signup />
                 </UnprotectedRoute>
               }
             />
@@ -247,6 +268,7 @@ function App() {
               }
             />
             <Route path="/updates" element={<Updates />} />
+            <Route path="/analytics" element={<Analytics />} />
             
             <Route path="/aistories" element={<PrivateRoute><Weaver /></PrivateRoute>} />
             <Route path="/storiesHistory" element={<PrivateRoute><WeaverHistory /></PrivateRoute>} />

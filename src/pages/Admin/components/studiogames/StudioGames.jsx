@@ -9,8 +9,15 @@ import CreateGamePopup from "../popups/CreateGamePopup";
 import SendWeeklyReportPopup from "../popups/SendWeeklyReportPopup";
 import EnableAutoReplyPopup from "../popups/EnableAutoReplyPopup";
 import ConfirmationPopup from "../../../../components/ConfirmationPopup";
+import { ArrowPathIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
+import loadingIcon from "../../../../assets/transparent-spinner.svg";
+import TypewriterLoader from "../../../../components/TypewriterLoader/TypewriterLoader";
+import ReviewsPrerequisites from "../popups/ReviewsPrerequisites";
+import Joyride, {  STATUS } from 'react-joyride';
+import { useSelector } from "react-redux";
 
-const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
+const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelectedTab }) => {
+  const userData = useSelector((state) => state.user.user);
   const [games, setGames] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalGames, setTotalGames] = useState(0);
@@ -20,11 +27,76 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
   const [showAutoReplyEnablePopup, setShowAutoReplyEnablePopup] =
     useState(false);
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
+  const [showReviewsPrerequisitesPopup, setShowReviewsPrerequisitesPopup] =
+    useState(false);
+  const [refreshLoader, setRefreshLoader] = useState(false);
+  const [run, setRun] = useState(false);
+  const steps = [
+    {
+      content: <h2>Prerequisites to fetch reviews</h2>,
+      locale: { skip: <strong aria-label="skip">SKIP</strong> },
+      placement: 'left',
+      target: '.prerequisites-text',
+      disableBeacon: true
+    },
+    {
+      content: <h2>Once Prerequisites is Done then you can create your games of your studio</h2>,
+      locale: { skip: <strong aria-label="skip">SKIP</strong> },
+      placement: 'left',
+      target: '.new-btn',
+    },
+  ];
   const limit = 10;
+
+  const handleJoyrideCallback = (data) => {
+    const { status, type } = data;
+    const finishedStatuses = [STATUS.FINISHED, STATUS.SKIPPED];
+
+    if (finishedStatuses.includes(status)) {
+      setRun(false);
+      localStorage.setItem("game-onBoard", true);
+    }
+  };
+
+  const onRefreshReviews = async (game) => {
+    try {
+      setRefreshLoader(true);
+      const requestbody = {
+        gameId: game.id,
+        studioId: studio_id,
+      };
+      const refresh_response = await api.put(
+        `/v1/organic-ua/refresh-reviews`,
+        requestbody
+      );
+      if (refresh_response.status === 201) {
+        setToastMessage({
+          show: true,
+          message: "successfull",
+          type: "success",
+        });
+      }
+      setRefreshLoader(false);
+    } catch (err) {
+      setRefreshLoader(false);
+      if (err.response.data.message) {
+        setToastMessage({
+          show: true,
+          message: err.response.data.message,
+          type: "error",
+        });
+      }
+      // if(err.response.status === 403){
+      //   setRun(true);
+      // }
+    }
+  };
 
   const deleteGame = async () => {
     try {
-      const response = await api.delete(`/v1/games/${studio_id}/${selectedGame.id}`);
+      const response = await api.delete(
+        `/v1/games/${studio_id}/${selectedGame.id}`
+      );
       if (response.data.data) {
         setToastMessage({
           show: true,
@@ -66,6 +138,10 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
       );
       setGames(games_response.data.data);
       setTotalGames(games_response.data.totalGames);
+      const isGameOnboarding = localStorage.getItem("game-onBoard");
+      if(!games_response.data.data.length && !isGameOnboarding && !userData?.studio_type?.includes("studio_manager")){
+        setRun(true);
+      }
     } catch (err) {
       console.log(err);
       setGames([]);
@@ -76,11 +152,25 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
     getGamesByStudioId();
   }, [currentPage, studio_id]);
   return (
-    <div>
+    <>
+    <Joyride
+        callback={handleJoyrideCallback}
+        continuous
+        run={run}
+        scrollToFirstStep
+        showProgress
+        showSkipButton
+        steps={steps}
+        styles={{
+          options: {
+            zIndex: 10000,
+          },
+        }}
+      />
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl my-2"></h1>
+        <p className="text-gray-500 my-2 cursor-pointer prerequisites-text" onClick={() => setShowReviewsPrerequisitesPopup(!showReviewsPrerequisitesPopup)}>Prerequisites/Not able to fetch the reviews <QuestionMarkCircleIcon className="inline w-4 h-4" /></p>
         <button
-          className="bg-[#f58174] text-white px-4 py-2 rounded-md"
+          className="bg-[#f58174] text-white px-4 py-2 rounded-md new-btn"
           onClick={() => setShowAddUserPopup(!showAddUserPopup)}
         >
           <PlusIcon className="h-5 w-5 inline mr-1" /> New
@@ -114,7 +204,7 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
         </div>
       </div>
       <div className="overflow-y-auto h-[calc(100vh-334px)]">
-        {games.map((game,index) => (
+        {games.map((game, index) => (
           <div
             className="grid grid-cols-12 px-3 py-3 border-b-[0.5px] border-[#e5e5e5] cursor-pointer"
             key={game.id}
@@ -127,10 +217,13 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
             <p className="col-span-2 break-all">{game.package_name}</p>
             <p className="col-span-2 break-all px-1">{game.pod_owner}</p>
             <Menu as="div" className="relative inline-block text-left">
-              <div>
+              <div className="flex items-center justify-end">
+                <button className="pr-4" onClick={() => onRefreshReviews(game)}>
+                  <ArrowPathIcon className="inline w-6 h-6" />
+                </button>
                 <Menu.Button
                   onClick={(event) => event.stopPropagation()}
-                  className="inline-flex w-full justify-end gap-x-1.5 text-sm font-semibold"
+                  className="inline-flex text-sm font-semibold"
                 >
                   <EllipsisVerticalIcon className="w-4 h-4" />
                 </Menu.Button>
@@ -270,7 +363,21 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
           onConfirm={deleteGame}
         />
       )}
-    </div>
+      {showReviewsPrerequisitesPopup && (
+        <ReviewsPrerequisites
+          showReviewsPrerequisitesPopup={showReviewsPrerequisitesPopup}
+          setShowReviewsPrerequisitesPopup={setShowReviewsPrerequisitesPopup}
+          setSelectedTab={setSelectedTab}
+        />
+      )}
+      {refreshLoader && (
+        <div className="fixed top-0 bottom-0 left-0 right-0 flex flex-col items-center justify-center bg-[#ffffff] bg-opacity-[0.7]">
+          <TypewriterLoader />
+          <p> Please wait...</p>
+          <p>till we fetch all the reviews</p>
+        </div>
+      )}
+    </>
   );
 };
 export default StudioGames;
