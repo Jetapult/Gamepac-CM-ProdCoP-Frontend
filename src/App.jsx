@@ -38,6 +38,7 @@ import HTML5Games from "./pages/HTML5Games";
 import Analytics from "./pages/Analytics/Analytics";
 import Signup from "./pages/Login/Signup";
 import { addStudios } from "./store/reducer/adminSlice";
+import Docs from "./pages/Docs";
 
 
 function App() {
@@ -76,7 +77,7 @@ function App() {
     }
   }, []);
   return (
-    <div className="h-screen bg-[#f6f6f7]">
+    <div className=" bg-[#f6f6f7] h-[calc(100vh-3.5rem)]">
       <>
         <Router>
           <Navbar />
@@ -276,6 +277,10 @@ function App() {
             <Route path ="/html5-games" element={<HTML5Games />}/>
             <Route path ="/html5-games/match-3" element={<Match3Game />}/>
             <Route path ="/html5-games/word-search-puzzle" element={<WordSearchPuzzleGame />}/>
+            <Route path="/docs/overview" element={<Docs />} />
+            <Route path="/docs/app-onboarding" element={<Docs />} />
+            <Route path="/docs/ai-replies" element={<Docs />} />
+            <Route path="/docs/campaign" element={<Docs />} />
             <Route
               path="*"
               element={<PageNotFound />}
