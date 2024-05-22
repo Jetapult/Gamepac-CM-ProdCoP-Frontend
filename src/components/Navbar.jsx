@@ -104,13 +104,10 @@ function Navbar() {
                   <ul>
                     <li className="duration-150 hover:text-gray-900">
                       <a
-                        className="block"
+                        className="block cursor-pointer"
                         onClick={() => setShowAnalyticsPopup(true)}
                       >
-                        <div className="flex gap-2 items-center cursor-pointer">
-                          {/* <ChartBarSquareIcon className="w-5 h-5" /> */}
-                          Analytics
-                        </div>
+                        <div className="flex gap-2 items-center">Analytics</div>
                       </a>
                     </li>
                   </ul>
@@ -119,66 +116,14 @@ function Navbar() {
               (studioSlug &&
                 studioSlug !== userData?.slug &&
                 userData?.studio_type?.includes("studio_manager")) ? (
-                <div className="relative">
-                  <button
-                    className="text-gray-700 justify-end items-center space-y-6 md:flex md:space-x-6 md:space-y-0 md:text-gray-600 md:font-medium"
-                    // onMouseEnter={handleOpenDropdown}
-                    onClick={handleOpenDropdown}
-                  >
-                    <div className="flex items-center socials">
-                      {/* <img src={socialsImg} className="w-6 h-6" alt="Socials" /> */}
-                      Socials
-                      {/* <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4 md:h-5 md:w-5 inline"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      aria-hidden="true"
+                  <div className="duration-150 hover:text-gray-900 ai-tools">
+                    <a
+                      className="block cursor-pointer"
+                      onClick={() => navigate( studioSlug ? `/organic-ua/smart-feedback/${studioSlug}` : "/organic-ua/smart-feedback")}
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M6.293 6.293a1 1 0 011.414 0L10 8.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg> */}
-                      <ChevronDownIcon className="w-5 h-5 inline ml-1" />
-                    </div>
-                  </button>
-                  {dropdownOpen && (
-                    <div
-                      className={`absolute bg-white border border-gray-300 mt-1 py-1 w-36 text-gray-800 rounded-lg shadow-lg whitespace-nowrap ${
-                        dropdownOpen ? "opacity-100" : "opacity-0"
-                      }`}
-                      style={{ transition: "opacity 0.3s" }}
-                      ref={wrapperRef}
-                    >
-                      <button
-                        className="block px-2 md:px-4 py-2 hover:bg-gray-200 transition duration-200 w-full text-left"
-                        onClick={() => {
-                          navigate(
-                            studioSlug
-                              ? `/${studioSlug}/assistant`
-                              : "/assistant"
-                          );
-                          handleToggleDropdown();
-                        }}
-                      >
-                        Reply Assistant
-                      </button>
-                      <button
-                        className="block px-2 md:px-4 py-2 hover:bg-gray-200 transition duration-200 w-full text-left"
-                        onClick={() => {
-                          navigate(
-                            studioSlug ? `/${studioSlug}/smart` : "/smart"
-                          );
-                          handleToggleDropdown();
-                        }}
-                      >
-                        Smart Actions
-                      </button>
-                    </div>
-                  )}
-                </div>
+                      <div className="flex gap-2 items-center">Socials</div>
+                    </a>
+                  </div>
               ) : (
                 <></>
               )}
@@ -250,6 +195,14 @@ function Navbar() {
                     </div>
                   </ReactPopover>
                 )}
+                <li className="duration-150 hover:text-gray-900 ai-tools">
+                  <a
+                    className="block cursor-pointer"
+                    onClick={() => navigate("/docs/overview")}
+                  >
+                    <div className="flex gap-2 items-center">Docs</div>
+                  </a>
+                </li>
                 <li
                   className="duration-150 text-black hover:text-gray-900 relative"
                   ref={wrapperRef}

@@ -26,8 +26,6 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelecte
   const [showAutoReplyEnablePopup, setShowAutoReplyEnablePopup] =
     useState(false);
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
-  const [showReviewsPrerequisitesPopup, setShowReviewsPrerequisitesPopup] =
-    useState(false);
   const [refreshLoader, setRefreshLoader] = useState(false);
   const limit = 10;
 
@@ -120,7 +118,7 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelecte
   return (
     <>
       <div className="flex justify-between items-center">
-        <p className="text-gray-500 my-2 cursor-pointer prerequisites-text" onClick={() => setShowReviewsPrerequisitesPopup(!showReviewsPrerequisitesPopup)}>Prerequisites/Not able to fetch the reviews <QuestionMarkCircleIcon className="inline w-4 h-4" /></p>
+        <p className="text-gray-500 my-2 cursor-pointer prerequisites-text" onClick={() => window.open(`/docs/app-onboarding`)}>Prerequisites/Not able to fetch the reviews <QuestionMarkCircleIcon className="inline w-4 h-4" /></p>
         <button
           className="bg-[#f58174] text-white px-4 py-2 rounded-md new-btn"
           onClick={() => setShowAddUserPopup(!showAddUserPopup)}
@@ -313,13 +311,6 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelecte
           subHeading="Are you sure you want to delete this game? on deleting all the reviews under this game will be deleted and cannot be retrieved."
           onCancel={() => setShowConfirmationPopup(!showConfirmationPopup)}
           onConfirm={deleteGame}
-        />
-      )}
-      {showReviewsPrerequisitesPopup && (
-        <ReviewsPrerequisites
-          showReviewsPrerequisitesPopup={showReviewsPrerequisitesPopup}
-          setShowReviewsPrerequisitesPopup={setShowReviewsPrerequisitesPopup}
-          setSelectedTab={setSelectedTab}
         />
       )}
       {refreshLoader && (

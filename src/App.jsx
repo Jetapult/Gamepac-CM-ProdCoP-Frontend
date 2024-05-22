@@ -39,6 +39,7 @@ import Analytics from "./pages/Analytics/Analytics";
 import Signup from "./pages/Login/Signup";
 import { addStudios } from "./store/reducer/adminSlice";
 import Docs from "./pages/Docs";
+import OrganicUA from "./pages/OrganicUA";
 
 
 function App() {
@@ -270,6 +271,16 @@ function App() {
             />
             <Route path="/updates" element={<Updates />} />
             <Route path="/analytics" element={<Analytics />} />
+
+            <Route path="/organic-ua/smart-feedback" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/smart-feedback/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/tags" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/tags/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/templates" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/templates/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/review-insights" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/review-insights/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+
             
             <Route path="/aistories" element={<PrivateRoute><Weaver /></PrivateRoute>} />
             <Route path="/storiesHistory" element={<PrivateRoute><WeaverHistory /></PrivateRoute>} />
