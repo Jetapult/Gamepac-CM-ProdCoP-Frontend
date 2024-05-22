@@ -42,7 +42,7 @@ const OrganicUA = () => {
           </div>
         ))}
       </div>
-      <div className="content w-full sm:w-4/5 p-6">
+      <div className="content flex-auto sm:w-auto p-6">
         {activeMenu === "smart-feedback" && <SmartFeedback studio_slug={studio_slug} />}
         {activeMenu === "review-insights" && <ReviewInsights studio_slug={studio_slug} />}
       </div>
