@@ -12,10 +12,15 @@ import { useDispatch, useSelector } from "react-redux";
 import CreateStudioPopup from "../pages/Admin/components/popups/CreateStudioPopup";
 import ToastMessage from "./ToastMessage";
 import { useNavigate, useParams } from "react-router-dom";
-import { addStudioData, addTotalStudio } from "../store/reducer/adminSlice";
+import {
+  addStudioData,
+  addStudios,
+  addTotalStudio,
+} from "../store/reducer/adminSlice";
 
 const AdminLayout = ({ children }) => {
   const userData = useSelector((state) => state.user.user);
+  const studioList = useSelector((state) => state.admin.studios);
   const [studios, setStudios] = useState([]);
   const [selectedStudio, setSelectedStudio] = useState(null);
   const [showCreateStudioPopup, setShowCreateStudioPopup] = useState(false);
@@ -44,17 +49,12 @@ const AdminLayout = ({ children }) => {
     }
   };
 
-  const getStudios = async () => {
-    try {
-      const res = await api.get("/v1/game-studios");
-      setStudios(res.data.data);
-    } catch (err) {
-      console.log(err);
-    }
-  };
   useEffect(() => {
-    getStudios();
-  }, []);
+    if(studioList.length){
+      setStudios(studioList);
+    }
+  }, [studioList.length]);
+  
   useEffect(() => {
     if (studios?.length) {
       const studio = studios.find(

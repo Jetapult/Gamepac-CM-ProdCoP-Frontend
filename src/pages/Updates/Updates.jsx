@@ -5,8 +5,80 @@ import { Helmet } from "react-helmet";
 
 const data = [
   {
+    id: "2",
+    title: "Jetapult AI Update - 15th May 2024",
+    short_description: "Hello Team, We are excited to share a bunch of exciting updates with you regarding HTML5 ads, our AI games, asset generation and more.",
+    feature: [
+      {
+        id: "1",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/playable-games.png",
+        update_type: "New Feature Launch",
+        title: "HTML5 Playable Ads Prototype",
+        description: `<ul>
+        <li>- Releasing our very first attempts at creating HTML5 ads. These demos are rough and we are figuring out the dev pipeline that lets pump ads at scale. <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://app.gamepacai.com/html5-games">Try them here.</a></li>
+        </ul>
+        `,
+      },
+      {
+        id: "2",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/Dialogue_1.jpg",
+        update_type: "AI Game updates",
+        title: "AI Game Launch Update",
+        description: `<ul><li>- Our intermediate release of the Murder Mystery AI Game. Please download here. <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://drive.google.com/file/d/1SC6hsr0Ku_k9z2sQJPm0ejArqsVQ1CRY/view?usp=drive_link">link</a>   </li></ul>`,
+      },
+      {
+        id: "3",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/word-levels.png",
+        update_type: "Game Impact",
+        title: "AI Generated Word Levels Impact (HDW5)",
+        description: `<ul>
+        <li>French:<br /> -D1 and D7 retention increased by 18% (25.15% to 29.62%) and 7% (8.96% to 9.58%) respectively.  </li>
+        <li>Spanish:<br /> -Engagement time increased by 8% (32.4 min to 34.98 min) and as a result, Impressions/DAU increased by 6% (5.42 to 5.75).<br/> -D1 and D7 retention increased by 25% (22.7% to 28.45%) and 40% (6.04% to 8.44%) respectively. </li>
+        </ul>`,
+      },
+      {
+        id: "4",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/ml.png",
+        update_type: "ML Models",
+        title: "ML Models For Gaming",
+        description: `<ul>
+        <li>- We built churn, purchase propensity and LTV prediction models with an external agency. </li>
+        <li>- We are currently planning their deployment into our games.</li>
+        </ul>`,
+      },
+      {
+        id: "5",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/looker-studio-analytics.png",
+        update_type: "Game Development",
+        title: "Gaming Dashboards",
+        description: `<ul><li>- We have worked with an external agency to develop in gaming dashboards. Check them out here. <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://lookerstudio.google.com/u/0/reporting/b08e7772-0424-40c0-87f4-3210e5711377/page/p_35ykx5xegd">link</a> </li>
+       </ul>`,
+      },
+      {
+        id: "6",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/image.png",
+        update_type: "R&D",
+        title: "Automated ASO Game Icon Generation[Coming Soon]",
+        description: `<ul><li>- We already work closely with HolyCow team to help them create game icons. </li>
+        <li>- We aim to automate this process and scale the ASO process for any studio.</li></ul>`,
+      },
+      {
+        id: "7",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/Masterlayer_Room1_SetA.png",
+        update_type: "Game Developemnt",
+        title: "Furniture Variation Generator ",
+        description: `<ul>
+        <li>- <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://drive.google.com/drive/folders/10djeq2eU6IfOE2-c-a3qOx2PwSgQRlbf?usp=sharing">View</a></li>
+        <li>- We have also developed and are testing a new furniture variation generator, working with Fastcode. </li>
+        <li>- This will helps us monetise our furniture assets much better with more variety available.</li></ul>`,
+      },
+    ],
+    date: "Released on 15th May 2024",
+  },
+  {
     id: "1",
     title: "Jetapult AI Update - 29th April 2024",
+    short_description: "Bi-weekly updates on current and future AI developments at Jetapult",
     feature: [
       {
         id: "1",
@@ -94,7 +166,7 @@ const data = [
   },
 ];
 const Updates = () => {
-  const [show, setShow] = useState("");
+  const [show, setShow] = useState("2");
   const [showUpdatePopup, setShowUpdatePopup] = useState({});
   const onExpand = (item) => {
     if (show === item.id) {
@@ -133,7 +205,7 @@ const Updates = () => {
       {data?.map((item) => (
         <div
           key={item.id}
-          className="gap-2 py-4 px-4 border border-1 rounded-md cursor-pointer"
+          className="gap-2 py-4 px-4 border border-1 rounded-md cursor-pointer mb-4"
         >
           <div
             className="flex items-center justify-between"
@@ -159,8 +231,7 @@ const Updates = () => {
                     Jetapult AI Updates
                   </h1>
                   <p className="mt-3 text-sm text-gray-300">
-                    Bi-weekly updates on current and future AI developments at
-                    Jetapult
+                    {item.short_description}
                   </p>
                 </div>
               </header>
@@ -168,12 +239,13 @@ const Updates = () => {
                 <main className="mx-auto max-w-8xl py-8 px-4 md:px-6 lg:px-8">
                   <section className="mb-8">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                      {item.feature.map((feature) => (
+                      {item?.feature?.map((feature) => (
                         <div
                           className="rounded-lg bg-[#262626] shadow-lg p-4"
                           key={feature.id}
                           onClick={() => setShowUpdatePopup(feature)}
                         >
+                          {feature.img ? <img src={feature.img} alt="img" className="h-44 w-full mb-4 rounded-lg" /> : <></>}
                           <h3 className="mb-2 text-md font-semibold">
                             {feature.update_type}
                           </h3>

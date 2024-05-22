@@ -12,6 +12,7 @@ import ToastMessage from "./ToastMessage";
 
 const Assistant = () => {
   const userData = useSelector((state) => state.user.user);
+  const studios = useSelector((state) => state.admin.studios);
   const [selectedApp, setSelectedApp] = useState("google");
   const [selectedGame, setSelectedGame] = useState(null);
   const [comments, setComments] = useState([]);
@@ -203,6 +204,7 @@ const Assistant = () => {
         response = await api.post("/postAppleReply", {
           reviewId: reviewId,
           reply: comment.reply,
+          studio_id: studio_slug ? studios.filter(x => x.slug === studio_slug)[0].id : userData.studio_id
         });
       }
       if (response.status === 200) {

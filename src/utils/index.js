@@ -20,8 +20,8 @@ export function parseJwt(token) {
 
 export const getAuthToken = () => {
   const userTokenData = localStorage.getItem("jwt");
-  return JSON.parse(userTokenData)
-}
+  return JSON.parse(userTokenData);
+};
 
 export function classNames(...classes) {
   return classes.filter(Boolean).join(" ");

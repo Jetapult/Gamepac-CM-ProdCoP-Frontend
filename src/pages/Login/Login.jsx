@@ -3,6 +3,7 @@ import api from "../../api";
 import ToastMessage from "../../components/ToastMessage";
 import { authenticate } from "../../auth";
 import { emailRegex } from "../../utils";
+import loadingIcon from "../../assets/transparent-spinner.svg";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -14,13 +15,14 @@ const Login = () => {
     duration: 3000,
     type: "success",
   });
+  const [loginLoader, setLoginLoader] = useState(false);
 
   const handleForgotPassword = async (event) => {
-    event.preventDefault();
-    if (!emailRegex.test(email)) {
-      return;
-    }
     try {
+      event.preventDefault();
+      if (!emailRegex.test(email)) {
+        return;
+      }
       const requestbody = {
         email,
       };
@@ -49,6 +51,7 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      setLoginLoader(true);
       const requestbody = {
         email: email.trim(),
         password,
@@ -61,11 +64,10 @@ const Login = () => {
             message: "Login Successfully",
             type: "success",
           });
-          setTimeout(() => {
-            window.location.href = "/";
-          }, 1000);
+          window.location.href = "/";
         });
       }
+      setLoginLoader(false);
     } catch (err) {
       if (err.response.data.message) {
         setToastMessage({
@@ -74,6 +76,7 @@ const Login = () => {
           type: "error",
         });
       }
+      setLoginLoader(false);
     }
   };
   return (
@@ -145,14 +148,29 @@ const Login = () => {
               </button>
             ) : (
               <>
-                {(email && password) ? (
-                  <button
-                    type="submit"
-                    className="w-full bg-[#f58174] text-white py-2 px-4 rounded-md focus:outline-none focus:ring focus:border-gray-400"
-                    onClick={handleLogin}
-                  >
-                    Login
-                  </button>
+                {email && password ? (
+                  <>
+                    {loginLoader ? (
+                      <button
+                        type="submit"
+                        className="w-full bg-[#f58174] text-white py-2 px-4 rounded-md flex justify-center outline-none"
+                      >
+                        <img
+                          src={loadingIcon}
+                          alt="loading"
+                          className="w-8 h-8"
+                        />
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        className="w-full bg-[#f58174] text-white py-2 px-4 rounded-md focus:outline-none focus:ring focus:border-gray-400"
+                        onClick={handleLogin}
+                      >
+                        Login
+                      </button>
+                    )}
+                  </>
                 ) : (
                   <button
                     type="submit"
