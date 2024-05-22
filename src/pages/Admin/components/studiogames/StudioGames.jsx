@@ -13,7 +13,6 @@ import { ArrowPathIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outli
 import loadingIcon from "../../../../assets/transparent-spinner.svg";
 import TypewriterLoader from "../../../../components/TypewriterLoader/TypewriterLoader";
 import ReviewsPrerequisites from "../popups/ReviewsPrerequisites";
-import Joyride, {  STATUS } from 'react-joyride';
 import { useSelector } from "react-redux";
 
 const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelectedTab }) => {
@@ -30,33 +29,7 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelecte
   const [showReviewsPrerequisitesPopup, setShowReviewsPrerequisitesPopup] =
     useState(false);
   const [refreshLoader, setRefreshLoader] = useState(false);
-  const [run, setRun] = useState(false);
-  const steps = [
-    {
-      content: <h2>Prerequisites to fetch reviews</h2>,
-      locale: { skip: <strong aria-label="skip">SKIP</strong> },
-      placement: 'left',
-      target: '.prerequisites-text',
-      disableBeacon: true
-    },
-    {
-      content: <h2>Once Prerequisites is Done then you can create your games of your studio</h2>,
-      locale: { skip: <strong aria-label="skip">SKIP</strong> },
-      placement: 'left',
-      target: '.new-btn',
-    },
-  ];
   const limit = 10;
-
-  const handleJoyrideCallback = (data) => {
-    const { status, type } = data;
-    const finishedStatuses = [STATUS.FINISHED, STATUS.SKIPPED];
-
-    if (finishedStatuses.includes(status)) {
-      setRun(false);
-      localStorage.setItem("game-onBoard", true);
-    }
-  };
 
   const onRefreshReviews = async (game) => {
     try {
@@ -86,9 +59,6 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelecte
           type: "error",
         });
       }
-      // if(err.response.status === 403){
-      //   setRun(true);
-      // }
     }
   };
 
@@ -138,10 +108,6 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelecte
       );
       setGames(games_response.data.data);
       setTotalGames(games_response.data.totalGames);
-      const isGameOnboarding = localStorage.getItem("game-onBoard");
-      if(!games_response.data.data.length && !isGameOnboarding && !userData?.studio_type?.includes("studio_manager")){
-        setRun(true);
-      }
     } catch (err) {
       console.log(err);
       setGames([]);
@@ -153,20 +119,6 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelecte
   }, [currentPage, studio_id]);
   return (
     <>
-    <Joyride
-        callback={handleJoyrideCallback}
-        continuous
-        run={run}
-        scrollToFirstStep
-        showProgress
-        showSkipButton
-        steps={steps}
-        styles={{
-          options: {
-            zIndex: 10000,
-          },
-        }}
-      />
       <div className="flex justify-between items-center">
         <p className="text-gray-500 my-2 cursor-pointer prerequisites-text" onClick={() => setShowReviewsPrerequisitesPopup(!showReviewsPrerequisitesPopup)}>Prerequisites/Not able to fetch the reviews <QuestionMarkCircleIcon className="inline w-4 h-4" /></p>
         <button

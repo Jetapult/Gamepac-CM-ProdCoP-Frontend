@@ -65,7 +65,6 @@ const CreateUserPopup = ({
         roles: roles,
         invite_status: selectedUser?.id ? selectedUser?.invite_status : "invited",
         studio_id: studio_id,
-        has_completed_onboarding: selectedUser?.has_completed_onboarding
       };
       const create_studio_response = selectedUser?.id
         ? await api.put(`/v1/users/${studio_id}/${selectedUser?.id}`, requestbody)

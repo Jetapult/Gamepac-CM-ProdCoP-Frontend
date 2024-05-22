@@ -16,24 +16,17 @@ import { isAuthenticated, logout } from "../auth";
 import AnalyticsPopup from "./AnalyticsPopup";
 import { ChartBarSquareIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 import { SparklesIcon } from "@heroicons/react/24/outline";
-import Joyride, { STATUS } from "react-joyride";
 import packageInfo from "../../package.json";
 import ReactPopover from "./Popover";
-import { StudioSteps, externalSteps, jetapultSteps, steps } from "../utils";
-import { onboardingProcess } from "../store/reducer/onboardingSlice";
-import { updateUserData } from "../store/reducer/userSlice";
 
 function Navbar() {
   const userData = useSelector((state) => state.user.user);
-  const onboardStatus = useSelector((state) => state.onboard.NavbarRun);
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showAnalyticsPopup, setShowAnalyticsPopup] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showNoteTakerDropdown, setShowNoteTakerDropdown] = useState(false);
-  const [run, setRun] = useState(false);
   const studioSlug = localStorage.getItem("selectedStudio");
-  const dispatch = useDispatch();
   const wrapperRef = useRef(null);
   useOutsideAlerter(wrapperRef);
   function useOutsideAlerter(ref) {
@@ -77,56 +70,8 @@ function Navbar() {
     setDropdownOpen(!dropdownOpen);
   };
 
-  const updateUserOnboardingStatus = async () => {
-    try {
-      const updateUserOnboardingStatus_response = await api.put(
-        `/v1/users/update-onboard-user-status`
-      );
-      const data = {
-        has_completed_onboarding:
-          updateUserOnboardingStatus_response.updateUserOnboardingStatus_response,
-      };
-      dispatch(updateUserData(data));
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  const handleJoyrideCallback = (data) => {
-    const { status, type } = data;
-    const finishedStatuses = [STATUS.FINISHED, STATUS.SKIPPED];
-    if (finishedStatuses.includes(status)) {
-      dispatch(onboardingProcess(false));
-      updateUserOnboardingStatus();
-    }
-  };
-  useState(() => {
-    setRun(onboardStatus);
-  }, [onboardStatus]);
   return (
     <>
-      {userData?.studio_type && (
-        <Joyride
-          callback={handleJoyrideCallback}
-          continuous
-          run={run}
-          scrollToFirstStep
-          showProgress
-          showSkipButton
-          steps={
-            userData?.studio_type?.includes("studio_manager")
-              ? jetapultSteps
-              : userData?.studio_type?.includes("external_studio")
-              ? externalSteps
-              : StudioSteps
-          }
-          styles={{
-            options: {
-              zIndex: 10000,
-            },
-          }}
-        />
-      )}
       <div className="navbar bg-white flex justify-between items-center h-14 py-4 px-8 shadow-lg fixed top-0 left-0 right-0 z-50">
         <a
           className="flex items-center cursor-pointer"

@@ -5,15 +5,10 @@ import StudioGames from "./components/studiogames/StudioGames";
 import api from "../../api";
 import StudioSettings from "./components/studioSettings/StudioSettings";
 import StudioDashboard from "./components/studioDashboard/StudioDashboard";
-import { useDispatch, useSelector } from "react-redux";
-import Joyride, { STATUS } from "react-joyride";
-import { StudioSteps, externalSteps, jetapultSteps, steps } from "../../utils";
-import { onboardingProcess } from "../../store/reducer/onboardingSlice";
-import { updateUserData } from "../../store/reducer/userSlice";
+import { useSelector } from "react-redux";
 import StudioAppStoreKeys from "./components/studioAppStoreKeys/studioAppStoreKeys";
 
 const StudioDetails = () => {
-  const userData = useSelector((state) => state.user.user);
   const adminData = useSelector((state) => state.admin.selectedStudio);
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -26,8 +21,6 @@ const StudioDetails = () => {
     duration: 3000,
     type: "success",
   });
-  const [run, setRun] = useState(false);
-  const dispatch = useDispatch();
 
   const tabs = [
     {
@@ -62,34 +55,6 @@ const StudioDetails = () => {
     },
   ];
 
-  const updateUserOnboardingStatus = async () => {
-    try {
-      const updateUserOnboardingStatus_response = await api.put(
-        `/v1/users/update-onboard-user-status`
-      );
-      const data = {
-        has_completed_onboarding:
-          updateUserOnboardingStatus_response.updateUserOnboardingStatus_response,
-      };
-      dispatch(updateUserData(data));
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  const handleJoyrideCallback = (data) => {
-    const { status, type, index } = data;
-    const finishedStatuses = [STATUS.FINISHED, STATUS.SKIPPED];
-
-    if (finishedStatuses.includes(status)) {
-      setRun(false);
-      updateUserOnboardingStatus();
-    }
-    if (index === steps.length - 1) {
-      dispatch(onboardingProcess(true));
-    }
-  };
-
   const getUsersBystudioSlug = async (pageNum) => {
     try {
       const users_response = await api.get(
@@ -109,11 +74,6 @@ const StudioDetails = () => {
     }
   }, [currentPage, adminData?.id]);
 
-  useEffect(() => {
-    if (userData.id && !userData.has_completed_onboarding) {
-      setRun(true);
-    }
-  }, [userData.id]);
 
   //   useEffect(() => {
   //     const getSearchData = setTimeout(() => {
@@ -126,26 +86,6 @@ const StudioDetails = () => {
 
   return (
     <>
-      <Joyride
-        callback={handleJoyrideCallback}
-        continuous
-        run={run}
-        scrollToFirstStep
-        showProgress
-        showSkipButton
-        steps={
-          userData?.studio_type?.includes("studio_manager")
-            ? jetapultSteps
-            : userData?.studio_type?.includes("external_studio")
-            ? externalSteps
-            : StudioSteps
-        }
-        styles={{
-          options: {
-            zIndex: 10000,
-          },
-        }}
-      />
       <div className="flex border-b-[0.5px] border-b-[#e5e5e5] my-3 pl-3">
         {tabs.map((tab) => (
           <React.Fragment key={tab.id}>
