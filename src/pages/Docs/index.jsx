@@ -28,7 +28,7 @@ const Docs = () => {
 
   return (
     <div className="docs-container flex bg-[#ffffff]">
-      <div className="menu w-1/5 p-3 sticky top-[58px] py-1/5 z-10 border-r border-r-[#e5e5e5] border-r-[1px] h-[calc(100vh-3.5rem)] pt-4">
+      <div className="menu w-1/5 p-3 sticky top-[58px] py-1/5 z-10 border-r border-r-[#e5e5e5] border-r-[1px] h-[calc(100vh-3.5rem)] pt-4 hidden sm:block">
         {menuItems.map((item) => (
           <div
             key={item.id}
@@ -41,7 +41,7 @@ const Docs = () => {
           </div>
         ))}
       </div>
-      <div className="content w-4/5">
+      <div className="content w-full sm:w-4/5">
         {activeMenu === "overview" && <Overview />}
         {activeMenu === "app-onboarding" && <Onboarding />}
         {activeMenu === "ai-replies" && <AIReplies />}

@@ -41,7 +41,7 @@ const AIReplies = () => {
   };
   return (
     <div className="flex flex-wrap py-6">
-      <div className="w-3/4 px-6">
+      <div className="w-full sm:w-3/4 px-6">
         <BreadCrumbs name="AI Replies" />
         <br />
         <h1 className="text-5xl text-[#092139] font-black mb-6">AI Replies</h1>
@@ -187,7 +187,7 @@ const AIReplies = () => {
           </div>
         </div>
       </div>
-      <div className="w-1/4 px-4">
+      <div className="w-1/4 px-4 hidden sm:block">
         <div className="border-l border-l-[1px] border-[#dadde1] sticky top-[4rem]">
           <ul className="table-of-contents table-of-contents__left-border pl-6 py-3">
             <li className="pb-1">

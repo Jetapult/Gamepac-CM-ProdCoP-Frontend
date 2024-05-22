@@ -35,7 +35,7 @@ const Campaign = () => {
   };
   return (
     <div className="flex flex-wrap py-6">
-      <div className="w-3/4 px-6">
+      <div className="w-full sm:w-3/4 px-6">
         <BreadCrumbs name="Campaign Integration" />
         <br />
         <h1 className="text-5xl text-[#092139] font-black mb-6">
