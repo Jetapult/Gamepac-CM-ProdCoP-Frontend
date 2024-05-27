@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import SmartFeedback from "./components/SmartFeedback";
+import SmartFeedback from "./components/smartFeedback/SmartFeedback";
 import ReviewInsights from "./components/ReviewInsights";
 
 const menuItems = [
@@ -28,8 +28,8 @@ const OrganicUA = () => {
   }, [studio_slug,location.pathname]);
 
   return (
-    <div className="docs-container flex bg-[#ffffff]">
-      <div className="menu w-40 p-3 sticky top-[58px] py-1/5 z-10 shadow-md h-[calc(100vh-3.5rem)] pt-4 hidden sm:block">
+    <div className="docs-container flex">
+      <div className="bg-[#ffffff] w-52 min-w-[13rem] max-w-[13rem] p-3 sticky top-[58px] py-1/5 z-10 shadow-md h-[calc(100vh-3.5rem)] pt-4 hidden sm:block">
         {menuItems.map((item) => (
           <div
             key={item.id}
@@ -42,7 +42,7 @@ const OrganicUA = () => {
           </div>
         ))}
       </div>
-      <div className="content flex-auto sm:w-auto p-6">
+      <div className="content flex-auto sm:w-auto px-6">
         {activeMenu === "smart-feedback" && <SmartFeedback studio_slug={studio_slug} />}
         {activeMenu === "review-insights" && <ReviewInsights studio_slug={studio_slug} />}
       </div>
