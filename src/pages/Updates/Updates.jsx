@@ -11,6 +11,15 @@ const data = [
     feature: [
       {
         id: "1",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/Curios-Calf_blue.jpg",
+        update_type: "New Studio logo update",
+        title: "Curious Calf Studio",
+        short_description: "Curious Calf Studios logo finalised.",
+        description: `<ul><li>- We finalised the branding and logo of the new AI studio. Excited to build and launch many more games using AI and automation. </li>
+       </ul>`,
+      },
+      {
+        id: "2",
         img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/gampac-organic-ua.png",
         update_type: "Gamapac New UI",
         title: "Oragnic UA Suite Updates",
@@ -21,7 +30,7 @@ const data = [
         `,
       },
       {
-        id: "2",
+        id: "3",
         img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/playable-screenshot.png",
         update_type: "Playable Ad updates",
         title: "Playable Ad Minified Version",
@@ -29,7 +38,7 @@ const data = [
         description: `<ul><li>-Our Playable Ads have successfully passed comprehensive technical evaluations, ensuring seamless integration across prominent ad networks. With a focus on captivating interactions, they're poised to elevate engagement and drive significant campaign success on a vast scale. Get ready to harness their potential and unlock unparalleled audience connections. <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://app.gamepacai.com/html5-games/word-search-puzzle">link</a></li></ul>`,
       },
       {
-        id: "3",
+        id: "4",
         img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/Sc3.2.jpg",
         update_type: "AI Game updates",
         title: "Murder Mystery Game - Analytics implemeted",
@@ -39,7 +48,7 @@ const data = [
         </ul>`,
       },
       {
-        id: "4",
+        id: "5",
         img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/data-discrepancy.png",
         update_type: "Data operation update",
         title: "Holy Cow IAP Data Discrepancy",
@@ -48,15 +57,6 @@ const data = [
         <li>- We sent out a report analysing the IAP discrepancy with some trends in the industry. We will be working with the studio team to resolve the issue in coming weeks. </li>
         </ul>`,
       },
-      {
-        id: "5",
-        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/Curios-Calf_blue.jpg",
-        update_type: "New Studio logo update",
-        title: "Curious Calf",
-        short_description: "Curious Calf Studios logo finalised.",
-        description: `<ul><li>- We finalised the branding and logo of the new AI studio. Excited to build and launch many more games using AI and automation. </li>
-       </ul>`,
-      }
     ],
     date: "Released on 31st May 2024",
   },
