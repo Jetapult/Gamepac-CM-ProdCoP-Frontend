@@ -20,6 +20,7 @@ const UpdatesPopup = ({ setShowModal, showUpdatePopup }) => {
           <div className="p-4">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
+                {showUpdatePopup?.short_description && <p className="text-md font-bold">{showUpdatePopup?.short_description}</p>}
                 <p className="text-md min-h-[100px] overflow-y-auto" dangerouslySetInnerHTML={{__html: showUpdatePopup.description}}/>
               </div>
             </div>

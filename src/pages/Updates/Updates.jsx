@@ -5,6 +5,62 @@ import { Helmet } from "react-helmet";
 
 const data = [
   {
+    id: "3",
+    title: "Jetapult AI Update - 31st May 2024",
+    short_description: "Hello Team, We are excited to share a bunch of exciting updates with you regarding HTML5 ads, our AI games, asset generation and more.",
+    feature: [
+      {
+        id: "1",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/gampac-organic-ua.png",
+        update_type: "Gamapac New UI",
+        title: "Oragnic UA Suite Updates",
+        short_description: `Revamping our Organic UA Suite with potent filters and insightful visualizations for a clearer view of your player community.`,
+        description: `<ul>
+        <li>- We are completely revamping the user experience of our Organic UA Suite. The newer version comes with powerful filters and useful visualisations to get an idea of whats happening with your player community.</a></li>
+        </ul>
+        `,
+      },
+      {
+        id: "2",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/playable-screenshot.png",
+        update_type: "Playable Ad updates",
+        title: "Playable Ad Minified Version",
+        short_description: "Our Playable Ads passed some technical checks and is ready for large ad networks!",
+        description: `<ul><li>-Our Playable Ads have successfully passed comprehensive technical evaluations, ensuring seamless integration across prominent ad networks. With a focus on captivating interactions, they're poised to elevate engagement and drive significant campaign success on a vast scale. Get ready to harness their potential and unlock unparalleled audience connections. <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://app.gamepacai.com/html5-games/word-search-puzzle">link</a></li></ul>`,
+      },
+      {
+        id: "3",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/Sc3.2.jpg",
+        update_type: "AI Game updates",
+        title: "Murder Mystery Game - Analytics implemeted",
+        short_description: "Murder Mystery: Word Detective is now ready for launch. Play test our latest build.",
+        description: `<ul>
+        <li>Our game is closed testing phase. We have added analytics, IAP options, ad monetisation for the muder mystery game. The developer account on Play Store has been setup. We will be discussing and planning the launch of the game next week.<a style="text-decoration: underline; color:#007bff" target="_blank" href="https://drive.google.com/file/d/1o2rKReCmToHjnovyrZCA_qiS9PHo1bBj/view?usp=drive_link">link</a></li>   </li>
+        </ul>`,
+      },
+      {
+        id: "4",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/data-discrepancy.png",
+        update_type: "Data operation update",
+        title: "Holy Cow IAP Data Discrepancy",
+        short_description: "IAP Discrepancy report sent.",
+        description: `<ul>
+        <li>- We sent out a report analysing the IAP discrepancy with some trends in the industry. We will be working with the studio team to resolve the issue in coming weeks. </li>
+        </ul>`,
+      },
+      {
+        id: "5",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/Curios-Calf_blue.jpg",
+        update_type: "New Studio logo update",
+        title: "Curious Calf",
+        short_description: "Curious Calf Studios logo finalised.",
+        description: `<ul><li>- We finalised the branding and logo of the new AI studio. Excited to build and launch many more games using AI and automation. </li>
+       </ul>`,
+      }
+    ],
+    date: "Released on 31st May 2024",
+  },
+  {
     id: "2",
     title: "Jetapult AI Update - 15th May 2024",
     short_description: "Hello Team, We are excited to share a bunch of exciting updates with you regarding HTML5 ads, our AI games, asset generation and more.",
@@ -166,7 +222,7 @@ const data = [
   },
 ];
 const Updates = () => {
-  const [show, setShow] = useState("2");
+  const [show, setShow] = useState("3");
   const [showUpdatePopup, setShowUpdatePopup] = useState({});
   const onExpand = (item) => {
     if (show === item.id) {
@@ -245,7 +301,7 @@ const Updates = () => {
                           key={feature.id}
                           onClick={() => setShowUpdatePopup(feature)}
                         >
-                          {feature.img ? <img src={feature.img} alt="img" className="h-44 w-full mb-4 rounded-lg" /> : <></>}
+                          {feature.img ? <img src={feature.img} alt="img" className="h-44 w-full mb-4 rounded-lg object-contain" /> : <></>}
                           <h3 className="mb-2 text-md font-semibold">
                             {feature.update_type}
                           </h3>
