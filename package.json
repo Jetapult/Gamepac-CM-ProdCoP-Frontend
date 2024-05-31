@@ -27,6 +27,7 @@
     "lamejs": "^1.2.1",
     "moment": "^2.30.1",
     "react": "^18.2.0",
+    "react-date-range": "^2.0.1",
     "react-dom": "^18.2.0",
     "react-helmet": "^6.1.0",
     "react-media-recorder": "^1.6.6",

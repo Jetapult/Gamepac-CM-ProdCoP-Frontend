@@ -5,30 +5,71 @@ import ReactStars from "react-rating-stars-component";
 import { formatNumberForDisplay } from "../../../../utils";
 import Select from "react-select";
 import ReviewsCard from "./ReviewsCard";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { ChevronDownIcon, XCircleIcon } from "@heroicons/react/20/solid";
+import { CalendarIcon } from "@heroicons/react/24/outline";
+import { DateRangePicker } from "react-date-range";
+import moment from "moment";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
+import {
+  TerritoryCode,
+  periodFilter,
+  ratingFilter,
+  replyStateFilter,
+  responseStateFilter,
+} from "../../../../constants/organicUA";
 
-const SmartFeedback = ({ studio_slug }) => {
+const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
   const userData = useSelector((state) => state.user.user);
   const [games, setGames] = useState([]);
   const [selectedGame, setSelectedGame] = useState({});
-  const [languages, setlanguages] = useState([
+  const [languages, setlanguages] = useState([]);
+  const [selectedlanguages, setSelectedLanguages] = useState();
+  const [tags, setTags] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [showGamesDropdown, setShowGamesDropdown] = useState(false);
+  const [period, setPeriod] = useState("");
+  const [customDates, setCustomDates] = useState([
+    {
+      startDate: new Date(),
+      endDate: new Date(),
+      key: "selection",
+    },
+  ]);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [rating, setRating] = useState("");
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [searchText, setSearchText] = useState("");
+  const [version, setVersion] = useState("");
+  const [replyState, setreplyState] = useState("");
+  const [sortBy, setSortBy] = useState();
+  const [selectedTerritory, setSelectedTerritory] = useState();
+  const [responseState, setResponseState] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 10;
+
+  const orderBy = [
     {
       id: "1",
-      label: "English",
-      value: "eng",
+      label: "Highest Rating",
+      value:
+        selectedGame?.platform === "Android"
+          ? "userrating DESC"
+          : "rating DESC",
     },
     {
       id: "2",
-      label: "portuguese",
-      value: "ptu",
+      label: "Lowest Rating",
+      value: selectedGame?.platform === "Android" ? "userrating" : "rating",
     },
-  ]);
-  const [selectedlanguages, setSelectedLanguages] = useState();
-  const [reviews, setReviews] = useState([]);
-  const [showGamesDropdown, setShowGamesDropdown] = useState(false);
-  const [totalReviews, setTotalReviews] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const limit = 10;
+    {
+      id: "3",
+      label: "Most Recent Reply",
+      value:
+        selectedGame?.platform === "Android" ? "posteddate" : "latestResponse",
+    },
+  ];
   const wrapperRef = useRef(null);
   useOutsideAlerter(wrapperRef);
   function useOutsideAlerter(ref) {
@@ -36,6 +77,7 @@ const SmartFeedback = ({ studio_slug }) => {
       function handleClickOutside(event) {
         if (ref.current && !ref.current.contains(event.target)) {
           setShowGamesDropdown(false);
+          setShowCalendar(false);
         }
       }
       document.addEventListener("mousedown", handleClickOutside);
@@ -45,13 +87,71 @@ const SmartFeedback = ({ studio_slug }) => {
     }, [ref]);
   }
 
-  const fetchReviews = async () => {
+  const onPeriodhangleChange = (event) => {
+    setPeriod(event.target.value);
+    if (event.target.value === "custom") {
+      setShowCalendar(true);
+    }
+  };
+
+  const handleRatingChange = (event) => {
+    if(rating === event.target.name){
+      setRating("");
+      return
+    }
+   setRating(event.target.name);
+  };
+
+  const fetchReviews = async (pageNumber) => {
     try {
       const paramData = {
-        current_page: currentPage,
+        current_page: pageNumber || currentPage,
         limit: limit,
         game_id: selectedGame.id,
       };
+      if (period) {
+        paramData.period = period;
+      }
+      if (period === "custom") {
+        paramData.startDate = moment(customDates[0].startDate).format(
+          "YYYY-MM-DD"
+        );
+        paramData.endDate = moment(customDates[0].endDate).format("YYYY-MM-DD");
+      }
+      if (rating) {
+        paramData.rating = rating;
+      }
+      if (searchText) {
+        paramData.searchText = searchText;
+      }
+      if (selectedlanguages?.value) {
+        paramData.language = selectedlanguages.value;
+      }
+      if (selectedTerritory?.value) {
+        paramData.territory = selectedTerritory.value;
+      }
+      if (version) {
+        paramData.version = version;
+      }
+      if (selectedTags?.value) {
+        paramData.tags = selectedTags.value;
+      }
+      if (replyState) {
+        paramData.replyState = replyState;
+      }
+      if(responseState){
+        paramData.responseState = responseState;
+      }
+      if (selectedTags?.length) {
+        const tags = [];
+        selectedTags.filter((x) => tags.push(x.value));
+        paramData.tags = tags.join(",");
+      }
+      if (sortBy) {
+        const sort_by = sortBy.value.split(" ");
+        paramData.sortBy = sort_by[0];
+        sort_by.length > 1 && (paramData.sortOrder = "desc");
+      }
       const url =
         selectedGame?.platform === "Android"
           ? `/v1/organic-ua/google-reviews/${studio_slug || userData.studio_id}`
@@ -77,20 +177,49 @@ const SmartFeedback = ({ studio_slug }) => {
       console.log(err);
     }
   };
+
+  const fetchAllLanguages = async () => {
+    try {
+      const languageResponse = await api.get(`v1/organic-ua/languages`);
+      const languages = [];
+      languageResponse.data.data.filter((x, index) => {
+        languages.push({ id: index, label: x, value: x });
+      });
+      setlanguages(languages);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const fetchAllTags = async () => {
+    try {
+      const tagsResponse = await api.get(`v1/organic-ua/tags`);
+      const tags = [];
+      tagsResponse.data.data.filter((x, index) => {
+        tags.push({ id: index, label: x, value: x });
+      });
+      setTags(tags);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   useEffect(() => {
     fetchAllgames();
+    fetchAllLanguages();
+    fetchAllTags();
   }, []);
   useEffect(() => {
     if (selectedGame.id) {
       fetchReviews();
     }
-  }, [selectedGame.id,selectedGame?.platform, currentPage]);
+  }, [selectedGame?.id, selectedGame?.platform, currentPage]);
   return (
     <div className="shadow-md bg-white w-full h-full p-4">
       <h1 className="text-2xl">Smart Feedback</h1>
       <div className="flex">
         <div className="w-[275px] min-w-[275px] max-w-[275px] bg-[#F8F9FD] p-3 relative">
-          {selectedGame.id && (
+          {selectedGame?.id && (
             <div
               className="flex items-center bg-white border border-[#ccc] rounded-lg px-2 relative mb-2 cursor-pointer"
               onClick={() => setShowGamesDropdown(!showGamesDropdown)}
@@ -146,7 +275,7 @@ const SmartFeedback = ({ studio_slug }) => {
                       edit={false}
                       size={15}
                       isHalf={true}
-                      value={selectedGame?.app_store_score}
+                      value={parseFloat(selectedGame?.app_store_score)}
                       emptyIcon={<i className="far fa-star"></i>}
                       halfIcon={<i className="fa fa-star-half-alt"></i>}
                       fullIcon={<i className="fa fa-star"></i>}
@@ -166,7 +295,7 @@ const SmartFeedback = ({ studio_slug }) => {
               </div>
             </div>
           )}
-          {showGamesDropdown && (
+          {showGamesDropdown ? (
             <div
               className="bg-white rounded-lg absolute top-[90px] overflow-auto h-[300px] z-10 shadow-lg px-2"
               ref={wrapperRef}
@@ -177,7 +306,7 @@ const SmartFeedback = ({ studio_slug }) => {
                   key={game.id + index}
                   onClick={() => {
                     setSelectedGame(game);
-                    setSelectedLanguages(false);
+                    setShowGamesDropdown(false);
                   }}
                 >
                   <img
@@ -228,7 +357,7 @@ const SmartFeedback = ({ studio_slug }) => {
                           edit={false}
                           size={15}
                           isHalf={true}
-                          value={game?.app_store_score}
+                          value={parseFloat(game?.app_store_score)}
                           emptyIcon={<i className="far fa-star"></i>}
                           halfIcon={<i className="fa fa-star-half-alt"></i>}
                           fullIcon={<i className="fa fa-star"></i>}
@@ -249,242 +378,197 @@ const SmartFeedback = ({ studio_slug }) => {
                 </div>
               ))}
             </div>
-          )}
+          ): <></>}
           <h5 className="font-bold">Period</h5>
-          <div className="flex items-center mb-1">
-            <input
-              id="period-radio-1"
-              type="radio"
-              value=""
-              name="period-radio"
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 "
-            />
-            <label
-              htmlFor="default-radio-1"
-              className="ms-2 text-sm font-medium"
-            >
-              Last 7 days
-            </label>
-          </div>
-          <div className="flex items-center mb-1">
-            <input
-              id="period-radio-2"
-              type="radio"
-              value=""
-              name="period-radio"
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300"
-            />
-            <label
-              htmlFor="default-radio-2"
-              className="ms-2 text-sm font-medium"
-            >
-              Last 30 days
-            </label>
-          </div>
-          <div className="flex items-center mb-1">
-            <input
-              id="period-radio-3"
-              type="radio"
-              value=""
-              name="period-radio"
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300"
-            />
-            <label
-              htmlFor="default-radio-3"
-              className="ms-2 text-sm font-medium "
-            >
-              Last 90 days
-            </label>
-          </div>
-          <div className="flex items-center mb-1">
-            <input
-              id="period-radio-4"
-              type="radio"
-              value=""
-              name="period-radio"
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300"
-            />
-            <label
-              htmlFor="period-radio-4"
-              className="ms-2 text-sm font-medium "
-            >
-              Custom
-            </label>
+          <div className="">
+            {periodFilter.map((item) => (
+              <div className="flex items-center mb-1" key={`period-${item.id}`}>
+                <input
+                  id={item.value}
+                  type="radio"
+                  value={item.value}
+                  name="period-radio"
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 "
+                  onChange={onPeriodhangleChange}
+                  checked={period === item.value}
+                  onClick={() => {if(period){setPeriod("")}}}
+                />
+                <label
+                  htmlFor="default-radio-1"
+                  className="ms-2 text-sm font-medium"
+                >
+                  {item.name}
+                </label>
+              </div>
+            ))}
+            {period === "custom" && showCalendar && (
+              <div className="" ref={wrapperRef}>
+                <DateRangePicker
+                  onChange={(item) => setCustomDates([item.selection])}
+                  showSelectionPreview={true}
+                  moveRangeOnFirstSelection={false}
+                  months={2}
+                  ranges={customDates}
+                  direction="horizontal"
+                  className="z-50 relative border border-[#eff2f7]"
+                />
+              </div>
+            )}
+            {period === "custom" && !showCalendar && (
+              <div
+                className="border border-[#eff2f7] bg-white rounded py-1 px-3 flex items-center justify-between"
+                onClick={() => setShowCalendar(true)}
+              >
+                {" "}
+                <p className="text-sm">
+                  {moment(customDates[0].startDate).format("YYYY-MM-DD")}
+                </p>
+                <span className="text-gray-400 px-3">-</span>
+                <p className="text-sm">
+                  {moment(customDates[0].endDate).format("YYYY-MM-DD")}
+                </p>{" "}
+                <CalendarIcon className="w-4 h-4 text-gray-400 ml-8" />
+              </div>
+            )}
           </div>
           <h5 className="font-bold my-3">Review rating</h5>
           <div className="flex flex-wrap">
-            <div className="flex items-center mb-2 mr-4">
+            {ratingFilter.map((rate) => (
+              <div className="flex items-center mb-2 mr-4" key={rate.id}>
+                <input
+                  id="default-checkbox"
+                  type="checkbox"
+                  value={rating}
+                  name={rate.name}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
+                  onChange={handleRatingChange}
+                  checked={rating === rate.name}
+                />
+                <label
+                  htmlFor="default-checkbox"
+                  className="ms-2 text-sm font-medium flex"
+                >
+                  {rate.name}
+                  <ReactStars
+                    count={1}
+                    edit={false}
+                    size={16}
+                    value={parseInt(rate.name)}
+                    activeColor={rate.color}
+                    classNames={"pl-1"}
+                  />
+                </label>
+              </div>
+            ))}
+          </div>
+          <h5 className="font-bold my-3">Search</h5>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by review text"
+              className="border border-[#ccc] rounded pl-3 pr-6 py-1.5 w-full"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+            {searchText.length ? (
+              <XCircleIcon
+                className="w-4 h-4 inline text-gray-400 absolute right-2 top-3 cursor-pointer"
+                onClick={() => setSearchText("")}
+              />
+            ) : (
+              <></>
+            )}
+          </div>
+          {selectedGame?.platform === "Android" ? (
+            <>
+              <h5 className="font-bold my-3">Language</h5>
+              <Select
+                options={languages}
+                value={selectedlanguages}
+                onChange={(val) => setSelectedLanguages(val)}
+              />
+            </>
+          ) : (
+            <>
+              <h5 className="font-bold my-3">Territory</h5>
+              <Select
+                options={TerritoryCode}
+                value={selectedTerritory}
+                onChange={(val) => setSelectedTerritory(val)}
+              />
+            </>
+          )}
+          {selectedGame?.platform === "Android" && (
+            <>
+              <h5 className="font-bold my-3">Version</h5>
+              <input
+                type="text"
+                placeholder="Version"
+                className="border border-[#ccc] rounded px-3 py-1.5 w-full"
+                value={version}
+                onChange={(e) => setVersion(e.target.value)}
+              />
+            </>
+          )}
+          <h5 className="font-bold my-3">Tag</h5>
+          <Select
+            options={tags}
+            value={selectedTags}
+            isMulti={true}
+            onChange={(val) => setSelectedTags(val)}
+          />
+          {selectedGame?.platform === "Apple" && (
+            <>
+              <h5 className="font-bold my-3">Response State</h5>
+              {responseStateFilter.map((state) => (
+                <div className="flex items-center mb-2 mr-4" key={state.id}>
+                  <input
+                    id="default-checkbox"
+                    type="checkbox"
+                    value={state.value}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
+                    onChange={(e) => setResponseState(e.target.value)}
+                    checked={responseState === state.value}
+                  />
+                  <label
+                    htmlFor="default-checkbox"
+                    className="ms-2 text-sm font-medium flex"
+                  >
+                    {state.name}
+                  </label>
+                </div>
+              ))}
+            </>
+          )}
+          <h5 className="font-bold my-3">Reply State</h5>
+          {replyStateFilter.map((state) => (
+            <div className="flex items-center mb-2 mr-4" key={state.id}>
               <input
                 id="default-checkbox"
                 type="checkbox"
-                value=""
+                value={state.value}
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
+                onChange={(e) => replyState === e.target.value ? setreplyState("") : setreplyState(e.target.value)}
+                checked={replyState === state.value}
               />
               <label
                 htmlFor="default-checkbox"
                 className="ms-2 text-sm font-medium flex"
               >
-                5
-                <ReactStars
-                  count={1}
-                  edit={false}
-                  size={16}
-                  value={1}
-                  activeColor="#62b47b"
-                  classNames={"pl-1"}
-                />
+                {state.name}
               </label>
             </div>
-            <div className="flex items-center mb-2 mr-4">
-              <input
-                id="checked-checkbox"
-                type="checkbox"
-                value=""
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="checked-checkbox"
-                className="ms-2 text-sm font-medium flex"
-              >
-                4
-                <ReactStars
-                  count={1}
-                  edit={false}
-                  size={16}
-                  value={1}
-                  activeColor="#bfd17e"
-                  classNames={"pl-1"}
-                />
-              </label>
-            </div>
-            <div className="flex items-center mb-2 mr-4">
-              <input
-                id="checked-checkbox"
-                type="checkbox"
-                value=""
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="checked-checkbox"
-                className="ms-2 text-sm font-medium flex"
-              >
-                3
-                <ReactStars
-                  count={1}
-                  edit={false}
-                  size={16}
-                  value={1}
-                  activeColor="#fcd66b"
-                  classNames={"pl-1"}
-                />
-              </label>
-            </div>
-            <div className="flex items-center mb-2 mr-4">
-              <input
-                id="checked-checkbox"
-                type="checkbox"
-                value=""
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="checked-checkbox"
-                className="ms-2 text-sm font-medium flex"
-              >
-                2
-                <ReactStars
-                  count={1}
-                  edit={false}
-                  size={16}
-                  value={1}
-                  activeColor="#ffb46f"
-                  classNames={"pl-1"}
-                />
-              </label>
-            </div>
-            <div className="flex items-center mb-1 mr-2">
-              <input
-                id="checked-checkbox"
-                type="checkbox"
-                value=""
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="checked-checkbox"
-                className="ms-2 text-sm font-medium flex"
-              >
-                1
-                <ReactStars
-                  count={1}
-                  edit={false}
-                  size={16}
-                  value={1}
-                  activeColor="#fd7779"
-                  classNames={"pl-1"}
-                />
-              </label>
-            </div>
-          </div>
-          <h5 className="font-bold my-3">Search</h5>
-          <input
-            type="text"
-            placeholder="Search by review text"
-            className="border border-[#ccc] rounded px-3 py-1.5 w-full"
-          />
-          <h5 className="font-bold my-3">Language</h5>
-          <Select
-            options={languages}
-            value={selectedlanguages}
-            isMulti={true}
-            onChange={(val) => setSelectedLanguages(val)}
-          />
-          <h5 className="font-bold my-3">Version</h5>
-          <input
-            type="text"
-            placeholder="Version"
-            className="border border-[#ccc] rounded px-3 py-1.5 w-full"
-          />
-          <h5 className="font-bold my-3">Tag</h5>
-          <input
-            type="text"
-            placeholder="Tag"
-            className="border border-[#ccc] rounded px-3 py-1.5 w-full"
-          />
-          <h5 className="font-bold my-3">Reply State</h5>
-          <div className="flex items-center mb-2 mr-4">
-            <input
-              id="default-checkbox"
-              type="checkbox"
-              value=""
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-            />
-            <label
-              htmlFor="default-checkbox"
-              className="ms-2 text-sm font-medium flex"
-            >
-              Unreplied
-            </label>
-          </div>
-          <div className="flex items-center mb-2 mr-4">
-            <input
-              id="default-checkbox"
-              type="checkbox"
-              value=""
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-            />
-            <label
-              htmlFor="default-checkbox"
-              className="ms-2 text-sm font-medium flex"
-            >
-              Replied
-            </label>
-          </div>
+          ))}
           <h5 className="font-bold my-3">Order By</h5>
-          <input
-            type="text"
-            placeholder="Order By"
-            className="border border-[#ccc] rounded px-3 py-1.5 w-full"
+          <Select
+            options={orderBy}
+            value={sortBy}
+            onChange={(val) => setSortBy(val)}
           />
-          <button className="border border-[#819edf] rounded-md w-full my-4 py-1 text-[#5e80e1]">
+          <button
+            className="border border-[#819edf] rounded-md w-full my-4 py-1 text-[#5e80e1]"
+            onClick={() => fetchReviews(1)}
+          >
             Search
           </button>
         </div>
@@ -498,6 +582,8 @@ const SmartFeedback = ({ studio_slug }) => {
             setReviews={setReviews}
             selectedGame={selectedGame}
             studio_slug={studio_slug}
+            templates={templates}
+            setTemplates={setTemplates}
           />
         </div>
       </div>

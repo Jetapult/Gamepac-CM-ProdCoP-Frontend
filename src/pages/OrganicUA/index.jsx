@@ -1,16 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 import SmartFeedback from "./components/smartFeedback/SmartFeedback";
 import ReviewInsights from "./components/ReviewInsights";
+import Templates from "./components/Templates";
+import api from "../../api";
 
 const menuItems = [
   { id: "smart-feedback", label: "Smart Feedback" },
-  { id: "tags", label: "Tags" },
   { id: "templates", label: "Templates" },
   { id: "review-insights", label: "Review Insights" },
 ];
 
 const OrganicUA = () => {
+  const studios = useSelector((state) => state.admin.studios);
+  const userData = useSelector((state) => state.user.user);
+  const [templates, setTemplates] = useState([]);
   const [activeMenu, setActiveMenu] = useState(menuItems[0].id);
   const navigate = useNavigate();
   const params = useParams();
@@ -26,6 +31,27 @@ const OrganicUA = () => {
     const relevantSegment = studio_slug ? pathSegments[pathSegments.length - 2] : pathSegments.pop();
     setActiveMenu(relevantSegment);
   }, [studio_slug,location.pathname]);
+
+  const getAllReplyTemplates = async () => {
+    try {
+      const templatesResponse = await api.get(
+        `/v1/organic-ua/reply-templates/${
+          studio_slug
+            ? studios.filter((x) => x.slug === studio_slug)[0].id
+            : userData.studio_id
+        }`
+      );
+      setTemplates(templatesResponse.data.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    if (studio_slug ? studios.length : 1) {
+      getAllReplyTemplates();
+    }
+  }, [studios.length]);
 
   return (
     <div className="docs-container flex">
@@ -43,8 +69,9 @@ const OrganicUA = () => {
         ))}
       </div>
       <div className="content flex-auto sm:w-auto px-6">
-        {activeMenu === "smart-feedback" && <SmartFeedback studio_slug={studio_slug} />}
+        {activeMenu === "smart-feedback" && <SmartFeedback studio_slug={studio_slug} templates={templates} setTemplates={setTemplates} />}
         {activeMenu === "review-insights" && <ReviewInsights studio_slug={studio_slug} />}
+        {activeMenu === "templates" && <Templates studio_slug={studio_slug} templates={templates} setTemplates={setTemplates} />}
       </div>
     </div>
   );

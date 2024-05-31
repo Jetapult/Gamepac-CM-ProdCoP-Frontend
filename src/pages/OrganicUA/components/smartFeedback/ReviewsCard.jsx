@@ -1,11 +1,13 @@
 import moment from "moment";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactStars from "react-rating-stars-component";
 import Pagination from "../../../../components/Pagination";
 import api from "../../../../api";
 import { useSelector } from "react-redux";
 import ToastMessage from "../../../../components/ToastMessage";
-import { PencilSquareIcon } from "@heroicons/react/24/outline";
+import { PencilSquareIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import CreateReplyTemplatePopup from "../CreateReplyTemplatePopup";
+import AddTagPopup from "./AddTagPopup";
 
 const ratingColor = {
   5: `#62b47b`,
@@ -24,84 +26,142 @@ const ReviewsCard = ({
   setReviews,
   selectedGame,
   studio_slug,
+  templates,
+  setTemplates,
 }) => {
   const userData = useSelector((state) => state.user.user);
   const studios = useSelector((state) => state.admin.studios);
   const [showOriginalLangComment, setShowOriginalLangComment] = useState([]);
   const [translateReply, setTranslateReply] = useState([]);
   const [translateLoader, setTranslateloader] = useState(false);
-  const [charCount, setCharCount] = useState(0);
-  const [charCountLimitErr, setCharCountLimitErr] = useState("");
-  const [isEdit, setIsEdit] = useState("");
   const [toastMessage, setToastMessage] = useState({
     show: false,
     message: "",
     duration: 3000,
     type: "success",
   });
+  const [showTemplateDropdown, setShowTemplateDropdown] = useState("");
+  const [postLoader, setPostLoader] = useState("");
+  const [generativeAILoader, setGenerativeAILoader] = useState("");
+  const [showCreateReplyTemplatePopup, setShowCreateReplyTemplatePopup] =
+    useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState({});
+  const [showAddTagPopup, setShowAddTagPopup] = useState(false);
+  const [selectedReview, setSelectedReview] = useState({});
+  const wrapperRef = useRef(null);
+  useOutsideAlerter(wrapperRef);
+  function useOutsideAlerter(ref) {
+    useEffect(() => {
+      function handleClickOutside(event) {
+        if (ref.current && !ref.current.contains(event.target)) {
+          setShowTemplateDropdown("");
+        }
+      }
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [ref]);
+  }
+
+  const translateReviewReply = async (review) => {
+    if (translateReply.includes(review.id)) {
+      const removeReviewTranslation = translateReply.filter(
+        (x) => x !== review.id
+      );
+      setTranslateReply(removeReviewTranslation);
+    } else {
+      const addReviewTranslation = [
+        ...translateReply,
+        review.id,
+      ];
+      setTranslateReply(addReviewTranslation);
+      // if(!review.translated_reply){
+      //   translateReplyAndSave(review);
+      // }
+    }
+  }
+
+  const onSelectTemplate = (template) => {
+    setReviews((prev) =>
+      prev.filter((x) => {
+        if (
+          x.id === showTemplateDropdown
+        ) {
+          const template_reply = template.review_reply.replaceAll(
+            "user",
+            x.userName || x.reviewernickname
+          );
+          x.reply = template_reply;
+          x.totalReplytextCount = template_reply.length;
+          x.template_type = template.review_type;
+          x.isAIReply = false;
+        }
+        return prev;
+      })
+    );
+    setShowTemplateDropdown("");
+  };
+
+  const getRandomColor = () => {
+    const letters = "0123456789ABCDEF";
+    let color = "#";
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return `border-[${color}]`;
+  };
+
   const onEditReply = (review) => {
     setReviews((prev) =>
       prev.map((x) => {
-        if (
-          selectedGame.platform === "Android"
-            ? x.reviewId === review.reviewId
-            : x.appstorereviewid === review.appstorereviewid
-        ) {
+        if (x.id === review.id) {
           return {
             ...x,
             reply:
               selectedGame.platform === "Android"
                 ? review.postedReply
                 : review.responsebody,
+            isEdit: true,
           };
         }
         return x;
       })
     );
-    setIsEdit(review.reviewId || review.appstorereviewid);
   };
   const showReviewtranslation = (review) => {
     if (
-      showOriginalLangComment.includes(
-        review.reviewId || review.appstorereviewid
-      )
+      showOriginalLangComment.includes(review.id)
     ) {
       const removeReviewTranslation = showOriginalLangComment.filter(
-        (x) => x !== (review.reviewId || review.appstorereviewid)
+        (x) => x !== review.id
       );
       setShowOriginalLangComment(removeReviewTranslation);
     } else {
       const addReviewTranslation = [
         ...showOriginalLangComment,
-        review.reviewId || review.appstorereviewid,
+        review.id,
       ];
       setShowOriginalLangComment(addReviewTranslation);
-      //   if (selectedGame.platform === "Apple") {
-      //     handleTranslate(review);
-      //   }
     }
   };
-  const showReviewtoReplytranslation = (review) => {
-    if (translateReply.includes(review.reviewId || review.appstorereviewid)) {
+  const showReviewtoReplytranslation = (review, translateToEnglish) => {
+    if (translateReply.includes(review.id)) {
       const removeReviewTranslation = translateReply.filter(
-        (x) => x !== review.reviewId || review.appstorereviewid
+        (x) => x !== review.id
       );
       setTranslateReply(removeReviewTranslation);
     } else {
       const addReviewTranslation = [
         ...translateReply,
-        review.reviewId || review.appstorereviewid,
+        review.id,
       ];
       setTranslateReply(addReviewTranslation);
       review.reviewerLanguage !== "en"
-        ? handleTranslate(review)
+        ? handleTranslate(review, translateToEnglish)
         : setReviews((prev) =>
             prev.map((x) => {
-              if (
-                selectedGame.platform === "Android"
-                  ? x.reviewId === review.reviewId
-                  : x.appstorereviewid === review.appstorereviewid
-              ) {
+              if (x.id === review.id) {
                 return { ...x, translatedReply: review.postedReply };
               }
               return x;
@@ -109,11 +169,11 @@ const ReviewsCard = ({
           );
     }
   };
-  const handleTranslate = async (review) => {
+  const handleTranslate = async (review, translateToEnglish) => {
     try {
       setTranslateloader(true);
       const response = await api.post("/translateTemplate", {
-        reviewerlang: "en",
+        review: review.reply,
         template: review.postedReply || review?.body,
       });
       const translatedReply = response.data.translatedReply;
@@ -123,7 +183,11 @@ const ReviewsCard = ({
             selectedGame.platform === "Android" &&
             x.reviewId === review.reviewId
           ) {
-            return { ...x, translatedReply };
+            return {
+              ...x,
+              translatedReply,
+              reply: translateToEnglish ? "" : translatedReply,
+            };
           }
           if (
             selectedGame.platform === "Apple" &&
@@ -143,8 +207,9 @@ const ReviewsCard = ({
 
   const generativeAIReply = async (reviewId) => {
     const review = reviews.find(
-      (x) => x.reviewId === reviewId || x.appstorereviewid === reviewId
+      (x) => x.id === reviewId
     );
+    setGenerativeAILoader(review.id);
     if (!review) {
       console.error("review not found");
       return;
@@ -154,28 +219,32 @@ const ReviewsCard = ({
         comment: review.comment || review.body,
       });
       const reply = response.data.reply;
-      setCharCount(reply.length);
-      setCharCountLimitErr(reply.length > 350 ? reply.reviewId : "");
       setReviews((prev) =>
         prev.map((x) => {
-          if (
-            selectedGame.platform === "Android"
-              ? x.reviewId === reviewId
-              : x.appstorereviewid === reviewId
-          ) {
-            return { ...x, reply };
+          if (x.id === reviewId) {
+            return {
+              ...x,
+              reply,
+              totalReplytextCount: reply.length,
+              template_type: "",
+              isAIReply: true,
+            };
           }
-          return c;
+          return x;
         })
       );
     } catch (error) {
       console.error("Error fetching reply:", error);
+    } finally {
+      setGenerativeAILoader("");
     }
   };
 
-  const handlePostReply = async (reviewId) => {
+  const handlePostReply = async (reviewData) => {
     try {
-      if (charCountLimitErr) {
+      const reviewId = reviewData.reviewId || reviewData.appstorereviewid;
+      setPostLoader(reviewId);
+      if (reviewData.totalReplytextCount > 350) {
         return;
       }
       const review = reviews.find(
@@ -203,27 +272,42 @@ const ReviewsCard = ({
             };
       const response = await api.post(url, requestbody);
       if (response.status === 200) {
-        selectedGame.platform === "Android" &&
-          setReviews((prev) =>
-            prev.map((x) => {
-              if (
-                selectedGame.platform === "Android"
-                  ? x.reviewId === reviewId
-                  : x.appstorereviewid === reviewId
-              ) {
-                return {
-                  ...x,
-                  postedReply: x.reply,
-                  isPosted: true,
-                  selectedTemplateIndex: "",
-                  reply: "",
-                  postedDate: new Date().toISOString(),
-                };
-              }
-              return x;
-            })
-          );
-        setIsEdit("");
+        selectedGame.platform === "Android"
+          ? setReviews((prev) =>
+              prev.map((x) => {
+                if (x.reviewId === reviewId) {
+                  return {
+                    ...x,
+                    postedReply: x.reply,
+                    isPosted: true,
+                    selectedTemplateIndex: "",
+                    reply: "",
+                    template_type: "",
+                    totalReplytextCount: 0,
+                    postedDate: new Date().toISOString(),
+                    isEdit: false,
+                  };
+                }
+                return x;
+              })
+            )
+          : setReviews((prev) =>
+              prev.map((x) => {
+                if (x.appstorereviewid === reviewId) {
+                  return {
+                    ...x,
+                    responsebody: x.reply,
+                    responsestate: "PENDING_PUBLISH",
+                    reply: "",
+                    template_type: "",
+                    totalReplytextCount: 0,
+                    lastmodifieddate: new Date().toISOString(),
+                    isEdit: false,
+                  };
+                }
+                return x;
+              })
+            );
       }
     } catch (error) {
       console.error("Error posting reply:", error);
@@ -234,35 +318,36 @@ const ReviewsCard = ({
           type: "error",
         });
       }
+    } finally {
+      setPostLoader("");
     }
   };
   return (
     <>
-      {console.log(reviews, "reviews")}
       {reviews.map((review, index) => (
         <div
           className="p-3 border-t-[0.5px] border-y-[#ccc]"
-          key={review?.reviewId || review?.appstorereviewid}
+          key={review?.id}
         >
           <div
             className={`mb-2 p-3 border-l-[2px] ${
-              review?.userRating || review?.rating === 5
+              review?.userRating === 5 || review?.rating === 5
                 ? "border-l-rating5"
                 : ""
             } ${
-              review?.userRating || review?.rating === 4
+              review?.userRating === 4 || review?.rating === 4
                 ? "border-l-rating4"
                 : ""
             } ${
-              review?.userRating || review?.rating === 3
+              review?.userRating === 3 || review?.rating === 3
                 ? "border-l-rating3"
                 : ""
             } ${
-              review?.userRating || review?.rating === 2
+              review?.userRating === 2 || review?.rating === 2
                 ? "border-l-rating2"
                 : ""
             } ${
-              review?.userRating || review?.rating === 1
+              review?.userRating === 1 || review?.rating === 1
                 ? "border-l-rating1"
                 : ""
             }`}
@@ -308,9 +393,7 @@ const ReviewsCard = ({
               <p className="text-md font-bold">{review?.title}</p>
             )}
 
-            {showOriginalLangComment.includes(
-              review.reviewId || review.appstorereviewid
-            ) ? (
+            {showOriginalLangComment.includes(review.id) ? (
               <p className="text-md">
                 {review?.comment || review?.translatedReview}
               </p>
@@ -319,23 +402,35 @@ const ReviewsCard = ({
                 {review?.originalLang || review?.comment || review?.body}
               </p>
             )}
-            <span
+            {selectedGame.platform === "Android" && <span
               className="text-[#5e80e1] underline text-[13px] cursor-pointer"
               onClick={() => showReviewtranslation(review)}
             >
-              {showOriginalLangComment.includes(
-                review.reviewId || review.appstorereviewid
-              )
+              {showOriginalLangComment.includes(review.id)
                 ? "Show Original"
                 : "Show Translation"}
-            </span>
+            </span>}
             <p>
               Tags:{" "}
-              <span className="text-[#5e80e1] text-[13px] cursor-pointer">
+              {review?.tags?.map((tag, index) => (
+                <span
+                  className={`px-2 py-1 text-sm border border-dashed rounded mx-1 ${getRandomColor()}`}
+                  key={`tag${index}`}
+                >
+                  {tag}
+                </span>
+              ))}
+              <span
+                className="text-[#5e80e1] text-[13px] cursor-pointer"
+                onClick={() => {
+                  setSelectedReview(review);
+                  setShowAddTagPopup(!showAddTagPopup);
+                }}
+              >
                 + Add tag
               </span>
             </p>
-            {(review.postedReply || review?.responsebody) && !isEdit ? (
+            {(review.postedReply || review?.responsebody) && !review.isEdit ? (
               <div
                 className={`group p-3 border rounded mt-3 relative ${
                   review?.responsestate === "PENDING_PUBLISH"
@@ -376,9 +471,9 @@ const ReviewsCard = ({
                     </span>
                   </div>
                 </div>
-                {translateReply.includes(review.reviewId) &&
+                {translateReply.includes(review.id) &&
                 !translateLoader ? (
-                  <p className="">{review.translatedReply}</p>
+                  <p className="">{review.translated_reply}</p>
                 ) : (
                   <p className="">
                     {review.postedReply || review?.responsebody}
@@ -386,9 +481,9 @@ const ReviewsCard = ({
                 )}
                 <span
                   className="text-[#5e80e1] underline text-[13px] cursor-pointer"
-                  onClick={() => showReviewtoReplytranslation(review)}
+                  onClick={() => translateReviewReply(review)}
                 >
-                  {translateReply.includes(review.reviewId) && !translateLoader
+                  {translateReply.includes(review.id) && !translateLoader
                     ? "Show Original"
                     : "Show Translation"}
                 </span>
@@ -402,56 +497,159 @@ const ReviewsCard = ({
             ) : (
               <>
                 <div
-                  className={`w-100 border border-[#ccc] rounded p-2 my-2 ${
-                    charCountLimitErr ? "border-red-500 border rounded" : ""
+                  className={`w-100 border border-[#ccc] rounded my-2 ${
+                    review.totalReplytextCount > 350
+                      ? "border-red-500 border rounded"
+                      : ""
                   }`}
                 >
+                  {review.isAIReply && (
+                    <p className="text-sm font-bold pl-2 pt-2">AI Reply:</p>
+                  )}
                   <textarea
-                    className="block outline:none focus:outline-none w-full"
+                    className="block outline:none focus:outline-none w-full p-2 rounded"
                     placeholder="Reply to review"
                     value={review.reply}
+                    onChange={(event) =>
+                      setReviews((prev) =>
+                        prev.filter((x) => {
+                          if (x.id === review.id) {
+                            x.reply = event.target.value;
+                            x.totalReplytextCount = event.target.value.length;
+                          }
+                          return prev;
+                        })
+                      )
+                    }
                   />
-                  <div className="flex justify-end mt-2">
-                    {/* <button className="border border-[#ccc] rounded py-1 px-3 mr-2 text-sm">Save as template</button> */}
-                    <button className="border border-[#ccc] rounded py-1 px-3 mr-2 text-sm">
-                      Select a template
-                    </button>
-                    <button
-                      className="bg-[#1174fc] rounded px-3 py-1 mr-2 text-white text-sm"
+                  {review.reply && (
+                    <span
+                      className="text-[#5e80e1] underline text-[13px] cursor-pointer pl-2"
                       onClick={() =>
-                        generativeAIReply(
-                          review?.reviewId || review?.appstorereviewid
-                        )
+                        translateReply.includes(review.id)
+                          ? showReviewtoReplytranslation(review, true)
+                          : showReviewtoReplytranslation(review, false)
                       }
                     >
-                      Generate AI reply
-                    </button>
-                    <button
-                      className="bg-[#1174fc] rounded px-3 py-1  text-white text-sm"
-                      onClick={() =>
-                        handlePostReply(
-                          review.reviewId || review.appstorereviewid
-                        )
-                      }
-                    >
-                      Post reply
-                    </button>
-                  </div>
-                </div>
-                {charCount ? (
-                  <p
-                    className={`text-xs ${
-                      charCountLimitErr ? "text-red-500" : ""
+                      {translateReply.includes(review.id) &&
+                      !translateLoader
+                        ? "Show Original"
+                        : "Show Translation"}
+                    </span>
+                  )}
+                  <div
+                    className={`flex items-end mt-2 ${
+                      review.totalReplytextCount
+                        ? "justify-between"
+                        : "justify-end"
                     }`}
                   >
-                    Character Count: {charCount}/350{" "}
-                  </p>
-                ) : (
-                  <></>
-                )}
-                {charCountLimitErr && (
-                  <p className="text-red-500">Max 350 characters allowed</p>
-                )}
+                    {review.totalReplytextCount && (
+                      <div
+                        className={`${
+                          review.totalReplytextCount > 350
+                            ? "bg-[#e67878]"
+                            : "bg-gray-200"
+                        } pt-1 px-1 rounded-bl`}
+                      >
+                        <p
+                          className={`text-sm ${
+                            review.totalReplytextCount > 350
+                              ? "text-white"
+                              : "text-[#092139]"
+                          }`}
+                        >
+                          {review.totalReplytextCount}/350
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex pr-2 pb-2">
+                      {review.isAIReply && (
+                        <button
+                          className="border border-[#ccc] rounded py-1 px-3 mr-2 text-sm"
+                          onClick={() => {
+                            setSelectedTemplate({
+                              review_type: "",
+                              review_reply: review.reply,
+                              type: "save-as-template",
+                            });
+                            setShowCreateReplyTemplatePopup(
+                              !showCreateReplyTemplatePopup
+                            );
+                          }}
+                        >
+                          Save as template
+                        </button>
+                      )}
+                      <div className="relative">
+                        <button
+                          className="border border-[#ccc] flex justify-between items-center rounded py-1 px-3 mr-2 text-sm w-[150px]"
+                          onClick={() =>
+                            setShowTemplateDropdown(review.id)
+                          }
+                        >
+                          {review.template_type
+                            ? review.template_type
+                            : "Select a template"}
+                          <ChevronDownIcon className="w-4 h-5 inline ml-2" />
+                        </button>
+                        {showTemplateDropdown === review.id && (
+                          <div
+                            className="absolute bg-white border border-[#ccc] rounded left-0 w-[150px] top-8"
+                            ref={wrapperRef}
+                          >
+                            {templates.map((template) => (
+                              <p
+                                className="p-2 border-b border-b-[#ccc] cursor-pointer hover:bg-gray-200"
+                                key={template.id}
+                                onClick={() => onSelectTemplate(template)}
+                              >
+                                {template.review_type}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        className={`bg-[#1174fc] rounded px-3 py-1 mr-2 text-white text-sm ${
+                          generativeAILoader === review?.id
+                            ? "opacity-40"
+                            : ""
+                        }`}
+                        onClick={() => {
+                          if (generativeAILoader === "") {
+                            generativeAIReply(review?.id);
+                          }
+                        }}
+                        disabled={
+                          generativeAILoader === review?.id
+                        }
+                      >
+                        Generate AI reply
+                      </button>
+                      <button
+                        className={`bg-[#1174fc] rounded px-3 py-1  text-white text-sm ${
+                          postLoader ===
+                          (review?.reviewId || review?.appstorereviewid)
+                            ? "opacity-40"
+                            : ""
+                        }`}
+                        onClick={() => {
+                          if (postLoader === "") {
+                            handlePostReply(review);
+                          }
+                        }}
+                        disabled={
+                          postLoader ===
+                          (review?.reviewId || review?.appstorereviewid)
+                        }
+                      >
+                        Post reply
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -469,6 +667,29 @@ const ReviewsCard = ({
         <ToastMessage
           message={toastMessage}
           setToastMessage={setToastMessage}
+        />
+      )}
+      {showCreateReplyTemplatePopup && (
+        <CreateReplyTemplatePopup
+          showCreateReplyTemplatePopup={showCreateReplyTemplatePopup}
+          setShowCreateReplyTemplatePopup={setShowCreateReplyTemplatePopup}
+          selectedTemplate={selectedTemplate}
+          setSelectedTemplate={setSelectedTemplate}
+          studio_slug={studio_slug}
+          setTemplates={setTemplates}
+          setToastMessage={setToastMessage}
+        />
+      )}
+      {showAddTagPopup && (
+        <AddTagPopup
+          showAddTagPopup={showAddTagPopup}
+          setShowAddTagPopup={setShowAddTagPopup}
+          selectedReview={selectedReview}
+          setToastMessage={setToastMessage}
+          setReviews={setReviews}
+          setSelectedReview={setSelectedReview}
+          selectedGame={selectedGame}
+          studio_slug={studio_slug}
         />
       )}
     </>
