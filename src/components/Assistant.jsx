@@ -170,6 +170,8 @@ const Assistant = () => {
           return c;
         })
       );
+      setCharCount(reply.length);
+      setCharCountLimitErr(reply.length > 350 ? reviewId : "");
       setLoadingReplyIndex(null);
     } catch (error) {
       console.error("Error fetching reply:", error);
@@ -261,6 +263,8 @@ const Assistant = () => {
           return c;
         })
       );
+      setCharCount(translatedReply.length);
+      setCharCountLimitErr(translatedReply.length > 350 ? comment.reviewId : "");
     } catch (error) {
       console.error("Error translating reply:", error);
     } finally {
