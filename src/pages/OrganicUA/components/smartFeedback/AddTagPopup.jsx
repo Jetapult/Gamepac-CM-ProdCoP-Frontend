@@ -4,27 +4,7 @@ import loadingIcon from "../../../../assets/transparent-spinner.svg";
 import Select from "react-select";
 import { useSelector } from "react-redux";
 import api from "../../../../api";
-
-const TagsList = [
-  {
-    id: "1",
-    name: "Positive",
-    label: "Positive",
-    value: "Positive",
-  },
-  {
-    id: "2",
-    name: "Bug",
-    label: "Bug",
-    value: "Bug",
-  },
-  {
-    id: "3",
-    name: "Negative",
-    label: "Negative",
-    value: "Negative",
-  },
-];
+import { TagsList } from "../../../../constants/organicUA";
 
 const AddTagPopup = ({
   showAddTagPopup,

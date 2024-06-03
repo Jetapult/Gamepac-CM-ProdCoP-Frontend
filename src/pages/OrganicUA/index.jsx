@@ -48,10 +48,10 @@ const OrganicUA = () => {
   };
 
   useEffect(() => {
-    if (studio_slug ? studios.length : 1) {
+    if (studio_slug ? studios.length : userData.studio_id) {
       getAllReplyTemplates();
     }
-  }, [studios.length]);
+  }, [studios.length,userData?.id]);
 
   return (
     <div className="docs-container flex">

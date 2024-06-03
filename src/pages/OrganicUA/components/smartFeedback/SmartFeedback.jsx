@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import api from "../../../../api";
 import ReactStars from "react-rating-stars-component";
 import { formatNumberForDisplay } from "../../../../utils";
@@ -18,13 +19,15 @@ import {
   replyStateFilter,
   responseStateFilter,
 } from "../../../../constants/organicUA";
+import NoDataImage from "../../../../assets/No-Data.png";
 
 const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
   const userData = useSelector((state) => state.user.user);
+  const studios = useSelector((state) => state.admin.studios);
   const [games, setGames] = useState([]);
   const [selectedGame, setSelectedGame] = useState({});
   const [languages, setlanguages] = useState([]);
-  const [selectedlanguages, setSelectedLanguages] = useState();
+  const [selectedlanguages, setSelectedLanguages] = useState([]);
   const [tags, setTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -38,15 +41,19 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
     },
   ]);
   const [showCalendar, setShowCalendar] = useState(false);
-  const [rating, setRating] = useState("");
+  const [rating, setRating] = useState([]);
   const [totalReviews, setTotalReviews] = useState(0);
   const [searchText, setSearchText] = useState("");
-  const [version, setVersion] = useState("");
+  const [isSearch, setIsSearch] = useState(false);
+  const [versionList, setVersionList] = useState([]);
+  const [selectedVersions, setSelectedVersions] = useState([]);
   const [replyState, setreplyState] = useState("");
   const [sortBy, setSortBy] = useState();
   const [selectedTerritory, setSelectedTerritory] = useState();
   const [responseState, setResponseState] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setisLoading] = useState(true);
+  const [isGameLoading, setIsGameLoading] = useState(true);
   const limit = 10;
 
   const orderBy = [
@@ -94,16 +101,33 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
     }
   };
 
+  const checkGames = () => {
+    let game = 0;
+    games.filter((x) => {
+      x.data.filter((y) => {
+        game += 1;
+      });
+    });
+    return game;
+  };
+
   const handleRatingChange = (event) => {
-    if(rating === event.target.name){
-      setRating("");
-      return
+    if (rating.includes(event.target.name)) {
+      const removeRating = rating.filter((x) => {
+        if (x === event.target.name) {
+          return x !== event.target.name;
+        }
+        return rating;
+      });
+      setRating(removeRating);
+      return;
     }
-   setRating(event.target.name);
+    setRating([...rating, event.target.name]);
   };
 
   const fetchReviews = async (pageNumber) => {
     try {
+      setisLoading(true);
       const paramData = {
         current_page: pageNumber || currentPage,
         limit: limit,
@@ -119,19 +143,25 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
         paramData.endDate = moment(customDates[0].endDate).format("YYYY-MM-DD");
       }
       if (rating) {
-        paramData.rating = rating;
+        const ratingsArr = [];
+        rating.filter((x) => ratingsArr.push(x));
+        paramData.rating = ratingsArr.join(",");
       }
       if (searchText) {
         paramData.searchText = searchText;
       }
-      if (selectedlanguages?.value) {
-        paramData.language = selectedlanguages.value;
+      if (selectedlanguages.length) {
+        const selectedLanguages = [];
+        selectedlanguages.filter((x) => selectedLanguages.push(x.value));
+        paramData.language = selectedLanguages.join(",");
       }
       if (selectedTerritory?.value) {
         paramData.territory = selectedTerritory.value;
       }
-      if (version) {
-        paramData.version = version;
+      if (selectedVersions.length) {
+        const selectedVersionsArr = [];
+        selectedVersions.filter((x) => selectedVersionsArr.push(x.value));
+        paramData.version = selectedVersionsArr.join(",");
       }
       if (selectedTags?.value) {
         paramData.tags = selectedTags.value;
@@ -139,7 +169,7 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
       if (replyState) {
         paramData.replyState = replyState;
       }
-      if(responseState){
+      if (responseState) {
         paramData.responseState = responseState;
       }
       if (selectedTags?.length) {
@@ -161,8 +191,13 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
       const reviewsResponse = await api.get(url, { params: paramData });
       setReviews(reviewsResponse.data.data);
       setTotalReviews(reviewsResponse.data.totalReviews);
+      if (searchText) {
+        setIsSearch(true);
+      }
     } catch (err) {
       console.log(err);
+    } finally {
+      setisLoading(false);
     }
   };
 
@@ -172,9 +207,11 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
         `/v1/games/platform/${studio_slug ? studio_slug : userData.studio_id}`
       );
       setGames(gamesresponse.data.data);
-      setSelectedGame(gamesresponse.data.data[0]);
+      setSelectedGame(gamesresponse.data.data[0].data[0]);
     } catch (err) {
       console.log(err);
+    } finally {
+      setIsGameLoading(false);
     }
   };
 
@@ -204,391 +241,539 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
     }
   };
 
+  const fetchAllVersions = async () => {
+    try {
+      const versionResponse = await api.get(
+        `v1/organic-ua/versions/${
+          studio_slug
+            ? studios.filter((x) => x.slug === studio_slug)[0]?.id
+            : userData.studio_id
+        }/${selectedGame.id}`
+      );
+      const versionsArr = [];
+      versionResponse.data.data.filter((x, index) => {
+        versionsArr.push({ id: index, label: x, value: x });
+      });
+      setVersionList(versionsArr);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   useEffect(() => {
-    fetchAllgames();
-    fetchAllLanguages();
-    fetchAllTags();
-  }, []);
+    if (userData.studio_id) {
+      fetchAllgames();
+      fetchAllLanguages();
+      fetchAllTags();
+    }
+  }, [userData.id]);
   useEffect(() => {
     if (selectedGame.id) {
       fetchReviews();
     }
   }, [selectedGame?.id, selectedGame?.platform, currentPage]);
+  useEffect(() => {
+    if (
+      selectedGame?.id &&
+      selectedGame?.platform === "Android" &&
+      (studio_slug ? studios.length : 1)
+    ) {
+      fetchAllVersions();
+    }
+  }, [selectedGame?.id, selectedGame?.platform, studios?.length]);
   return (
     <div className="shadow-md bg-white w-full h-full p-4">
       <h1 className="text-2xl">Smart Feedback</h1>
-      <div className="flex">
-        <div className="w-[275px] min-w-[275px] max-w-[275px] bg-[#F8F9FD] p-3 relative">
-          {selectedGame?.id && (
-            <div
-              className="flex items-center bg-white border border-[#ccc] rounded-lg px-2 relative mb-2 cursor-pointer"
-              onClick={() => setShowGamesDropdown(!showGamesDropdown)}
-            >
-              <img
-                src={
-                  selectedGame?.platform === "Android"
-                    ? selectedGame?.play_store_icon
-                    : selectedGame?.app_store_icon
-                }
-                alt="icon"
-                className="w-14 h-auto rounded-lg"
-              />
-              <span className="absolute bg-white bottom-[0px] left-[50px] px-1 rounded-full text-sm text-gray-600">
-                {selectedGame?.platform === "Android" ? (
-                  <i className="fa fa-android"></i>
-                ) : (
-                  <i className="fa fa-apple"></i>
-                )}
-              </span>
-              <div className="pl-2 w-full">
-                <p className="truncate w-[172px] text-md font-bold">
-                  {selectedGame?.game_name}
-                </p>
-                <div className="flex justify-between items-center">
-                  <p className="truncate w-[158px] text-sm text-gray-400">
-                    {selectedGame?.platform === "Android"
-                      ? selectedGame?.play_store_developer
-                      : selectedGame?.app_store_developer}
-                  </p>
-                  <ChevronDownIcon className="w-5 h-5" />
-                </div>
-                <div className="flex">
+      {isGameLoading ? (
+        <></>
+      ) : checkGames() ? (
+        <div className="flex">
+          <div className="w-[275px] min-w-[275px] max-w-[275px] bg-[#F8F9FD] p-3 relative">
+            {selectedGame?.id && (
+              <div
+                className="flex items-center bg-white border border-[#ccc] rounded-lg px-2 relative mb-2 cursor-pointer"
+                onClick={() => setShowGamesDropdown(!showGamesDropdown)}
+              >
+                <img
+                  src={
+                    selectedGame?.platform === "Android"
+                      ? selectedGame?.play_store_icon
+                      : selectedGame?.app_store_icon
+                  }
+                  alt="icon"
+                  className="w-14 h-auto rounded-lg"
+                />
+                <span className="absolute bg-white bottom-[0px] left-[50px] px-1 rounded-full text-sm text-gray-600">
                   {selectedGame?.platform === "Android" ? (
-                    <>
-                      {selectedGame?.play_store_score && (
-                        <ReactStars
-                          count={5}
-                          edit={false}
-                          size={15}
-                          isHalf={true}
-                          value={parseFloat(selectedGame?.play_store_score)}
-                          emptyIcon={<i className="far fa-star"></i>}
-                          halfIcon={<i className="fa fa-star-half-alt"></i>}
-                          fullIcon={<i className="fa fa-star"></i>}
-                          activeColor="#ffd700"
-                        />
-                      )}
-                    </>
+                    <i className="fa fa-android"></i>
                   ) : (
-                    <ReactStars
-                      count={5}
-                      edit={false}
-                      size={15}
-                      isHalf={true}
-                      value={parseFloat(selectedGame?.app_store_score)}
-                      emptyIcon={<i className="far fa-star"></i>}
-                      halfIcon={<i className="fa fa-star-half-alt"></i>}
-                      fullIcon={<i className="fa fa-star"></i>}
-                      activeColor="#ffd700"
-                    />
+                    <i className="fa fa-apple"></i>
                   )}
-                  <p className="text-gray-400 text-sm ml-2">
-                    (
-                    {selectedGame?.platform === "Android"
-                      ? formatNumberForDisplay(
-                          parseFloat(selectedGame?.play_store_ratings)
-                        )
-                      : formatNumberForDisplay(selectedGame?.app_store_ratings)}
-                    )
+                </span>
+                <div className="pl-2 w-full">
+                  <p className="truncate w-[172px] text-md font-bold">
+                    {selectedGame?.game_name}
                   </p>
-                </div>
-              </div>
-            </div>
-          )}
-          {showGamesDropdown ? (
-            <div
-              className="bg-white rounded-lg absolute top-[90px] overflow-auto h-[300px] z-10 shadow-lg px-2"
-              ref={wrapperRef}
-            >
-              {games.map((game, index) => (
-                <div
-                  className="flex items-center bg-white rounded-lg px-2 relative mb-2 cursor-pointer"
-                  key={game.id + index}
-                  onClick={() => {
-                    setSelectedGame(game);
-                    setShowGamesDropdown(false);
-                  }}
-                >
-                  <img
-                    src={
-                      game?.platform === "Android"
-                        ? game?.play_store_icon
-                        : game?.app_store_icon
-                    }
-                    alt="icon"
-                    className="w-14 h-auto rounded-lg"
-                  />
-                  <span className="absolute bg-white bottom-[0px] left-[50px] px-1 rounded-full text-sm text-gray-600">
-                    {game?.platform === "Android" ? (
-                      <i className="fa fa-android"></i>
-                    ) : (
-                      <i className="fa fa-apple"></i>
-                    )}
-                  </span>
-                  <div className="pl-2 w-full">
-                    <p className="truncate w-[172px] text-md font-bold">
-                      {game?.game_name}
-                    </p>
+                  <div className="flex justify-between items-center">
                     <p className="truncate w-[158px] text-sm text-gray-400">
-                      {game?.platform === "Android"
-                        ? game?.play_store_developer
-                        : game?.app_store_developer}
+                      {selectedGame?.platform === "Android"
+                        ? selectedGame?.play_store_developer
+                        : selectedGame?.app_store_developer}
                     </p>
-                    <div className="flex">
-                      {game?.platform === "Android" ? (
-                        <>
-                          {game?.play_store_score && (
-                            <ReactStars
-                              count={5}
-                              edit={false}
-                              size={15}
-                              isHalf={true}
-                              value={parseFloat(game?.play_store_score)}
-                              emptyIcon={<i className="far fa-star"></i>}
-                              halfIcon={<i className="fa fa-star-half-alt"></i>}
-                              fullIcon={<i className="fa fa-star"></i>}
-                              activeColor="#ffd700"
-                            />
+                    <ChevronDownIcon className="w-5 h-5" />
+                  </div>
+                  <div className="flex">
+                    {selectedGame?.platform === "Android" ? (
+                      <>
+                        {selectedGame?.play_store_score && (
+                          <ReactStars
+                            count={5}
+                            edit={false}
+                            size={15}
+                            isHalf={true}
+                            value={parseFloat(selectedGame?.play_store_score)}
+                            emptyIcon={<i className="far fa-star"></i>}
+                            halfIcon={<i className="fa fa-star-half-alt"></i>}
+                            fullIcon={<i className="fa fa-star"></i>}
+                            activeColor="#ffd700"
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <ReactStars
+                        count={5}
+                        edit={false}
+                        size={15}
+                        isHalf={true}
+                        value={parseFloat(selectedGame?.app_store_score)}
+                        emptyIcon={<i className="far fa-star"></i>}
+                        halfIcon={<i className="fa fa-star-half-alt"></i>}
+                        fullIcon={<i className="fa fa-star"></i>}
+                        activeColor="#ffd700"
+                      />
+                    )}
+                    <p className="text-gray-400 text-sm ml-2">
+                      (
+                      {selectedGame?.platform === "Android"
+                        ? formatNumberForDisplay(
+                            parseFloat(selectedGame?.play_store_ratings)
+                          )
+                        : formatNumberForDisplay(
+                            selectedGame?.app_store_ratings
                           )}
-                        </>
-                      ) : (
-                        <ReactStars
-                          count={5}
-                          edit={false}
-                          size={15}
-                          isHalf={true}
-                          value={parseFloat(game?.app_store_score)}
-                          emptyIcon={<i className="far fa-star"></i>}
-                          halfIcon={<i className="fa fa-star-half-alt"></i>}
-                          fullIcon={<i className="fa fa-star"></i>}
-                          activeColor="#ffd700"
-                        />
-                      )}
-                      <p className="text-gray-400 text-sm ml-2">
-                        (
-                        {game?.platform === "Android"
-                          ? formatNumberForDisplay(
-                              parseFloat(game?.play_store_ratings)
-                            )
-                          : formatNumberForDisplay(game?.app_store_ratings)}
-                        )
-                      </p>
-                    </div>
+                      )
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          ): <></>}
-          <h5 className="font-bold">Period</h5>
-          <div className="">
-            {periodFilter.map((item) => (
-              <div className="flex items-center mb-1" key={`period-${item.id}`}>
-                <input
-                  id={item.value}
-                  type="radio"
-                  value={item.value}
-                  name="period-radio"
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 "
-                  onChange={onPeriodhangleChange}
-                  checked={period === item.value}
-                  onClick={() => {if(period){setPeriod("")}}}
-                />
-                <label
-                  htmlFor="default-radio-1"
-                  className="ms-2 text-sm font-medium"
-                >
-                  {item.name}
-                </label>
-              </div>
-            ))}
-            {period === "custom" && showCalendar && (
-              <div className="" ref={wrapperRef}>
-                <DateRangePicker
-                  onChange={(item) => setCustomDates([item.selection])}
-                  showSelectionPreview={true}
-                  moveRangeOnFirstSelection={false}
-                  months={2}
-                  ranges={customDates}
-                  direction="horizontal"
-                  className="z-50 relative border border-[#eff2f7]"
-                />
               </div>
             )}
-            {period === "custom" && !showCalendar && (
+            {showGamesDropdown ? (
               <div
-                className="border border-[#eff2f7] bg-white rounded py-1 px-3 flex items-center justify-between"
-                onClick={() => setShowCalendar(true)}
+                className="bg-white rounded-lg absolute top-[90px] overflow-auto h-[300px] z-10 shadow-lg"
+                ref={wrapperRef}
               >
-                {" "}
-                <p className="text-sm">
-                  {moment(customDates[0].startDate).format("YYYY-MM-DD")}
-                </p>
-                <span className="text-gray-400 px-3">-</span>
-                <p className="text-sm">
-                  {moment(customDates[0].endDate).format("YYYY-MM-DD")}
-                </p>{" "}
-                <CalendarIcon className="w-4 h-4 text-gray-400 ml-8" />
+                {games.map((item, index) => (
+                  <div className="" key={item.title + index}>
+                    <p className="bg-gray-400 px-2 text-white mb-2">
+                      {item.title}
+                    </p>
+                    {item.data.map((game, index) => (
+                      <div
+                        className={`flex items-center  rounded-lg px-2 relative mb-2 cursor-pointer mx-2 ${
+                          item.title === "Android"
+                            ? game.package_name === selectedGame.package_name &&
+                              selectedGame.platform === "Android"
+                              ? "bg-[#e1e1e1]"
+                              : ""
+                            : game.app_id === selectedGame.app_id &&
+                              selectedGame.platform === "Apple"
+                            ? "bg-[#e1e1e1]"
+                            : ""
+                        }`}
+                        key={game.id + index}
+                        onClick={() => {
+                          setSelectedGame(game);
+                          setShowGamesDropdown(false);
+                        }}
+                      >
+                        <img
+                          src={
+                            game?.platform === "Android"
+                              ? game?.play_store_icon
+                              : game?.app_store_icon
+                          }
+                          alt="icon"
+                          className="w-14 h-auto rounded-lg"
+                        />
+                        <span className="absolute bg-white bottom-[0px] left-[50px] px-1 rounded-full text-sm text-gray-600">
+                          {game?.platform === "Android" ? (
+                            <i className="fa fa-android"></i>
+                          ) : (
+                            <i className="fa fa-apple"></i>
+                          )}
+                        </span>
+                        <div className="pl-2 w-full">
+                          <p className="truncate w-[172px] text-md font-bold">
+                            {game?.game_name}
+                          </p>
+                          <p className="truncate w-[158px] text-sm text-gray-400">
+                            {game?.platform === "Android"
+                              ? game?.play_store_developer
+                              : game?.app_store_developer}
+                          </p>
+                          <div className="flex">
+                            {game?.platform === "Android" ? (
+                              <>
+                                {game?.play_store_score && (
+                                  <ReactStars
+                                    count={5}
+                                    edit={false}
+                                    size={15}
+                                    isHalf={true}
+                                    value={parseFloat(game?.play_store_score)}
+                                    emptyIcon={<i className="far fa-star"></i>}
+                                    halfIcon={
+                                      <i className="fa fa-star-half-alt"></i>
+                                    }
+                                    fullIcon={<i className="fa fa-star"></i>}
+                                    activeColor="#ffd700"
+                                  />
+                                )}
+                              </>
+                            ) : (
+                              <ReactStars
+                                count={5}
+                                edit={false}
+                                size={15}
+                                isHalf={true}
+                                value={parseFloat(game?.app_store_score)}
+                                emptyIcon={<i className="far fa-star"></i>}
+                                halfIcon={
+                                  <i className="fa fa-star-half-alt"></i>
+                                }
+                                fullIcon={<i className="fa fa-star"></i>}
+                                activeColor="#ffd700"
+                              />
+                            )}
+                            <p className="text-gray-400 text-sm ml-2">
+                              (
+                              {game?.platform === "Android"
+                                ? formatNumberForDisplay(
+                                    parseFloat(game?.play_store_ratings)
+                                  )
+                                : formatNumberForDisplay(
+                                    game?.app_store_ratings
+                                  )}
+                              )
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
-          <h5 className="font-bold my-3">Review rating</h5>
-          <div className="flex flex-wrap">
-            {ratingFilter.map((rate) => (
-              <div className="flex items-center mb-2 mr-4" key={rate.id}>
-                <input
-                  id="default-checkbox"
-                  type="checkbox"
-                  value={rating}
-                  name={rate.name}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-                  onChange={handleRatingChange}
-                  checked={rating === rate.name}
-                />
-                <label
-                  htmlFor="default-checkbox"
-                  className="ms-2 text-sm font-medium flex"
-                >
-                  {rate.name}
-                  <ReactStars
-                    count={1}
-                    edit={false}
-                    size={16}
-                    value={parseInt(rate.name)}
-                    activeColor={rate.color}
-                    classNames={"pl-1"}
-                  />
-                </label>
-              </div>
-            ))}
-          </div>
-          <h5 className="font-bold my-3">Search</h5>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search by review text"
-              className="border border-[#ccc] rounded pl-3 pr-6 py-1.5 w-full"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-            />
-            {searchText.length ? (
-              <XCircleIcon
-                className="w-4 h-4 inline text-gray-400 absolute right-2 top-3 cursor-pointer"
-                onClick={() => setSearchText("")}
-              />
             ) : (
               <></>
             )}
-          </div>
-          {selectedGame?.platform === "Android" ? (
-            <>
-              <h5 className="font-bold my-3">Language</h5>
-              <Select
-                options={languages}
-                value={selectedlanguages}
-                onChange={(val) => setSelectedLanguages(val)}
-              />
-            </>
-          ) : (
-            <>
-              <h5 className="font-bold my-3">Territory</h5>
-              <Select
-                options={TerritoryCode}
-                value={selectedTerritory}
-                onChange={(val) => setSelectedTerritory(val)}
-              />
-            </>
-          )}
-          {selectedGame?.platform === "Android" && (
-            <>
-              <h5 className="font-bold my-3">Version</h5>
-              <input
-                type="text"
-                placeholder="Version"
-                className="border border-[#ccc] rounded px-3 py-1.5 w-full"
-                value={version}
-                onChange={(e) => setVersion(e.target.value)}
-              />
-            </>
-          )}
-          <h5 className="font-bold my-3">Tag</h5>
-          <Select
-            options={tags}
-            value={selectedTags}
-            isMulti={true}
-            onChange={(val) => setSelectedTags(val)}
-          />
-          {selectedGame?.platform === "Apple" && (
-            <>
-              <h5 className="font-bold my-3">Response State</h5>
-              {responseStateFilter.map((state) => (
-                <div className="flex items-center mb-2 mr-4" key={state.id}>
+            <h5 className="font-bold">Period</h5>
+            <div className="">
+              {periodFilter.map((item) => (
+                <div
+                  className="flex items-center mb-1"
+                  key={`period-${item.id}`}
+                >
+                  <input
+                    id={item.value}
+                    type="radio"
+                    value={item.value}
+                    name="period-radio"
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 "
+                    onChange={onPeriodhangleChange}
+                    checked={period === item.value}
+                    onClick={() => {
+                      if (period) {
+                        setPeriod("");
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor="default-radio-1"
+                    className="ms-2 text-sm font-medium"
+                  >
+                    {item.name}
+                  </label>
+                </div>
+              ))}
+              {period === "custom" && showCalendar && (
+                <div className="" ref={wrapperRef}>
+                  <DateRangePicker
+                    onChange={(item) => setCustomDates([item.selection])}
+                    showSelectionPreview={true}
+                    moveRangeOnFirstSelection={false}
+                    months={2}
+                    ranges={customDates}
+                    direction="horizontal"
+                    className="z-50 relative border border-[#eff2f7]"
+                  />
+                </div>
+              )}
+              {period === "custom" && !showCalendar && (
+                <div
+                  className="border border-[#eff2f7] bg-white rounded py-1 px-3 flex items-center justify-between"
+                  onClick={() => setShowCalendar(true)}
+                >
+                  {" "}
+                  <p className="text-sm">
+                    {moment(customDates[0].startDate).format("YYYY-MM-DD")}
+                  </p>
+                  <span className="text-gray-400 px-3">-</span>
+                  <p className="text-sm">
+                    {moment(customDates[0].endDate).format("YYYY-MM-DD")}
+                  </p>{" "}
+                  <CalendarIcon className="w-4 h-4 text-gray-400 ml-8" />
+                </div>
+              )}
+            </div>
+            <h5 className="font-bold my-3">Review rating</h5>
+            <div className="flex flex-wrap">
+              {ratingFilter.map((rate) => (
+                <div className="flex items-center mb-2 mr-4" key={rate.id}>
                   <input
                     id="default-checkbox"
                     type="checkbox"
-                    value={state.value}
+                    value={rating.includes(rate.name) ? rate.name : ""}
+                    name={rate.name}
                     className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-                    onChange={(e) => setResponseState(e.target.value)}
-                    checked={responseState === state.value}
+                    onChange={handleRatingChange}
+                    checked={
+                      rating.includes(rate.name) ? rate.name : "" === rate.name
+                    }
                   />
                   <label
                     htmlFor="default-checkbox"
                     className="ms-2 text-sm font-medium flex"
                   >
-                    {state.name}
+                    {rate.name}
+                    <ReactStars
+                      count={1}
+                      edit={false}
+                      size={16}
+                      value={parseInt(rate.name)}
+                      activeColor={rate.color}
+                      classNames={"pl-1"}
+                    />
                   </label>
                 </div>
               ))}
-            </>
-          )}
-          <h5 className="font-bold my-3">Reply State</h5>
-          {replyStateFilter.map((state) => (
-            <div className="flex items-center mb-2 mr-4" key={state.id}>
-              <input
-                id="default-checkbox"
-                type="checkbox"
-                value={state.value}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-                onChange={(e) => replyState === e.target.value ? setreplyState("") : setreplyState(e.target.value)}
-                checked={replyState === state.value}
-              />
-              <label
-                htmlFor="default-checkbox"
-                className="ms-2 text-sm font-medium flex"
-              >
-                {state.name}
-              </label>
             </div>
-          ))}
-          <h5 className="font-bold my-3">Order By</h5>
-          <Select
-            options={orderBy}
-            value={sortBy}
-            onChange={(val) => setSortBy(val)}
-          />
-          <button
-            className="border border-[#819edf] rounded-md w-full my-4 py-1 text-[#5e80e1]"
-            onClick={() => fetchReviews(1)}
-          >
-            Search
-          </button>
+            <h5 className="font-bold my-3">Search</h5>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by review text"
+                className="border border-[#ccc] rounded pl-3 pr-6 py-1.5 w-full"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
+              {searchText.length ? (
+                <XCircleIcon
+                  className="w-4 h-4 inline text-gray-400 absolute right-2 top-3 cursor-pointer"
+                  onClick={() => setSearchText("")}
+                />
+              ) : (
+                <></>
+              )}
+            </div>
+            {selectedGame?.platform === "Android" ? (
+              <>
+                <h5 className="font-bold my-3">Language</h5>
+                <Select
+                  options={languages}
+                  value={selectedlanguages}
+                  isMulti={true}
+                  onChange={(val) => setSelectedLanguages(val)}
+                />
+              </>
+            ) : (
+              <>
+                <h5 className="font-bold my-3">Territory</h5>
+                <Select
+                  options={TerritoryCode}
+                  value={selectedTerritory}
+                  onChange={(val) => setSelectedTerritory(val)}
+                />
+              </>
+            )}
+            {selectedGame?.platform === "Android" && (
+              <>
+                <h5 className="font-bold my-3">Version</h5>
+                <Select
+                  options={versionList}
+                  value={selectedVersions}
+                  isMulti={true}
+                  onChange={(val) => setSelectedVersions(val)}
+                />
+              </>
+            )}
+            <h5 className="font-bold my-3">Tag</h5>
+            <Select
+              options={tags}
+              value={selectedTags}
+              isMulti={true}
+              onChange={(val) => setSelectedTags(val)}
+            />
+            {selectedGame?.platform === "Apple" && (
+              <>
+                <h5 className="font-bold my-3">Response State</h5>
+                {responseStateFilter.map((state) => (
+                  <div className="flex items-center mb-2 mr-4" key={state.id}>
+                    <input
+                      id="default-checkbox"
+                      type="checkbox"
+                      value={state.value}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
+                      onChange={(e) => setResponseState(e.target.value)}
+                      checked={responseState === state.value}
+                    />
+                    <label
+                      htmlFor="default-checkbox"
+                      className="ms-2 text-sm font-medium flex"
+                    >
+                      {state.name}
+                    </label>
+                  </div>
+                ))}
+              </>
+            )}
+            <h5 className="font-bold my-3">Reply State</h5>
+            {replyStateFilter.map((state) => (
+              <div className="flex items-center mb-2 mr-4" key={state.id}>
+                <input
+                  id="default-checkbox"
+                  type="checkbox"
+                  value={state.value}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
+                  onChange={(e) =>
+                    replyState === e.target.value
+                      ? setreplyState("")
+                      : setreplyState(e.target.value)
+                  }
+                  checked={replyState === state.value}
+                />
+                <label
+                  htmlFor="default-checkbox"
+                  className="ms-2 text-sm font-medium flex"
+                >
+                  {state.name}
+                </label>
+              </div>
+            ))}
+            <h5 className="font-bold my-3">Order By</h5>
+            <Select
+              options={orderBy}
+              value={sortBy}
+              onChange={(val) => setSortBy(val)}
+            />
+            <button
+              className="border border-[#819edf] rounded-md w-full my-4 py-1 text-[#5e80e1]"
+              onClick={() => fetchReviews(1)}
+            >
+              Search
+            </button>
+          </div>
+          <div className="flex-auto w-3/5">
+            {isSearch && (
+              <div className="px-3">
+                <p className="text-lg font-bold">Results for "{searchText}"</p>
+                <p className="">{totalReviews} results found</p>
+              </div>
+            )}
+            {isLoading ? (
+              <>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    className="p-4 w-full  border-t-[0.5px] border-y-[#ccc]"
+                    key={i}
+                  >
+                    <div className="animate-pulse">
+                      <div className="grid grid-cols-3 gap-4 max-w-sm mb-4">
+                        <div className="h-2 bg-slate-200 rounded col-span-1"></div>
+                        <div className="h-2 bg-slate-200 rounded col-span-1"></div>
+                        <div className="h-2 bg-slate-200 rounded col-span-1"></div>
+                      </div>
+                      <div className="h-2 bg-slate-200 rounded mb-2"></div>
+                      <div className="h-2 bg-slate-200 rounded mb-2"></div>
+                      <div className="grid grid-cols-3 gap-4 max-w-sm my-4">
+                        <div className="h-3 bg-slate-200 rounded col-span-1"></div>
+                        <div className="h-3 bg-slate-200 rounded col-span-1"></div>
+                        <div className="h-3 bg-slate-200 rounded col-span-1"></div>
+                      </div>
+                      <div className="border-[0.5px] border-[#ccc] h-24 p-3 flex flex-col justify-between">
+                        <div className="h-2 bg-slate-200 rounded mb-2"></div>
+                        <div className="grid grid-cols-4 gap-4 max-w-sm">
+                          <div className="h-3 bg-slate-200 rounded col-span-1"></div>
+                          <div className="h-3 bg-slate-200 rounded col-span-1"></div>
+                          <div className="h-3 bg-slate-200 rounded col-span-1"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <>
+                {reviews.length === 0 ? (
+                  <NoData type="reviews" />
+                ) : (
+                  <ReviewsCard
+                    reviews={reviews}
+                    totalReviews={totalReviews}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    limit={limit}
+                    setReviews={setReviews}
+                    selectedGame={selectedGame}
+                    studio_slug={studio_slug}
+                    templates={templates}
+                    setTemplates={setTemplates}
+                    searchText={searchText}
+                  />
+                )}
+              </>
+            )}
+          </div>
         </div>
-        <div className="flex-auto w-3/5">
-          <ReviewsCard
-            reviews={reviews}
-            totalReviews={totalReviews}
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            limit={limit}
-            setReviews={setReviews}
-            selectedGame={selectedGame}
-            studio_slug={studio_slug}
-            templates={templates}
-            setTemplates={setTemplates}
-          />
-        </div>
-      </div>
+      ) : (
+        <NoData type="game" studio_slug={studio_slug} />
+      )}
     </div>
   );
 };
+
+function NoData({ type, studio_slug }) {
+  const navigate = useNavigate();
+  return (
+    <div className="py-3 text-center">
+      <img src={NoDataImage} alt="no-data" className="w-5/12 mx-auto" />
+      <p className="text-xl font-bold mb-2 text-[#09213a]">No Review found</p>
+      {type === "reviews" && <p>Try changing the filter settings or search terms to find the reviews you are looking for.</p>}
+      {type === "game" ? (
+        <button
+          onClick={() =>
+            navigate(
+              `${studio_slug ? `/${studio_slug}/dashboard` : "/dashboard"}`
+            )
+          }
+          className="bg-[#1e96fc] text-white px-8 py-2 rounded"
+        >
+          Add Game
+        </button>
+      ) : (
+        <></>
+      )}
+    </div>
+  );
+}
 
 export default SmartFeedback;

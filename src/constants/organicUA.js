@@ -74,6 +74,69 @@ export const periodFilter = [
   },
 ];
 
+export const TagsList = [
+  {
+    id: "1",
+    name: "ads concern",
+    label: "Ads Concern",
+    value: "ads concern",
+  },
+  {
+    id: "2",
+    name: "crashes/ANR",
+    label: "Crashes/ANR",
+    value: "crashes/ANR",
+  },
+  {
+    id: "3",
+    name: "IAP concern",
+    label: "IAP concern",
+    value: "IAP concern",
+  },
+  {
+    id: "4",
+    name: "lag/freeze",
+    label: "Lag/Freeze",
+    value: "lag/freeze",
+  },
+  {
+    id: "5",
+    name: "progress saving",
+    label: "Progress Saving",
+    value: "progress saving",
+  },
+  {
+    id: "6",
+    name: "need more info",
+    label: "Need More info",
+    value: "need more info",
+  },
+  {
+    id: "7",
+    name: "bug",
+    label: "Bug",
+    value: "bug",
+  },
+  {
+    id: "8",
+    name: "feedback/suggestion",
+    label: "Feedback/Suggestion",
+    value: "feedback/suggestion",
+  },
+  {
+    id: "9",
+    name: "cannot install",
+    label: "Cannot Install",
+    value: "cannot install",
+  },
+  {
+    id: "10",
+    name: "appreciation",
+    label: "Appreciation",
+    value: "appreciation",
+  },
+];
+
 export const TerritoryCode = [
   {
     id: "1",
