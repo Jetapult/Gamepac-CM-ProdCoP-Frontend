@@ -70,8 +70,8 @@ const OrganicUA = () => {
       </div>
       <div className="content flex-auto sm:w-auto px-6">
         {activeMenu === "smart-feedback" && <SmartFeedback studio_slug={studio_slug} templates={templates} setTemplates={setTemplates} />}
-        {activeMenu === "review-insights" && <ReviewInsights studio_slug={studio_slug} />}
         {activeMenu === "templates" && <Templates studio_slug={studio_slug} templates={templates} setTemplates={setTemplates} />}
+        {activeMenu === "review-insights" && <ReviewInsights packageName={"com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating"} />}
       </div>
     </div>
   );
