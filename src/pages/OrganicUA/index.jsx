@@ -44,7 +44,7 @@ const OrganicUA = () => {
       </div>
       <div className="content w-full sm:w-4/5 p-6">
         {activeMenu === "smart-feedback" && <SmartFeedback studio_slug={studio_slug} />}
-        {activeMenu === "review-insights" && <ReviewInsights studio_slug={studio_slug} />}
+        {activeMenu === "review-insights" && <ReviewInsights packageName={"com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating"} />}
       </div>
     </div>
   );
