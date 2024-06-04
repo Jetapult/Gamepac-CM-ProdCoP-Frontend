@@ -446,19 +446,16 @@ const ReviewsCard = ({
                   review?.translated_review}
               </p>
             ) : (
-              // <p className="text-md">
-              //   {review?.originalLang || review?.comment || review?.body}
-              // </p>
               <HighlightText text={review?.originalLang || review?.comment || review?.body} searchTerm={searchText} />
             )}
-            <span
+            {(selectedGame.platform === "Android" && review.reviewerLanguage !== 'en' || selectedGame.platform === "Apple") && <span
               className="text-[#5e80e1] underline text-[13px] cursor-pointer"
               onClick={() => showReviewtranslation(review)}
             >
               {showOriginalLangComment.includes(review.id)
                 ? "Show Original"
                 : "Show Translation"}
-            </span>
+            </span>}
             <p>
               Tags:{" "}
               {review?.tags?.map((tag, index) => (

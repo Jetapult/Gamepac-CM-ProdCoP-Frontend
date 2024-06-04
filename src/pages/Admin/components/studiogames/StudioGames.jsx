@@ -3,19 +3,24 @@ import api from "../../../../api";
 import { EllipsisVerticalIcon, PlusIcon } from "@heroicons/react/20/solid";
 import { Menu, Transition } from "@headlessui/react";
 import Pagination from "../../../../components/Pagination";
-import CreateUserPopup from "../popups/CreateUserPopup";
 import { classNames } from "../../../../utils";
 import CreateGamePopup from "../popups/CreateGamePopup";
 import SendWeeklyReportPopup from "../popups/SendWeeklyReportPopup";
 import EnableAutoReplyPopup from "../popups/EnableAutoReplyPopup";
 import ConfirmationPopup from "../../../../components/ConfirmationPopup";
-import { ArrowPathIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
-import loadingIcon from "../../../../assets/transparent-spinner.svg";
+import {
+  QuestionMarkCircleIcon,
+} from "@heroicons/react/24/outline";
 import TypewriterLoader from "../../../../components/TypewriterLoader/TypewriterLoader";
-import ReviewsPrerequisites from "../popups/ReviewsPrerequisites";
 import { useSelector } from "react-redux";
 
-const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelectedTab }) => {
+const StudioGames = ({
+  studio_id,
+  setToastMessage,
+  users,
+  studioData,
+  setSelectedTab,
+}) => {
   const userData = useSelector((state) => state.user.user);
   const [games, setGames] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -118,7 +123,13 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelecte
   return (
     <>
       <div className="flex justify-between items-center">
-        <p className="text-gray-500 my-2 cursor-pointer prerequisites-text" onClick={() => window.open(`/docs/app-onboarding`)}>Prerequisites/Not able to fetch the reviews <QuestionMarkCircleIcon className="inline w-4 h-4" /></p>
+        <p
+          className="text-gray-500 my-2 cursor-pointer prerequisites-text"
+          onClick={() => window.open(`/docs/app-onboarding`)}
+        >
+          Prerequisites/Not able to fetch the reviews{" "}
+          <QuestionMarkCircleIcon className="inline w-4 h-4" />
+        </p>
         <button
           className="bg-[#f58174] text-white px-4 py-2 rounded-md new-btn"
           onClick={() => setShowAddUserPopup(!showAddUserPopup)}
@@ -137,17 +148,11 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelecte
         <div className="col-span-1">
           <p>short_names</p>
         </div>
-        <div className="col-span-2">
-          <p>game_type</p>
-        </div>
-        <div className="col-span-1">
-          <p>App ID</p>
-        </div>
-        <div className="col-span-2">
-          <p>Package name</p>
-        </div>
-        <div className="col-span-2 px-1">
+        <div className="col-span-3 px-1">
           <p>Pod owner</p>
+        </div>
+        <div className="col-span-4">
+          <p>Actions</p>
         </div>
         <div className="">
           <p></p>
@@ -161,16 +166,32 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelecte
           >
             <p className="">{(currentPage - 1) * limit + index + 1}</p>
             <p className="col-span-2">{game.game_name}</p>
-            <p className="col-span-1">{game.short_names}</p>
-            <p className="col-span-2">{game.game_type}</p>
-            <p className="col-span-1">{game.app_id}</p>
-            <p className="col-span-2 break-all">{game.package_name}</p>
-            <p className="col-span-2 break-all px-1">{game.pod_owner}</p>
+            <p className="col-span-1 text-center">{game.short_names}</p>
+            <p className="col-span-3 break-all px-1">{game.pod_owner}</p>
+            <p className="col-span-4">
+              <button className="border border-[#ccc] rounded px-4 py-1 mr-2"
+              onClick={() => {
+                setSelectedGame(game);
+                setShowAutoReplyEnablePopup(
+                  !showAutoReplyEnablePopup
+                );
+              }}>
+                Auto reply
+              </button>{" "}
+              <button className="border border-[#ccc] rounded px-4 py-1 mr-2"
+              onClick={() => {
+                setSelectedGame(game);
+                setShowSendReportPopup(!showSendReportPopup);
+              }}>
+                Weekly report
+              </button>
+              <button
+                className="border border-[#ccc] rounded px-4 py-1"
+                onClick={() => onRefreshReviews(game)}
+              >Refresh reviews</button>
+            </p>
             <Menu as="div" className="relative inline-block text-left">
               <div className="flex items-center justify-end">
-                <button className="pr-4" onClick={() => onRefreshReviews(game)}>
-                  <ArrowPathIcon className="inline w-6 h-6" />
-                </button>
                 <Menu.Button
                   onClick={(event) => event.stopPropagation()}
                   className="inline-flex text-sm font-semibold"
@@ -190,44 +211,6 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData, setSelecte
               >
                 <Menu.Items className="absolute right-0 z-10 mt-2 w-36 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                   <div className="py-1">
-                    <Menu.Item>
-                      {({ active }) => (
-                        <a
-                          className={classNames(
-                            active
-                              ? "bg-gray-100 text-gray-900"
-                              : "text-gray-700",
-                            "block px-4 py-2 text-sm"
-                          )}
-                          onClick={() => {
-                            setSelectedGame(game);
-                            setShowAutoReplyEnablePopup(
-                              !showAutoReplyEnablePopup
-                            );
-                          }}
-                        >
-                          Enable Auto Reply
-                        </a>
-                      )}
-                    </Menu.Item>
-                    <Menu.Item>
-                      {({ active }) => (
-                        <a
-                          className={classNames(
-                            active
-                              ? "bg-gray-100 text-gray-900"
-                              : "text-gray-700",
-                            "block px-4 py-2 text-sm"
-                          )}
-                          onClick={() => {
-                            setSelectedGame(game);
-                            setShowSendReportPopup(!showSendReportPopup);
-                          }}
-                        >
-                          Send weekly report
-                        </a>
-                      )}
-                    </Menu.Item>
                     <Menu.Item>
                       {({ active }) => (
                         <a
