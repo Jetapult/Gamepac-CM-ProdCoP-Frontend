@@ -4,6 +4,7 @@ import api from "../../../api";
 import CreateReplyTemplatePopup from "./CreateReplyTemplatePopup";
 import ToastMessage from "../../../components/ToastMessage";
 import ConfirmationPopup from "../../../components/ConfirmationPopup";
+import NoData from "../../../components/NoData";
 
 const Templates = ({ studio_slug, templates, setTemplates }) => {
   const [showCreateReplyTemplatePopup, setShowCreateReplyTemplatePopup] =
@@ -62,44 +63,53 @@ const Templates = ({ studio_slug, templates, setTemplates }) => {
           type="button"
           onClick={() => {
             setSelectedTemplate({});
-            setShowCreateReplyTemplatePopup(!showCreateReplyTemplatePopup)
+            setShowCreateReplyTemplatePopup(!showCreateReplyTemplatePopup);
           }}
         >
           {"Add"}
         </button>
       </div>
 
-      {templates.map((template) => (
-        <div
-          className="bg-white rounded p-4 mb-4 border-[0.5px] border-[#ccc]"
-          key={template.id}
-        >
-          <h5 className="capitalize font-bold mb-2 bg-gray-400 inline-block px-4 rounded text-white">
-            {template.review_type}
-          </h5>
-          <p>{template.review_reply}</p>
-          <div className="flex justify-end">
-            <button
-              className="mr-4 border border-[#ccc] rounded py-1 px-3 mr-2 text-sm"
-              onClick={() => {
-                setSelectedTemplate(template);
-                setShowCreateReplyTemplatePopup(!showCreateReplyTemplatePopup);
-              }}
-            >
-              Edit
-            </button>
-            <button
-              className="border border-[#be261f] text-[#f44337] rounded py-1 px-3 mr-2 text-sm"
-              onClick={() => {
-                setSelectedTemplate(template);
-                setShowConfirmationPopup(!showConfirmationPopup);
-              }}
-            >
-              Delete
-            </button>
+      {templates.length === 0 ? (
+        <NoData
+          type="templates"
+          next={() => setShowCreateReplyTemplatePopup(!showCreateReplyTemplatePopup)}
+        />
+      ) : (
+        templates.map((template) => (
+          <div
+            className="bg-white rounded p-4 mb-4 border-[0.5px] border-[#ccc]"
+            key={template.id}
+          >
+            <h5 className="capitalize font-bold mb-2 bg-gray-400 inline-block px-4 rounded text-white">
+              {template.review_type}
+            </h5>
+            <p>{template.review_reply}</p>
+            <div className="flex justify-end">
+              <button
+                className="mr-4 border border-[#ccc] rounded py-1 px-3 mr-2 text-sm"
+                onClick={() => {
+                  setSelectedTemplate(template);
+                  setShowCreateReplyTemplatePopup(
+                    !showCreateReplyTemplatePopup
+                  );
+                }}
+              >
+                Edit
+              </button>
+              <button
+                className="border border-[#be261f] text-[#f44337] rounded py-1 px-3 mr-2 text-sm"
+                onClick={() => {
+                  setSelectedTemplate(template);
+                  setShowConfirmationPopup(!showConfirmationPopup);
+                }}
+              >
+                Delete
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        ))
+      )}
       {showCreateReplyTemplatePopup && (
         <CreateReplyTemplatePopup
           showCreateReplyTemplatePopup={showCreateReplyTemplatePopup}

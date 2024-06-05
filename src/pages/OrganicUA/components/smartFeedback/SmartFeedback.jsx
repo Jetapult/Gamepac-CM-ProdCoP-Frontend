@@ -3,10 +3,9 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import api from "../../../../api";
 import ReactStars from "react-rating-stars-component";
-import { formatNumberForDisplay } from "../../../../utils";
 import Select from "react-select";
 import ReviewsCard from "./ReviewsCard";
-import { ChevronDownIcon, XCircleIcon } from "@heroicons/react/20/solid";
+import { XCircleIcon } from "@heroicons/react/20/solid";
 import { CalendarIcon } from "@heroicons/react/24/outline";
 import { DateRangePicker } from "react-date-range";
 import moment from "moment";
@@ -19,19 +18,26 @@ import {
   replyStateFilter,
   responseStateFilter,
 } from "../../../../constants/organicUA";
-import NoDataImage from "../../../../assets/No-Data.png";
+import GamesDropdown from "./GamesDropdown";
+import NoData from "../../../../components/NoData";
 
-const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
+const SmartFeedback = ({
+  studio_slug,
+  templates,
+  setTemplates,
+  isGameLoading,
+  setIsGameLoading,
+  games,
+  setGames,
+}) => {
   const userData = useSelector((state) => state.user.user);
   const studios = useSelector((state) => state.admin.studios);
-  const [games, setGames] = useState([]);
   const [selectedGame, setSelectedGame] = useState({});
   const [languages, setlanguages] = useState([]);
   const [selectedlanguages, setSelectedLanguages] = useState([]);
   const [tags, setTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [showGamesDropdown, setShowGamesDropdown] = useState(false);
   const [period, setPeriod] = useState("");
   const [customDates, setCustomDates] = useState([
     {
@@ -53,8 +59,8 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
   const [responseState, setResponseState] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setisLoading] = useState(true);
-  const [isGameLoading, setIsGameLoading] = useState(true);
   const limit = 10;
+  const navigate = useNavigate();
 
   const orderBy = [
     {
@@ -83,7 +89,6 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
     useEffect(() => {
       function handleClickOutside(event) {
         if (ref.current && !ref.current.contains(event.target)) {
-          setShowGamesDropdown(false);
           setShowCalendar(false);
         }
       }
@@ -201,20 +206,6 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
     }
   };
 
-  const fetchAllgames = async () => {
-    try {
-      const gamesresponse = await api.get(
-        `/v1/games/platform/${studio_slug ? studio_slug : userData.studio_id}`
-      );
-      setGames(gamesresponse.data.data);
-      setSelectedGame(gamesresponse.data.data[0].data[0]);
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setIsGameLoading(false);
-    }
-  };
-
   const fetchAllLanguages = async () => {
     try {
       const languageResponse = await api.get(`v1/organic-ua/languages`);
@@ -262,7 +253,6 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
 
   useEffect(() => {
     if (userData.studio_id) {
-      fetchAllgames();
       fetchAllLanguages();
       fetchAllTags();
     }
@@ -281,6 +271,12 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
       fetchAllVersions();
     }
   }, [selectedGame?.id, selectedGame?.platform, studios?.length]);
+
+  useEffect(() => {
+    if (games.length) {
+      setSelectedGame(games[0].data[0]);
+    }
+  }, [games.length]);
   return (
     <div className="shadow-md bg-white w-full h-full p-4">
       <h1 className="text-2xl">Smart Feedback</h1>
@@ -289,193 +285,11 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
       ) : checkGames() ? (
         <div className="flex">
           <div className="w-[275px] min-w-[275px] max-w-[275px] bg-[#F8F9FD] p-3 relative">
-            {selectedGame?.id && (
-              <div
-                className="flex items-center bg-white border border-[#ccc] rounded-lg px-2 relative mb-2 cursor-pointer"
-                onClick={() => setShowGamesDropdown(!showGamesDropdown)}
-              >
-                <img
-                  src={
-                    selectedGame?.platform === "Android"
-                      ? selectedGame?.play_store_icon
-                      : selectedGame?.app_store_icon
-                  }
-                  alt="icon"
-                  className="w-14 h-auto rounded-lg"
-                />
-                <span className="absolute bg-white bottom-[0px] left-[50px] px-1 rounded-full text-sm text-gray-600">
-                  {selectedGame?.platform === "Android" ? (
-                    <i className="fa fa-android"></i>
-                  ) : (
-                    <i className="fa fa-apple"></i>
-                  )}
-                </span>
-                <div className="pl-2 w-full">
-                  <p className="truncate w-[172px] text-md font-bold">
-                    {selectedGame?.game_name}
-                  </p>
-                  <div className="flex justify-between items-center">
-                    <p className="truncate w-[158px] text-sm text-gray-400">
-                      {selectedGame?.platform === "Android"
-                        ? selectedGame?.play_store_developer
-                        : selectedGame?.app_store_developer}
-                    </p>
-                    <ChevronDownIcon className="w-5 h-5" />
-                  </div>
-                  <div className="flex">
-                    {selectedGame?.platform === "Android" ? (
-                      <>
-                        {selectedGame?.play_store_score && (
-                          <ReactStars
-                            count={5}
-                            edit={false}
-                            size={15}
-                            isHalf={true}
-                            value={parseFloat(selectedGame?.play_store_score)}
-                            emptyIcon={<i className="far fa-star"></i>}
-                            halfIcon={<i className="fa fa-star-half-alt"></i>}
-                            fullIcon={<i className="fa fa-star"></i>}
-                            activeColor="#ffd700"
-                          />
-                        )}
-                      </>
-                    ) : (
-                      <ReactStars
-                        count={5}
-                        edit={false}
-                        size={15}
-                        isHalf={true}
-                        value={parseFloat(selectedGame?.app_store_score)}
-                        emptyIcon={<i className="far fa-star"></i>}
-                        halfIcon={<i className="fa fa-star-half-alt"></i>}
-                        fullIcon={<i className="fa fa-star"></i>}
-                        activeColor="#ffd700"
-                      />
-                    )}
-                    <p className="text-gray-400 text-sm ml-2">
-                      (
-                      {selectedGame?.platform === "Android"
-                        ? formatNumberForDisplay(
-                            parseFloat(selectedGame?.play_store_ratings)
-                          )
-                        : formatNumberForDisplay(
-                            selectedGame?.app_store_ratings
-                          )}
-                      )
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            {showGamesDropdown ? (
-              <div
-                className="bg-white rounded-lg absolute top-[90px] overflow-auto h-[300px] z-10 shadow-lg"
-                ref={wrapperRef}
-              >
-                {games.map((item, index) => (
-                  <div className="" key={item.title + index}>
-                    <p className="bg-gray-400 px-2 text-white mb-2">
-                      {item.title}
-                    </p>
-                    {item.data.map((game, index) => (
-                      <div
-                        className={`flex items-center  rounded-lg px-2 relative mb-2 cursor-pointer mx-2 ${
-                          item.title === "Android"
-                            ? game.package_name === selectedGame.package_name &&
-                              selectedGame.platform === "Android"
-                              ? "bg-[#e1e1e1]"
-                              : ""
-                            : game.app_id === selectedGame.app_id &&
-                              selectedGame.platform === "Apple"
-                            ? "bg-[#e1e1e1]"
-                            : ""
-                        }`}
-                        key={game.id + index}
-                        onClick={() => {
-                          setSelectedGame(game);
-                          setShowGamesDropdown(false);
-                        }}
-                      >
-                        <img
-                          src={
-                            game?.platform === "Android"
-                              ? game?.play_store_icon
-                              : game?.app_store_icon
-                          }
-                          alt="icon"
-                          className="w-14 h-auto rounded-lg"
-                        />
-                        <span className="absolute bg-white bottom-[0px] left-[50px] px-1 rounded-full text-sm text-gray-600">
-                          {game?.platform === "Android" ? (
-                            <i className="fa fa-android"></i>
-                          ) : (
-                            <i className="fa fa-apple"></i>
-                          )}
-                        </span>
-                        <div className="pl-2 w-full">
-                          <p className="truncate w-[172px] text-md font-bold">
-                            {game?.game_name}
-                          </p>
-                          <p className="truncate w-[158px] text-sm text-gray-400">
-                            {game?.platform === "Android"
-                              ? game?.play_store_developer
-                              : game?.app_store_developer}
-                          </p>
-                          <div className="flex">
-                            {game?.platform === "Android" ? (
-                              <>
-                                {game?.play_store_score && (
-                                  <ReactStars
-                                    count={5}
-                                    edit={false}
-                                    size={15}
-                                    isHalf={true}
-                                    value={parseFloat(game?.play_store_score)}
-                                    emptyIcon={<i className="far fa-star"></i>}
-                                    halfIcon={
-                                      <i className="fa fa-star-half-alt"></i>
-                                    }
-                                    fullIcon={<i className="fa fa-star"></i>}
-                                    activeColor="#ffd700"
-                                  />
-                                )}
-                              </>
-                            ) : (
-                              <ReactStars
-                                count={5}
-                                edit={false}
-                                size={15}
-                                isHalf={true}
-                                value={parseFloat(game?.app_store_score)}
-                                emptyIcon={<i className="far fa-star"></i>}
-                                halfIcon={
-                                  <i className="fa fa-star-half-alt"></i>
-                                }
-                                fullIcon={<i className="fa fa-star"></i>}
-                                activeColor="#ffd700"
-                              />
-                            )}
-                            <p className="text-gray-400 text-sm ml-2">
-                              (
-                              {game?.platform === "Android"
-                                ? formatNumberForDisplay(
-                                    parseFloat(game?.play_store_ratings)
-                                  )
-                                : formatNumberForDisplay(
-                                    game?.app_store_ratings
-                                  )}
-                              )
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <></>
-            )}
+            <GamesDropdown
+              selectedGame={selectedGame}
+              setSelectedGame={setSelectedGame}
+              games={games}
+            />
             <h5 className="font-bold">Period</h5>
             <div className="">
               {periodFilter.map((item) => (
@@ -724,7 +538,18 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
             ) : (
               <>
                 {reviews.length === 0 ? (
-                  <NoData type="reviews" />
+                  <NoData
+                    type="reviews"
+                    next={() =>
+                      navigate(
+                        `${
+                          studio_slug
+                            ? `/${studio_slug}/dashboard`
+                            : "/dashboard"
+                        }`
+                      )
+                    }
+                  />
                 ) : (
                   <ReviewsCard
                     reviews={reviews}
@@ -745,35 +570,17 @@ const SmartFeedback = ({ studio_slug, templates, setTemplates }) => {
           </div>
         </div>
       ) : (
-        <NoData type="game" studio_slug={studio_slug} />
-      )}
-    </div>
-  );
-};
-
-function NoData({ type, studio_slug }) {
-  const navigate = useNavigate();
-  return (
-    <div className="py-3 text-center">
-      <img src={NoDataImage} alt="no-data" className="w-5/12 mx-auto" />
-      <p className="text-xl font-bold mb-2 text-[#09213a]">No Review found</p>
-      {type === "reviews" && <p>Try changing the filter settings or search terms to find the reviews you are looking for.</p>}
-      {type === "game" ? (
-        <button
-          onClick={() =>
+        <NoData
+          type="game"
+          next={() =>
             navigate(
               `${studio_slug ? `/${studio_slug}/dashboard` : "/dashboard"}`
             )
           }
-          className="bg-[#1e96fc] text-white px-8 py-2 rounded"
-        >
-          Add Game
-        </button>
-      ) : (
-        <></>
+        />
       )}
     </div>
   );
-}
+};
 
 export default SmartFeedback;

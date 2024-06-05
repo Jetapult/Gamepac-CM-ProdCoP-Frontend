@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import SmartFeedback from "./components/smartFeedback/SmartFeedback";
-import ReviewInsights from "./components/ReviewInsights";
+import ReviewInsights from "./components/ReviewInsights/ReviewInsights";
 import Templates from "./components/Templates";
 import api from "../../api";
 
@@ -17,20 +17,26 @@ const OrganicUA = () => {
   const userData = useSelector((state) => state.user.user);
   const [templates, setTemplates] = useState([]);
   const [activeMenu, setActiveMenu] = useState(menuItems[0].id);
+  const [games, setGames] = useState([]);
+  const [isGameLoading, setIsGameLoading] = useState(true);
   const navigate = useNavigate();
   const params = useParams();
   const studio_slug = params.studio_slug;
 
   const handleMenuClick = (id) => {
-    navigate(studio_slug ? `/organic-ua/${id}/${studio_slug}` : `/organic-ua/${id}`);
+    navigate(
+      studio_slug ? `/organic-ua/${id}/${studio_slug}` : `/organic-ua/${id}`
+    );
     setActiveMenu(id);
   };
 
   useEffect(() => {
     const pathSegments = location.pathname.split("/");
-    const relevantSegment = studio_slug ? pathSegments[pathSegments.length - 2] : pathSegments.pop();
+    const relevantSegment = studio_slug
+      ? pathSegments[pathSegments.length - 2]
+      : pathSegments.pop();
     setActiveMenu(relevantSegment);
-  }, [studio_slug,location.pathname]);
+  }, [studio_slug, location.pathname]);
 
   const getAllReplyTemplates = async () => {
     try {
@@ -47,11 +53,25 @@ const OrganicUA = () => {
     }
   };
 
+  const fetchAllgames = async () => {
+    try {
+      const gamesresponse = await api.get(
+        `/v1/games/platform/${studio_slug ? studio_slug : userData.studio_id}`
+      );
+      setGames(gamesresponse.data.data);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setIsGameLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (studio_slug ? studios.length : userData.studio_id) {
       getAllReplyTemplates();
+      fetchAllgames();
     }
-  }, [studios.length,userData?.id]);
+  }, [studios.length, userData?.id]);
 
   return (
     <div className="docs-container flex">
@@ -69,9 +89,33 @@ const OrganicUA = () => {
         ))}
       </div>
       <div className="content flex-auto sm:w-auto px-6">
-        {activeMenu === "smart-feedback" && <SmartFeedback studio_slug={studio_slug} templates={templates} setTemplates={setTemplates} />}
-        {activeMenu === "templates" && <Templates studio_slug={studio_slug} templates={templates} setTemplates={setTemplates} />}
-        {activeMenu === "review-insights" && <ReviewInsights packageName={"com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating"} />}
+        {activeMenu === "smart-feedback" && (
+          <SmartFeedback
+            studio_slug={studio_slug}
+            templates={templates}
+            setTemplates={setTemplates}
+            setIsGameLoading={setIsGameLoading}
+            isGameLoading={isGameLoading}
+            games={games}
+            setGames={setGames}
+          />
+        )}
+        {activeMenu === "templates" && (
+          <Templates
+            studio_slug={studio_slug}
+            templates={templates}
+            setTemplates={setTemplates}
+          />
+        )}
+        {activeMenu === "review-insights" && (
+          <ReviewInsights
+            packageName={
+              "com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating"
+            }
+            games={games}
+            setGames={setGames}
+          />
+        )}
       </div>
     </div>
   );
