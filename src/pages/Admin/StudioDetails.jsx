@@ -6,7 +6,7 @@ import api from "../../api";
 import StudioSettings from "./components/studioSettings/StudioSettings";
 import StudioDashboard from "./components/studioDashboard/StudioDashboard";
 import { useSelector } from "react-redux";
-import StudioAppStoreKeys from "./components/studioAppStoreKeys/studioAppStoreKeys";
+import StudioAppStoreKeys from "./components/studioAppStoreKeys/StudioAppStoreKeys";
 
 const StudioDetails = () => {
   const adminData = useSelector((state) => state.admin.selectedStudio);
