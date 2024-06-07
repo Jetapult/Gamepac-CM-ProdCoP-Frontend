@@ -25,6 +25,7 @@ import {
 import { Line } from "react-chartjs-2";
 import Select from "react-select";
 import "./reviewInsights.css";
+import NoData from "../../../../components/NoData";
 
 const tagDistributionlabels = [
   "Ads concern",
@@ -43,6 +44,7 @@ const tagDistributionlabelData = {
   "ads concern": "#fb9c00",
   "crashes/ANR": "#8d0934",
   "IAP concern": "#334fde",
+  "iap concern": "#334fde",
   "lag/freeze": "#97433b",
   "progress saving": "#fa8d05",
   "need more info": "#a5ba67",
@@ -50,6 +52,7 @@ const tagDistributionlabelData = {
   "feedback/suggestion": "#f6d01a",
   "cannot install": "#5f0b9d",
   appreciation: "#f3c2ee",
+  positive: "#819ee0",
 };
 
 Chart.register(
@@ -81,6 +84,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
   const [lineChart, setLineChart] = useState({});
   const [selectedVersions, setSelectedVersions] = useState([]);
   const [versionList, setVersionList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const wrapperRef = useRef(null);
   useOutsideAlerter(wrapperRef);
@@ -241,6 +245,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
 
   const getTagsDistrubutionData = async () => {
     try {
+      setIsLoading(true);
       setPieChartData([]);
       const requestBody = {
         start_date: moment(customDates[0].startDate).format("YYYY-MM-DD"),
@@ -282,11 +287,14 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
       }
     } catch (err) {
       console.log(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const fetchRatingTrends = async () => {
     try {
+      setIsLoading(true);
       setLineChart([]);
       const requestbody = {
         game_id: selectedGame.id,
@@ -304,29 +312,33 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
       const url = `/v1/organic-ua/avg-rating-trends`;
       const reviewsResponse = await api.post(url, requestbody);
       const reviews = reviewsResponse.data;
-      const labels = [];
-      const data = [];
-      reviews.map((x) => {
-        labels.push(moment(x.date).format("MM-DD"));
-        data.push(x.avg_rating);
-      });
-      setLineChart({
-        labels,
-        datasets: [
-          {
-            label: "Rating Trend",
-            data,
-            borderColor: "#6879af",
-            borderWidth: 2,
-            fill: false,
-            pointBackgroundColor: "#ffffff",
-            pointBorderColor: "#6879af",
-            pointRadius: 4,
-          },
-        ],
-      });
+      if (reviewsResponse.data.length) {
+        const labels = [];
+        const data = [];
+        reviews.map((x) => {
+          labels.push(moment(x.date).format("MM-DD"));
+          data.push(x.avg_rating);
+        });
+        setLineChart({
+          labels,
+          datasets: [
+            {
+              label: "Rating Trend",
+              data,
+              borderColor: "#6879af",
+              borderWidth: 2,
+              fill: false,
+              pointBackgroundColor: "#ffffff",
+              pointBorderColor: "#6879af",
+              pointRadius: 4,
+            },
+          ],
+        });
+      }
     } catch (err) {
       console.log(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -406,46 +418,72 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
           </button>
         )}
       </div>
-      <div className="grid grid-cols-12">
-        <div className="col-span-6 relative">
-          <h2 className="text-center text-2xl font-bold">Tag Distribution</h2>
-          <TagsList tagDistribution={tagDistribution} />
-          {pieChartData.labels && <Pie data={pieChartData} options={options} />}
-        </div>
-        <div className="col-span-6">
-          <h2 className="text-center text-2xl font-bold">Rating Trend</h2>
-          {lineChart.labels && <Line options={lineOptions} data={lineChart} />}
-        </div>
-      </div>
-      {tagDistribution.length ? (
-        <div className="border border-[#f2f2f2] rounded-lg mb-10">
-          <div className="flex bg-[#fafafb] rounded-t-lg border-b border-b-[#f2f2f2]">
-            <p className="w-3/5 border-r border-r-[#f2f2f2] p-3">Tag</p>
-            <p className="w-2/5 p-3">Change (Last Week)</p>
-          </div>
-          {tagDistribution.map((tag, index) => (
-            <div key={index} className="flex border-b border-b-[#f2f2f2]">
-              <p className="w-3/5 border-r border-r-[#f2f2f2] p-3">{tag.tag}</p>
-              <p className="w-2/5 p-3">
-                {tag.count} (
-                <span
-                  className={`${
-                    getTagPercentageChange(tag).changeSymbol === "+"
-                      ? "text-[#9ac18b]"
-                      : "text-[#c86577]"
-                  }`}
-                >
-                  {getTagPercentageChange(tag).changeSymbol +
-                    getTagPercentageChange(tag).percentage}
-                  %
-                </span>
-                )
-              </p>
-            </div>
-          ))}
-        </div>
-      ) : (
+      {isLoading ? (
         <></>
+      ) : (
+        <>
+          {Object.keys(pieChartData || {}).length ||
+          Object.keys(lineChart || {}).length ? (
+            <>
+              <div className="grid grid-cols-12">
+                <div className="col-span-6 relative">
+                  <h2 className="text-center text-2xl font-bold">
+                    Tag Distribution
+                  </h2>
+                  <TagsList tagDistribution={tagDistribution} />
+                  {pieChartData.labels && (
+                    <Pie data={pieChartData} options={options} />
+                  )}
+                </div>
+                <div className="col-span-6">
+                  <h2 className="text-center text-2xl font-bold">
+                    Rating Trend
+                  </h2>
+                  {lineChart.labels && (
+                    <Line options={lineOptions} data={lineChart} />
+                  )}
+                </div>
+              </div>
+              {tagDistribution.length ? (
+                <div className="border border-[#f2f2f2] rounded-lg mb-10">
+                  <div className="flex bg-[#fafafb] rounded-t-lg border-b border-b-[#f2f2f2]">
+                    <p className="w-3/5 border-r border-r-[#f2f2f2] p-3">Tag</p>
+                    <p className="w-2/5 p-3">Change (Last Week)</p>
+                  </div>
+                  {tagDistribution.map((tag, index) => (
+                    <div
+                      key={index}
+                      className="flex border-b border-b-[#f2f2f2]"
+                    >
+                      <p className="w-3/5 border-r border-r-[#f2f2f2] p-3">
+                        {tag.tag}
+                      </p>
+                      <p className="w-2/5 p-3">
+                        {tag.count} (
+                        <span
+                          className={`${
+                            getTagPercentageChange(tag).changeSymbol === "+"
+                              ? "text-[#9ac18b]"
+                              : "text-[#c86577]"
+                          }`}
+                        >
+                          {getTagPercentageChange(tag).changeSymbol +
+                            getTagPercentageChange(tag).percentage}
+                          %
+                        </span>
+                        )
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <></>
+              )}
+            </>
+          ) : (
+            <NoData type="Reviews" />
+          )}
+        </>
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import GamesDropdown from "../smartFeedback/GamesDropdown";
 import "./weeklyReport.css";
 import moment from "moment";
 import Select from "react-select";
+import NoData from "../../../../components/NoData";
 
 const WeeklyReport = ({ games, studio_slug }) => {
   const userData = useSelector((state) => state.user.user);
@@ -172,7 +173,7 @@ const WeeklyReport = ({ games, studio_slug }) => {
 
       {weeklyReport?.ratings_count ? (
         <div className="border border-[#f2f2f2] rounded-lg mb-10 w-[698px]">
-          <div className="flex bg-[#fafafb] rounded-t-lg border-b border-b-[#f2f2f2]">
+          <div className="flex bg-[#e1e1e2] rounded-t-lg border-b border-b-[#f2f2f2]">
             <p className="w-[14%] border-r border-r-[#f2f2f2] p-3 text-center">
               Avg rating
             </p>
@@ -232,6 +233,7 @@ const WeeklyReport = ({ games, studio_slug }) => {
       ) : (
         <></>
       )}
+      {!weeklyReport && <NoData type="reports" />}
     </div>
   );
 };
