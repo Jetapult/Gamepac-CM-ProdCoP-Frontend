@@ -132,8 +132,8 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
   useEffect(() => {
     if (studioData?.id) {
       setName(studioData.studio_name);
-      setEmail(studioData.contact_email);
-      setPhone(studioData.phone);
+      setEmail(studioData.contact_email || "");
+      setPhone(studioData.phone || "");
       setLogo(studioData.studio_logo || {});
     }
   }, [studioData?.id]);
@@ -174,7 +174,7 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
             type="email"
             value={email}
             onChange={onEmailChange}
-            disabled={studioData?.id}
+            disabled={studioData.contact_email ? true : false}
           />
           {emailError && (
             <span className="text-[#f58174] text-[12px]">

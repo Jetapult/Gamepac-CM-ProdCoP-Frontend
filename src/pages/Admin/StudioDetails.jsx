@@ -6,6 +6,7 @@ import api from "../../api";
 import StudioSettings from "./components/studioSettings/StudioSettings";
 import StudioDashboard from "./components/studioDashboard/StudioDashboard";
 import { useSelector } from "react-redux";
+import StudioAppStoreKeys from "./components/studioAppStoreKeys/studioAppStoreKeys";
 
 const StudioDetails = () => {
   const adminData = useSelector((state) => state.admin.selectedStudio);
@@ -46,6 +47,12 @@ const StudioDetails = () => {
       value: "settings",
       show: true,
     },
+    {
+      id: "4",
+      label: "API key",
+      value: "apple-api-key",
+      show: !adminData?.studio_type?.includes("studio_manager") ? true : false,
+    },
   ];
 
   const getUsersBystudioSlug = async (pageNum) => {
@@ -67,6 +74,7 @@ const StudioDetails = () => {
     }
   }, [currentPage, adminData?.id]);
 
+
   //   useEffect(() => {
   //     const getSearchData = setTimeout(() => {
   //       if(searchTerm.length > 0){
@@ -81,19 +89,21 @@ const StudioDetails = () => {
       <div className="flex border-b-[0.5px] border-b-[#e5e5e5] my-3 pl-3">
         {tabs.map((tab) => (
           <React.Fragment key={tab.id}>
-            {tab.show && <p
-              className={`mr-6 cursor-pointer text-lg ${
-                selectedTab === tab.value
-                  ? "text-black border-b-[2px] border-black"
-                  : "text-[#808080]"
-              }`}
-              onClick={() => {
-                setSelectedTab(tab.value);
-                setCurrentPage(1);
-              }}
-            >
-              {tab.label}
-            </p>}
+            {tab.show && (
+              <p
+                className={`mr-6 cursor-pointer text-lg tab-${tab.id} ${
+                  selectedTab === tab.value
+                    ? "text-black border-b-[2px] border-black"
+                    : "text-[#808080]"
+                }`}
+                onClick={() => {
+                  setSelectedTab(tab.value);
+                  setCurrentPage(1);
+                }}
+              >
+                {tab.label}
+              </p>
+            )}
           </React.Fragment>
         ))}
       </div>
@@ -118,11 +128,20 @@ const StudioDetails = () => {
           setToastMessage={setToastMessage}
           users={users}
           studioData={adminData}
+          setSelectedTab={setSelectedTab}
         />
       )}
 
       {selectedTab === "settings" && (
         <StudioSettings
+          studioData={adminData}
+          setToastMessage={setToastMessage}
+          setSelectedTab={setSelectedTab}
+        />
+      )}
+
+      {selectedTab === "apple-api-key" && (
+        <StudioAppStoreKeys
           studioData={adminData}
           setToastMessage={setToastMessage}
           setSelectedTab={setSelectedTab}

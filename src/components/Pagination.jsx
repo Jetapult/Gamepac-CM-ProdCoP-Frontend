@@ -18,7 +18,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
   };
 
   return (
-    <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+    <div className="flex items-center justify-between border-t border-gray-200 bg-white py-3">
       <div className="flex flex-1 justify-between sm:hidden">
         <a
           onClick={() =>
@@ -39,8 +39,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
           Next
         </a>
       </div>
-      <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-        <div>
+      {/* <div>
           {totalReviews > limit && (
             <p className="text-sm text-gray-700">
               Showing <span className="font-medium">{currentPage}</span> to{" "}
@@ -48,68 +47,85 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
               <span className="font-medium">{totalReviews}</span> results
             </p>
           )}
-        </div>
-        <div>
-          <nav
-            className="isolate inline-flex -space-x-px rounded-md shadow-sm cursor-pointer"
-            aria-label="Pagination"
+        </div> */}
+      <div>
+        <nav
+          className="isolate inline-flex -space-x-px rounded-md shadow-sm cursor-pointer"
+          aria-label="Pagination"
+        >
+          <a
+            className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+              currentPage < totalPages ? "" : "cursor-default"
+            }`}
+            onClick={() => setPage(1)}
           >
+            <img
+              src={FirstPageIcon}
+              className={`h-5 w-5 ${currentPage === 1 ? "opacity-30" : ""}`}
+              aria-hidden="true"
+            />
+          </a>
+          <a
+            className="relative inline-flex items-center px-2 py-2 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+            onClick={() =>
+              currentPage === 1 ? {} : setCurrentPage((prev) => prev - 1)
+            }
+          >
+            <span className="sr-only">Previous</span>
+            <ChevronLeftIcon
+              className={`h-5 w-5 ${
+                currentPage === 1 ? "text-gray-400" : "text-black"
+              }`}
+              aria-hidden="true"
+            />
+          </a>
+          {Array.from(
+            { length: endPage - startPage + 1 },
+            (_, i) => startPage + i
+          ).map((page, i) => (
             <a
-              className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${currentPage < totalPages ? "" : "cursor-default"}`}
-              onClick={() =>
-                setPage(1)
-              }
+              aria-current="page"
+              key={i}
+              className={`relative z-10 inline-flex items-center ${
+                currentPage === page
+                  ? "bg-[#f58174] text-white"
+                  : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              } px-4 py-2 text-sm font-semibold focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600`}
+              onClick={() => setPage(page)}
+              disabled={page === currentPage}
             >
-              <img src={FirstPageIcon} className={`h-5 w-5 ${currentPage === 1 ? "opacity-30" : ""}`} aria-hidden="true" />
+              {page}
             </a>
-            <a
-              className="relative inline-flex items-center px-2 py-2 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
-              onClick={() =>
-                currentPage === 1 ? {} : setCurrentPage((prev) => prev - 1)
-              }
-            >
-              <span className="sr-only">Previous</span>
-              <ChevronLeftIcon className={`h-5 w-5 ${currentPage === 1 ? "text-gray-400" : "text-black"}`} aria-hidden="true" />
-            </a>
-            {Array.from(
-              { length: endPage - startPage + 1 },
-              (_, i) => startPage + i
-            ).map((page, i) => (
-              <a
-                aria-current="page"
-                key={i}
-                className={`relative z-10 inline-flex items-center ${
-                  currentPage === page
-                    ? "bg-[#f58174] text-white"
-                    : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-                } px-4 py-2 text-sm font-semibold focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600`}
-                onClick={() => setPage(page)}
-                disabled={page === currentPage}
-              >
-                {page}
-              </a>
-            ))}
-            <a
-              className="relative inline-flex items-center px-2 py-2 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
-              onClick={() =>
-                currentPage < totalPages
-                  ? setCurrentPage((prev) => prev + 1)
-                  : {}
-              }
-            >
-              <span className="sr-only">Next</span>
-              <ChevronRightIcon className={`h-5 w-5 ${currentPage < totalPages ? "text-black" : "text-gray-400"}`} aria-hidden="true" />
-            </a>
-            <a
-              className={`relative inline-flex items-center rounded-r-md px-2 py-2 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${currentPage < totalPages ? "" : "cursor-default"}`}
-              onClick={() =>
-                setPage(totalPages)
-              }
-            >
-              <img src={LastPageIcon} className={`h-5 w-5 ${currentPage < totalPages ? "text-black" : "opacity-30"}`} aria-hidden="true" />
-            </a>
-          </nav>
-        </div>
+          ))}
+          <a
+            className="relative inline-flex items-center px-2 py-2 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+            onClick={() =>
+              currentPage < totalPages ? setCurrentPage((prev) => prev + 1) : {}
+            }
+          >
+            <span className="sr-only">Next</span>
+            <ChevronRightIcon
+              className={`h-5 w-5 ${
+                currentPage < totalPages ? "text-black" : "text-gray-400"
+              }`}
+              aria-hidden="true"
+            />
+          </a>
+          <a
+            className={`relative inline-flex items-center rounded-r-md px-2 py-2 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+              currentPage < totalPages ? "" : "cursor-default"
+            }`}
+            onClick={() => setPage(totalPages)}
+          >
+            <img
+              src={LastPageIcon}
+              className={`h-5 w-5 ${
+                currentPage < totalPages ? "text-black" : "opacity-30"
+              }`}
+              aria-hidden="true"
+            />
+          </a>
+        </nav>
       </div>
     </div>
   );
