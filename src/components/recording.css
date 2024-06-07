@@ -14,7 +14,7 @@
   width: 1em;
   height: 1em;
   border-radius: 50%;
-  animation: ease pulse 2s infinite;
+  animation: ease recordingdot 2s infinite;
   margin-right: 0.25em;
 }
 
@@ -25,7 +25,7 @@
   color: white;
 }
 
-@keyframes pulse {
+@keyframes recordingdot {
   0% {
     background-color: red;
   }
