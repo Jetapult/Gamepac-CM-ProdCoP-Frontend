@@ -35,6 +35,11 @@ import AIToolsLanding from "./pages/AITools/AIToolsLanding";
 import Match3Game from "./pages/HTML5Games/Match3Game";
 import WordSearchPuzzleGame from "./pages/HTML5Games/WordSearchPuzzleGame";
 import HTML5Games from "./pages/HTML5Games";
+import Analytics from "./pages/Analytics/Analytics";
+import Signup from "./pages/Login/Signup";
+import { addStudios } from "./store/reducer/adminSlice";
+import Docs from "./pages/Docs";
+import OrganicUA from "./pages/OrganicUA";
 
 
 function App() {
@@ -52,6 +57,16 @@ function App() {
       });
       if (studioData.status === 200) {
         dispatch(addUserData(studioData.data.data));
+        if (studioData.data.data.studio_type.includes("studio_manager")) {
+          await api
+            .get("/v1/game-studios")
+            .then((res) => {
+              dispatch(addStudios(res.data.data));
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+        }
       }
     } catch (err) {
       console.log(err, "err");
@@ -63,7 +78,7 @@ function App() {
     }
   }, []);
   return (
-    <div className="h-screen bg-[#f6f6f7]">
+    <div className=" bg-[#f6f6f7] h-[calc(100vh-3.5rem)]">
       <>
         <Router>
           <Navbar />
@@ -91,6 +106,14 @@ function App() {
               element={
                 <UnprotectedRoute>
                   <Login />
+                </UnprotectedRoute>
+              }
+            />
+            <Route
+              path="/signup"
+              element={
+                <UnprotectedRoute>
+                  <Signup />
                 </UnprotectedRoute>
               }
             />
@@ -247,6 +270,19 @@ function App() {
               }
             />
             <Route path="/updates" element={<Updates />} />
+            <Route path="/analytics" element={<Analytics />} />
+
+            <Route path="/organic-ua/smart-feedback" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/smart-feedback/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/tags" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/tags/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/templates" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/templates/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/review-insights" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/review-insights/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/weekly-report" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/weekly-report/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+
             
             <Route path="/aistories" element={<PrivateRoute><Weaver /></PrivateRoute>} />
             <Route path="/storiesHistory" element={<PrivateRoute><WeaverHistory /></PrivateRoute>} />
@@ -254,6 +290,10 @@ function App() {
             <Route path ="/html5-games" element={<HTML5Games />}/>
             <Route path ="/html5-games/match-3" element={<Match3Game />}/>
             <Route path ="/html5-games/word-search-puzzle" element={<WordSearchPuzzleGame />}/>
+            <Route path="/docs/overview" element={<Docs />} />
+            <Route path="/docs/app-onboarding" element={<Docs />} />
+            <Route path="/docs/ai-replies" element={<Docs />} />
+            <Route path="/docs/campaign" element={<Docs />} />
             <Route
               path="*"
               element={<PageNotFound />}

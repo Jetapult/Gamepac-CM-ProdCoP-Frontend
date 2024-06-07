@@ -20,9 +20,21 @@ export function parseJwt(token) {
 
 export const getAuthToken = () => {
   const userTokenData = localStorage.getItem("jwt");
-  return JSON.parse(userTokenData)
-}
+  return JSON.parse(userTokenData);
+};
 
 export function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
+}
+
+export function formatNumberForDisplay(num) {
+  if (num < 1000) {
+    return `${num}`;
+  } else if (num < 1000000) {
+    return `${(num / 1000).toFixed(1).replace(/\.0$/, '')}K`;
+  } else if (num < 1000000000) {
+    return `${(num / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
+  } else {
+    return `${(num / 1000000000).toFixed(1).replace(/\.0$/, '')}B`;
+  }
 }

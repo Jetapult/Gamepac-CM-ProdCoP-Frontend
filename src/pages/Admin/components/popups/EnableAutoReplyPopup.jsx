@@ -1,6 +1,8 @@
 import { CheckIcon, XMarkIcon } from "@heroicons/react/20/solid";
 import { useEffect, useState } from "react";
 import api from "../../../../api";
+import ReactStars from "react-rating-stars-component";
+import { ratingFilter } from "../../../../constants/organicUA";
 
 const data = [
   {
@@ -25,9 +27,24 @@ const EnableAutoReplyPopup = ({
   selectedGame,
   setSelectedGame,
   setGames,
-  studio_id
+  studio_id,
 }) => {
   const [selectedType, setSelectedType] = useState({});
+  const [rating, setRating] = useState(["1", "2", "3", "4", "5"]);
+
+  const handleRatingChange = (event) => {
+    if (rating.includes(event.target.name)) {
+      const removeRating = rating.filter((x) => {
+        if (x === event.target.name) {
+          return x !== event.target.name;
+        }
+        return rating;
+      });
+      setRating(removeRating);
+      return;
+    }
+    setRating([...rating, event.target.name]);
+  };
 
   const onSelectType = (item) => {
     if (item.value === selectedType?.value) {
@@ -39,9 +56,14 @@ const EnableAutoReplyPopup = ({
 
   const enableAutoReply = async () => {
     try {
+      if (selectedType?.id && !rating.length) {
+        return;
+      }
+      const auto_reply_ratings = rating?.join(",");
       const GameData = {
         ...selectedGame,
         auto_reply_enabled: selectedType?.value || "none",
+        auto_reply_ratings: auto_reply_ratings,
       };
       const sendWeeklyReportResponse = await api.put(
         `/v1/games/${studio_id}/${selectedGame?.id}`,
@@ -52,10 +74,12 @@ const EnableAutoReplyPopup = ({
           if (game.id === selectedGame.id) {
             game.auto_reply_enabled =
               sendWeeklyReportResponse.data.data.auto_reply_enabled;
+            game.auto_reply_ratings = sendWeeklyReportResponse.data.data.auto_reply_ratings;
           }
           return prev;
         })
       );
+      setRating(sendWeeklyReportResponse.data.data?.auto_reply_ratings?.split(","))
       setSelectedGame({});
       setShowAutoReplyEnablePopup(false);
     } catch (error) {
@@ -68,6 +92,9 @@ const EnableAutoReplyPopup = ({
         (item) => item.value === selectedGame.auto_reply_enabled
       );
       setSelectedType(game);
+      if (selectedGame.auto_reply_ratings) {
+        setRating(selectedGame.auto_reply_ratings.split(","));
+      }
     }
   }, [selectedGame?.id]);
   return (
@@ -75,7 +102,7 @@ const EnableAutoReplyPopup = ({
       <div className="relative my-6 mx-auto max-w-3xl w-[500px]">
         <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
           <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
-            <h3 className="text-2xl font-semibold">Enable Auto Reply</h3>
+            <h3 className="text-2xl font-semibold">Auto Reply</h3>
             <button
               className="p-1 ml-auto border-0 text-black float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
               onClick={() => setShowAutoReplyEnablePopup(false)}
@@ -101,6 +128,40 @@ const EnableAutoReplyPopup = ({
               </p>
             ))}
           </div>
+          {selectedType?.id && <p className="px-4 mb-2">Please select the star ratings you want to automatically reply to.</p>}
+          {selectedType?.id && (
+            <div className="flex items-center px-4">
+              {ratingFilter.map((rate) => (
+                <div className="flex items-center mb-2 mr-4" key={rate.id}>
+                  <input
+                    id="default-checkbox"
+                    type="checkbox"
+                    value={rating.includes(rate.name) ? rate.name : ""}
+                    name={rate.name}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
+                    onChange={handleRatingChange}
+                    checked={
+                      rating.includes(rate.name) ? rate.name : "" === rate.name
+                    }
+                  />
+                  <label
+                    htmlFor="default-checkbox"
+                    className="ms-2 text-sm font-medium flex"
+                  >
+                    {rate.name}
+                    <ReactStars
+                      count={1}
+                      edit={false}
+                      size={16}
+                      value={parseInt(rate.name)}
+                      activeColor={rate.color}
+                      classNames={"pl-1"}
+                    />
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex p-6 pt-4 justify-center">
             <button
               className={`bg-[#000000] text-white rounded-md px-5 py-2`}

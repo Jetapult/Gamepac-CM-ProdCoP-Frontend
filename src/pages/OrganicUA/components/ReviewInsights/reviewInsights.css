@@ -1,0 +1,15 @@
+.slider-container {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.slider-content {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+}
+
+.slider-item {
+  box-sizing: border-box;
+  padding: 0 10px;
+}

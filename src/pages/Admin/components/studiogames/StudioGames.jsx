@@ -3,14 +3,25 @@ import api from "../../../../api";
 import { EllipsisVerticalIcon, PlusIcon } from "@heroicons/react/20/solid";
 import { Menu, Transition } from "@headlessui/react";
 import Pagination from "../../../../components/Pagination";
-import CreateUserPopup from "../popups/CreateUserPopup";
 import { classNames } from "../../../../utils";
 import CreateGamePopup from "../popups/CreateGamePopup";
 import SendWeeklyReportPopup from "../popups/SendWeeklyReportPopup";
 import EnableAutoReplyPopup from "../popups/EnableAutoReplyPopup";
 import ConfirmationPopup from "../../../../components/ConfirmationPopup";
+import {
+  QuestionMarkCircleIcon,
+} from "@heroicons/react/24/outline";
+import TypewriterLoader from "../../../../components/TypewriterLoader/TypewriterLoader";
+import { useSelector } from "react-redux";
 
-const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
+const StudioGames = ({
+  studio_id,
+  setToastMessage,
+  users,
+  studioData,
+  setSelectedTab,
+}) => {
+  const userData = useSelector((state) => state.user.user);
   const [games, setGames] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalGames, setTotalGames] = useState(0);
@@ -20,11 +31,45 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
   const [showAutoReplyEnablePopup, setShowAutoReplyEnablePopup] =
     useState(false);
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
+  const [refreshLoader, setRefreshLoader] = useState(false);
   const limit = 10;
+
+  const onRefreshReviews = async (game) => {
+    try {
+      setRefreshLoader(true);
+      const requestbody = {
+        gameId: game.id,
+        studioId: studio_id,
+      };
+      const refresh_response = await api.put(
+        `/v1/organic-ua/refresh-reviews`,
+        requestbody
+      );
+      if (refresh_response.status === 201) {
+        setToastMessage({
+          show: true,
+          message: "successfull",
+          type: "success",
+        });
+      }
+      setRefreshLoader(false);
+    } catch (err) {
+      setRefreshLoader(false);
+      if (err.response.data.message) {
+        setToastMessage({
+          show: true,
+          message: err.response.data.message,
+          type: "error",
+        });
+      }
+    }
+  };
 
   const deleteGame = async () => {
     try {
-      const response = await api.delete(`/v1/games/${studio_id}/${selectedGame.id}`);
+      const response = await api.delete(
+        `/v1/games/${studio_id}/${selectedGame.id}`
+      );
       if (response.data.data) {
         setToastMessage({
           show: true,
@@ -76,11 +121,17 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
     getGamesByStudioId();
   }, [currentPage, studio_id]);
   return (
-    <div>
+    <>
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl my-2"></h1>
+        <p
+          className="text-gray-500 my-2 cursor-pointer prerequisites-text"
+          onClick={() => window.open(`/docs/app-onboarding`)}
+        >
+          Prerequisites/Not able to fetch the reviews{" "}
+          <QuestionMarkCircleIcon className="inline w-4 h-4" />
+        </p>
         <button
-          className="bg-[#f58174] text-white px-4 py-2 rounded-md"
+          className="bg-[#f58174] text-white px-4 py-2 rounded-md new-btn"
           onClick={() => setShowAddUserPopup(!showAddUserPopup)}
         >
           <PlusIcon className="h-5 w-5 inline mr-1" /> New
@@ -97,40 +148,53 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
         <div className="col-span-1">
           <p>short_names</p>
         </div>
-        <div className="col-span-2">
-          <p>game_type</p>
-        </div>
-        <div className="col-span-1">
-          <p>App ID</p>
-        </div>
-        <div className="col-span-2">
-          <p>Package name</p>
-        </div>
-        <div className="col-span-2 px-1">
+        <div className="col-span-3 px-1">
           <p>Pod owner</p>
+        </div>
+        <div className="col-span-4">
+          <p>Actions</p>
         </div>
         <div className="">
           <p></p>
         </div>
       </div>
       <div className="overflow-y-auto h-[calc(100vh-334px)]">
-        {games.map((game,index) => (
+        {games.map((game, index) => (
           <div
             className="grid grid-cols-12 px-3 py-3 border-b-[0.5px] border-[#e5e5e5] cursor-pointer"
             key={game.id}
           >
             <p className="">{(currentPage - 1) * limit + index + 1}</p>
             <p className="col-span-2">{game.game_name}</p>
-            <p className="col-span-1">{game.short_names}</p>
-            <p className="col-span-2">{game.game_type}</p>
-            <p className="col-span-1">{game.app_id}</p>
-            <p className="col-span-2 break-all">{game.package_name}</p>
-            <p className="col-span-2 break-all px-1">{game.pod_owner}</p>
+            <p className="col-span-1 text-center">{game.short_names}</p>
+            <p className="col-span-3 break-all px-1">{game.pod_owner}</p>
+            <p className="col-span-4">
+              <button className="border border-[#ccc] rounded px-4 py-1 mr-2"
+              onClick={() => {
+                setSelectedGame(game);
+                setShowAutoReplyEnablePopup(
+                  !showAutoReplyEnablePopup
+                );
+              }}>
+                Auto reply
+              </button>{" "}
+              <button className="border border-[#ccc] rounded px-4 py-1 mr-2"
+              onClick={() => {
+                setSelectedGame(game);
+                setShowSendReportPopup(!showSendReportPopup);
+              }}>
+                Weekly report
+              </button>
+              <button
+                className="border border-[#ccc] rounded px-4 py-1"
+                onClick={() => onRefreshReviews(game)}
+              >Refresh reviews</button>
+            </p>
             <Menu as="div" className="relative inline-block text-left">
-              <div>
+              <div className="flex items-center justify-end">
                 <Menu.Button
                   onClick={(event) => event.stopPropagation()}
-                  className="inline-flex w-full justify-end gap-x-1.5 text-sm font-semibold"
+                  className="inline-flex text-sm font-semibold"
                 >
                   <EllipsisVerticalIcon className="w-4 h-4" />
                 </Menu.Button>
@@ -147,44 +211,6 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
               >
                 <Menu.Items className="absolute right-0 z-10 mt-2 w-36 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                   <div className="py-1">
-                    <Menu.Item>
-                      {({ active }) => (
-                        <a
-                          className={classNames(
-                            active
-                              ? "bg-gray-100 text-gray-900"
-                              : "text-gray-700",
-                            "block px-4 py-2 text-sm"
-                          )}
-                          onClick={() => {
-                            setSelectedGame(game);
-                            setShowAutoReplyEnablePopup(
-                              !showAutoReplyEnablePopup
-                            );
-                          }}
-                        >
-                          Enable Auto Reply
-                        </a>
-                      )}
-                    </Menu.Item>
-                    <Menu.Item>
-                      {({ active }) => (
-                        <a
-                          className={classNames(
-                            active
-                              ? "bg-gray-100 text-gray-900"
-                              : "text-gray-700",
-                            "block px-4 py-2 text-sm"
-                          )}
-                          onClick={() => {
-                            setSelectedGame(game);
-                            setShowSendReportPopup(!showSendReportPopup);
-                          }}
-                        >
-                          Send weekly report
-                        </a>
-                      )}
-                    </Menu.Item>
                     <Menu.Item>
                       {({ active }) => (
                         <a
@@ -270,7 +296,14 @@ const StudioGames = ({ studio_id, setToastMessage, users, studioData }) => {
           onConfirm={deleteGame}
         />
       )}
-    </div>
+      {refreshLoader && (
+        <div className="fixed top-0 bottom-0 left-0 right-0 flex flex-col items-center justify-center bg-[#ffffff] bg-opacity-[0.7]">
+          <TypewriterLoader />
+          <p> Please wait...</p>
+          <p>till we fetch all the reviews</p>
+        </div>
+      )}
+    </>
   );
 };
 export default StudioGames;

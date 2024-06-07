@@ -49,7 +49,7 @@ const AnalyticsPopup = ({ setShowModal }) => {
           <div className="p-4">
             <ul className="grid grid-cols-12 gap-4">
               {analytics.map((analytic) => (
-                <li className="bg-white col-span-4 p-3 border border-[#d6d6d6] rounded">
+                <li className="bg-white col-span-4 p-3 border border-[#d6d6d6] rounded" key={analytic.id}>
                   <Link to={analytic.url} target="_blank" className="flex justify-between items-center">
                     <button>{analytic.name} </button><ArrowUpRightIcon className="inline w-5 h-5 ml-1" />
                   </Link>
