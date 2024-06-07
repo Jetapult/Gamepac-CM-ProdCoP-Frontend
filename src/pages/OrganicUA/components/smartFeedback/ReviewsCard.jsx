@@ -200,6 +200,9 @@ const ReviewsCard = ({
     }
   };
   const showReviewtoReplytranslation = (review) => {
+    if(!review.reply){
+      return
+    }
     if (translateCurrentReply.includes(review.id)) {
       const removeReviewTranslation = translateCurrentReply.filter(
         (x) => x !== review.id
@@ -517,7 +520,7 @@ const ReviewsCard = ({
                     </span>
                   </div>
                 </div>
-                {translateReply.includes(review.id) && !translateLoader ? (
+                {translateReply.includes(review.id) ? (
                   <p className="">{review.translated_reply}</p>
                 ) : (
                   <p className="">
@@ -568,7 +571,7 @@ const ReviewsCard = ({
                       )
                     }
                   />
-                  {review.reply && (
+                  {/* {review.reply && (
                     <span
                       className="text-[#5e80e1] underline text-[13px] cursor-pointer pl-2"
                       onClick={() => showReviewtoReplytranslation(review)}
@@ -577,7 +580,7 @@ const ReviewsCard = ({
                         ? "Show Original"
                         : "Show Translation"}
                     </span>
-                  )}
+                  )} */}
                   <div
                     className={`flex items-end mt-2 ${
                       review.totalReplytextCount
@@ -622,6 +625,20 @@ const ReviewsCard = ({
                           Save as template
                         </button>
                       )}
+
+                      <button
+                        className={`bg-[#1174fc] rounded px-3 py-1 mr-2 text-white text-sm ${
+                          generativeAILoader === review?.id ? "opacity-40" : ""
+                        }`}
+                        onClick={() => {
+                          if (generativeAILoader === "") {
+                            generativeAIReply(review?.id);
+                          }
+                        }}
+                        disabled={generativeAILoader === review?.id}
+                      >
+                        Generate AI reply
+                      </button>
                       <div className="relative">
                         <button
                           className="border border-[#ccc] flex justify-between items-center rounded py-1 px-3 mr-2 text-sm w-[150px]"
@@ -649,19 +666,11 @@ const ReviewsCard = ({
                           </div>
                         )}
                       </div>
-
                       <button
-                        className={`bg-[#1174fc] rounded px-3 py-1 mr-2 text-white text-sm ${
-                          generativeAILoader === review?.id ? "opacity-40" : ""
-                        }`}
-                        onClick={() => {
-                          if (generativeAILoader === "") {
-                            generativeAIReply(review?.id);
-                          }
-                        }}
-                        disabled={generativeAILoader === review?.id}
+                        className={`bg-[#1174fc] rounded px-3 py-1 mr-2 text-white text-sm ${review.reply ? "" : "opacity-40"}`}
+                        onClick={() => showReviewtoReplytranslation(review)}
                       >
-                        Generate AI reply
+                        Translate
                       </button>
                       <button
                         className={`bg-[#1174fc] rounded px-3 py-1  text-white text-sm ${
