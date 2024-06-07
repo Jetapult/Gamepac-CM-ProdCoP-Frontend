@@ -5,11 +5,13 @@ import SmartFeedback from "./components/smartFeedback/SmartFeedback";
 import ReviewInsights from "./components/ReviewInsights/ReviewInsights";
 import Templates from "./components/Templates";
 import api from "../../api";
+import WeeklyReport from "./components/WeeklyReport/WeeklyReport";
 
 const menuItems = [
   { id: "smart-feedback", label: "Smart Feedback" },
   { id: "templates", label: "Templates" },
   { id: "review-insights", label: "Review Insights" },
+  { id: "weekly-report", label: "Weekly Report" },
 ];
 
 const OrganicUA = () => {
@@ -109,11 +111,15 @@ const OrganicUA = () => {
         )}
         {activeMenu === "review-insights" && (
           <ReviewInsights
-            packageName={
-              "com.holycowstudio.my.home.design.makeover.games.dream.word.redecorate.masters.life.house.decorating"
-            }
+            studio_slug={studio_slug}
             games={games}
             setGames={setGames}
+          />
+        )}
+        {activeMenu === "weekly-report" && (
+          <WeeklyReport
+            games={games}
+            studio_slug={studio_slug}
           />
         )}
       </div>
