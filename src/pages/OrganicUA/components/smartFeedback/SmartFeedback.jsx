@@ -507,10 +507,10 @@ const SmartFeedback = ({
               <>
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div
-                    className="p-4 w-full  border-t-[0.5px] border-y-[#ccc]"
+                    className="p-4 w-full  border-t-[0.5px] border-y-[#ccc] bg-white"
                     key={i}
                   >
-                    <div className="animate-pulse">
+                    <div className="animate-pulse bg-white">
                       <div className="grid grid-cols-3 gap-4 max-w-sm mb-4">
                         <div className="h-2 bg-slate-200 rounded col-span-1"></div>
                         <div className="h-2 bg-slate-200 rounded col-span-1"></div>
