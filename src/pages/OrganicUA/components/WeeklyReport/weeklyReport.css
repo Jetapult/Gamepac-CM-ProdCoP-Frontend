@@ -17,6 +17,10 @@
 .report-content ol li {
   margin-bottom: 10px;
 }
+.report-content li,
+.report-content li {
+  padding-left: 10px;
+}
 .report-content ol h2 {
     padding: 0;
 }

@@ -230,7 +230,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
     const currentWeekPercentage = parseFloat(
       tagData.percentage.replace("%", "")
     );
-    const difference = currentWeekPercentage - lastWeekPercentage;
+    const difference = currentWeekPercentage - (lastWeekPercentage || 0);
     const isPositiveChange = difference >= 0;
     const changeSymbol = isPositiveChange ? "+" : "-";
     return {
@@ -243,7 +243,6 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
     try {
       setPieChartData([]);
       const requestBody = {
-        package_name: selectedGame.package_name,
         start_date: moment(customDates[0].startDate).format("YYYY-MM-DD"),
         end_date: moment(customDates[0].endDate).format("YYYY-MM-DD"),
         game_id: selectedGame.id,
@@ -254,7 +253,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
       if (selectedVersions.length) {
         const selectedVersionsArr = [];
         selectedVersions.filter((x) => selectedVersionsArr.push(x.value));
-        requestBody.appversionname = selectedVersionsArr.join(",");
+        requestBody.appversionnames = selectedVersionsArr;
       }
       const tagDistributionResponse = await api.post(
         `v1/organic-ua/tagsDistributionData`,
@@ -300,7 +299,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
       if (selectedVersions.length) {
         const selectedVersionsArr = [];
         selectedVersions.filter((x) => selectedVersionsArr.push(x.value));
-        requestbody.appversionname = selectedVersionsArr.join(",");
+        requestbody.appversionnames = selectedVersionsArr;
       }
       const url = `/v1/organic-ua/avg-rating-trends`;
       const reviewsResponse = await api.post(url, requestbody);
@@ -379,13 +378,13 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
             onClick={() => setShowCalendar(true)}
           >
             <p className="text-sm">
-              {moment(customDates[0].startDate).format("YYYY-MM-DD")}
+              {moment(customDates[0].startDate).format("Do MMM YYYY")}
             </p>
             <span className="text-gray-400 px-3">-</span>
             <p className="text-sm">
-              {moment(customDates[0].endDate).format("YYYY-MM-DD")}
+              {moment(customDates[0].endDate).format("Do MMM YYYY")}
             </p>{" "}
-            <CalendarIcon className="w-4 h-4 text-gray-400 ml-8" />
+            <CalendarIcon className="w-4 h-4 text-gray-400 ml-4" />
           </div>
         </div>
         <Select

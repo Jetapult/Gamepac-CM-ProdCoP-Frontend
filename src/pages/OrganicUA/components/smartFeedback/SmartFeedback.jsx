@@ -334,16 +334,16 @@ const SmartFeedback = ({
               )}
               {period === "custom" && !showCalendar && (
                 <div
-                  className="border border-[#eff2f7] bg-white rounded py-1 px-3 flex items-center justify-between"
+                  className="whitespace-pre border border-[#eff2f7] bg-white rounded py-1 px-3 flex items-center justify-between"
                   onClick={() => setShowCalendar(true)}
                 >
                   {" "}
                   <p className="text-sm">
-                    {moment(customDates[0].startDate).format("YYYY-MM-DD")}
+                    {moment(customDates[0].startDate).format("Do MMM YYYY")}
                   </p>
                   <span className="text-gray-400 px-3">-</span>
                   <p className="text-sm">
-                    {moment(customDates[0].endDate).format("YYYY-MM-DD")}
+                    {moment(customDates[0].endDate).format("Do MMM YYYY")}
                   </p>{" "}
                   <CalendarIcon className="w-4 h-4 text-gray-400 ml-8" />
                 </div>
