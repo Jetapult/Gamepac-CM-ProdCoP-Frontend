@@ -143,35 +143,6 @@ const Test = ({ getDataForGoogleDoc }) => {
           )}
         </div>
       )}
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div
-          className="p-4 w-full  border-t-[0.5px] border-y-[#ccc] bg-white"
-          key={i}
-        >
-          <div className="animate-pulse bg-white">
-            <div className="grid grid-cols-3 gap-4 max-w-sm mb-4">
-              <div className="h-2 bg-slate-200 rounded col-span-1"></div>
-              <div className="h-2 bg-slate-200 rounded col-span-1"></div>
-              <div className="h-2 bg-slate-200 rounded col-span-1"></div>
-            </div>
-            <div className="h-2 bg-slate-200 rounded mb-2"></div>
-            <div className="h-2 bg-slate-200 rounded mb-2"></div>
-            <div className="grid grid-cols-3 gap-4 max-w-sm my-4">
-              <div className="h-3 bg-slate-200 rounded col-span-1"></div>
-              <div className="h-3 bg-slate-200 rounded col-span-1"></div>
-              <div className="h-3 bg-slate-200 rounded col-span-1"></div>
-            </div>
-            <div className="border-[0.5px] border-[#ccc] h-24 p-3 flex flex-col justify-between">
-              <div className="h-2 bg-slate-200 rounded mb-2"></div>
-              <div className="grid grid-cols-4 gap-4 max-w-sm">
-                <div className="h-3 bg-slate-200 rounded col-span-1"></div>
-                <div className="h-3 bg-slate-200 rounded col-span-1"></div>
-                <div className="h-3 bg-slate-200 rounded col-span-1"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
     </div>
   );
 };
