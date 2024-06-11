@@ -201,6 +201,11 @@ const ReviewsCard = ({
   };
   const showReviewtoReplytranslation = (review) => {
     if(!review.reply){
+      setToastMessage({
+        show: true,
+        message: "reply to review should not be empty",
+        type: "error",
+      });
       return
     }
     if (translateCurrentReply.includes(review.id)) {
@@ -297,13 +302,22 @@ const ReviewsCard = ({
       const reviewId = reviewData.reviewId || reviewData.appstorereviewid;
       setPostLoader(reviewId);
       if (reviewData.totalReplytextCount > 350) {
+        setToastMessage({
+          show: true,
+          message: "reply to review limit is 350 characters",
+          type: "error",
+        });
         return;
       }
       const review = reviews.find(
         (x) => x.reviewId === reviewId || x.appstorereviewid === reviewId
       );
       if (!review.reply) {
-        console.error("Review not found");
+        setToastMessage({
+          show: true,
+          message: "reply to review should not be empty",
+          type: "error",
+        });
         return;
       }
       const url =
@@ -442,7 +456,7 @@ const ReviewsCard = ({
               <p className="text-md font-bold">{review?.title}</p>
             )}
 
-            {showOriginalLangComment.includes(review.id) && !translateLoader ? (
+            {showOriginalLangComment.includes(review.id) ? (
               <p className="text-md">
                 {review?.comment ||
                   review?.translatedReview ||
@@ -451,7 +465,7 @@ const ReviewsCard = ({
             ) : (
               <HighlightText text={review?.originalLang || review?.comment || review?.body} searchTerm={searchText} />
             )}
-            {(selectedGame.platform === "Android" && review.reviewerLanguage !== 'en' || selectedGame.platform === "Apple") && <span
+            {review.reviewerLanguage !== 'en' && <span
               className="text-[#5e80e1] underline text-[13px] cursor-pointer"
               onClick={() => showReviewtranslation(review)}
             >
@@ -667,7 +681,7 @@ const ReviewsCard = ({
                         )}
                       </div>
                       <button
-                        className={`bg-[#1174fc] rounded px-3 py-1 mr-2 text-white text-sm ${review.reply ? "" : "opacity-40"}`}
+                        className={`bg-[#1174fc] rounded px-3 py-1 mr-2 text-white text-sm`}
                         onClick={() => showReviewtoReplytranslation(review)}
                       >
                         Translate
