@@ -17,10 +17,7 @@ const WeeklyReport = ({ games, studio_slug }) => {
       new Date("2024-05-25").setDate(new Date("2024-05-25").getDate() + 7)
     ).format("Do MMM YYYY")}`,
     value: {
-      start_date: moment(new Date("2024-05-25")).format("YYYY-MM-DD"),
-      end_date: moment(
-        new Date("2024-05-25").setDate(new Date("2024-05-25").getDate() + 7)
-      ).format("YYYY-MM-DD"),
+      start_date: moment(new Date("2024-05-25")).format("YYYY-MM-DD")
     },
   });
 
@@ -29,23 +26,19 @@ const WeeklyReport = ({ games, studio_slug }) => {
     const end = new Date(endDate);
     let current = start;
     const sundays = [];
-
+  
     while (current <= end) {
       const nextSunday = new Date(current);
       nextSunday.setDate(current.getDate() + 7);
-      if (nextSunday > current) {
-        break;
+      if (nextSunday <= end) {
+        sundays.push({
+          label: `${moment(current).format("Do MMM YYYY")} - ${moment(nextSunday).format("Do MMM YYYY")}`,
+          value: {
+            start_date: moment(current).format("YYYY-MM-DD")
+          },
+        });
       }
-      sundays.push({
-        label: `${moment(current).format("Do MMM YYYY")} - ${moment(
-          nextSunday
-        ).format("Do MMM YYYY")}`,
-        value: {
-          start_date: moment(current).format("YYYY-MM-DD"),
-          end_date: moment(nextSunday).format("YYYY-MM-DD"),
-        },
-      });
-      current.setDate(current.getDate() + 7);
+      current = nextSunday;
     }
     return sundays;
   };
