@@ -36,7 +36,7 @@ const ReviewsCard = ({
   const [showOriginalLangComment, setShowOriginalLangComment] = useState([]);
   const [translateReply, setTranslateReply] = useState([]);
   const [translateCurrentReply, setTranslateCurrentReply] = useState([]);
-  const [translateLoader, setTranslateloader] = useState(false);
+  const [translateLoader, setTranslateloader] = useState("");
   const [toastMessage, setToastMessage] = useState({
     show: false,
     message: "",
@@ -99,7 +99,6 @@ const ReviewsCard = ({
 
   const translateReplyAndSave = async (review, isReview) => {
     try {
-      setTranslateloader(true);
       const requestBody = {
         review:
           selectedGame.platform === "Android"
@@ -133,10 +132,8 @@ const ReviewsCard = ({
           return prev;
         })
       );
-      setTranslateloader(false);
     } catch (err) {
       console.log(err);
-      setTranslateloader(false);
     }
   };
 
@@ -208,40 +205,42 @@ const ReviewsCard = ({
       });
       return
     }
-    if (translateCurrentReply.includes(review.id)) {
-      const removeReviewTranslation = translateCurrentReply.filter(
-        (x) => x !== review.id
-      );
-      setTranslateCurrentReply(removeReviewTranslation);
-      setReviews((prev) =>
-        prev.map((x) => {
-          if (x.id === review.id) {
-            return { ...x, reply: review.originalReply };
-          }
-          return x;
-        })
-      );
-    } else {
-      const addReviewTranslation = [...translateCurrentReply, review.id];
-      setTranslateCurrentReply(addReviewTranslation);
-      !review.translatedReply
-        ? handleTranslate(review)
-        : setReviews((prev) =>
-            prev.map((x) => {
-              if (x.id === review.id) {
-                return { ...x, reply: review.translatedReply };
-              }
-              return x;
-            })
-          );
-    }
+    handleTranslate(review);
+    // if (translateCurrentReply.includes(review.id)) {
+    //   const removeReviewTranslation = translateCurrentReply.filter(
+    //     (x) => x !== review.id
+    //   );
+    //   setTranslateCurrentReply(removeReviewTranslation);
+    //   setReviews((prev) =>
+    //     prev.map((x) => {
+    //       if (x.id === review.id) {
+    //         return { ...x, reply: review.originalReply };
+    //       }
+    //       return x;
+    //     })
+    //   );
+    // } else {
+    //   const addReviewTranslation = [...translateCurrentReply, review.id];
+    //   setTranslateCurrentReply(addReviewTranslation);
+    //   !review.translatedReply
+    //     ? handleTranslate(review)
+    //     : setReviews((prev) =>
+    //         prev.map((x) => {
+    //           if (x.id === review.id) {
+    //             return { ...x, reply: review.translatedReply };
+    //           }
+    //           return x;
+    //         })
+    //       );
+    // }
   };
   const handleTranslate = async (review) => {
     try {
-      setTranslateloader(true);
+      setTranslateloader(review.id);
       const response = await api.post("/translateTemplate", {
-        review: review.reply,
-        template: review.postedReply || review?.body,
+        review: selectedGame.platform === "Apple" ? review.body : review.originalLang || review.comment,
+        template: review.reply,
+        reviewerLanguage: review.reviewerLanguage
       });
       const translatedReply = response.data.translatedReply;
       setReviews((prev) =>
@@ -260,7 +259,7 @@ const ReviewsCard = ({
     } catch (error) {
       console.error("Error translating reply:", error);
     } finally {
-      setTranslateloader(false);
+      setTranslateloader("");
     }
   };
 
@@ -585,16 +584,6 @@ const ReviewsCard = ({
                       )
                     }
                   />
-                  {/* {review.reply && (
-                    <span
-                      className="text-[#5e80e1] underline text-[13px] cursor-pointer pl-2"
-                      onClick={() => showReviewtoReplytranslation(review)}
-                    >
-                      {translateCurrentReply.includes(review.id)
-                        ? "Show Original"
-                        : "Show Translation"}
-                    </span>
-                  )} */}
                   <div
                     className={`flex items-end mt-2 ${
                       review.totalReplytextCount
@@ -681,8 +670,12 @@ const ReviewsCard = ({
                         )}
                       </div>
                       <button
-                        className={`bg-[#1174fc] rounded px-3 py-1 mr-2 text-white text-sm`}
-                        onClick={() => showReviewtoReplytranslation(review)}
+                        className={`bg-[#1174fc] rounded px-3 py-1 mr-2 text-white text-sm ${translateLoader === review.id ? 'opacity-40' : ''}`}
+                        onClick={() => {
+                          if (translateLoader === "") {
+                            showReviewtoReplytranslation(review)
+                          }
+                        }}
                       >
                         Translate
                       </button>
