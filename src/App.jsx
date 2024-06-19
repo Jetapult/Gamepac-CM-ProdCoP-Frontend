@@ -40,6 +40,7 @@ import Signup from "./pages/Login/Signup";
 import { addStudios } from "./store/reducer/adminSlice";
 import Docs from "./pages/Docs";
 import OrganicUA from "./pages/OrganicUA";
+import HiddenObjectsGame from "./pages/HTML5Games/HiddenObjectsGame";
 
 
 function App() {
@@ -290,6 +291,7 @@ function App() {
             <Route path ="/html5-games" element={<HTML5Games />}/>
             <Route path ="/html5-games/match-3" element={<Match3Game />}/>
             <Route path ="/html5-games/word-search-puzzle" element={<WordSearchPuzzleGame />}/>
+            <Route path ="/html5-games/hidden-objects" element={<HiddenObjectsGame />}/>
             <Route path="/docs/overview" element={<Docs />} />
             <Route path="/docs/app-onboarding" element={<Docs />} />
             <Route path="/docs/ai-replies" element={<Docs />} />
