@@ -14,6 +14,12 @@ const games = [
     image: AIGame,
     type: "word-search-puzzle"
   },
+  {
+    id: "3",
+    name: "Murder Mystery Detective Hidden Objects",
+    image: AIGame,
+    type: "hidden-objects"
+  },
 ];
 const HTML5Games = () => {
     const navigate = useNavigate();
