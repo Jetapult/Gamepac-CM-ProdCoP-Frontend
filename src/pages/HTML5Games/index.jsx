@@ -20,6 +20,12 @@ const games = [
     image: AIGame,
     type: "hidden-objects"
   },
+  {
+    id: "4",
+    name: "Murder Mystery Narration",
+    image: AIGame,
+    type: "narration"
+  }
 ];
 const HTML5Games = () => {
     const navigate = useNavigate();
