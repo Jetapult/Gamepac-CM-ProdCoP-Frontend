@@ -10,13 +10,13 @@ function Match3Game() {
 
   return (
     <div className="absolute top-0 bottom-0 left-0 right-0 z-50">
-      <p
+      {/* <p
         className="text-white absolute top-6 left-6 cursor-pointer"
         onClick={goback}
       >
         <ArrowLongLeftIcon className="w-6 h-6 inline ml-2" />
         back
-      </p>
+      </p> */}
       <iframe src="/html5/match-3.html" className="w-full h-screen"></iframe>
     </div>
   );
