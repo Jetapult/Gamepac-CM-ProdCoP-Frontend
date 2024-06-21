@@ -154,7 +154,7 @@ const WeeklyReport = ({ games, studio_slug }) => {
         />
         {selectedGame.id && (
           <button
-            className="border border-[#819edf] rounded-md py-1.5 w-32 text-[#5e80e1]"
+            className="border border-[#ff1053] rounded-md py-1.5 w-32 text-[#ff1053]"
             onClick={() => {
               getWeeklyInsightReport();
             }}

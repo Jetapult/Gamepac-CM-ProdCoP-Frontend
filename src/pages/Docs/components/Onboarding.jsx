@@ -311,7 +311,7 @@ const Onboarding = () => {
                 href="#google-play-store"
                 className={`table-of-contents__link toc-highlight block py-2 w-full pl-3 rounded ${
                   activeSection === "google-play-store"
-                    ? "active bg-[#f0f6ff] text-[#1e96fc]"
+                    ? "active bg-[#f7e5e5] text-[#ff1053]"
                     : ""
                 }`}
                 onClick={() => handleClick("google-play-store")}
@@ -324,7 +324,7 @@ const Onboarding = () => {
                 href="#apple-app-store"
                 className={`table-of-contents__link toc-highlight block py-2 w-full pl-3 rounded ${
                   activeSection === "apple-app-store"
-                    ? "active bg-[#f0f6ff] text-[#1e96fc]"
+                    ? "active bg-[#f7e5e5] text-[#ff1053]"
                     : ""
                 }`}
                 onClick={() => handleClick("apple-app-store")}
@@ -337,7 +337,7 @@ const Onboarding = () => {
                 href="#next-steps"
                 className={`table-of-contents__link toc-highlight block py-2 w-full pl-3 rounded ${
                   activeSection === "next-steps"
-                    ? "active bg-[#f0f6ff] text-[#1e96fc]"
+                    ? "active bg-[#f7e5e5] text-[#ff1053]"
                     : ""
                 }`}
                 onClick={() => handleClick("next-steps")}

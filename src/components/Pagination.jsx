@@ -88,7 +88,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
               key={i}
               className={`relative z-10 inline-flex items-center ${
                 currentPage === page
-                  ? "bg-[#f58174] text-white"
+                  ? "bg-[#ff1053] text-white"
                   : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
               } px-4 py-2 text-sm font-semibold focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600`}
               onClick={() => setPage(page)}
