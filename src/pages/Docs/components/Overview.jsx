@@ -142,7 +142,7 @@ const Overview = () => {
               <a
                 className={`block py-2 w-full pl-3 rounded cursor-pointer ${
                   activeSection === "whats-Gamepac"
-                    ? "active bg-[#f0f6ff] text-[#1e96fc]"
+                    ? "active bg-[#f7e5e5] text-[#ff1053]"
                     : ""
                 }`}
                 onClick={() => handleClick("whats-Gamepac")}
@@ -154,7 +154,7 @@ const Overview = () => {
               <a
                 className={`block py-2 w-full pl-3 rounded cursor-pointer ${
                   activeSection === "how-can-i-use-gamepac"
-                    ? "active bg-[#f0f6ff] text-[#1e96fc]"
+                    ? "active bg-[#f7e5e5] text-[#ff1053]"
                     : ""
                 }`}
                 onClick={() => handleClick("how-can-i-use-gamepac")}
@@ -166,7 +166,7 @@ const Overview = () => {
               <a
                 className={`block py-2 w-full pl-3 rounded cursor-pointer ${
                   activeSection === "next-steps"
-                    ? "active bg-[#f0f6ff] text-[#1e96fc]"
+                    ? "active bg-[#f7e5e5] text-[#ff1053]"
                     : ""
                 }`}
                 onClick={() => handleClick("next-steps")}

@@ -9,7 +9,7 @@ const menuItems = [
   { id: "overview", label: "Overview" },
   { id: "app-onboarding", label: "App Onboarding Setup" },
   { id: "ai-replies", label: "AI Replies" },
-  { id: "campaign", label: "Campaign Integration" },
+  // { id: "campaign", label: "Campaign Integration" },
 ];
 
 const Docs = () => {
@@ -33,7 +33,7 @@ const Docs = () => {
           <div
             key={item.id}
             className={`menu-item p-1.5 pl-5 cursor-pointer rounded ${
-              activeMenu === item.id ? "active bg-[#f0f6ff] text-[#1e96fc]" : ""
+              activeMenu === item.id ? "active bg-[#f7e5e5] text-[#ff1053]" : ""
             }`}
             onClick={() => handleMenuClick(item.id)}
           >
@@ -45,7 +45,7 @@ const Docs = () => {
         {activeMenu === "overview" && <Overview />}
         {activeMenu === "app-onboarding" && <Onboarding />}
         {activeMenu === "ai-replies" && <AIReplies />}
-        {activeMenu === "campaign" && <Campaign />}
+        {/* {activeMenu === "campaign" && <Campaign />} */}
       </div>
     </div>
   );

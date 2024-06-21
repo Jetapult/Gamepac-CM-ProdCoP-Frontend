@@ -408,7 +408,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
         />
         {selectedGame.id && (
           <button
-            className="border border-[#819edf] rounded-md mx-4 py-1.5 w-32 text-[#5e80e1]"
+            className="border border-[#ff1053] rounded-md mx-4 py-1.5 w-32 text-[#ff1053]"
             onClick={() => {
               getTagsDistrubutionData();
               fetchRatingTrends();
