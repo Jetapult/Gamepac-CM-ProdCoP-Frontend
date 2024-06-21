@@ -14,7 +14,7 @@ export default function NoData({ type, next }) {
       {type === "game" || type === "templates" ? (
         <button
           onClick={next}
-          className="bg-[#1e96fc] text-white px-8 py-2 rounded capitalize"
+          className="bg-[#ff1053] text-white px-8 py-2 rounded capitalize"
         >
           Add {type}
         </button>

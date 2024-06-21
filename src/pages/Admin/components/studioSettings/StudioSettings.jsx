@@ -226,7 +226,7 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
           )}
         </div>
         <button
-          className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 mt-4"
+          className="bg-[#ff1053] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 mt-4"
           type="button"
           onClick={updateStudio}
         >
@@ -238,7 +238,7 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
           <>
             <h1 className="mb-4 text-base">Delete Studio</h1>
             <button
-              className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 mt-4"
+              className="bg-[#ff1053] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 mt-4"
               type="button"
               onClick={() => setShowConfirmationPopup(!showConfirmationPopup)}
             >

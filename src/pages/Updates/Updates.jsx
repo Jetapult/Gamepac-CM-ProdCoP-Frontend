@@ -5,6 +5,74 @@ import { Helmet } from "react-helmet";
 
 const data = [
   {
+    id: "4",
+    title: "Jetapult AI Update - 21st June 2024",
+    short_description: "Brand New Community Management Suite, Playable Ads and much more. Deep Dive into the work put in by the Data + AI from the last three weeks. Do reach out for giving feedback and to test things out. ",
+    feature: [
+      {
+        id: "1",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/gampac-ui-charts.png",
+        update_type: "UI updates",
+        title: "Review Tagging/Trends in Community Management Suite",
+        short_description: "Quick insights about reviews.",
+        description: `<ul><li>- We revamped the Community Management Suite to include tags, insights , trends and more. You can also see Weekly Reports with trends and sentiment analysis.  </li>
+       </ul>`,
+      },
+      {
+        id: "2",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/gampac-organic-ua.png",
+        update_type: "UI updates",
+        title: "New Insight Filters in Community Management Suite",
+        short_description: `Quick search filters for advanced searches. `,
+        description: `<ul>
+        <li>- We added Search, Filters, Tagging and additional Templates. Improved review search UI. </a></li>
+        </ul>
+        `,
+      },
+      {
+        id: "3",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/gamepac-onboarding.png",
+        update_type: "New Feature updates",
+        title: "External Studios can now be onboarded in Community Management Suite",
+        short_description: "We can welcome external studios to Gamepac Suite",
+        description: `<ul><li>- Community Management Suite is Multitenant and can onboard external studios, we would recommend a regular feedback loop to be set up so we can improve the product better for external use.</li></ul>`,
+      },
+      {
+        id: "4",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/adrevenue.webp",
+        update_type: "AD Revenue update",
+        title: "All Ad Revenue Data on Bigquery ",
+        short_description: "High level dashboards with daa from authoratative sources now possible.",
+        description: `<ul>
+        <li>We have pipelined all of ad revenue data to Bigquery. Accompanying the IAP data we get now capabilities to create central revenue and high level metrics.</li>   </li>
+        </ul>`,
+      },
+      {
+        id: "5",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/AI-Game-playable.png",
+        update_type: "Playable ad update",
+        title: "New Murder Mystery Game Playable Ads",
+        short_description: "Jetapult's first playable ads.",
+        description: `<ul>
+        <li>- 2 Landscape Playable Ads for our AI game that are Ad networks Ready. Play Test them! </li>
+        <li>- Murder Mystery Detective Game HOB - <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://app.gamepacai.com/html5-games/hidden-objects">link</a>
+        <li>- Murder Mystery Detective Game Narration + HOB + Gameplay - <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://app.gamepacai.com/html5-games/narration">link</a>
+        </ul>`,
+      },
+      {
+        id: "6",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/Murdermysterylogo.png",
+        update_type: "AI Game update",
+        title: "Final Build - AI Game Alpha link",
+        short_description: `Play the Murder Mystery Game.`,
+        description: `<ul>
+        <li>- AI game has finished all QA tests, and we are now ready with our final build. Play our game on our internal testing store front! <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://play.google.com/store/apps/details?id=com.curiouscalf.murder.mystery.minds.story.unsolved.detective.crime.choice.hidden.criminal.games">Play now</a> </li>
+        </ul>`,
+      },
+    ],
+    date: "Released on 21st June 2024",
+  },
+  {
     id: "3",
     title: "Jetapult AI Update - 31st May 2024",
     short_description: "Hello Team, We are excited to share a bunch of exciting updates with you regarding HTML5 ads, our AI games, asset generation and more.",
@@ -222,7 +290,7 @@ const data = [
   },
 ];
 const Updates = () => {
-  const [show, setShow] = useState("3");
+  const [show, setShow] = useState("4");
   const [showUpdatePopup, setShowUpdatePopup] = useState({});
   const onExpand = (item) => {
     if (show === item.id) {

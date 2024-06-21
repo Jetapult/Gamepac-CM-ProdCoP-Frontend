@@ -131,14 +131,14 @@ const StudioGames = ({
           <QuestionMarkCircleIcon className="inline w-4 h-4" />
         </p>
         <button
-          className="bg-[#f58174] text-white px-4 py-2 rounded-md new-btn"
+          className="bg-[#ff1053] text-white px-4 py-2 rounded-md new-btn"
           onClick={() => setShowAddUserPopup(!showAddUserPopup)}
         >
           <PlusIcon className="h-5 w-5 inline mr-1" /> New
         </button>
       </div>
 
-      <div className="grid grid-cols-12 border-y-[0.5px] border-[#e5e5e5] py-3 items-center bg-[#f5e7e6] px-3 mt-4">
+      <div className="grid grid-cols-12 border-y-[0.5px] border-[#e5e5e5] py-3 items-center bg-[#f7e5e5] px-3 mt-4">
         <div className="">
           <p>No.</p>
         </div>
@@ -185,10 +185,10 @@ const StudioGames = ({
               }}>
                 Weekly report
               </button>
-              <button
+              {/* <button
                 className="border border-[#ccc] rounded px-4 py-1"
                 onClick={() => onRefreshReviews(game)}
-              >Refresh reviews</button>
+              >Refresh reviews</button> */}
             </p>
             <Menu as="div" className="relative inline-block text-left">
               <div className="flex items-center justify-end">

@@ -630,7 +630,7 @@ const ReviewsCard = ({
                       )}
 
                       <button
-                        className={`bg-[#1174fc] rounded px-3 py-1 mr-2 text-white text-sm ${
+                        className={`bg-[#ff1053] rounded px-3 py-1 mr-2 text-white text-sm ${
                           generativeAILoader === review?.id ? "opacity-40" : ""
                         }`}
                         onClick={() => {
@@ -670,7 +670,7 @@ const ReviewsCard = ({
                         )}
                       </div>
                       <button
-                        className={`bg-[#1174fc] rounded px-3 py-1 mr-2 text-white text-sm ${translateLoader === review.id ? 'opacity-40' : ''}`}
+                        className={`bg-[#ff1053] rounded px-3 py-1 mr-2 text-white text-sm ${translateLoader === review.id ? 'opacity-40' : ''}`}
                         onClick={() => {
                           if (translateLoader === "") {
                             showReviewtoReplytranslation(review)
@@ -680,7 +680,7 @@ const ReviewsCard = ({
                         Translate
                       </button>
                       <button
-                        className={`bg-[#1174fc] rounded px-3 py-1  text-white text-sm ${
+                        className={`bg-[#ff1053] rounded px-3 py-1  text-white text-sm ${
                           postLoader ===
                           (review?.reviewId || review?.appstorereviewid)
                             ? "opacity-40"
