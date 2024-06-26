@@ -138,7 +138,7 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
     }
   }, [studioData?.id]);
   return (
-    <div className="w-[500px]">
+    <div className="w-[500px] h-[calc(100vh-165px)] overflow-auto">
       <form className="px-8 pt-6 pb-8">
         <h1 className="mb-4 text-base">Edit Studio</h1>
         <div className="mb-4">
@@ -233,7 +233,7 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
           Save
         </button>
       </form>
-      {userData?.studio_type?.includes("studio_manager") &&
+      {/* {userData?.studio_type?.includes("studio_manager") &&
         !studioData?.studio_type?.includes("studio_manager") && (
           <>
             <h1 className="mb-4 text-base">Delete Studio</h1>
@@ -245,7 +245,7 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
               Delete
             </button>
           </>
-        )}
+        )} */}
 
       {showConfirmationPopup && (
         <ConfirmationPopup

@@ -6,10 +6,14 @@ import ReviewInsights from "./components/ReviewInsights/ReviewInsights";
 import Templates from "./components/Templates";
 import api from "../../api";
 import WeeklyReport from "./components/WeeklyReport/WeeklyReport";
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
 
 const menuItems = [
-  { id: "smart-feedback", label: "Smart Feedback" },
-  { id: "templates", label: "Templates" },
+  {
+    id: "smart-feedback",
+    label: "Smart Feedback",
+    subMenu: [{ id: "templates", label: "Templates" }],
+  },
   { id: "review-insights", label: "Review Insights" },
   { id: "weekly-report", label: "Weekly Report" },
 ];
@@ -79,14 +83,42 @@ const OrganicUA = () => {
     <div className="docs-container flex">
       <div className="bg-[#ffffff] w-52 min-w-[13rem] max-w-[13rem] p-3 sticky top-[58px] py-1/5 z-10 shadow-md h-[calc(100vh-3.5rem)] pt-4 hidden sm:block">
         {menuItems.map((item) => (
-          <div
-            key={item.id}
-            className={`menu-item p-1.5 pl-5 cursor-pointer rounded ${
-              activeMenu === item.id ? "active bg-[#f7e5e5] text-[#ff1053]" : ""
-            }`}
-            onClick={() => handleMenuClick(item.id)}
-          >
-            {item.label}
+          <div key={item.id}>
+            <p
+              className={`menu-item p-1.5 pl-5 cursor-pointer rounded ${
+                activeMenu === item.id
+                  ? "active bg-[#f7e5e5] text-[#ff1053]"
+                  : ""
+              }`}
+              onClick={() => handleMenuClick(item.id)}
+            >
+              {item.label}
+              {item?.subMenu?.length && (
+                <ChevronDownIcon className="inline-block ml-2 h-4 w-4" />
+              )}
+            </p>
+            <div
+              className={`sub-menu my-1 ${
+                activeMenu === item.id ||
+                item?.subMenu?.some((subItem) => subItem.id === activeMenu)
+                  ? "open"
+                  : ""
+              }`}
+            >
+              {item?.subMenu?.map((subItem) => (
+                <p
+                  key={subItem.id}
+                  className={`p-1 px-2 pl-8 cursor-pointer rounded ${
+                    activeMenu === subItem.id
+                      ? "active bg-[#f7e5e5] text-[#ff1053]"
+                      : ""
+                  }`}
+                  onClick={() => handleMenuClick(subItem.id)}
+                >
+                  {subItem.label}
+                </p>
+              ))}
+            </div>
           </div>
         ))}
       </div>
@@ -117,10 +149,7 @@ const OrganicUA = () => {
           />
         )}
         {activeMenu === "weekly-report" && (
-          <WeeklyReport
-            games={games}
-            studio_slug={studio_slug}
-          />
+          <WeeklyReport games={games} studio_slug={studio_slug} />
         )}
       </div>
     </div>

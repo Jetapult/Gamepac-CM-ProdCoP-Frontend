@@ -3,16 +3,19 @@ import api from "../../../../api";
 import { XMarkIcon } from "@heroicons/react/20/solid";
 import { classNames, emailRegex } from "../../../../utils";
 import loadingIcon from "../../../../assets/transparent-spinner.svg";
+import Select from "react-select";
 
 const CreateGamePopup = ({
   setShowModal,
   setToastMessage,
-  setUsers,
   selectedGame,
   setSelectedGame,
   studio_id,
-  users,
+  setGames,
 }) => {
+  const [users, setUsers] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [gameData, setGameData] = useState({
     game_name: "",
     short_names: "",
@@ -22,10 +25,11 @@ const CreateGamePopup = ({
     app_id: "",
     package_name: "",
     studio_id: studio_id?.toString(),
-    pod_owner: "",
-    pod_owner_email: "",
     generateweeklyreport: "none",
   });
+  const [product_manager, setProductManager] = useState(null);
+  const [producer, setProducer] = useState(null);
+  const [lead_engineer, setLeadEngineer] = useState(null);
 
   const [error, setError] = useState({
     game_name: "",
@@ -35,7 +39,6 @@ const CreateGamePopup = ({
     appstore_link: "",
     app_id: "",
     package_name: "",
-    pod_owner: "",
   });
   const [submitLoader, setSubmitLoader] = useState(false);
 
@@ -103,19 +106,20 @@ const CreateGamePopup = ({
         return;
       }
 
-      if (gameData.pod_owner && !emailRegex.test(gameData.pod_owner)) {
-        setError((prev) => ({
-          ...prev,
-          pod_owner: "Please enter a valid email address",
-        }));
-        return;
-      }
-
       if (Object.values(error).every((value) => value === "")) {
         setSubmitLoader(true);
+        const requestbody = {
+          ...gameData,
+          product_manager: product_manager?.value,
+          producer: producer?.value,
+          lead_engineer: lead_engineer?.value,
+        };
         const create_game_response = selectedGame?.id
-          ? await api.put(`/v1/games/${studio_id}/${selectedGame?.id}`, gameData)
-          : await api.post("v1/games", gameData);
+          ? await api.put(
+              `/v1/games/${studio_id}/${selectedGame?.id}`,
+              requestbody
+            )
+          : await api.post("v1/games", requestbody);
         setToastMessage({
           show: true,
           message: selectedGame.id
@@ -126,16 +130,28 @@ const CreateGamePopup = ({
         setSubmitLoader(false);
         if (create_game_response.status === 201) {
           selectedGame?.id
-            ? setUsers((prev) =>
+            ? setGames((prev) =>
                 prev.map((studio) =>
                   studio.id === selectedGame.id
-                    ? { ...gameData, id: selectedGame.id }
+                    ? {
+                        ...gameData,
+                        id: selectedGame.id,
+                        product_manager_name: product_manager?.label,
+                        producer_name: producer?.label,
+                        lead_engineer_name: lead_engineer?.label,
+                      }
                     : studio
                 )
               )
-            : setUsers((prev) => [
+            : setGames((prev) => [
                 ...prev,
-                { ...gameData, id: create_game_response.data.data.id },
+                {
+                  ...gameData,
+                  id: create_game_response.data.data.id,
+                  product_manager_name: product_manager?.label,
+                  producer_name: producer?.label,
+                  lead_engineer_name: lead_engineer?.label,
+                },
               ]);
           closePopup();
           setGameData({
@@ -163,14 +179,46 @@ const CreateGamePopup = ({
     }
   };
 
+  const getListofUsers = async () => {
+    try {
+      const usersResponse = await api.get(
+        `v1/users/studio/${studio_id}/users?current_page=${currentPage}&limit=20`
+      );
+      const usersData = usersResponse.data.data;
+      const usersList = usersData.map((x) => ({ label: x.name, value: x.id }));
+      currentPage === 1
+        ? setUsers(usersList)
+        : setUsers((prev) => [...prev, ...usersList]);
+      setTotalUsers(usersResponse.data.totalUsers);
+    } catch (err) {
+      console.log(err, "err");
+    }
+  };
+
   useEffect(() => {
     if (selectedGame?.id) {
       setGameData(selectedGame);
+      setProductManager({
+        label: selectedGame.product_manager_name,
+        value: selectedGame.product_manager,
+      });
+      setProducer({
+        label: selectedGame.producer_name,
+        value: selectedGame.producer,
+      });
+      setLeadEngineer({
+        label: selectedGame.lead_engineer_name,
+        value: selectedGame.lead_engineer,
+      });
     }
   }, [selectedGame]);
+
+  useEffect(() => {
+    getListofUsers();
+  }, [currentPage]);
   return (
     <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-[#12111157]">
-      <div className="relative my-6 mx-auto max-w-3xl w-[500px]">
+      <div className="relative my-6 mx-auto max-w-3xl w-[800px]">
         <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
           <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
             <h3 className="text-2xl font-semibold">
@@ -183,7 +231,7 @@ const CreateGamePopup = ({
               <XMarkIcon className="w-6 h-6 text-[#d6d6d6]" />
             </button>
           </div>
-          <form className="px-8 py-4">
+          <form className="px-8 py-4 overflow-y-auto max-h-[550px] grid grid-cols-2 gap-4">
             <div className="mb-4">
               <label
                 className="block text-gray-700 text-sm font-bold mb-2"
@@ -334,66 +382,60 @@ const CreateGamePopup = ({
             <div className="">
               <label
                 className="block text-gray-700 text-sm font-bold mb-2"
-                htmlFor="pod_owner"
+                htmlFor="product_manager"
               >
-                Pod owner
+                Product manager
               </label>
-              <input
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-7000 leading-tight focus:outline-none focus:shadow-outline"
-                id="pod_owner"
-                name="pod_owner"
-                type="email"
-                value={gameData.pod_owner}
-                onChange={onhandleChange}
+              <Select
+                options={users}
+                value={product_manager}
+                onChange={(val) => setProductManager(val)}
+                onMenuScrollToBottom={() => {
+                  if (users.length < totalUsers) {
+                    setCurrentPage(currentPage + 1);
+                  }
+                }}
+                placeholder={""}
               />
-              {error.pod_owner && (
-                <span className="text-[#f58174] text-[12px]">
-                  {error.pod_owner}
-                </span>
-              )}
-              {/* <Menu as="div" className="relative text-left">
-                <Menu.Button className="border rounded py-2 px-3 h-10 w-full text-start shadow">
-                  {gameData.pod_owner_email}
-                </Menu.Button>
+            </div>
+            <div className="">
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="producer"
+              >
+                Producer
+              </label>
+              <Select
+                options={users}
+                value={producer}
+                onChange={(val) => setProducer(val)}
+                onMenuScrollToBottom={() => {
+                  if (users.length < totalUsers) {
+                    setCurrentPage(currentPage + 1);
+                  }
+                }}
+                placeholder={""}
+              />
+            </div>
 
-                <Transition
-                  as={Fragment}
-                  enter="transition ease-out duration-100"
-                  enterFrom="transform opacity-0 scale-95"
-                  enterTo="transform opacity-100 scale-100"
-                  leave="transition ease-in duration-75"
-                  leaveFrom="transform opacity-100 scale-100"
-                  leaveTo="transform opacity-0 scale-95"
-                >
-                  <Menu.Items className="absolute right-0 z-10 mt-2 w-full origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                    <div className="py-1 h-[100px] overflow-y-auto">
-                      {users.map((user, index) => (
-                        <Menu.Item key={index}>
-                          {({ active }) => (
-                            <a
-                              className={classNames(
-                                active
-                                  ? "bg-gray-100 text-gray-900"
-                                  : "text-gray-700",
-                                "block px-4 py-2 text-sm"
-                              )}
-                              onClick={() => {
-                                setGameData((prev) => ({
-                                  ...prev,
-                                  pod_owner: user.id,
-                                  pod_owner_email: user.email
-                                }));
-                              }}
-                            >
-                              {user.email}
-                            </a>
-                          )}
-                        </Menu.Item>
-                      ))}
-                    </div>
-                  </Menu.Items>
-                </Transition>
-              </Menu> */}
+            <div className="">
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="lead_engineer"
+              >
+                Lead Engineer
+              </label>
+              <Select
+                options={users}
+                value={lead_engineer}
+                onChange={(val) => setLeadEngineer(val)}
+                onMenuScrollToBottom={() => {
+                  if (users.length < totalUsers) {
+                    setCurrentPage(currentPage + 1);
+                  }
+                }}
+                placeholder={""}
+              />
             </div>
 
             {error.links && (
@@ -403,14 +445,14 @@ const CreateGamePopup = ({
           <div className="flex items-center p-6 border-t border-solid border-blueGray-200 rounded-b">
             {submitLoader ? (
               <button
-                className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-1.5 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                className="bg-[#ff1053] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-1.5 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                 type="button"
               >
                 <img src={loadingIcon} alt="loading" className="w-8 h-8" />
               </button>
             ) : (
               <button
-                className="bg-[#f58174] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                className="bg-[#ff1053] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                 type="button"
                 onClick={createStudio}
               >

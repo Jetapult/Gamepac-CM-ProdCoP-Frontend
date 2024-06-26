@@ -20,6 +20,7 @@ const WeeklyReport = ({ games, studio_slug }) => {
       start_date: moment(new Date("2024-05-25")).format("YYYY-MM-DD")
     },
   });
+  const [selectedTab, setSelectedTab] = useState("android");
 
   const getSundays = (startDate, endDate) => {
     const start = new Date(startDate);
@@ -131,7 +132,7 @@ const WeeklyReport = ({ games, studio_slug }) => {
   }, [selectedGame.id, selectedGame.platform]);
   useEffect(() => {
     if (games.length) {
-      setSelectedGame(games[0].data[0]);
+      setSelectedGame(games[0]);
     }
   }, [games.length]);
   return (
@@ -143,6 +144,8 @@ const WeeklyReport = ({ games, studio_slug }) => {
             selectedGame={selectedGame}
             setSelectedGame={setSelectedGame}
             games={games}
+            selectedTab={selectedTab}
+            setSelectedTab={setSelectedTab}
           />
         </div>
         <Select
@@ -220,7 +223,7 @@ const WeeklyReport = ({ games, studio_slug }) => {
         <div
           className="report-content"
           dangerouslySetInnerHTML={{
-            __html: addStylesToContent(weeklyReport?.formattedresponse),
+            __html: weeklyReport?.formattedresponse.replaceAll('\n', '<br/>'),
           }}
         ></div>
       ) : (

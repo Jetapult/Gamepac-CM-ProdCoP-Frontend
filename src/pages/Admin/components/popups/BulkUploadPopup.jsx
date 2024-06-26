@@ -107,14 +107,14 @@ const BulkUploadPopup = ({ setShowModal, studio_id, getUsersBystudioSlug }) => {
             {errors && <p className="text-[#e80707] text-[12px]">{errors}</p>}
             {submitLoader ? (
               <button
-                className="bg-[#f58174] text-white font-bold uppercase text-sm px-6 py-1.5 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                className="bg-[#ff1053] text-white font-bold uppercase text-sm px-6 py-1.5 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                 type="button"
               >
                 <img src={loadingIcon} alt="loading" className="w-8 h-8" />
               </button>
             ) : (
               <button
-                className="bg-[#f58174] text-white px-4 py-2 rounded-md mr-3 mt-3"
+                className="bg-[#ff1053] text-white px-4 py-2 rounded-md mr-3 mt-3"
                 onClick={onBulkUploadUsers}
               >
                 Upload CSV

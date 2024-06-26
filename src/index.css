@@ -17,4 +17,24 @@ body {
 textarea{
   resize: none;
 }
-/* Other styles for your app */
+.sub-menu {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease-out;
+}
+.sub-menu.open {
+  max-height: 100px;
+  transition: max-height 0.5s ease-in;
+}
+.pin-icon {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.game-card:hover .pin-icon {
+  visibility: visible;
+  opacity: 0.3;
+}
+.rdrCalendarWrapper{
+  height: 430px;
+}
