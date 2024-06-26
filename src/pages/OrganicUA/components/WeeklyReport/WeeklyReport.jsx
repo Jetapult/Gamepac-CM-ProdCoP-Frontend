@@ -7,7 +7,7 @@ import moment from "moment";
 import Select from "react-select";
 import NoData from "../../../../components/NoData";
 
-const WeeklyReport = ({ games, studio_slug }) => {
+const WeeklyReport = ({ games, studio_slug, setGames }) => {
   const userData = useSelector((state) => state.user.user);
   const studios = useSelector((state) => state.admin.studios);
   const [weeklyReport, setWeeklyReport] = useState([]);
@@ -146,6 +146,8 @@ const WeeklyReport = ({ games, studio_slug }) => {
             games={games}
             selectedTab={selectedTab}
             setSelectedTab={setSelectedTab}
+            setGames={setGames}
+            studio_slug={studio_slug}
           />
         </div>
         <Select

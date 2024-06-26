@@ -386,6 +386,8 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
             games={games}
             selectedTab={selectedTab}
             setSelectedTab={setSelectedTab}
+            setGames={setGames}
+            studio_slug={studio_slug}
           />
         </div>
         <div className="relative px-4">
