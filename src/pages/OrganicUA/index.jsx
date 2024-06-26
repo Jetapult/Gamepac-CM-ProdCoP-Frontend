@@ -149,7 +149,7 @@ const OrganicUA = () => {
           />
         )}
         {activeMenu === "weekly-report" && (
-          <WeeklyReport games={games} studio_slug={studio_slug} />
+          <WeeklyReport games={games} studio_slug={studio_slug} setGames={setGames} />
         )}
       </div>
     </div>
