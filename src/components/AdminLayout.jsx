@@ -59,7 +59,7 @@ const AdminLayout = ({ children }) => {
     if (studios?.length) {
       const selectedStudio_slug = localStorage.getItem("selectedStudio");
       const studio = studios.find(
-        (studio) => studio.slug === (selectedStudio_slug || params.studio_slug)
+        (studio) => studio.slug === (selectedStudio_slug || params.studio_slug || userData.slug)
       );
       dispatch(addStudioData(studio));
       dispatch(addTotalStudio(studios.length));

@@ -275,8 +275,7 @@ const SmartFeedback = ({
   useEffect(() => {
     if (games.length) {
       if (gameIdparam && gameTypeparam) {
-        console.log('tag redirect')
-        const game = games.filter(x => x.id === gameIdparam)[0];
+        const game = games.filter(x => x.id === parseInt(gameIdparam))[0];
         if (game) {
           setSelectedGame({...game, platform: gameTypeparam});
         }

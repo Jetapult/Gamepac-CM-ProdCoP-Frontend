@@ -233,7 +233,7 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
           Save
         </button>
       </form>
-      {userData?.studio_type?.includes("studio_manager") &&
+      {/* {userData?.studio_type?.includes("studio_manager") &&
         !studioData?.studio_type?.includes("studio_manager") && (
           <>
             <h1 className="mb-4 text-base">Delete Studio</h1>
@@ -245,7 +245,7 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
               Delete
             </button>
           </>
-        )}
+        )} */}
 
       {showConfirmationPopup && (
         <ConfirmationPopup
