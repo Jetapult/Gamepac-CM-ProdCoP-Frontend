@@ -96,8 +96,8 @@ const GamesDropdown = ({
       const response = await api.delete(`/v1/games/${game.id}/unpin`);
       if (response.status === 200) {
         setGames((prev) =>
-          prev.filter((x) => {
-            if (x.id === game.id) {
+          prev?.filter((x) => {
+            if (x?.id === game?.id) {
               x.is_pinned = false;
               return x;
             }

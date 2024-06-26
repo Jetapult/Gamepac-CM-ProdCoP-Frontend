@@ -441,21 +441,21 @@ const ReviewsCard = ({
               </p>
               {(review?.reviewerLanguage || review?.territory) && (
                 <p
-                  className="border border-dashed rounded px-2 text-sm text-gray-500 ml-2 text-[#d89a28]"
+                  className="border border-dashed rounded px-2 text-sm ml-2 text-[#d89a28]"
                 >
                   {review?.reviewerLanguage || review?.territory}
                 </p>
               )}
               {review?.appVersionName && (
                 <p
-                  className="border border-dashed rounded px-2 text-sm text-gray-500 ml-2 text-[#9450c9]"
+                  className="border border-dashed rounded px-2 text-sm ml-2 text-[#9450c9]"
                 >
                   {review?.appVersionName}
                 </p>
               )}
               {review?.productName && (
                 <p
-                  className="border border-dashed rounded px-2 text-sm text-gray-500 ml-2 text-[#059afd]"
+                  className="border border-dashed rounded px-2 text-sm ml-2 text-[#059afd]"
                 >
                   {review?.productName}
                 </p>
