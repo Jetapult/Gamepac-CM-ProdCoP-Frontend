@@ -240,10 +240,10 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
 
   const getTagPercentageChange = (tagData) => {
     const lastWeekPercentage = parseFloat(
-      tagData.lastweek_percentage.replace("%", "")
+      tagData?.lastweek_percentage?.replace("%", "")
     );
     const currentWeekPercentage = parseFloat(
-      tagData.percentage.replace("%", "")
+      tagData?.percentage?.replace("%", "")
     );
     const difference = currentWeekPercentage - (lastWeekPercentage || 0);
     const isPositiveChange = difference >= 0;
@@ -259,8 +259,12 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
       setIsLoading(true);
       setPieChartData([]);
       const requestBody = {
-        start_date: moment(customDates[0].startDate).format("YYYY-MM-DD"),
-        end_date: moment(customDates[0].endDate).format("YYYY-MM-DD"),
+        start_date: customDates[0].startDate
+          ? moment(customDates[0].startDate).format("YYYY-MM-DD")
+          : "lifetime",
+        end_date: customDates[0].endDate
+          ? moment(customDates[0].endDate).format("YYYY-MM-DD")
+          : "lifetime",
         game_id: selectedGame.id,
         studio_id: studio_slug
           ? studios.filter((x) => x.slug === studio_slug)[0]?.id
@@ -312,8 +316,8 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
         studio_id: studio_slug
           ? studios.filter((x) => x.slug === studio_slug)[0]?.id
           : userData.studio_id,
-        start_date: moment(customDates[0].startDate).format("YYYY-MM-DD"),
-        end_date: moment(customDates[0].endDate).format("YYYY-MM-DD"),
+        start_date: customDates[0].startDate ? moment(customDates[0].startDate).format("YYYY-MM-DD") : 'lifetime',
+        end_date: customDates[0].endDate ? moment(customDates[0].endDate).format("YYYY-MM-DD") : 'lifetime',
       };
       if (selectedVersions.length) {
         const selectedVersionsArr = [];
@@ -391,20 +395,31 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
               customDates={customDates}
               wrapperRef={wrapperRef}
               page={"reviewInsights"}
-              isCustomBtnAction={() => setShowCalendar(false)}
+              isCustomBtnAction={() => {
+                getTagsDistrubutionData();
+                fetchRatingTrends();
+                setShowCalendar(false);
+              }}
             />
           )}
           <div
-            className="border border-[#ccc] bg-white rounded py-1.5 px-3 flex items-center justify-between"
+            className="border border-[#ccc] bg-white rounded py-1.5 px-3 flex items-center justify-between min-w-[245px]"
             onClick={() => setShowCalendar(true)}
           >
-            <p className="text-sm">
-              {moment(customDates[0].startDate).format("Do MMM YYYY")}
-            </p>
-            <span className="text-gray-400 px-3">-</span>
-            <p className="text-sm">
-              {moment(customDates[0].endDate).format("Do MMM YYYY")}
-            </p>{" "}
+            {customDates[0].startDate && customDates[0].endDate ? (
+              <>
+                <p className="text-sm">
+                  {moment(customDates[0].startDate).format("Do MMM YYYY")}
+                </p>
+                <span className="text-gray-400 px-3">-</span>
+                <p className="text-sm">
+                  {moment(customDates[0].endDate).format("Do MMM YYYY")}
+                </p>{" "}
+              </>
+            ) : (
+              <p className="text-sm">Lifetime</p>
+            )}
+
             <CalendarIcon className="w-4 h-4 text-gray-400 ml-4" />
           </div>
         </div>
@@ -463,7 +478,12 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
                 <div className="border border-[#f2f2f2] rounded-lg mb-10">
                   <div className="flex bg-[#fafafb] rounded-t-lg border-b border-b-[#f2f2f2]">
                     <p className="w-3/5 border-r border-r-[#f2f2f2] p-3">Tag</p>
-                    <p className="w-2/5 p-3">Change (Last Week)</p>
+                    <p className="w-2/5 p-3">
+                      Change{" "}
+                      {customDates[0].startDate && (
+                        <span className="">(Last Week)</span>
+                      )}
+                    </p>
                   </div>
                   {tagDistribution.map((tag, index) => (
                     <div
@@ -479,19 +499,24 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
                         {tag.tag}
                       </p>
                       <p className="w-2/5 p-3">
-                        {tag.count} (
-                        <span
-                          className={`${
-                            getTagPercentageChange(tag).changeSymbol === "+"
-                              ? "text-[#9ac18b]"
-                              : "text-[#c86577]"
-                          }`}
-                        >
-                          {getTagPercentageChange(tag).changeSymbol +
-                            getTagPercentageChange(tag).percentage}
-                          %
-                        </span>
-                        )
+                        {tag.count}
+                        {tag?.lastweek_percentage && (
+                          <>
+                            (
+                            <span
+                              className={`${
+                                getTagPercentageChange(tag).changeSymbol === "+"
+                                  ? "text-[#9ac18b]"
+                                  : "text-[#c86577]"
+                              }`}
+                            >
+                              {getTagPercentageChange(tag).changeSymbol +
+                                getTagPercentageChange(tag).percentage}
+                              %
+                            </span>
+                            )
+                          </>
+                        )}
                       </p>
                     </div>
                   ))}
