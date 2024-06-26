@@ -395,7 +395,11 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
               customDates={customDates}
               wrapperRef={wrapperRef}
               page={"reviewInsights"}
-              isCustomBtnAction={() => setShowCalendar(false)}
+              isCustomBtnAction={() => {
+                getTagsDistrubutionData();
+                fetchRatingTrends();
+                setShowCalendar(false);
+              }}
             />
           )}
           <div

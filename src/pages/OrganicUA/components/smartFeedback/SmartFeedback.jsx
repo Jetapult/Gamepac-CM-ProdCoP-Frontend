@@ -354,7 +354,10 @@ const SmartFeedback = ({
                   customDates={customDates}
                   wrapperRef={wrapperRef}
                   page={"feedback"}
-                  isCustomBtnAction={() => setShowCalendar(false)}
+                  isCustomBtnAction={() => {
+                    fetchReviews(1);
+                    setShowCalendar(false);
+                  }}
                 />
               )}
               {period === "custom" && !showCalendar && (
