@@ -120,7 +120,7 @@ const SendWeeklyReportPopup = ({
                 >
                   {item.name}
                   {item.coming_soon ? (
-                    <p className="text-md">comming soon</p>
+                    <p className="text-md">coming soon</p>
                   ) : (
                     <>
                       <input

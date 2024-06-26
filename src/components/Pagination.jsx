@@ -18,7 +18,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
   };
 
   return (
-    <div className="flex items-center justify-between border-t border-gray-200 bg-white py-3">
+    <div className="flex items-center justify-between border-t border-gray-200 bg-white py-3 pl-4">
       <div className="flex flex-1 justify-between sm:hidden">
         <a
           onClick={() =>
@@ -39,7 +39,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
           Next
         </a>
       </div>
-      {/* <div>
+      <div>
           {totalReviews > limit && (
             <p className="text-sm text-gray-700">
               Showing <span className="font-medium">{currentPage}</span> to{" "}
@@ -47,7 +47,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
               <span className="font-medium">{totalReviews}</span> results
             </p>
           )}
-        </div> */}
+        </div>
       <div>
         <nav
           className="isolate inline-flex -space-x-px rounded-md shadow-sm cursor-pointer"

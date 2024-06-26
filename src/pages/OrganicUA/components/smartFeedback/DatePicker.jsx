@@ -30,6 +30,16 @@ const customStaticRanges = [
       );
     },
   },
+  {
+    label: 'Lifetime',
+    range: () => ({
+      startDate: null,
+      endDate: null,
+    }),
+    isSelected(range) {
+      return range.startDate === null && range.endDate === null;
+    }
+  }
 ];
 
 const DatePicker = ({
@@ -55,7 +65,7 @@ const DatePicker = ({
       />
       <button
         onClick={() => isCustomBtnAction()}
-        className={`z-50 absolute right-[-620px] bottom-[10px] mt-2 bg-[#ff1053] text-white font-bold py-1 px-4 rounded ${page === "reviewInsights" ? "bottom-[-460px]" : ""}`}
+        className={`z-50 absolute right-[-620px] mt-2 bg-[#ff1053] text-white font-bold py-1 px-4 rounded ${page === "reviewInsights" ? "bottom-[-460px]" : "bottom-[10px]"}`}
       >
         Apply
       </button>

@@ -128,7 +128,7 @@ const EnableAutoReplyPopup = ({
                 <label className={`relative flex justify-between items-center p-1 text-xl mb-2 ${item.coming_soon ? "text-gray-300" : ""}`}>
                   {item.name}
                   {item.coming_soon ? (
-                    <p className="text-md">comming soon</p>
+                    <p className="text-md">coming soon</p>
                   ) : (
                     <>
                       <input
