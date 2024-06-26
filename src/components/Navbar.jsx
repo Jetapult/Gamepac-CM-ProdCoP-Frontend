@@ -258,7 +258,7 @@ function Navbar() {
                     </>
                   )}
                 {userData.studio_type?.includes("external_studio") && (
-                  <ReactPopover trigger="hover" content={<p>Comming soon</p>}>
+                  <ReactPopover trigger="hover" content={<p>Coming soon</p>}>
                     <div className="flex gap-2 items-center cursor-pointer">
                       AI Tools
                     </div>
