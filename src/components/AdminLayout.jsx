@@ -44,9 +44,9 @@ const AdminLayout = ({ children }) => {
     dispatch(addStudioData(studio));
     localStorage.setItem("selectedStudio", studio.slug);
     navigate(`/${studio.slug}/dashboard`);
-    if (parseInt(studio.id) !== parseInt(userData.studio_id)) {
-      window.location.reload();
-    }
+    // if (parseInt(studio.id) !== parseInt(userData.studio_id)) {
+    //   window.location.reload();
+    // }
   };
 
   useEffect(() => {
@@ -57,8 +57,9 @@ const AdminLayout = ({ children }) => {
   
   useEffect(() => {
     if (studios?.length) {
+      const selectedStudio_slug = localStorage.getItem("selectedStudio");
       const studio = studios.find(
-        (studio) => studio.slug === (params.studio_slug || userData.slug)
+        (studio) => studio.slug === (selectedStudio_slug || params.studio_slug)
       );
       dispatch(addStudioData(studio));
       dispatch(addTotalStudio(studios.length));
