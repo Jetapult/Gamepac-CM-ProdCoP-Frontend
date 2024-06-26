@@ -63,15 +63,18 @@ const SmartFeedback = ({
   const [searchParams, setSearchParams] = useSearchParams();
   const limit = 10;
   const navigate = useNavigate();
-  const querytags = searchParams.get('tags');
-  const gameIdparam = searchParams.get('gameId');
-  const gameTypeparam = searchParams.get('gameType');
+  const querytags = searchParams.get("tags");
+  const gameIdparam = searchParams.get("gameId");
+  const gameTypeparam = searchParams.get("gameType");
 
   const orderBy = [
     {
       id: "1",
       label: "Highest Rating",
-      value: selectedGame?.platform === "android" ? "userrating DESC" : "rating DESC",
+      value:
+        selectedGame?.platform === "android"
+          ? "userrating DESC"
+          : "rating DESC",
     },
     {
       id: "2",
@@ -81,7 +84,8 @@ const SmartFeedback = ({
     {
       id: "3",
       label: "Most Recent Reply",
-      value: selectedGame?.platform === "android" ? "posteddate" : "latestResponse",
+      value:
+        selectedGame?.platform === "android" ? "posteddate" : "latestResponse",
     },
   ];
   const wrapperRef = useRef(null);
@@ -134,10 +138,19 @@ const SmartFeedback = ({
         paramData.period = period;
       }
       if (period === "custom") {
-        paramData.startDate = moment(customDates[0].startDate).format(
-          "YYYY-MM-DD"
-        );
-        paramData.endDate = moment(customDates[0].endDate).format("YYYY-MM-DD");
+        if (
+          customDates[0].startDate === null &&
+          customDates[0].endDate === null
+        ) {
+          paramData.period = "lifetime";
+        } else {
+          paramData.startDate = moment(customDates[0].startDate).format(
+            "YYYY-MM-DD"
+          );
+          paramData.endDate = moment(customDates[0].endDate).format(
+            "YYYY-MM-DD"
+          );
+        }
       }
       if (rating.length) {
         const ratingsArr = [];
@@ -258,10 +271,14 @@ const SmartFeedback = ({
   useEffect(() => {
     if (querytags) {
       const tagsArr = querytags.split(",");
-      const tagsArrObj = tagsArr.map((x, index) => ({id: index, label: x, value: x}));
+      const tagsArrObj = tagsArr.map((x, index) => ({
+        id: index,
+        label: x,
+        value: x,
+      }));
       setSelectedTags(tagsArrObj);
     }
-  }, [querytags])
+  }, [querytags]);
   useEffect(() => {
     if (
       selectedGame?.id &&
@@ -275,16 +292,16 @@ const SmartFeedback = ({
   useEffect(() => {
     if (games.length) {
       if (gameIdparam && gameTypeparam) {
-        const game = games.filter(x => x.id === parseInt(gameIdparam))[0];
+        const game = games.filter((x) => x.id === parseInt(gameIdparam))[0];
         if (game) {
-          setSelectedGame({...game, platform: gameTypeparam});
+          setSelectedGame({ ...game, platform: gameTypeparam });
         }
-      }else{
+      } else {
         const gameData = games[0];
-        setSelectedGame({...gameData, platform: "android"});
+        setSelectedGame({ ...gameData, platform: "android" });
       }
     }
-  }, [games.length,gameIdparam, gameTypeparam]);
+  }, [games.length, gameIdparam, gameTypeparam]);
   return (
     <div className="shadow-md bg-white w-full h-full p-4">
       <h1 className="text-2xl">Smart Feedback</h1>
@@ -332,22 +349,33 @@ const SmartFeedback = ({
                 </div>
               ))}
               {period === "custom" && showCalendar && (
-                <DatePicker setCustomDates={setCustomDates} customDates={customDates} wrapperRef={wrapperRef} page={"feedback"} isCustomBtnAction={() => setShowCalendar(false)} />
+                <DatePicker
+                  setCustomDates={setCustomDates}
+                  customDates={customDates}
+                  wrapperRef={wrapperRef}
+                  page={"feedback"}
+                  isCustomBtnAction={() => setShowCalendar(false)}
+                />
               )}
               {period === "custom" && !showCalendar && (
                 <div
                   className="whitespace-pre border border-[#eff2f7] bg-white rounded py-1 px-3 flex items-center justify-between"
                   onClick={() => setShowCalendar(true)}
                 >
-                  {" "}
-                  <p className="text-sm">
-                    {moment(customDates[0].startDate).format("Do MMM YYYY")}
-                  </p>
-                  <span className="text-gray-400 px-3">-</span>
-                  <p className="text-sm">
-                    {moment(customDates[0].endDate).format("Do MMM YYYY")}
-                  </p>{" "}
-                  <CalendarIcon className="w-4 h-4 text-gray-400 ml-8" />
+                  {customDates[0].startDate && customDates[0].endDate ? (
+                    <>
+                      <p className="text-sm">
+                        {moment(customDates[0].startDate).format("Do MMM YYYY")}
+                      </p>
+                      <span className="text-gray-400 px-3">-</span>
+                      <p className="text-sm">
+                        {moment(customDates[0].endDate).format("Do MMM YYYY")}
+                      </p>{" "}
+                      <CalendarIcon className="w-4 h-4 text-gray-400 ml-8" />
+                    </>
+                  ) : (
+                    <p className="text-sm">Lifetime</p>
+                  )}
                 </div>
               )}
             </div>

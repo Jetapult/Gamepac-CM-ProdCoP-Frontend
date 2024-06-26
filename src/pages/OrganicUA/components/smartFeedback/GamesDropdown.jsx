@@ -109,24 +109,25 @@ const GamesDropdown = ({
           message: "Game unpinned",
           type: "success",
         });
+        setRefresh(refresh ? 0 : 1);
       }
     } catch (error) {
       console.log(error);
     }
   };
 
-  const handleSelectGame = useCallback((game, selectedTab) => {
-    setSelectedGame({ ...game, platform: selectedTab });
+  const handleSelectGame = useCallback((game) => {
+    setSelectedGame(game);
     setShowGamesDropdown(false);
     setSearchTerm("");
   }, []);
 
   const androidGames = useMemo(
-    () => games.filter((game) => game.package_name && game.package_name.trim().length > 0),
+    () => games.filter((game) => game.package_name && game.package_name.trim().length > 0).map((game) => ({ ...game, platform: "android" })),
     [games, refresh]
   );
   const appleGames = useMemo(
-    () => games.filter((game) => game.app_id),
+    () => games.filter((game) => game.app_id).map((game) => ({ ...game, platform: "apple" })),
     [games, refresh]
   );
 
@@ -307,7 +308,7 @@ const GamesCard = React.memo(
             ? "bg-[#e1e1e1]"
             : ""
         }`}
-        onClick={() => onSelect(game, selectedTab)}
+        onClick={() => onSelect(game)}
       >
         {game?.play_store_icon || game?.app_store_icon ? (
           <img

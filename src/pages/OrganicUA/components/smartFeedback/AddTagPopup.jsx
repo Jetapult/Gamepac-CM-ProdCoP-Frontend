@@ -37,7 +37,7 @@ const AddTagPopup = ({
         gameId: selectedGame.id,
       };
       const templatesResponse =
-        selectedGame.platform === "Android"
+        selectedGame.platform === "android"
           ? await api.put(`v1/organic-ua/play-store/add-tags`, requestbody)
           : await api.put(`v1/organic-ua/app-store/add-tags`, requestbody);
       setSubmitLoader(false);
