@@ -302,8 +302,8 @@ const Updates = () => {
   return (
     <div className="py-10 px-10 bg-white min-h-screen">
       <Helmet>
-        <title>My Page Title</title>
-        <meta property="og:title" content="GamePAC AI | Updates" />
+        <title>Jetapult AI updates</title>
+        <meta property="og:title" content="Gamepac | Jetapult AI updates" />
         <meta
           property="og:description"
           content="Explore the latest updates on Gamepac AI, featuring new game developments, feature enhancements, and crucial bug fixes. Stay informed about our ongoing improvements and innovations in gaming technology."
@@ -315,7 +315,7 @@ const Updates = () => {
         />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="GamePAC AI | Updates" />
+        <meta name="twitter:title" content="Gamepac | Jetapult AI updates" />
         <meta
           name="twitter:description"
           content="Explore the latest updates on Gamepac AI, featuring new game developments, feature enhancements, and crucial bug fixes. Stay informed about our ongoing improvements and innovations in gaming technology."

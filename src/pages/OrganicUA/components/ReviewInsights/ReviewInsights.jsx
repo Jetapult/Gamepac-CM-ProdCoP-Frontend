@@ -15,7 +15,6 @@ import ChartDataLabels from "chartjs-plugin-datalabels";
 import api from "../../../../api";
 import "chart.js/auto";
 import GamesDropdown from "../smartFeedback/GamesDropdown";
-import { DateRangePicker } from "react-date-range";
 import moment from "moment";
 import {
   CalendarIcon,
@@ -26,6 +25,8 @@ import { Line } from "react-chartjs-2";
 import Select from "react-select";
 import "./reviewInsights.css";
 import NoData from "../../../../components/NoData";
+import DatePicker from "../smartFeedback/DatePicker";
+import { useNavigate } from "react-router-dom";
 
 const tagDistributionlabels = [
   "Ads concern",
@@ -72,11 +73,11 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
   const [pieChartData, setPieChartData] = useState({});
   const [selectedGame, setSelectedGame] = useState({});
   const [showCalendar, setShowCalendar] = useState(false);
-  const today = new Date();
+  const [selectedTab, setSelectedTab] = useState("android");
   const [customDates, setCustomDates] = useState([
     {
-      startDate: today.setDate(today.getDate() - 7),
-      endDate: new Date(),
+      startDate: moment().subtract(7, "days").toDate(),
+      endDate: moment().toDate(),
       key: "selection",
     },
   ]);
@@ -85,7 +86,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
   const [selectedVersions, setSelectedVersions] = useState([]);
   const [versionList, setVersionList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  const navigate = useNavigate();
   const wrapperRef = useRef(null);
   useOutsideAlerter(wrapperRef);
   function useOutsideAlerter(ref) {
@@ -101,6 +102,16 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
       };
     }, [ref]);
   }
+
+  const handlePieClick = (event, elements) => {
+    if (elements.length === 0) return;
+
+    const elementIndex = elements[0].index;
+    const label = pieChartData.labels[elementIndex];
+    navigate(
+      `/organic-ua/smart-feedback/${studio_slug}?tags=${label}&gameId=${selectedGame.id}&gameType=${selectedGame.platform}`
+    );
+  };
 
   const options = {
     plugins: {
@@ -356,7 +367,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
 
   useEffect(() => {
     if (games.length) {
-      setSelectedGame(games[0].data[0]);
+      setSelectedGame({ ...games[0], platform: "android" });
     }
   }, [games.length]);
 
@@ -369,21 +380,19 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
             selectedGame={selectedGame}
             setSelectedGame={setSelectedGame}
             games={games}
+            selectedTab={selectedTab}
+            setSelectedTab={setSelectedTab}
           />
         </div>
         <div className="relative px-4">
           {showCalendar && (
-            <div className="" ref={wrapperRef}>
-              <DateRangePicker
-                onChange={(item) => setCustomDates([item.selection])}
-                showSelectionPreview={true}
-                moveRangeOnFirstSelection={false}
-                months={2}
-                ranges={customDates}
-                direction="horizontal"
-                className="z-50 border border-[#eff2f7] mt-4 absolute top-6"
-              />
-            </div>
+            <DatePicker
+              setCustomDates={setCustomDates}
+              customDates={customDates}
+              wrapperRef={wrapperRef}
+              page={"reviewInsights"}
+              isCustomBtnAction={() => setShowCalendar(false)}
+            />
           )}
           <div
             className="border border-[#ccc] bg-white rounded py-1.5 px-3 flex items-center justify-between"
@@ -432,7 +441,13 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
                   </h2>
                   <TagsList tagDistribution={tagDistribution} />
                   {pieChartData.labels && (
-                    <Pie data={pieChartData} options={options} />
+                    <Pie
+                      data={pieChartData}
+                      options={{
+                        ...options,
+                        onClick: handlePieClick,
+                      }}
+                    />
                   )}
                 </div>
                 <div className="col-span-6">
@@ -454,6 +469,11 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
                     <div
                       key={index}
                       className="flex border-b border-b-[#f2f2f2]"
+                      onClick={() =>
+                        navigate(
+                          `/organic-ua/smart-feedback/${studio_slug}?tags=${tag.tag}&gameId=${selectedGame.id}&gameType=${selectedGame.platform}`
+                        )
+                      }
                     >
                       <p className="w-3/5 border-r border-r-[#f2f2f2] p-3">
                         {tag.tag}

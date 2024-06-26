@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../../../../api";
 import ReactStars from "react-rating-stars-component";
 import Select from "react-select";
 import ReviewsCard from "./ReviewsCard";
 import { XCircleIcon } from "@heroicons/react/20/solid";
 import { CalendarIcon } from "@heroicons/react/24/outline";
-import { DateRangePicker } from "react-date-range";
+import { DateRangePicker, defaultStaticRanges } from "react-date-range";
 import moment from "moment";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
@@ -20,13 +20,13 @@ import {
 } from "../../../../constants/organicUA";
 import GamesDropdown from "./GamesDropdown";
 import NoData from "../../../../components/NoData";
+import DatePicker from "./DatePicker";
 
 const SmartFeedback = ({
   studio_slug,
   templates,
   setTemplates,
   isGameLoading,
-  setIsGameLoading,
   games,
   setGames,
 }) => {
@@ -59,28 +59,29 @@ const SmartFeedback = ({
   const [responseState, setResponseState] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setisLoading] = useState(true);
+  const [selectedTab, setSelectedTab] = useState("android");
+  const [searchParams, setSearchParams] = useSearchParams();
   const limit = 10;
   const navigate = useNavigate();
+  const querytags = searchParams.get('tags');
+  const gameIdparam = searchParams.get('gameId');
+  const gameTypeparam = searchParams.get('gameType');
 
   const orderBy = [
     {
       id: "1",
       label: "Highest Rating",
-      value:
-        selectedGame?.platform === "Android"
-          ? "userrating DESC"
-          : "rating DESC",
+      value: selectedGame?.platform === "android" ? "userrating DESC" : "rating DESC",
     },
     {
       id: "2",
       label: "Lowest Rating",
-      value: selectedGame?.platform === "Android" ? "userrating" : "rating",
+      value: selectedGame?.platform === "android" ? "userrating" : "rating",
     },
     {
       id: "3",
       label: "Most Recent Reply",
-      value:
-        selectedGame?.platform === "Android" ? "posteddate" : "latestResponse",
+      value: selectedGame?.platform === "android" ? "posteddate" : "latestResponse",
     },
   ];
   const wrapperRef = useRef(null);
@@ -90,6 +91,7 @@ const SmartFeedback = ({
       function handleClickOutside(event) {
         if (ref.current && !ref.current.contains(event.target)) {
           setShowCalendar(false);
+          setSearchText("");
         }
       }
       document.addEventListener("mousedown", handleClickOutside);
@@ -104,16 +106,6 @@ const SmartFeedback = ({
     if (event.target.value === "custom") {
       setShowCalendar(true);
     }
-  };
-
-  const checkGames = () => {
-    let game = 0;
-    games.filter((x) => {
-      x.data.filter((y) => {
-        game += 1;
-      });
-    });
-    return game;
   };
 
   const handleRatingChange = (event) => {
@@ -147,7 +139,7 @@ const SmartFeedback = ({
         );
         paramData.endDate = moment(customDates[0].endDate).format("YYYY-MM-DD");
       }
-      if (rating) {
+      if (rating.length) {
         const ratingsArr = [];
         rating.filter((x) => ratingsArr.push(x));
         paramData.rating = ratingsArr.join(",");
@@ -188,7 +180,7 @@ const SmartFeedback = ({
         sort_by.length > 1 && (paramData.sortOrder = "desc");
       }
       const url =
-        selectedGame?.platform === "Android"
+        selectedGame?.platform === "android"
           ? `/v1/organic-ua/google-reviews/${studio_slug || userData.studio_id}`
           : `/v1/organic-ua/fetch-app-store-reviews/${
               studio_slug || userData.studio_id
@@ -262,10 +254,18 @@ const SmartFeedback = ({
       fetchReviews();
     }
   }, [selectedGame?.id, selectedGame?.platform, currentPage]);
+
+  useEffect(() => {
+    if (querytags) {
+      const tagsArr = querytags.split(",");
+      const tagsArrObj = tagsArr.map((x, index) => ({id: index, label: x, value: x}));
+      setSelectedTags(tagsArrObj);
+    }
+  }, [querytags])
   useEffect(() => {
     if (
       selectedGame?.id &&
-      selectedGame?.platform === "Android" &&
+      selectedGame?.platform === "android" &&
       (studio_slug ? studios.length : 1)
     ) {
       fetchAllVersions();
@@ -274,21 +274,33 @@ const SmartFeedback = ({
 
   useEffect(() => {
     if (games.length) {
-      setSelectedGame(games[0].data[0]);
+      if (gameIdparam && gameTypeparam) {
+        const game = games.filter(x => x.id === parseInt(gameIdparam))[0];
+        if (game) {
+          setSelectedGame({...game, platform: gameTypeparam});
+        }
+      }else{
+        const gameData = games[0];
+        setSelectedGame({...gameData, platform: "android"});
+      }
     }
-  }, [games.length]);
+  }, [games.length,gameIdparam, gameTypeparam]);
   return (
     <div className="shadow-md bg-white w-full h-full p-4">
       <h1 className="text-2xl">Smart Feedback</h1>
       {isGameLoading ? (
         <></>
-      ) : checkGames() ? (
+      ) : games.length ? (
         <div className="flex">
           <div className="w-[275px] min-w-[275px] max-w-[275px] bg-[#F8F9FD] p-3 relative">
             <GamesDropdown
               selectedGame={selectedGame}
               setSelectedGame={setSelectedGame}
               games={games}
+              selectedTab={selectedTab}
+              setSelectedTab={setSelectedTab}
+              setGames={setGames}
+              studio_slug={studio_slug}
             />
             <h5 className="font-bold">Period</h5>
             <div className="">
@@ -320,17 +332,7 @@ const SmartFeedback = ({
                 </div>
               ))}
               {period === "custom" && showCalendar && (
-                <div className="" ref={wrapperRef}>
-                  <DateRangePicker
-                    onChange={(item) => setCustomDates([item.selection])}
-                    showSelectionPreview={true}
-                    moveRangeOnFirstSelection={false}
-                    months={2}
-                    ranges={customDates}
-                    direction="horizontal"
-                    className="z-50 relative border border-[#eff2f7]"
-                  />
-                </div>
+                <DatePicker setCustomDates={setCustomDates} customDates={customDates} wrapperRef={wrapperRef} page={"feedback"} isCustomBtnAction={() => setShowCalendar(false)} />
               )}
               {period === "custom" && !showCalendar && (
                 <div
@@ -399,7 +401,7 @@ const SmartFeedback = ({
                 <></>
               )}
             </div>
-            {selectedGame?.platform === "Android" ? (
+            {selectedGame?.platform === "android" ? (
               <>
                 <h5 className="font-bold my-3">Language</h5>
                 <Select
@@ -419,7 +421,7 @@ const SmartFeedback = ({
                 />
               </>
             )}
-            {selectedGame?.platform === "Android" && (
+            {selectedGame?.platform === "android" && (
               <>
                 <h5 className="font-bold my-3">Version</h5>
                 <Select
@@ -437,7 +439,7 @@ const SmartFeedback = ({
               isMulti={true}
               onChange={(val) => setSelectedTags(val)}
             />
-            {selectedGame?.platform === "Apple" && (
+            {selectedGame?.platform === "apple" && (
               <>
                 <h5 className="font-bold my-3">Response State</h5>
                 {responseStateFilter.map((state) => (

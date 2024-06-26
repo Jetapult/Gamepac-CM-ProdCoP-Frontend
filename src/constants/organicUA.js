@@ -72,6 +72,11 @@ export const periodFilter = [
     name: "Custom",
     value: "custom",
   },
+  {
+    id: "5",
+    name: "Lifetime",
+    value: "lifetime",
+  },
 ];
 
 export const TagsList = [

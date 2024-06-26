@@ -8,11 +8,10 @@ import CreateGamePopup from "../popups/CreateGamePopup";
 import SendWeeklyReportPopup from "../popups/SendWeeklyReportPopup";
 import EnableAutoReplyPopup from "../popups/EnableAutoReplyPopup";
 import ConfirmationPopup from "../../../../components/ConfirmationPopup";
-import {
-  QuestionMarkCircleIcon,
-} from "@heroicons/react/24/outline";
+import { QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 import TypewriterLoader from "../../../../components/TypewriterLoader/TypewriterLoader";
 import { useSelector } from "react-redux";
+import ReactPopover from "../../../../components/Popover";
 
 const StudioGames = ({
   studio_id,
@@ -138,51 +137,104 @@ const StudioGames = ({
         </button>
       </div>
 
-      <div className="grid grid-cols-12 border-y-[0.5px] border-[#e5e5e5] py-3 items-center bg-[#f7e5e5] px-3 mt-4">
-        <div className="">
+      <div className="flex border-y-[0.5px] border-[#e5e5e5] py-3 items-center bg-[#f7e5e5] px-3 mt-4">
+        <div className="w-[5%]">
           <p>No.</p>
         </div>
-        <div className="col-span-2">
+        <div className="w-[25%]">
           <p>Game name</p>
         </div>
-        <div className="col-span-1">
-          <p>short_names</p>
+        <div className="w-[10%]">
+          <p>Short names</p>
         </div>
-        <div className="col-span-3 px-1">
-          <p>Pod owner</p>
+        <div className="w-[10%]">
+          <p>App details</p>
         </div>
-        <div className="col-span-4">
+        <div className="w-[20%] px-1">
+          <p>Team</p>
+        </div>
+        <div className="w-[30%]">
           <p>Actions</p>
-        </div>
-        <div className="">
-          <p></p>
         </div>
       </div>
       <div className="overflow-y-auto h-[calc(100vh-334px)]">
         {games.map((game, index) => (
           <div
-            className="grid grid-cols-12 px-3 py-3 border-b-[0.5px] border-[#e5e5e5] cursor-pointer"
+            className="flex grid-cols-12 px-3 py-3 border-b-[0.5px] border-[#e5e5e5] cursor-pointer"
             key={game.id}
           >
-            <p className="">{(currentPage - 1) * limit + index + 1}</p>
-            <p className="col-span-2">{game.game_name}</p>
-            <p className="col-span-1 text-center">{game.short_names}</p>
-            <p className="col-span-3 break-all px-1">{game.pod_owner}</p>
-            <p className="col-span-4">
-              <button className="border border-[#ccc] rounded px-4 py-1 mr-2"
-              onClick={() => {
-                setSelectedGame(game);
-                setShowAutoReplyEnablePopup(
-                  !showAutoReplyEnablePopup
-                );
-              }}>
+            <p className="w-[5%]">{(currentPage - 1) * limit + index + 1}</p>
+            <p className="w-[25%] pr-2">{game.game_name}</p>
+            <p className="w-[10%] break-all px-1">{game.short_names}</p>
+            <div className="w-[10%] break-all px-1 pr-3 flex">
+              {game.package_name && (
+                <ReactPopover
+                  trigger="hover"
+                  content={
+                    <p>
+                      <span className="text-[#808080]">Package name: </span>
+                      {game.package_name}
+                    </p>
+                  }
+                >
+                  <span className="text-xl text-[#092139] mr-2">
+                    <i className="fa fa-android"></i>
+                  </span>
+                </ReactPopover>
+              )}
+              {game.app_id && (
+                <ReactPopover
+                  trigger="hover"
+                  content={
+                    <p>
+                      <span className="text-[#808080]">App ID: </span>
+                      {game.app_id}
+                    </p>
+                  }
+                >
+                  <span className="text-xl text-[#092139]">
+                    <i className="fa fa-apple"></i>
+                  </span>
+                </ReactPopover>
+              )}
+            </div>
+            <div className="w-[20%] break-all px-1 pr-3">
+              {game.product_manager_name && (
+                <p>
+                  <span className="text-[#808080]">PM:</span>{" "}
+                  {game.product_manager_name}
+                </p>
+              )}
+              {game.producer_name && (
+                <p>
+                  <span className="text-[#808080]">Producer:</span>{" "}
+                  {game.producer_name}
+                </p>
+              )}
+              {game.lead_engineer_name && (
+                <p>
+                  <span className="text-[#808080]">Lead engineer:</span>{" "}
+                  {game.lead_engineer_name}
+                </p>
+              )}
+            </div>
+            <p className="w-[30%]">
+              <button
+                className="bg-[#ff1053] text-white rounded-full px-4 py-1 mr-2"
+                onClick={() => {
+                  setSelectedGame(game);
+                  setShowAutoReplyEnablePopup(!showAutoReplyEnablePopup);
+                }}
+              >
                 Auto reply
               </button>{" "}
-              <button className="border border-[#ccc] rounded px-4 py-1 mr-2"
-              onClick={() => {
-                setSelectedGame(game);
-                setShowSendReportPopup(!showSendReportPopup);
-              }}>
+              <button
+                className="bg-[#ff1053] text-white rounded-full px-4 py-1 mr-2"
+                onClick={() => {
+                  setSelectedGame(game);
+                  setShowSendReportPopup(!showSendReportPopup);
+                }}
+              >
                 Weekly report
               </button>
               {/* <button
@@ -190,7 +242,10 @@ const StudioGames = ({
                 onClick={() => onRefreshReviews(game)}
               >Refresh reviews</button> */}
             </p>
-            <Menu as="div" className="relative inline-block text-left">
+            <Menu
+              as="div"
+              className="relative inline-block text-left col-span-1"
+            >
               <div className="flex items-center justify-end">
                 <Menu.Button
                   onClick={(event) => event.stopPropagation()}
@@ -263,7 +318,7 @@ const StudioGames = ({
         <CreateGamePopup
           setShowModal={setShowAddUserPopup}
           setToastMessage={setToastMessage}
-          setUsers={setGames}
+          setGames={setGames}
           selectedGame={selectedGame}
           setSelectedGame={setSelectedGame}
           studio_id={studio_id}

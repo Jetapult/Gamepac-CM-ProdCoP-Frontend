@@ -18,9 +18,12 @@ import { ChartBarSquareIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 import { SparklesIcon } from "@heroicons/react/24/outline";
 import packageInfo from "../../package.json";
 import ReactPopover from "./Popover";
+import { addStudioData } from "../store/reducer/adminSlice";
 
 function Navbar() {
   const userData = useSelector((state) => state.user.user);
+  const studios = useSelector((state) => state.admin.studios);
+  const adminData = useSelector((state) => state.admin.selectedStudio);
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showAnalyticsPopup, setShowAnalyticsPopup] = useState(false);
@@ -28,6 +31,7 @@ function Navbar() {
   const [showNoteTakerDropdown, setShowNoteTakerDropdown] = useState(false);
   const studioSlug = localStorage.getItem("selectedStudio");
   const wrapperRef = useRef(null);
+  const dispatch = useDispatch();
   useOutsideAlerter(wrapperRef);
   function useOutsideAlerter(ref) {
     useEffect(() => {
@@ -70,6 +74,19 @@ function Navbar() {
     setDropdownOpen(!dropdownOpen);
   };
 
+  useEffect(() => {
+    if (studios.length) {
+      const studioData = studios.filter((x) => x.slug === studioSlug)[0];
+      if (studioData) {
+        const updatedStudioData = {
+          ...studioData,
+          studio_logo: studioData.studio_logo || image,
+        };
+        dispatch(addStudioData(updatedStudioData));
+      }
+    }
+  }, [studios]);
+
   return (
     <>
       <div className="navbar bg-white flex justify-between items-center h-14 py-4 px-8 shadow-lg fixed top-0 left-0 right-0 z-50">
@@ -77,18 +94,39 @@ function Navbar() {
           className="flex items-center cursor-pointer"
           onClick={() => navigate("/")}
         >
-          <img
-            src={userData?.studio_logo || image}
-            alt="Icon"
-            className={`w-auto h-10 mr-2 text-gray-600 inline`}
-            style={{ marginBottom: "0 rem" }}
-          />
+          {studioSlug ? (
+            <>
+              {adminData.studio_logo && <img
+                src={adminData.studio_logo}
+                alt="Icon"
+                className={`w-auto h-10 mr-2 text-gray-600 inline`}
+                style={{ marginBottom: "0 rem" }}
+              />}
+            </>
+          ) : (
+            <img
+              src={
+                studioSlug
+                  ? adminData.studio_logo
+                  : userData?.studio_logo || image
+              }
+              alt="Icon"
+              className={`w-auto h-10 mr-2 text-gray-600 inline`}
+              style={{ marginBottom: "0 rem" }}
+            />
+          )}
         </a>
         <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
           {isAuthenticated() ? (
             <>
-              <ul className="text-gray-700">
-                <li className="duration-150 hover:text-gray-900">
+              <ul className="text-gray-7000 relative">
+                <li
+                  className={`duration-150 hover:text-gray-900 ${
+                    location.pathname.includes("dashboard")
+                      ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                      : ""
+                  }`}
+                >
                   <a
                     className="block cursor-pointer"
                     onClick={() =>
@@ -102,10 +140,18 @@ function Navbar() {
               {userData?.studio_type?.includes("studio_manager") &&
                 studioSlug?.includes("holy-cow-studio") && (
                   <ul>
-                    <li className="duration-150 hover:text-gray-900">
+                    <li
+                      className={`relative duration-150 hover:text-gray-900 ${
+                        location.pathname.includes("analytics")
+                          ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                          : ""
+                      }`}
+                    >
                       <a
                         className="block cursor-pointer"
-                        onClick={() => setShowAnalyticsPopup(true)}
+                        onClick={() =>
+                          navigate(`/${studioSlug || userData?.slug}/analytics`)
+                        }
                       >
                         <div className="flex gap-2 items-center">Analytics</div>
                       </a>
@@ -116,14 +162,26 @@ function Navbar() {
               (studioSlug &&
                 studioSlug !== userData?.slug &&
                 userData?.studio_type?.includes("studio_manager")) ? (
-                  <div className="duration-150 hover:text-gray-900 ai-tools">
-                    <a
-                      className="block cursor-pointer"
-                      onClick={() => navigate( studioSlug ? `/organic-ua/smart-feedback/${studioSlug}` : "/organic-ua/smart-feedback")}
-                    >
-                      <div className="flex gap-2 items-center">Socials</div>
-                    </a>
-                  </div>
+                <div
+                  className={`duration-150 hover:text-gray-900 relative ai-tools ${
+                    location.pathname.includes("organic-ua")
+                      ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                      : ""
+                  }`}
+                >
+                  <a
+                    className="block cursor-pointer"
+                    onClick={() =>
+                      navigate(
+                        studioSlug
+                          ? `/organic-ua/smart-feedback/${studioSlug}`
+                          : "/organic-ua/smart-feedback"
+                      )
+                    }
+                  >
+                    <div className="flex gap-2 items-center">Socials</div>
+                  </a>
+                </div>
               ) : (
                 <></>
               )}
@@ -132,7 +190,12 @@ function Navbar() {
                   !userData.studio_type?.includes("external_studio") && (
                     <>
                       <li
-                        className="duration-150 hover:text-gray-900 relative cursor-pointer notetaker"
+                        className={`duration-150 hover:text-gray-900 relative cursor-pointer notetaker ${
+                          location.pathname.includes("note-taker") ||
+                          location.pathname.includes("online")
+                            ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[46%] after:translate-x-[-50%] after:rounded-full"
+                            : ""
+                        }`}
                         ref={wrapperRef}
                       >
                         <a
@@ -176,7 +239,13 @@ function Navbar() {
                           </div>
                         )}
                       </li>
-                      <li className="duration-150 hover:text-gray-900 ai-tools">
+                      <li
+                        className={`duration-150 hover:text-gray-900 relative ai-tools ${
+                          location.pathname.includes("ai-tools")
+                            ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                            : ""
+                        }`}
+                      >
                         <a
                           className="block cursor-pointer"
                           onClick={() => navigate("/ai-tools")}
@@ -195,7 +264,13 @@ function Navbar() {
                     </div>
                   </ReactPopover>
                 )}
-                <li className="duration-150 hover:text-gray-900 ai-tools">
+                <li
+                  className={`duration-150 hover:text-gray-900 relative ai-tools ${
+                    location.pathname.includes("docs")
+                      ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                      : ""
+                  }`}
+                >
                   <a
                     className="block cursor-pointer"
                     onClick={() => navigate("/docs/overview")}
