@@ -467,7 +467,7 @@ const ReviewsCard = ({
             )}
 
             {showOriginalLangComment.includes(review.id) ? (
-              <p className="text-md">
+              <p className="text-md breakword">
                 {review?.comment ||
                   review?.translatedReview ||
                   review?.translated_review}
