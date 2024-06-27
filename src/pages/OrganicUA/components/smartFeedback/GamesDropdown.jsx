@@ -95,21 +95,16 @@ const GamesDropdown = ({
       e.stopPropagation();
       const response = await api.delete(`/v1/games/${game.id}/unpin`);
       if (response.status === 200) {
-        setGames((prev) =>
-          prev?.filter((x) => {
-            if (x?.id === game?.id) {
-              x.is_pinned = false;
-              return x;
-            }
-            return prev;
-          })
+        const gamesresponse = await fetchAllgames(
+          studio_slug ? studio_slug : userData.studio_id
         );
+        setGames(gamesresponse);
+        setRefresh(refresh ? 0 : 1);
         setToastMessage({
           show: true,
           message: "Game unpinned",
           type: "success",
         });
-        setRefresh(refresh ? 0 : 1);
       }
     } catch (error) {
       console.log(error);

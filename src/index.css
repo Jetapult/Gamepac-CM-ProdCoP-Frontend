@@ -38,3 +38,6 @@ textarea{
 .rdrCalendarWrapper{
   height: 430px;
 }
+.breakword{
+  word-break: break-word;
+}
