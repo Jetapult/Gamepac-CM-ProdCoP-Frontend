@@ -1,6 +1,5 @@
 import HDDLogo from "../../assets/hdd-logo.webp";
 import AIGame from "../../assets/game-icon.png";
-import hdwlogo from '../../assets/hdw-logo.jpg'
 import { useNavigate } from "react-router-dom";
 const games = [
   {
@@ -26,12 +25,6 @@ const games = [
     name: "Murder Mystery Narration",
     image: AIGame,
     type: "narration"
-  },
-  {
-    id:"5",
-    name:"HDW",
-    image: hdwlogo,
-    type:"word-match"
   }
 ];
 const HTML5Games = () => {
