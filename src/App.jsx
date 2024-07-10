@@ -42,7 +42,7 @@ import Docs from "./pages/Docs";
 import OrganicUA from "./pages/OrganicUA";
 import HiddenObjectsGame from "./pages/HTML5Games/HiddenObjectsGame";
 import AINarrations from "./pages/HTML5Games/AINarrations";
-import Hdw from "./pages/HTML5Games/hdw";
+import HDW from "./pages/HTML5Games/hdw";
 
 
 function App() {
@@ -295,7 +295,7 @@ function App() {
             <Route path ="/html5-games/word-search-puzzle" element={<WordSearchPuzzleGame />}/>
             <Route path ="/html5-games/hidden-objects" element={<HiddenObjectsGame />}/>
             <Route path ="/html5-games/narration" element={<AINarrations />}/>
-            <Route path ="/html5-games/word-match" element={<Hdw />}/>
+            <Route path ="/html5-games/word-match" element={<HDW />}/>
             <Route path="/docs/overview" element={<Docs />} />
             <Route path="/docs/app-onboarding" element={<Docs />} />
             <Route path="/docs/ai-replies" element={<Docs />} />
