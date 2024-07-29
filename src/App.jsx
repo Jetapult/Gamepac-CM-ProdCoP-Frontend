@@ -272,7 +272,7 @@ function App() {
               }
             />
             <Route path="/updates" element={<Updates />} />
-            <Route path="/:studio_slug/analytics" element={<Analytics />} />
+            <Route path="/:studio_slug/analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
 
             <Route path="/organic-ua/smart-feedback" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
             <Route path="/organic-ua/smart-feedback/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
