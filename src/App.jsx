@@ -42,6 +42,7 @@ import Docs from "./pages/Docs";
 import OrganicUA from "./pages/OrganicUA";
 import HiddenObjectsGame from "./pages/HTML5Games/HiddenObjectsGame";
 import AINarrations from "./pages/HTML5Games/AINarrations";
+import RagChat from "./pages/GameReviewer/RagChat";
 import HdwPlayable from "./pages/HTML5Games/HdwPlayable";
 
 
@@ -300,6 +301,9 @@ function App() {
             <Route path="/docs/app-onboarding" element={<Docs />} />
             <Route path="/docs/ai-replies" element={<Docs />} />
             <Route path="/docs/campaign" element={<Docs />} />
+
+            <Route path="/ai-chat" element={<PrivateRoute><RagChat /></PrivateRoute>} />
+            <Route path="/ai-chat/:studio_slug" element={<PrivateRoute><RagChat /></PrivateRoute>} />
             <Route
               path="*"
               element={<PageNotFound />}
