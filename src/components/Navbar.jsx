@@ -133,7 +133,7 @@ function Navbar() {
                       navigate(`/${studioSlug || userData?.slug}/dashboard`)
                     }
                   >
-                    Dashboard
+                    Home
                   </a>
                 </li>
               </ul>

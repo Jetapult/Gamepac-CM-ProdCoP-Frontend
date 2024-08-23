@@ -72,10 +72,10 @@ const AdminLayout = ({ children }) => {
         <div className="p-4">
           <Menu as="div" className="relative mb-2">
             <div>
-              <Menu.Button className="inline-flex w-full text-l font-bold">
+              <Menu.Button className="inline-flex w-full text-xl font-bold">
                 <p>
                   {selectedStudio?.studio_name}{" "}
-                  <ChevronDownIcon className="w-5 h-5 inline" />
+                  <ChevronDownIcon className="w-5 h-5 inline text-2xl font-bold" />
                 </p>
               </Menu.Button>
             </div>
@@ -95,7 +95,7 @@ const AdminLayout = ({ children }) => {
                     {({ active, close }) => (
                       <div className="flex items-center justify-between py-1 pl-4 pr-2 border-b-[0.5px]">
                         <p className="text-sm font-bold text-gray-700">
-                          Switch dashboard
+                          Switch Studio
                         </p>
                         <XMarkIcon
                           className="w-5 h-5 inline text-gray-700 cursor-pointer"
