@@ -49,26 +49,16 @@ const AIToolsLanding = () => {
                 </button>
               </div>
             </div>
-            <div className="group rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-colors hover:bg-gray-100 relative">
-              <div className="space-y-2 blur-sm opacity-50">
-                <h3 className="text-xl font-bold">AI Genarate Playable ADs</h3>
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm relative"  onClick={() => navigate("/ai-chat")}>
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold">AI Chat</h3>
                 <p className="text-gray-500">
-                  Generate Playable ads to promote your products.
+                  AI-Powered Chat.
                 </p>
-                <div className="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm font-medium text-gray-500">
-                  Coming Soon
-                </div>
                 <button
                   className="mt-4 inline-flex h-9 items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-gray-50 shadow transition-colors hover:bg-gray-900/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50"
-                  disabled
-                  href="#"
                 >
                   Try Now
-                </button>
-              </div>
-              <div className="hidden group-hover:flex absolute top-0 bottom-0 left-0 right-0 items-center justify-center bg-[#12111157] rounded-lg">
-                <button className="inline-flex h-9 items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-gray-50 shadow transition-colors hover:bg-gray-900/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50">
-                  Coming Soon
                 </button>
               </div>
             </div>
