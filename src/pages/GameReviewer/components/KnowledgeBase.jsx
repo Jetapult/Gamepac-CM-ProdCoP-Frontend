@@ -118,7 +118,7 @@ const KnowledgeBase = ({messageObj, setMessageObj, userData, selectedPdf, setSel
       ) : (
         <></>
       )}
-      <div className="flex flex-col">
+      <div className="flex flex-col overflow-auto h-[calc(100vh-265px)]">
         {knowledgebase.map((knowledge) => (
           <div key={knowledge.id} className={`runded mb-2 p-2 rounded cursor-pointer ${selectedPdf?.id === knowledge.id ? "bg-white" : ""}`} onClick={() => setSelectedPdf(knowledge)}>
             <input
