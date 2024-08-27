@@ -7,7 +7,10 @@ const UploadFile = ({
   setMessageObj,
   userData,
   setKnowledgebase,
-  selectedKnowledgebaseCategories
+  selectedKnowledgebaseCategories,
+  setSelectedPdf,
+  setSelectedKnowledgebase,
+  setToastMessage
 }) => {
   const fileInputRef = useRef(null);
   const [showUploadProgressPopup, setShowUploadProgressPopup] = useState(false);
@@ -41,9 +44,20 @@ const UploadFile = ({
       });
       setKnowledgebase((prev) => [...response.data.knowledgebase, ...prev]);
       setShowUploadProgressPopup(false);
+      if(response.data.knowledgebase.length){
+        setSelectedPdf(response.data.knowledgebase[0]);
+        setSelectedKnowledgebase((prev) => [...prev, response.data.knowledgebase[0]]);
+      }
     } catch (error) {
       console.log(error);
       setShowUploadProgressPopup(false);
+      setToastMessage({
+        show: true,
+        message:
+          error?.response?.data?.message ||
+          "Something went wrong! Please try again later",
+        type: "error",
+      });
     }
   };
   return (
@@ -53,7 +67,7 @@ const UploadFile = ({
           Upload your files to get started
         </p>
         <button
-          className="px-4 py-2 border border-[#ccc] rounded-full px-14 mx-auto flex "
+          className="px-4 py-2 border border-[#ccc] rounded-full px-14 mx-auto flex hover:bg-[#e6e6e6]"
           onClick={handleButtonClick}
         >
           Upload PDF
@@ -64,7 +78,6 @@ const UploadFile = ({
           ref={fileInputRef}
           style={{ display: "none" }}
           onChange={handleFileChange}
-          multiple
         />
       </div>
       {showUploadProgressPopup && <UploadProgressPopup files={files} />}
