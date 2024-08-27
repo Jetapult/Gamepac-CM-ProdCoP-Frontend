@@ -66,7 +66,8 @@ const Conversations = ({
               selectedConversation.id === conversation.id ? "bg-[#e5e5e5]" : ""
             }`}
             key={conversation.id}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               if (isEditTitle === "") {
                 setSelectedConversation(conversation);
               }

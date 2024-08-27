@@ -7,6 +7,8 @@ import { XCircleIcon } from "@heroicons/react/24/outline";
 import { getFileName, isPDF } from "../RagChat";
 import { useEffect, useState } from "react";
 import Conversations from "./Conversations";
+import history from "../../../assets/history.svg";
+import plusIcon from "../../../assets/plus-icon.svg";
 
 const InputFieldChat = ({
   messageObj,
@@ -21,7 +23,7 @@ const InputFieldChat = ({
   setSelectedConversation,
   createNewChat,
   updateConversation,
-  deleteConversation,
+  deleteConversation
 }) => {
   const [showHistory, setShowHistory] = useState(false);
   const handleFileChange = async (event) => {
@@ -61,16 +63,18 @@ const InputFieldChat = ({
         {conversations.length ? (
           <div className="flex my-2 mx-2">
             <button
-              className="border border-[#ccc] px-3 rounded-full mr-4"
+              className="border border-[#ccc] px-3 py-[2px] rounded-full mr-2 hover:bg-[#e6e6e6] leading-[26px] flex items-center"
               onClick={() => setShowHistory(true)}
             >
-              History
+              <img src={history} className="mr-1" alt="history" />
+              <span className="text-sm">History</span>
             </button>
             <button
-              className="border border-[#ccc] px-3 rounded-full"
+              className="border border-[#ccc] px-3 py-[2px] rounded-full hover:bg-[#e6e6e6] leading-[26px] flex items-center"
               onClick={() => createNewChat()}
             >
-              New Chat
+              <img src={plusIcon} className="mr-1" alt="new chat" />
+              <span className="text-sm">New Chat</span>
             </button>
           </div>
         ) : (

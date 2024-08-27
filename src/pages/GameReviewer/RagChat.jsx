@@ -55,6 +55,7 @@ const RagChat = () => {
   });
   const [selectedPdf, setSelectedPdf] = useState(null);
   const [selectedKnowledgebase, setSelectedKnowledgebase] = useState([]);
+  const [selectedPage, setSelectedPage] = useState(null);
   const wrapperRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -269,7 +270,7 @@ const RagChat = () => {
     if (selectedConversation?.id && selectedConversation?.message_count > 0) {
       fetchMessages();
     } else {
-      // setMessages([]);
+      setMessages([]);
     }
   }, [selectedConversation?.id]);
 
@@ -286,6 +287,8 @@ const RagChat = () => {
               selectedPdf={selectedPdf}
               setSelectedPdf={setSelectedPdf}
               setSelectedKnowledgebase={setSelectedKnowledgebase}
+              selectedKnowledgebase={selectedKnowledgebase}
+              setToastMessage={setToastMessage}
             />
             {/* <Conversations
                 conversations={conversations}
@@ -297,13 +300,13 @@ const RagChat = () => {
               /> */}
           </div>
           <div className="relative w-[40%]">
-            {selectedPdf && <PdfViewer selectedPdf={selectedPdf} />}
+            {selectedPdf && <PdfViewer selectedPdf={selectedPdf} selectedPage={selectedPage} setSelectedPdf={setSelectedPdf} />}
           </div>
           <div className="relative w-[40%] px-6 border-l border-l-[#e6e6e6]">
-            <div className="flex flex-col-reverse h-[calc(100vh-60px)] overflow-auto no-scrollbar pb-24 outline-none">
+            <div className="flex flex-col-reverse h-[calc(100vh-60px)] overflow-auto no-scrollbar pb-[124px] outline-none">
               {generatingLoader && <GeneratingLoader />}
               {messages.map((message, index) => (
-                <Message key={index} message={message} />
+                <Message key={index} message={message} setSelectedPage={setSelectedPage} />
               ))}
             </div>
             <div ref={messagesEndRef} />

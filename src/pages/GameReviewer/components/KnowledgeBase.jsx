@@ -9,11 +9,14 @@ import {
 } from "@heroicons/react/20/solid";
 import { classNames } from "../../../utils";
 import UploadFile from "./UploadFile";
+import { useDispatch } from "react-redux";
+import { addKnowledgebase } from "../../../store/reducer/knowledgebaseSlice";
 
-const KnowledgeBase = ({messageObj, setMessageObj, userData, selectedPdf, setSelectedPdf, setSelectedKnowledgebase}) => {
+const KnowledgeBase = ({messageObj, setMessageObj, userData, selectedPdf, setSelectedPdf, setSelectedKnowledgebase, selectedKnowledgebase, setToastMessage}) => {
   const [knowledgebaseCategories, setKnowledgebaseCategories] = useState([]);
   const [selectedKnowledgebaseCategories, setSelectedKnowledgebaseCategories] = useState({});
   const [knowledgebase, setKnowledgebase] = useState([]);
+  const dispatch = useDispatch()
   const fetchKnowledgebaseCategories = async () => {
     try {
       const response = await api.get(`/v1/chat/knowledgebase-categories`);
@@ -30,6 +33,7 @@ const KnowledgeBase = ({messageObj, setMessageObj, userData, selectedPdf, setSel
     try {
       const response = await api.get(`/v1/chat/knowledgebase/${id}`);
       setKnowledgebase(response.data.data);
+      dispatch(addKnowledgebase(response.data.data));
       setSelectedPdf(response.data.data[0])
     } catch (err) {
       console.log(err);
@@ -46,6 +50,9 @@ const KnowledgeBase = ({messageObj, setMessageObj, userData, selectedPdf, setSel
         userData={userData}
         setKnowledgebase={setKnowledgebase}
         selectedKnowledgebaseCategories={selectedKnowledgebaseCategories}
+        setSelectedPdf={setSelectedPdf}
+        setSelectedKnowledgebase={setSelectedKnowledgebase}
+        setToastMessage={setToastMessage}
       />
       {/* {knowledgebaseCategories.length ? (
         <Menu as="div" className="relative mb-2">
@@ -120,13 +127,13 @@ const KnowledgeBase = ({messageObj, setMessageObj, userData, selectedPdf, setSel
       )}
       <div className="flex flex-col overflow-auto h-[calc(100vh-265px)]">
         {knowledgebase.map((knowledge) => (
-          <div key={knowledge.id} className={`runded mb-2 p-2 rounded cursor-pointer ${selectedPdf?.id === knowledge.id ? "bg-white" : ""}`} onClick={() => setSelectedPdf(knowledge)}>
+          <div key={knowledge.id} className={`flex flex-wrap items-start runded mb-2 p-2 rounded hover:bg-white cursor-pointer ${selectedPdf?.id === knowledge.id ? "bg-white" : ""}`} onClick={() => setSelectedPdf(knowledge)}>
             <input
               id="default-checkbox"
               type="checkbox"
               value={2}
               name="name"
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded mr-2 pt-2"
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded mr-2 pt-2 mt-[4px]"
               onChange={(e) => {
                 e.stopPropagation();
                 setSelectedKnowledgebase(prev => {
@@ -141,8 +148,9 @@ const KnowledgeBase = ({messageObj, setMessageObj, userData, selectedPdf, setSel
               onClick={(e) => {
                 e.stopPropagation();
               }}
+              checked={selectedKnowledgebase?.some(item => item.id === knowledge.id)}
             />{" "}
-            {knowledge.title}
+            <p className="w-[90%]">{knowledge.title}</p>
           </div>
         ))}
       </div>
