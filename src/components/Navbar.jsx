@@ -241,7 +241,7 @@ function Navbar() {
                       </li>
                       <li
                         className={`duration-150 hover:text-gray-900 relative ai-tools ${
-                          location.pathname.includes("ai-tools")
+                          location.pathname.includes("ai-")
                             ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
                             : ""
                         }`}
