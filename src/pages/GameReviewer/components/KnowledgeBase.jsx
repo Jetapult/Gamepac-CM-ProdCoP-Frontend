@@ -11,12 +11,24 @@ import { classNames } from "../../../utils";
 import UploadFile from "./UploadFile";
 import { useDispatch } from "react-redux";
 import { addKnowledgebase } from "../../../store/reducer/knowledgebaseSlice";
+import moment from "moment";
+import { ClockIcon } from "@heroicons/react/24/outline";
 
-const KnowledgeBase = ({messageObj, setMessageObj, userData, selectedPdf, setSelectedPdf, setSelectedKnowledgebase, selectedKnowledgebase, setToastMessage}) => {
+const KnowledgeBase = ({
+  messageObj,
+  setMessageObj,
+  userData,
+  selectedPdf,
+  setSelectedPdf,
+  setSelectedKnowledgebase,
+  selectedKnowledgebase,
+  setToastMessage,
+}) => {
   const [knowledgebaseCategories, setKnowledgebaseCategories] = useState([]);
-  const [selectedKnowledgebaseCategories, setSelectedKnowledgebaseCategories] = useState({});
+  const [selectedKnowledgebaseCategories, setSelectedKnowledgebaseCategories] =
+    useState({});
   const [knowledgebase, setKnowledgebase] = useState([]);
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
   const fetchKnowledgebaseCategories = async () => {
     try {
       const response = await api.get(`/v1/chat/knowledgebase-categories`);
@@ -34,7 +46,7 @@ const KnowledgeBase = ({messageObj, setMessageObj, userData, selectedPdf, setSel
       const response = await api.get(`/v1/chat/knowledgebase/${id}`);
       setKnowledgebase(response.data.data);
       dispatch(addKnowledgebase(response.data.data));
-      setSelectedPdf(response.data.data[0])
+      setSelectedPdf(response.data.data[0]);
     } catch (err) {
       console.log(err);
     }
@@ -121,25 +133,37 @@ const KnowledgeBase = ({messageObj, setMessageObj, userData, selectedPdf, setSel
         <></>
       )} */}
       {knowledgebase.length ? (
-        <p className="text-sm font-bold text-gray-700 my-3">KnowledgeBase</p>
+        <>
+          <p className="text-sm font-bold text-gray-700 my-3">
+            Knowledge Bases
+          </p>
+        </>
       ) : (
         <></>
       )}
       <div className="flex flex-col overflow-auto h-[calc(100vh-265px)]">
         {knowledgebase.map((knowledge) => (
-          <div key={knowledge.id} className={`flex flex-wrap items-start runded mb-2 p-2 rounded hover:bg-white cursor-pointer ${selectedPdf?.id === knowledge.id ? "bg-white" : ""}`} onClick={() => setSelectedPdf(knowledge)}>
+          <div
+            key={knowledge.id}
+            className={`flex items-start runded mb-2 p-2 rounded-lg hover:bg-white cursor-pointer ${
+              selectedPdf?.id === knowledge.id ? "bg-white" : ""
+            }`}
+            onClick={() => setSelectedPdf(knowledge)}
+          >
             <input
               id="default-checkbox"
               type="checkbox"
               value={2}
               name="name"
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded mr-2 pt-2 mt-[4px]"
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded mr-3 pt-2 mt-[4px]"
               onChange={(e) => {
                 e.stopPropagation();
-                setSelectedKnowledgebase(prev => {
-                  const isAlreadySelected = prev.some(item => item.id === knowledge.id);
+                setSelectedKnowledgebase((prev) => {
+                  const isAlreadySelected = prev.some(
+                    (item) => item.id === knowledge.id
+                  );
                   if (isAlreadySelected) {
-                    return prev.filter(item => item.id !== knowledge.id);
+                    return prev.filter((item) => item.id !== knowledge.id);
                   } else {
                     return [...prev, knowledge];
                   }
@@ -148,9 +172,16 @@ const KnowledgeBase = ({messageObj, setMessageObj, userData, selectedPdf, setSel
               onClick={(e) => {
                 e.stopPropagation();
               }}
-              checked={selectedKnowledgebase?.some(item => item.id === knowledge.id)}
+              checked={selectedKnowledgebase?.some(
+                (item) => item.id === knowledge.id
+              )}
             />{" "}
-            <p className="w-[90%]">{knowledge.title}</p>
+            <div className="w-[88%]">
+              <p className="truncate">{knowledge.title}</p>
+              <p className="text-[14px] flex items-center text-gray-500 mb-1">
+                <ClockIcon className="inline w-4 h-4 mr-1 mb-[2px] text-black" />{moment(knowledge.created_at).format("YYYY-MM-DD HH:MM:SS")}
+              </p>
+            </div>
           </div>
         ))}
       </div>

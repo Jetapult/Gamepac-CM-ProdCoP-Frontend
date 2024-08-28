@@ -70,8 +70,9 @@ const InputFieldChat = ({
               <span className="text-sm">History</span>
             </button>
             <button
-              className="border border-[#ccc] px-3 py-[2px] rounded-full hover:bg-[#e6e6e6] leading-[26px] flex items-center"
+              className={`border border-[#ccc] px-3 py-[2px] rounded-full hover:bg-[#e6e6e6] leading-[26px] flex items-center ${generatingLoader ? 'bg-[#e6e6e6] opacity-25': ''}`}
               onClick={() => createNewChat()}
+              disabled={generatingLoader}
             >
               <img src={plusIcon} className="mr-1" alt="new chat" />
               <span className="text-sm">New Chat</span>
