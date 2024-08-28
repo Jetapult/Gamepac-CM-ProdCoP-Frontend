@@ -56,12 +56,17 @@ const RagChat = () => {
   const [selectedPdf, setSelectedPdf] = useState(null);
   const [selectedKnowledgebase, setSelectedKnowledgebase] = useState([]);
   const [selectedPage, setSelectedPage] = useState(null);
+  const [isFirstChat, setIsFirstChat] = useState(false);
   const wrapperRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   const createNewChat = async () => {
     try {
-      if (conversations.some((x) => x.message_count === 0)) {
+      if (
+        conversations.some(
+          (x) => x.message_count === 0 && x.title === "New Chat"
+        )
+      ) {
         return;
       }
       const response = await createConversation(`New Chat`);
@@ -82,15 +87,17 @@ const RagChat = () => {
         conversation_id: conversationId || selectedConversation.id,
         selectedKnowledgebase: selectedKnowledgebase.id
       };
-      if(selectedKnowledgebase.length){
+      if (selectedKnowledgebase.length) {
         const knowledgebase_ids = [];
         const knowledgebase_source = [];
-        selectedKnowledgebase.forEach(knowledgebase => {
+        selectedKnowledgebase.forEach((knowledgebase) => {
           knowledgebase_ids.push(knowledgebase.id);
-          knowledgebase_source.push(`/tmp/${knowledgebase?.file_url?.split('/')?.pop()}`)
-        })
-        requestbody.knowledgebase_ids = knowledgebase_ids
-        requestbody.source = knowledgebase_source
+          knowledgebase_source.push(
+            `/tmp/${knowledgebase?.file_url?.split("/")?.pop()}`
+          );
+        });
+        requestbody.knowledgebase_ids = knowledgebase_ids;
+        requestbody.source = knowledgebase_source;
       }
       if (messageObj.files.length) {
         requestbody.files = messageObj.attachments;
@@ -184,6 +191,7 @@ const RagChat = () => {
     try {
       setGeneratingLoader(true);
       if (selectedConversation?.id) {
+        setIsFirstChat(false);
         onMessageSend(messageObj, selectedConversation.id);
         if (selectedConversation?.message_count === 0) {
           updateConversation(
@@ -196,7 +204,8 @@ const RagChat = () => {
           messageObj.message.slice(0, 150)
         );
         if (conversationResponse.data.data) {
-          setConversations(conversationResponse.data.data);
+          setIsFirstChat(true);
+          setConversations([conversationResponse.data.data]);
           setSelectedConversation(conversationResponse.data.data);
           onMessageSend(messageObj, conversationResponse.data.data.id);
         }
@@ -267,10 +276,8 @@ const RagChat = () => {
   ]);
 
   useEffect(() => {
-    if (selectedConversation?.id && selectedConversation?.message_count > 0) {
+    if (selectedConversation?.id && !isFirstChat) {
       fetchMessages();
-    } else {
-      setMessages([]);
     }
   }, [selectedConversation?.id]);
 
@@ -300,13 +307,23 @@ const RagChat = () => {
               /> */}
           </div>
           <div className="relative w-[40%]">
-            {selectedPdf && <PdfViewer selectedPdf={selectedPdf} selectedPage={selectedPage} setSelectedPdf={setSelectedPdf} />}
+            {selectedPdf && (
+              <PdfViewer
+                selectedPdf={selectedPdf}
+                selectedPage={selectedPage}
+                setSelectedPdf={setSelectedPdf}
+              />
+            )}
           </div>
           <div className="relative w-[40%] px-6 border-l border-l-[#e6e6e6]">
             <div className="flex flex-col-reverse h-[calc(100vh-60px)] overflow-auto no-scrollbar pb-[124px] outline-none">
               {generatingLoader && <GeneratingLoader />}
               {messages.map((message, index) => (
-                <Message key={index} message={message} setSelectedPage={setSelectedPage} />
+                <Message
+                  key={index}
+                  message={message}
+                  setSelectedPage={setSelectedPage}
+                />
               ))}
             </div>
             <div ref={messagesEndRef} />
