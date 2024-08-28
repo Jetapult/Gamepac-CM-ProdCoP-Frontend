@@ -66,9 +66,9 @@ const Message = ({ message, setSelectedPage }) => {
           className={`inline content mt-2 whitespace-pre-wrap `}
           dangerouslySetInnerHTML={{ __html: cleanMessage(message.message) }}
         />
-        <div className="flex flex-wrap relative my-2">
-          {message.type === "ai" &&
-            message.sources.map((source, i) => (
+        {message.type === "ai" && (
+          <div className="flex flex-wrap relative my-2">
+            {message.sources.map((source, i) => (
               <React.Fragment key={i}>
                 <p
                   className={`mr-3 mb-1 px-1 rounded border-2 border-[#ff1053] cursor-pointer ${
@@ -80,30 +80,34 @@ const Message = ({ message, setSelectedPage }) => {
                   onMouseEnter={() => setShowPdfName(source?.filename)}
                   onMouseLeave={() => setShowPdfName("")}
                 >
-                  <BookOpenIcon className="inline w-4 h-4 mr-2" />
-                  [ {source?.page?.map((page_num, index) => (
+                  <BookOpenIcon className="inline w-4 h-4 mr-2" />[{" "}
+                  {source?.page?.map((page_num, index) => (
                     <React.Fragment key={index}>
-                      {page_num > 0 && <span
-                        className="hover:text-blue-500 cursor-pointer underline text-sm"
-                        onClick={() =>
-                          setSelectedPage({
-                            page_number: page_num,
-                            file_name: source.filename,
-                          })
-                        }
-                      >
-                        {page_num}
-                        {source?.page.length !== index + 1 ? ", " : ""}
-                      </span>}
+                      {page_num > 0 && (
+                        <span
+                          className="hover:text-[#092139] cursor-pointer underline text-sm"
+                          onClick={() =>
+                            setSelectedPage({
+                              page_number: page_num,
+                              file_name: source.filename,
+                            })
+                          }
+                        >
+                          {page_num}
+                          {source?.page.length !== index + 1 ? ", " : ""}
+                        </span>
+                      )}
                     </React.Fragment>
-                  ))} ]
+                  ))}{" "}
+                  ]
                 </p>
                 {showPdfName === source?.filename && (
                   <Popover name={source?.filename?.split("/")?.pop()} />
                 )}
               </React.Fragment>
             ))}
-        </div>
+          </div>
+        )}
       </div>
       {selectedImage && (
         <ImagePopup
