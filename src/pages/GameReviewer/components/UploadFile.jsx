@@ -44,9 +44,21 @@ const UploadFile = ({
       });
       setKnowledgebase((prev) => [...response.data.knowledgebase, ...prev]);
       setShowUploadProgressPopup(false);
+      if(response.data.data.skipped_files.length){
+        setToastMessage({
+          show: true,
+          message: "This file has already been uploaded. Please choose a different file.",
+          type: "error",
+        });
+      }
       if(response.data.knowledgebase.length){
         setSelectedPdf(response.data.knowledgebase[0]);
         setSelectedKnowledgebase((prev) => [...prev, response.data.knowledgebase[0]]);
+        setToastMessage({
+          show: true,
+          message: "Successfully uploaded!!",
+          type: "success",
+        });
       }
     } catch (error) {
       console.log(error);

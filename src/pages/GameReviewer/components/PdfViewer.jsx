@@ -1,10 +1,16 @@
-import { useState, useRef, useEffect } from "react";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MagnifyingGlassIcon,
+  XCircleIcon,
+} from "@heroicons/react/24/outline";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import { useSelector } from "react-redux";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
   const knowledgebases = useSelector(
@@ -16,9 +22,34 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
   const [isLoadingNewPdf, setIsLoadingNewPdf] = useState(false);
   const containerRef = useRef(null);
   const url = selectedPdf.file_url;
+  const [searchText, setSearchText] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const wrapperRef = useRef(null);
+  useOutsideAlerter(wrapperRef);
+  function useOutsideAlerter(ref) {
+    useEffect(() => {
+      function handleClickOutside(event) {
+        if (ref.current && !ref.current.contains(event.target)) {
+          setShowSearch(false);
+        }
+      }
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [ref]);
+  }
+
+  const resetSearch = () => {
+    setSearchText("");
+    setSearchResults([]);
+  }
+
   function onDocumentLoadSuccess(numPages, isLoadingNewPdf, selectedPage) {
     setNumPages(numPages.numPages);
-    if(isLoadingNewPdf && selectedPage){
+    if (isLoadingNewPdf && selectedPage) {
       setTimeout(() => {
         setIsLoadingNewPdf(false);
         scrollToPage(selectedPage.page_number, numPages.numPages);
@@ -30,7 +61,7 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
     if (containerRef.current && numPages && numPages > 0) {
       const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
       const scrollableHeight = scrollHeight - clientHeight;
-      
+
       if (scrollableHeight > 0) {
         const scrollPercentage = scrollTop / scrollableHeight;
         const page = Math.floor(scrollPercentage * numPages) + 1;
@@ -42,8 +73,13 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
   };
 
   const scrollToPage = (pageNum, totalPages) => {
-    if (containerRef.current && pageNum >= 1 && pageNum <= (totalPages || numPages)) {
-      const pageHeight = containerRef.current.scrollHeight / (totalPages || numPages);
+    if (
+      containerRef.current &&
+      pageNum >= 1 &&
+      pageNum <= (totalPages || numPages)
+    ) {
+      const pageHeight =
+        containerRef.current.scrollHeight / (totalPages || numPages);
       containerRef.current.scrollTo(0, (pageNum - 1) * pageHeight);
       setPageNumber(pageNum);
     }
@@ -90,6 +126,56 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
     }
   }, [selectedPage]);
 
+  const handleSearch = async () => {
+    if (!searchText) return;
+    setIsSearchActive(true);
+    const pdf = await pdfjs.getDocument(url).promise;
+    let results = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const text = textContent.items.map((item) => item.str).join(" ");
+      const escapedSearchText = searchText.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&"
+      );
+      const regex = new RegExp(escapedSearchText, "gi");
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        results.push({ pageNumber: i, index: match.index });
+      }
+    }
+    setSearchResults(results);
+    setCurrentSearchIndex(results.length > 0 ? 0 : -1);
+    if (results.length > 0) {
+      scrollToPage(results[0].pageNumber);
+    }
+  };
+
+  const navigateSearch = (direction) => {
+    if (searchResults.length === 0) return;
+    let newIndex = currentSearchIndex + direction;
+    if (newIndex < 0) newIndex = searchResults.length - 1;
+    if (newIndex >= searchResults.length) newIndex = 0;
+    setCurrentSearchIndex(newIndex);
+    scrollToPage(searchResults[newIndex].pageNumber);
+  };
+
+  const highlightPattern = (text, pattern) => {
+    if (!pattern) return text;
+    const escapedSearchText = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escapedSearchText, "gi");
+    return text.replace(regex, (match) => `<mark>${match}</mark>`);
+  };
+
+  const textRenderer = useCallback(
+    (textItem) =>
+      isSearchActive
+        ? highlightPattern(textItem.str, searchText, textItem.pageNumber)
+        : textItem.str,
+    [searchText, isSearchActive]
+  );
+
   return (
     <div className="pdf-viewer">
       <div
@@ -102,17 +188,64 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
           backgroundColor: "#f0f0f0",
         }}
       >
-        <select
-          value={scale}
-          onChange={handleScaleChange}
-          className="rounded py-1 outline-none px-1"
-        >
-          {scaleOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          <select
+            value={scale}
+            onChange={handleScaleChange}
+            className="rounded py-1 outline-none px-1"
+          >
+            {scaleOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <div
+            className={`search-container flex items-center justify-between rounded px-2 py-[2px] mr-2 mx-2 border border-[#ccc] bg-white`}
+          >
+            <input
+              type="text"
+              value={searchText}
+              onChange={(e) => {
+                setSearchText(e.target.value);
+                setIsSearchActive(false);
+              }}
+              placeholder="Search PDF"
+              className={`outline-none  ${searchResults.length ? "w-[48%]" : "w-full"}`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  handleSearch();
+                }
+              }}
+            />
+            {searchResults.length ? <span className="cursor-pointer text-gray-500" onClick={resetSearch}>
+              <XCircleIcon className="w-4 h-4" />
+            </span> : <></>}
+            <button
+              onClick={handleSearch}
+              className="text-gray-500 rounded pl-2 hover:text-black"
+            >
+              <MagnifyingGlassIcon className="inline w-5 h-5" />
+            </button>
+            {searchResults.length > 0 && (
+              <>
+                <span className="pr-3 pl-3 pt-1">
+                  {currentSearchIndex + 1} of {searchResults.length}
+                </span>
+                <button
+                  onClick={() => navigateSearch(-1)}
+                  className="rounded px-1 py-1 hover:bg-gray-200"
+                >
+                  <ChevronLeftIcon className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => navigateSearch(1)}
+                  className=" rounded px-1 py-1 hover:bg-gray-200"
+                >
+                  <ChevronRightIcon className="w-5 h-5" />
+                </button>
+              </>
+            )}
+          </div>
         <span className="bg-white rounded px-2 py-1">
           {pageNumber} <span className="text-gray-500">/ {numPages}</span>
         </span>
@@ -127,7 +260,12 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
           justifyContent: "flex-start",
         }}
       >
-        <Document file={url} onLoadSuccess={(e) => onDocumentLoadSuccess(e, isLoadingNewPdf, selectedPage)}>
+        <Document
+          file={url}
+          onLoadSuccess={(e) =>
+            onDocumentLoadSuccess(e, isLoadingNewPdf, selectedPage)
+          }
+        >
           {Array.from(new Array(numPages), (el, index) => (
             <Page
               key={`page_${index + 1}`}
@@ -136,6 +274,7 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
               width={
                 scale === "auto" ? containerRef.current?.clientWidth : undefined
               }
+              customTextRenderer={textRenderer}
             />
           ))}
         </Document>
