@@ -109,7 +109,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
     const elementIndex = elements[0].index;
     const label = pieChartData.labels[elementIndex];
     navigate(
-      `/organic-ua/smart-feedback/${studio_slug}?tags=${label}&gameId=${selectedGame.id}&gameType=${selectedGame.platform}`
+      `/organic-ua/smart-feedback${studio_slug ? `/${studio_slug}` : ""}?tags=${label}&gameId=${selectedGame.id}&gameType=${selectedGame.platform}`
     );
   };
 
@@ -493,7 +493,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
                       className="flex border-b border-b-[#f2f2f2]"
                       onClick={() =>
                         navigate(
-                          `/organic-ua/smart-feedback/${studio_slug}?tags=${tag.tag}&gameId=${selectedGame.id}&gameType=${selectedGame.platform}`
+                          `/organic-ua/smart-feedback${studio_slug ? `/${studio_slug}` : ""}?tags=${tag.tag}&gameId=${selectedGame.id}&gameType=${selectedGame.platform}`
                         )
                       }
                     >

@@ -286,7 +286,7 @@ const RagChat = () => {
       <div className="bg-white h-[calc(100vh-60px)]">
         <div className="flex">
           <div className="relative pt-4 px-4 w-[20%] bg-[#f6f6f7]">
-            <h1 className="text-2xl font-bold">AI Chat</h1>
+            <h1 className="text-2xl font-bold">QueryPac</h1>
             <KnowledgeBase
               messageObj={messageObj}
               setMessageObj={setMessageObj}

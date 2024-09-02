@@ -51,7 +51,7 @@ const AIToolsLanding = () => {
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm relative"  onClick={() => navigate("/ai-chat")}>
               <div className="space-y-2">
-                <h3 className="text-xl font-bold">AI Chat</h3>
+                <h3 className="text-xl font-bold">Querypac</h3>
                 <p className="text-gray-500">
                   AI-Powered Chat.
                 </p>

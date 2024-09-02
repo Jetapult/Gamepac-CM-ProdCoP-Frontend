@@ -12,14 +12,7 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
   const studios = useSelector((state) => state.admin.studios);
   const [weeklyReport, setWeeklyReport] = useState([]);
   const [selectedGame, setSelectedGame] = useState({});
-  const [selectedDate, setSelectedDate] = useState({
-    label: `${moment(new Date("2024-05-25")).format("Do MMM YYYY")} - ${moment(
-      new Date("2024-05-25").setDate(new Date("2024-05-25").getDate() + 7)
-    ).format("Do MMM YYYY")}`,
-    value: {
-      start_date: moment(new Date("2024-05-25")).format("YYYY-MM-DD")
-    },
-  });
+  const [selectedDate, setSelectedDate] = useState({});
   const [selectedTab, setSelectedTab] = useState("android");
 
   const getSundays = (startDate, endDate) => {
@@ -27,21 +20,23 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
     const end = new Date(endDate);
     let current = start;
     const sundays = [];
-  
+
     while (current <= end) {
       const nextSunday = new Date(current);
       nextSunday.setDate(current.getDate() + 7);
       if (nextSunday <= end) {
         sundays.push({
-          label: `${moment(current).format("Do MMM YYYY")} - ${moment(nextSunday).format("Do MMM YYYY")}`,
+          label: `${moment(current).format("Do MMM YYYY")} - ${moment(
+            nextSunday
+          ).format("Do MMM YYYY")}`,
           value: {
-            start_date: moment(current).format("YYYY-MM-DD")
+            start_date: moment(current).format("YYYY-MM-DD"),
           },
         });
       }
       current = nextSunday;
     }
-    return sundays;
+    return sundays?.reverse();
   };
 
   const sundays = getSundays(
@@ -50,67 +45,54 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
   );
 
   const addStylesToContent = (content) => {
-    return (
-      content
+    return content
       .replace(
         /<b>Sentiment Analysis<\/b>/g,
         '<h1 class="report-heading sentiment-analysis">Sentiment Analysis</h1>'
-    )
-    .replace(
+      )
+      .replace(
         /<b>Trends & Insights<\/b>/g,
         '<h1 class="report-heading trends-insights">Trends & Insights</h1>'
-    )
-    .replace(
+      )
+      .replace(
         /<b>Actionable Recommendations<\/b>/g,
         '<h1 class="report-heading actionable-recommendations">Actionable Recommendations</h1>'
-    )
-    .replace(
+      )
+      .replace(
         /<h1 class="report-heading actionable-recommendations">Actionable Recommendations<\/h1>([\s\S]*?)$/g,
         (match, p1) => {
-            return match.replace(/(\d+\. [^\.]+\.)/g, "<li>$1</li>");
+          return match.replace(/(\d+\. [^\.]+\.)/g, "<li>$1</li>");
         }
-    )
-    .replace(
-        /- Positive: \d+(\.\d+)?%/g,
-        '<p class="padding-left-20">$&</p>'
-    )
-    .replace(
-        /- Neutral: \d+(\.\d+)?%/g,
-        '<p class="padding-left-20">$&</p>'
-    )
-    .replace(
-        /- Negative: \d+(\.\d+)?%/g,
-        '<p class="padding-left-20">$&</p>'
-    )
-    .replace(/- Appreciation: \d+%/g, '<p class="padding-left-20">$&</p>')
-    .replace(/- Ads Concern: \d+%/g, '<p class="padding-left-20">$&</p>')
-    .replace(/- Concern: \d+%/g, '<p class="padding-left-20">$&</p>')
-    .replace(/- Need more info: \d+%/g, '<p class="padding-left-20">$&</p>')
-    .replace(
-        /- Progress saving: \d+%/g,
-        '<p class="padding-left-20">$&</p>'
-    )
-    .replace(/- Bug: \d+%/g, '<p class="padding-left-20">$&</p>')
-    .replace(/- IAP Concern: \d+%/g, '<p class="padding-left-20">$&</p>')
-    .replace(
+      )
+      .replace(/- Positive: \d+(\.\d+)?%/g, '<p class="padding-left-20">$&</p>')
+      .replace(/- Neutral: \d+(\.\d+)?%/g, '<p class="padding-left-20">$&</p>')
+      .replace(/- Negative: \d+(\.\d+)?%/g, '<p class="padding-left-20">$&</p>')
+      .replace(/- Appreciation: \d+%/g, '<p class="padding-left-20">$&</p>')
+      .replace(/- Ads Concern: \d+%/g, '<p class="padding-left-20">$&</p>')
+      .replace(/- Concern: \d+%/g, '<p class="padding-left-20">$&</p>')
+      .replace(/- Need more info: \d+%/g, '<p class="padding-left-20">$&</p>')
+      .replace(/- Progress saving: \d+%/g, '<p class="padding-left-20">$&</p>')
+      .replace(/- Bug: \d+%/g, '<p class="padding-left-20">$&</p>')
+      .replace(/- IAP Concern: \d+%/g, '<p class="padding-left-20">$&</p>')
+      .replace(
         /- Crashes\/ANR: \d+(\.\d+)?%/g,
         '<p class="padding-left-20">$&</p>'
-    )
-    .replace(
+      )
+      .replace(
         /- Lag\/Freeze: \d+(\.\d+)?%/g,
         '<p class="padding-left-20">$&</p>'
-    )
-    .replace(/(\d+\.\sApp Version - [^:]+: [^\.]+\.)/g, "<li>$1</li>")
-    .replace(
+      )
+      .replace(/(\d+\.\sApp Version - [^:]+: [^\.]+\.)/g, "<li>$1</li>")
+      .replace(
         /<b>Negative Feedback<\/b>/g,
         '<h1 class="report-heading negative-feedback">Negative Feedback</h1>'
-    ))
+      );
   };
 
   const getWeeklyInsightReport = async () => {
     try {
       const paramData = {
-        ...selectedDate.value
+        ...selectedDate.value,
       };
       const weeklyReportResponse = await api.get(
         `v1/organic-ua/weekly-reports/${selectedGame.id}/${
@@ -135,6 +117,12 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
       setSelectedGame(games[0]);
     }
   }, [games.length]);
+
+  useEffect(() => {
+    if (sundays.length) {
+      setSelectedDate(sundays[0]);
+    }
+  }, [sundays.length]);
   return (
     <div className="shadow-md bg-white w-full h-full p-4">
       <h1 className="text-2xl">Weekly Review Analysis Report</h1>
@@ -225,7 +213,7 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
         <div
           className="report-content"
           dangerouslySetInnerHTML={{
-            __html: weeklyReport?.formattedresponse.replaceAll('\n', '<br/>'),
+            __html: weeklyReport?.formattedresponse.replaceAll("\n", "<br/>"),
           }}
         ></div>
       ) : (

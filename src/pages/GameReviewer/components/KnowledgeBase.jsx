@@ -12,7 +12,9 @@ import UploadFile from "./UploadFile";
 import { useDispatch } from "react-redux";
 import { addKnowledgebase } from "../../../store/reducer/knowledgebaseSlice";
 import moment from "moment";
-import { ClockIcon } from "@heroicons/react/24/outline";
+import { ClockIcon, TrashIcon } from "@heroicons/react/24/outline";
+import SearchKnowledgebase from "./SearchKnowledgebase";
+import ConfirmationPopup from "../../../components/ConfirmationPopup";
 
 const KnowledgeBase = ({
   messageObj,
@@ -28,7 +30,53 @@ const KnowledgeBase = ({
   const [selectedKnowledgebaseCategories, setSelectedKnowledgebaseCategories] =
     useState({});
   const [knowledgebase, setKnowledgebase] = useState([]);
+  const [deleteDocument, setDeleteDocument] = useState({});
+  const [showDeleteConfirmationPopup, setShowDeleteConfirmationPopup] =
+    useState(false);
   const dispatch = useDispatch();
+
+  const deleteDoc = async () => {
+    try {
+      const deletedocResponse = await api.delete(
+        `v1/chat/knowledgebase/${selectedKnowledgebaseCategories.id}/${
+          deleteDocument.id
+        }?source=${`/tmp/${deleteDocument?.file_url?.split("/")?.pop()}`}`
+      );
+      setShowDeleteConfirmationPopup(false);
+      setToastMessage({
+        show: true,
+        message: "Successfuly deleted",
+        type: "success",
+      });
+      const deleteFileFromKnowledgeBase = knowledgebase.filter(x => {
+        if(x.id === deleteDocument.id){
+          return x.id !== deleteDocument.id
+        }
+        return knowledgebase
+      })
+      setKnowledgebase(deleteFileFromKnowledgeBase);
+      if(deleteDocument.id === selectedPdf.id && deleteFileFromKnowledgeBase.length){
+        setSelectedPdf(deleteFileFromKnowledgeBase[0]);
+        setSelectedKnowledgebase(prev => prev.filter(x => x.id !== deleteDocument.id));
+      }
+      setDeleteDocument({});
+    } catch (error) {
+      console.log(error);
+      setToastMessage({
+        show: true,
+        message:
+          error?.response?.data?.message ||
+          "Something went wrong! Please try again later",
+        type: "error",
+      });
+    }
+  };
+
+  const onhandleDelete = (e, document) => {
+    e.stopPropagation();
+    setDeleteDocument(document);
+    setShowDeleteConfirmationPopup(!showDeleteConfirmationPopup);
+  };
   const fetchKnowledgebaseCategories = async () => {
     try {
       const response = await api.get(`/v1/chat/knowledgebase-categories`);
@@ -66,6 +114,7 @@ const KnowledgeBase = ({
         setSelectedKnowledgebase={setSelectedKnowledgebase}
         setToastMessage={setToastMessage}
       />
+      {/* <SearchKnowledgebase /> */}
       {/* {knowledgebaseCategories.length ? (
         <Menu as="div" className="relative mb-2">
           <div>
@@ -176,15 +225,34 @@ const KnowledgeBase = ({
                 (item) => item.id === knowledge.id
               )}
             />{" "}
-            <div className="w-[88%]">
+            <div className="w-[88%] group">
               <p className="truncate">{knowledge.title}</p>
-              <p className="text-[14px] flex items-center text-gray-500 mb-1">
-                <ClockIcon className="inline w-4 h-4 mr-1 mb-[2px] text-black" />{moment(knowledge.created_at).format("YYYY-MM-DD HH:MM:SS")}
+              <p className="text-[14px] flex items-center justify-between text-gray-500 mb-1">
+                <span>
+                  <ClockIcon className="inline w-4 h-4 mr-1 mb-[3px] text-black" />
+                  {moment(knowledge.created_at).format("YYYY-MM-DD HH:MM:SS")}
+                </span>
+                <span
+                  className="hidden group-hover:block"
+                  onClick={(event) => onhandleDelete(event, knowledge)}
+                >
+                  <TrashIcon className="w-4 h-4 text-black" />
+                </span>
               </p>
             </div>
           </div>
         ))}
       </div>
+      {showDeleteConfirmationPopup && (
+        <ConfirmationPopup
+          heading={`Delete document? \n ${deleteDocument?.title}`}
+          subHeading={"This document will be deleted forever."}
+          onCancel={() =>
+            setShowDeleteConfirmationPopup(!showDeleteConfirmationPopup)
+          }
+          onConfirm={deleteDoc}
+        />
+      )}
     </div>
   );
 };
