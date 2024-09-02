@@ -292,7 +292,7 @@ const SmartFeedback = ({
   useEffect(() => {
     if (games.length) {
       if (gameIdparam && gameTypeparam) {
-        const game = games.filter((x) => x.id === parseInt(gameIdparam))[0];
+        const game = games.find((x) => parseInt(x.id) === parseInt(gameIdparam));
         if (game) {
           setSelectedGame({ ...game, platform: gameTypeparam });
         }
