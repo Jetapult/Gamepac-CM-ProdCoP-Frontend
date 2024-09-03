@@ -25,6 +25,8 @@ const KnowledgeBase = ({
   setSelectedKnowledgebase,
   selectedKnowledgebase,
   setToastMessage,
+  showPdf,
+  setShowPdf,
 }) => {
   const [knowledgebaseCategories, setKnowledgebaseCategories] = useState([]);
   const [selectedKnowledgebaseCategories, setSelectedKnowledgebaseCategories] =
@@ -48,16 +50,21 @@ const KnowledgeBase = ({
         message: "Successfuly deleted",
         type: "success",
       });
-      const deleteFileFromKnowledgeBase = knowledgebase.filter(x => {
-        if(x.id === deleteDocument.id){
-          return x.id !== deleteDocument.id
+      const deleteFileFromKnowledgeBase = knowledgebase.filter((x) => {
+        if (x.id === deleteDocument.id) {
+          return x.id !== deleteDocument.id;
         }
-        return knowledgebase
-      })
+        return knowledgebase;
+      });
       setKnowledgebase(deleteFileFromKnowledgeBase);
-      if(deleteDocument.id === selectedPdf.id && deleteFileFromKnowledgeBase.length){
+      if (
+        deleteDocument.id === selectedPdf.id &&
+        deleteFileFromKnowledgeBase.length
+      ) {
         setSelectedPdf(deleteFileFromKnowledgeBase[0]);
-        setSelectedKnowledgebase(prev => prev.filter(x => x.id !== deleteDocument.id));
+        setSelectedKnowledgebase((prev) =>
+          prev.filter((x) => x.id !== deleteDocument.id)
+        );
       }
       setDeleteDocument({});
     } catch (error) {
@@ -113,6 +120,8 @@ const KnowledgeBase = ({
         setSelectedPdf={setSelectedPdf}
         setSelectedKnowledgebase={setSelectedKnowledgebase}
         setToastMessage={setToastMessage}
+        showPdf={showPdf}
+        setShowPdf={setShowPdf}
       />
       {/* <SearchKnowledgebase /> */}
       {/* {knowledgebaseCategories.length ? (
@@ -181,68 +190,76 @@ const KnowledgeBase = ({
       ) : (
         <></>
       )} */}
-      {knowledgebase.length ? (
+      {showPdf ? (
         <>
-          <p className="text-sm font-bold text-gray-700 my-3">
-            Knowledge Bases
-          </p>
+          {knowledgebase.length ? (
+            <>
+              <p className="text-sm font-bold text-gray-700 my-3">
+                Knowledge Bases
+              </p>
+            </>
+          ) : (
+            <></>
+          )}
+          <div className="flex flex-col overflow-auto h-[calc(100vh-265px)]">
+            {knowledgebase.map((knowledge) => (
+              <div
+                key={knowledge.id}
+                className={`flex items-start runded mb-2 p-2 rounded-lg hover:bg-white cursor-pointer ${
+                  selectedPdf?.id === knowledge.id ? "bg-white" : ""
+                }`}
+                onClick={() => setSelectedPdf(knowledge)}
+              >
+                <input
+                  id="default-checkbox"
+                  type="checkbox"
+                  value={2}
+                  name="name"
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded mr-3 pt-2 mt-[4px]"
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    setSelectedKnowledgebase((prev) => {
+                      const isAlreadySelected = prev.some(
+                        (item) => item.id === knowledge.id
+                      );
+                      if (isAlreadySelected) {
+                        return prev.filter((item) => item.id !== knowledge.id);
+                      } else {
+                        return [...prev, knowledge];
+                      }
+                    });
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  checked={selectedKnowledgebase?.some(
+                    (item) => item.id === knowledge.id
+                  )}
+                />{" "}
+                <div className="w-[88%] group">
+                  <p className="truncate">{knowledge.title}</p>
+                  <p className="text-[14px] flex items-center justify-between text-gray-500 mb-1">
+                    <span>
+                      <ClockIcon className="inline w-4 h-4 mr-1 mb-[3px] text-black" />
+                      {moment(knowledge.created_at).format(
+                        "YYYY-MM-DD HH:MM:SS"
+                      )}
+                    </span>
+                    <span
+                      className="hidden group-hover:block"
+                      onClick={(event) => onhandleDelete(event, knowledge)}
+                    >
+                      <TrashIcon className="w-4 h-4 text-black" />
+                    </span>
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         </>
       ) : (
         <></>
       )}
-      <div className="flex flex-col overflow-auto h-[calc(100vh-265px)]">
-        {knowledgebase.map((knowledge) => (
-          <div
-            key={knowledge.id}
-            className={`flex items-start runded mb-2 p-2 rounded-lg hover:bg-white cursor-pointer ${
-              selectedPdf?.id === knowledge.id ? "bg-white" : ""
-            }`}
-            onClick={() => setSelectedPdf(knowledge)}
-          >
-            <input
-              id="default-checkbox"
-              type="checkbox"
-              value={2}
-              name="name"
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded mr-3 pt-2 mt-[4px]"
-              onChange={(e) => {
-                e.stopPropagation();
-                setSelectedKnowledgebase((prev) => {
-                  const isAlreadySelected = prev.some(
-                    (item) => item.id === knowledge.id
-                  );
-                  if (isAlreadySelected) {
-                    return prev.filter((item) => item.id !== knowledge.id);
-                  } else {
-                    return [...prev, knowledge];
-                  }
-                });
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-              checked={selectedKnowledgebase?.some(
-                (item) => item.id === knowledge.id
-              )}
-            />{" "}
-            <div className="w-[88%] group">
-              <p className="truncate">{knowledge.title}</p>
-              <p className="text-[14px] flex items-center justify-between text-gray-500 mb-1">
-                <span>
-                  <ClockIcon className="inline w-4 h-4 mr-1 mb-[3px] text-black" />
-                  {moment(knowledge.created_at).format("YYYY-MM-DD HH:MM:SS")}
-                </span>
-                <span
-                  className="hidden group-hover:block"
-                  onClick={(event) => onhandleDelete(event, knowledge)}
-                >
-                  <TrashIcon className="w-4 h-4 text-black" />
-                </span>
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
       {showDeleteConfirmationPopup && (
         <ConfirmationPopup
           heading={`Delete document? \n ${deleteDocument?.title}`}

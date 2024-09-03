@@ -8,6 +8,7 @@ import Conversations from "./components/Conversations";
 import InputFieldChat from "./components/InputFieldChat";
 import KnowledgeBase from "./components/KnowledgeBase";
 import PdfViewer from "./components/PdfViewer";
+import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon } from "@heroicons/react/20/solid";
 
 export const isPDF = (url) => {
   return url.toLowerCase().endsWith(".pdf");
@@ -57,6 +58,7 @@ const RagChat = () => {
   const [selectedKnowledgebase, setSelectedKnowledgebase] = useState([]);
   const [selectedPage, setSelectedPage] = useState(null);
   const [isFirstChat, setIsFirstChat] = useState(false);
+  const [showPdf, setShowPdf] = useState(true);
   const wrapperRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -85,7 +87,7 @@ const RagChat = () => {
       const requestbody = {
         message: messageObj.message,
         conversation_id: conversationId || selectedConversation.id,
-        selectedKnowledgebase: selectedKnowledgebase.id
+        selectedKnowledgebase: selectedKnowledgebase.id,
       };
       if (selectedKnowledgebase.length) {
         const knowledgebase_ids = [];
@@ -285,8 +287,23 @@ const RagChat = () => {
     <div className="mx-auto">
       <div className="bg-white h-[calc(100vh-60px)]">
         <div className="flex">
-          <div className="relative pt-4 px-4 w-[20%] bg-[#f6f6f7]">
-            <h1 className="text-2xl font-bold">QueryPac</h1>
+          <div className={`relative pt-3 bg-[#f6f6f7] ${showPdf ? "px-4 w-[20%]" : "px-2 w-[3%]"}`}>
+            <div className={`flex items-center ${showPdf ? "justify-between" : "justify-center"}`}>
+              {showPdf && <h1 className="text-2xl font-bold">QueryPac</h1>}
+              <span
+                className={`cursor-pointer z-10 ${
+                  showPdf ? "" : ""
+                }`}
+                onClick={() => setShowPdf(!showPdf)}
+              >
+                {showPdf ? (
+                  <ChevronDoubleLeftIcon className="w-6 h-6" />
+                ) : (
+                  <ChevronDoubleRightIcon className="w-6 h-6" />
+                )}
+              </span>
+            </div>
+
             <KnowledgeBase
               messageObj={messageObj}
               setMessageObj={setMessageObj}
@@ -296,6 +313,8 @@ const RagChat = () => {
               setSelectedKnowledgebase={setSelectedKnowledgebase}
               selectedKnowledgebase={selectedKnowledgebase}
               setToastMessage={setToastMessage}
+              showPdf={showPdf}
+              setShowPdf={setShowPdf}
             />
             {/* <Conversations
                 conversations={conversations}
@@ -306,7 +325,7 @@ const RagChat = () => {
                 deleteConversation={deleteConversation}
               /> */}
           </div>
-          <div className="relative w-[40%]">
+          <div className={`relative ${showPdf ? "w-[40%]" : "w-[57%]"}`}>
             {selectedPdf && (
               <PdfViewer
                 selectedPdf={selectedPdf}

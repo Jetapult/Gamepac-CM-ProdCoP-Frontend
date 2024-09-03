@@ -148,7 +148,8 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
     setSearchResults(results);
     setCurrentSearchIndex(results.length > 0 ? 0 : -1);
     if (results.length > 0) {
-      scrollToPage(results[0].pageNumber);
+      scrollToPage(pageNumber);
+      setCurrentSearchIndex(pageNumber);
     }
   };
 
@@ -188,64 +189,71 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
           backgroundColor: "#f0f0f0",
         }}
       >
-          <select
-            value={scale}
-            onChange={handleScaleChange}
-            className="rounded py-1 outline-none px-1"
-          >
-            {scaleOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <div
-            className={`search-container flex items-center justify-between rounded px-2 py-[2px] mr-2 mx-2 border border-[#ccc] bg-white`}
-          >
-            <input
-              type="text"
-              value={searchText}
-              onChange={(e) => {
-                setSearchText(e.target.value);
-                setIsSearchActive(false);
-              }}
-              placeholder="Search PDF"
-              className={`outline-none  ${searchResults.length ? "w-[48%]" : "w-full"}`}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  handleSearch();
-                }
-              }}
-            />
-            {searchResults.length ? <span className="cursor-pointer text-gray-500" onClick={resetSearch}>
-              <XCircleIcon className="w-4 h-4" />
-            </span> : <></>}
-            <button
-              onClick={handleSearch}
-              className="text-gray-500 rounded pl-2 hover:text-black"
+        <select
+          value={scale}
+          onChange={handleScaleChange}
+          className="rounded py-1 outline-none px-1"
+        >
+          {scaleOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <div
+          className={`search-container flex items-center justify-between rounded px-2 py-[2px] mr-2 mx-2 border border-[#ccc] bg-white`}
+        >
+          <input
+            type="text"
+            value={searchText}
+            onChange={(e) => {
+              setSearchText(e.target.value);
+              setIsSearchActive(false);
+            }}
+            placeholder="Search PDF"
+            className={`outline-none w-auto`}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                handleSearch();
+              }
+            }}
+          />
+          {searchResults.length ? (
+            <span
+              className="cursor-pointer text-gray-500"
+              onClick={resetSearch}
             >
-              <MagnifyingGlassIcon className="inline w-5 h-5" />
-            </button>
-            {searchResults.length > 0 && (
-              <>
-                <span className="pr-3 pl-3 pt-1">
-                  {currentSearchIndex + 1} of {searchResults.length}
-                </span>
-                <button
-                  onClick={() => navigateSearch(-1)}
-                  className="rounded px-1 py-1 hover:bg-gray-200"
-                >
-                  <ChevronLeftIcon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => navigateSearch(1)}
-                  className=" rounded px-1 py-1 hover:bg-gray-200"
-                >
-                  <ChevronRightIcon className="w-5 h-5" />
-                </button>
-              </>
-            )}
-          </div>
+              <XCircleIcon className="w-4 h-4" />
+            </span>
+          ) : (
+            <></>
+          )}
+          <button
+            onClick={handleSearch}
+            className="text-gray-500 rounded pl-2 hover:text-black"
+          >
+            <MagnifyingGlassIcon className="inline w-5 h-5" />
+          </button>
+          {searchResults.length > 0 && (
+            <>
+              <span className="pr-3 pl-3 pt-1">
+                {currentSearchIndex + 1} of {searchResults.length}
+              </span>
+              <button
+                onClick={() => navigateSearch(-1)}
+                className="rounded px-1 py-1 hover:bg-gray-200"
+              >
+                <ChevronLeftIcon className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => navigateSearch(1)}
+                className=" rounded px-1 py-1 hover:bg-gray-200"
+              >
+                <ChevronRightIcon className="w-5 h-5" />
+              </button>
+            </>
+          )}
+        </div>
         <span className="bg-white rounded px-2 py-1">
           {pageNumber} <span className="text-gray-500">/ {numPages}</span>
         </span>
