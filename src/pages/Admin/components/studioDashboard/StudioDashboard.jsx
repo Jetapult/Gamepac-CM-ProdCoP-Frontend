@@ -47,7 +47,7 @@ const StudioDashboard = ({ studioData }) => {
         <React.Fragment key={item.id}>
           {item.show && <div className="col-span-3">
             <div className="rounded-md bg-white p-4 shadow border-[0.5px] border-[#f6f6f7]">
-              <p className="text-5xl">{item.name === 'studios' ? totalStudio : overview[item.name]}</p>
+              <p className="text-5xl">{item.name === 'studios' ? totalStudio - 1 : overview[item.name]}</p>
               <p className="text-xl text-gray-700 capitalize">
                 Total {item.name}
               </p>

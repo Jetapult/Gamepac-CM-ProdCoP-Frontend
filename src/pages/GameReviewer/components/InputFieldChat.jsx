@@ -23,7 +23,9 @@ const InputFieldChat = ({
   setSelectedConversation,
   createNewChat,
   updateConversation,
-  deleteConversation
+  deleteConversation,
+  fetchConversations,
+  totalConversations
 }) => {
   const [showHistory, setShowHistory] = useState(false);
   const handleFileChange = async (event) => {
@@ -51,6 +53,7 @@ const InputFieldChat = ({
         message: "",
         files: [],
         attachments: [],
+        quote: "",
       });
       setMessages([messageObj, ...messages]);
       sendMessage(messageObj);
@@ -70,7 +73,9 @@ const InputFieldChat = ({
               <span className="text-sm">History</span>
             </button>
             <button
-              className={`border border-[#ccc] px-3 py-[2px] rounded-full hover:bg-[#e6e6e6] leading-[26px] flex items-center ${generatingLoader ? 'bg-[#e6e6e6] opacity-25': ''}`}
+              className={`border border-[#ccc] px-3 py-[2px] rounded-full hover:bg-[#e6e6e6] leading-[26px] flex items-center ${
+                generatingLoader ? "bg-[#e6e6e6] opacity-25" : ""
+              }`}
               onClick={() => createNewChat()}
               disabled={generatingLoader}
             >
@@ -82,6 +87,13 @@ const InputFieldChat = ({
           <></>
         )}
         <div className="p-3 border border-[#ccc] rounded-[26px]">
+          {messageObj.quote && <div className="bg-[#f6f6f7] p-2 rounded-t-xl mb-2 relative">
+            <p className="overflow-auto max-h-16 pr-3">{messageObj.quote}</p>
+            <XCircleIcon className="w-5 h-5 text-[#808080] absolute right-[4px] top-[4px] cursor-pointer" onClick={() => setMessageObj({
+              ...messageObj,
+              quote: "",
+            })} />
+          </div>}
           <div className="flex items-center">
             {/* <label htmlFor="file-upload" className="cursor-pointer">
           <PaperClipIcon className="w-6 h-5 absolute top-1/2 left-2 transform -translate-y-1/2 rotate-[-45deg]" />
@@ -168,6 +180,8 @@ const InputFieldChat = ({
           createNewChat={createNewChat}
           updateConversation={updateConversation}
           deleteConversation={deleteConversation}
+          fetchConversations={fetchConversations}
+          totalConversations={totalConversations}
         />
       )}
     </>
@@ -182,14 +196,16 @@ const History = ({
   createNewChat,
   updateConversation,
   deleteConversation,
+  fetchConversations,
+  totalConversations
 }) => {
   return (
     <div
-      className="justify-end items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-[#12111157]"
+      className="justify-end items-center flex overflow-x-hidden overflow-y-hidden fixed inset-0 z-50 outline-none focus:outline-none bg-[#12111157]"
       onClick={() => setShowHistory(false)}
     >
       <div
-        className="relative my-6 max-w-3xl w-[300px]"
+        className="relative my-6 max-w-3xl w-[400px]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none h-screen px-4">
@@ -206,6 +222,8 @@ const History = ({
             }}
             updateConversation={updateConversation}
             deleteConversation={deleteConversation}
+            fetchConversations={fetchConversations}
+            totalConversations={totalConversations}
           />
         </div>
       </div>

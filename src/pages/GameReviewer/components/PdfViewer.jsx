@@ -9,10 +9,16 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import { useSelector } from "react-redux";
+import useTextSelection from "./useTextSelection";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
+const PdfViewer = ({
+  selectedPdf,
+  selectedPage,
+  setSelectedPdf,
+  setMessageObj,
+}) => {
   const knowledgebases = useSelector(
     (state) => state.knowledgebase.knowledgebase
   );
@@ -26,7 +32,15 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [isHighlightVisible, setIsHighlightVisible] = useState(true);
   const wrapperRef = useRef(null);
+  const {
+    selectedText,
+    selectionInfo,
+    buttonRef,
+    highlightRef,
+    handleTextSelection,
+  } = useTextSelection(containerRef);
   useOutsideAlerter(wrapperRef);
   function useOutsideAlerter(ref) {
     useEffect(() => {
@@ -45,9 +59,10 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
   const resetSearch = () => {
     setSearchText("");
     setSearchResults([]);
-  }
+  };
 
   function onDocumentLoadSuccess(numPages, isLoadingNewPdf, selectedPage) {
+    setIsHighlightVisible(false);
     setNumPages(numPages.numPages);
     if (isLoadingNewPdf && selectedPage) {
       setTimeout(() => {
@@ -148,7 +163,8 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
     setSearchResults(results);
     setCurrentSearchIndex(results.length > 0 ? 0 : -1);
     if (results.length > 0) {
-      scrollToPage(results[0].pageNumber);
+      scrollToPage(pageNumber);
+      setCurrentSearchIndex(pageNumber);
     }
   };
 
@@ -176,10 +192,18 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
     [searchText, isSearchActive]
   );
 
+  const handleSummarizeClick = () => {
+    setMessageObj((prev) => ({
+      ...prev,
+      quote: selectedText,
+    }));
+    setIsHighlightVisible(false);
+  };
+
   return (
-    <div className="pdf-viewer">
+    <div className="pdf-viewer h-full flex flex-col relative">
       <div
-        className="pdf-toolbar"
+        className="pdf-toolbar z-50"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -188,76 +212,87 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
           backgroundColor: "#f0f0f0",
         }}
       >
-          <select
-            value={scale}
-            onChange={handleScaleChange}
-            className="rounded py-1 outline-none px-1"
-          >
-            {scaleOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <div
-            className={`search-container flex items-center justify-between rounded px-2 py-[2px] mr-2 mx-2 border border-[#ccc] bg-white`}
-          >
-            <input
-              type="text"
-              value={searchText}
-              onChange={(e) => {
-                setSearchText(e.target.value);
-                setIsSearchActive(false);
-              }}
-              placeholder="Search PDF"
-              className={`outline-none  ${searchResults.length ? "w-[48%]" : "w-full"}`}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  handleSearch();
-                }
-              }}
-            />
-            {searchResults.length ? <span className="cursor-pointer text-gray-500" onClick={resetSearch}>
-              <XCircleIcon className="w-4 h-4" />
-            </span> : <></>}
-            <button
-              onClick={handleSearch}
-              className="text-gray-500 rounded pl-2 hover:text-black"
+        <select
+          value={scale}
+          onChange={handleScaleChange}
+          className="rounded py-1 outline-none px-1"
+        >
+          {scaleOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <div
+          className={`search-container flex items-center justify-between rounded px-2 py-[2px] mr-2 mx-2 border border-[#ccc] bg-white`}
+        >
+          <input
+            type="text"
+            value={searchText}
+            onChange={(e) => {
+              setSearchText(e.target.value);
+              setIsSearchActive(false);
+            }}
+            placeholder="Search PDF"
+            className={`outline-none w-auto`}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                handleSearch();
+              }
+            }}
+          />
+          {searchResults.length ? (
+            <span
+              className="cursor-pointer text-gray-500"
+              onClick={resetSearch}
             >
-              <MagnifyingGlassIcon className="inline w-5 h-5" />
-            </button>
-            {searchResults.length > 0 && (
-              <>
-                <span className="pr-3 pl-3 pt-1">
-                  {currentSearchIndex + 1} of {searchResults.length}
-                </span>
-                <button
-                  onClick={() => navigateSearch(-1)}
-                  className="rounded px-1 py-1 hover:bg-gray-200"
-                >
-                  <ChevronLeftIcon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => navigateSearch(1)}
-                  className=" rounded px-1 py-1 hover:bg-gray-200"
-                >
-                  <ChevronRightIcon className="w-5 h-5" />
-                </button>
-              </>
-            )}
-          </div>
+              <XCircleIcon className="w-4 h-4" />
+            </span>
+          ) : (
+            <></>
+          )}
+          <button
+            onClick={handleSearch}
+            className="text-gray-500 rounded pl-2 hover:text-black"
+          >
+            <MagnifyingGlassIcon className="inline w-5 h-5" />
+          </button>
+          {searchResults.length > 0 && (
+            <>
+              <span className="pr-3 pl-3 pt-1">
+                {currentSearchIndex + 1} of {searchResults.length}
+              </span>
+              <button
+                onClick={() => navigateSearch(-1)}
+                className="rounded px-1 py-1 hover:bg-gray-200"
+              >
+                <ChevronLeftIcon className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => navigateSearch(1)}
+                className=" rounded px-1 py-1 hover:bg-gray-200"
+              >
+                <ChevronRightIcon className="w-5 h-5" />
+              </button>
+            </>
+          )}
+        </div>
         <span className="bg-white rounded px-2 py-1">
           {pageNumber} <span className="text-gray-500">/ {numPages}</span>
         </span>
       </div>
       <div
         ref={containerRef}
-        className="pdf-container"
+        className="pdf-container flex-grow relative"
         style={{
           height: "calc(100vh - 130px)",
           overflow: "auto",
           display: "flex",
           justifyContent: "flex-start",
+        }}
+        onMouseUp={() => {
+          handleTextSelection();
+          setIsHighlightVisible(true);
         }}
       >
         <Document
@@ -279,6 +314,33 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
           ))}
         </Document>
       </div>
+
+      {/* Highlight layer */}
+      {isHighlightVisible && (
+        <div
+          ref={highlightRef}
+          className="highlight-layer"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
+      {selectedText && isHighlightVisible && (
+        <div ref={buttonRef} className="z-10">
+          <button
+            onClick={handleSummarizeClick}
+            className="bg-[#ff1053] text-white px-2 py-1 rounded-md w-16"
+          >
+            Ask AI
+          </button>
+        </div>
+      )}
     </div>
   );
 };

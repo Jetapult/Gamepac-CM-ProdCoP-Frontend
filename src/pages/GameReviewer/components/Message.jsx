@@ -24,8 +24,8 @@ const Message = ({ message, setSelectedPage }) => {
     <div
       className={`flex flex-col my-2  ${
         message.type === "ai"
-          ? "items-start w-11/12"
-          : " ml-auto bg-white items-end w-1/2"
+          ? "items-start"
+          : " ml-auto bg-white items-end"
       }`}
     >
       <div className="flex flex-wrap w-[60%] justify-end">
@@ -55,6 +55,9 @@ const Message = ({ message, setSelectedPage }) => {
       {/* {message.type === "ai" && message.latest ? (
         <TypingEffect message={message.message} />
       ) : ( */}
+      {message.quote && <div className="pl-2 relative border-l-4 border-l-[#e6e6e6]">
+            <p className="text-gray-600"><span className=" text-4xl">“</span> {message.quote}</p>
+          </div>}
       <div
         className={`rounded-2xl ${
           message.type === "ai"

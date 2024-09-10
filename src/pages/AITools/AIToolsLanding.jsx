@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { SparklesIcon } from "@heroicons/react/24/outline";
+import { ChatBubbleLeftRightIcon, SparklesIcon } from "@heroicons/react/24/outline";
 
 const AIToolsLanding = () => {
   const navigate = useNavigate();
@@ -49,9 +49,9 @@ const AIToolsLanding = () => {
                 </button>
               </div>
             </div>
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm relative"  onClick={() => navigate("/ai-chat")}>
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm relative hover:bg-gray-100"  onClick={() => navigate("/ai-chat")}>
               <div className="space-y-2">
-                <h3 className="text-xl font-bold">Querypac</h3>
+                <h3 className="text-xl font-bold"><ChatBubbleLeftRightIcon className="w-6 h-6 inline" /> Querypac</h3>
                 <p className="text-gray-500">
                   AI-Powered Chat.
                 </p>

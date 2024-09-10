@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import api from "../../../api";
 import UploadingDoc from "../../../assets/uploading-docs.jpg";
+import { ArrowUpTrayIcon } from "@heroicons/react/20/solid";
 
 const UploadFile = ({
   messageObj,
@@ -10,7 +11,9 @@ const UploadFile = ({
   selectedKnowledgebaseCategories,
   setSelectedPdf,
   setSelectedKnowledgebase,
-  setToastMessage
+  setToastMessage,
+  showPdf,
+  setShowPdf,
 }) => {
   const fileInputRef = useRef(null);
   const [showUploadProgressPopup, setShowUploadProgressPopup] = useState(false);
@@ -44,16 +47,20 @@ const UploadFile = ({
       });
       setKnowledgebase((prev) => [...response.data.knowledgebase, ...prev]);
       setShowUploadProgressPopup(false);
-      if(response.data.data.skipped_files.length){
+      if (response.data.data.skipped_files.length) {
         setToastMessage({
           show: true,
-          message: "This file has already been uploaded. Please choose a different file.",
+          message:
+            "This file has already been uploaded. Please choose a different file.",
           type: "error",
         });
       }
-      if(response.data.knowledgebase.length){
+      if (response.data.knowledgebase.length) {
         setSelectedPdf(response.data.knowledgebase[0]);
-        setSelectedKnowledgebase((prev) => [...prev, response.data.knowledgebase[0]]);
+        setSelectedKnowledgebase((prev) => [
+          ...prev,
+          response.data.knowledgebase[0],
+        ]);
         setToastMessage({
           show: true,
           message: "Successfully uploaded!!",
@@ -74,16 +81,26 @@ const UploadFile = ({
   };
   return (
     <>
-      <div className="border border-[#ccc] rounded-2xl h-24">
-        <p className="text-sm text-gray-500 pl-4 py-2">
-          Upload your files to get started
-        </p>
-        <button
-          className="px-4 py-2 border border-[#ccc] rounded-full px-14 mx-auto flex hover:bg-[#e6e6e6]"
-          onClick={handleButtonClick}
-        >
-          Upload PDF
-        </button>
+      <div
+        className={` ${showPdf ? "border border-[#ccc] rounded-2xl" : ""}`}
+      >
+        {showPdf ? (
+          <>
+            <p className="text-sm text-gray-500 pl-4 py-2">
+              Upload your files to get started
+            </p>
+            <button
+              className="px-4 py-1 border border-[#ccc] rounded-full px-14 mx-auto flex hover:bg-[#e6e6e6] mb-3"
+              onClick={handleButtonClick}
+            >
+              Upload PDF
+            </button>
+          </>
+        ) : (
+          <div onClick={handleButtonClick} className="flex items-center justify-center cursor-pointer">
+            <ArrowUpTrayIcon className="w-6 h-6" />
+          </div>
+        )}
         <input
           accept=".pdf,application/pdf"
           type="file"
@@ -97,7 +114,7 @@ const UploadFile = ({
   );
 };
 
-const UploadProgressPopup = ({files}) => {
+const UploadProgressPopup = ({ files }) => {
   return (
     <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-[#12111157]">
       <div className="relative my-6 mx-auto max-w-3xl w-[500px]">
