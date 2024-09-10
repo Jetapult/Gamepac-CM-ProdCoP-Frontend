@@ -162,7 +162,7 @@ const StudioUsers = ({
             <p className="col-span-2">{user.name}</p>
             <p className="col-span-3">{user.email}</p>
             <p className="col-span-2">{user.roles?.join(", ")}</p>
-            <p className="col-span-2">{user.invite_status}</p>
+            <p className="col-span-2 capitalize">{user.invite_status}</p>
             <p className="col-span-1">
               {user.invite_status !== "accepted" && (
                 <>
