@@ -8,7 +8,10 @@ import Conversations from "./components/Conversations";
 import InputFieldChat from "./components/InputFieldChat";
 import KnowledgeBase from "./components/KnowledgeBase";
 import PdfViewer from "./components/PdfViewer";
-import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon } from "@heroicons/react/20/solid";
+import {
+  ChevronDoubleLeftIcon,
+  ChevronDoubleRightIcon,
+} from "@heroicons/react/20/solid";
 
 export const isPDF = (url) => {
   return url.toLowerCase().endsWith(".pdf");
@@ -43,6 +46,7 @@ const RagChat = () => {
     message: "",
     files: [],
     attachments: [],
+    quote: "",
   });
   const [messages, setMessages] = useState([]);
   const [conversations, setConversations] = useState([]);
@@ -59,6 +63,7 @@ const RagChat = () => {
   const [selectedPage, setSelectedPage] = useState(null);
   const [isFirstChat, setIsFirstChat] = useState(false);
   const [showPdf, setShowPdf] = useState(true);
+  const [totalConversations, setTotalConversations] = useState(0);
   const wrapperRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -77,6 +82,29 @@ const RagChat = () => {
         setSelectedConversation(response.data.data);
         setMessages([]);
       }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const updateConversationName = async (conversationId, messages) => {
+    try {
+      const requestBody = {
+        conversation_id: conversationId,
+        messages: messages,
+      };
+      const response = await api.post(
+        `/v1/chat/generate-update-conversation`,
+        requestBody
+      );
+      setConversations((prev) =>
+        prev.filter((x) => {
+          if (x.id === conversationId) {
+            x.title = response.data.data.title;
+          }
+          return prev;
+        })
+      );
     } catch (err) {
       console.log(err);
     }
@@ -104,6 +132,9 @@ const RagChat = () => {
       if (messageObj.files.length) {
         requestbody.files = messageObj.attachments;
       }
+      if (messageObj.quote) {
+        requestbody.quote = messageObj.quote;
+      }
       const response = await api.post(`/v1/chat/chat-with-ai`, requestbody);
       const aiResponse = {
         ...response.data.data.saved_message,
@@ -113,9 +144,12 @@ const RagChat = () => {
       setMessageObj({
         message: "",
         files: [],
+        quote: "",
       });
       if (selectedConversation?.message_count === 0) {
-        setSelectedConversation({ ...selectedConversation, message_count: 1 });
+        setSelectedConversation({ ...selectedConversation, message_count: 2 });
+        const conversations = [...messages, aiResponse];
+        updateConversationName(selectedConversation.id, conversations);
       }
       setGeneratingLoader(false);
     } catch (err) {
@@ -230,15 +264,18 @@ const RagChat = () => {
     }
   };
 
-  const fetchConversations = async () => {
+  const fetchConversations = async (currentPage, searchText) => {
     try {
       const response = await api.get(
         `/v1/chat/conversations/${
           selectedGame.platform === "apple" ? "ios" : "android"
-        }/${selectedGame.id || 1}`
+        }/${selectedGame.id || 1}?current_page=${currentPage}${
+          searchText ? `&searchText=${searchText}` : ""
+        }`
       );
-      setConversations(response.data.data);
+      setConversations((prev) => [...prev, ...response.data.data]);
       setSelectedConversation(response.data.data[0]);
+      setTotalConversations(response.data.total);
     } catch (err) {
       console.log(err);
     }
@@ -269,13 +306,9 @@ const RagChat = () => {
 
   useEffect(() => {
     if (selectedGame.id || 1) {
-      fetchConversations();
+      fetchConversations(1, "");
     }
-  }, [
-    selectedGame.id || 1,
-    selectedGame.platform,
-    period !== "custom" ? period : null,
-  ]);
+  }, []);
 
   useEffect(() => {
     if (selectedConversation?.id && !isFirstChat) {
@@ -287,13 +320,19 @@ const RagChat = () => {
     <div className="mx-auto">
       <div className="bg-white h-[calc(100vh-60px)]">
         <div className="flex">
-          <div className={`relative pt-3 bg-[#f6f6f7] ${showPdf ? "px-4 w-[20%]" : "px-2 w-[3%]"}`}>
-            <div className={`flex items-center ${showPdf ? "justify-between" : "justify-center"}`}>
+          <div
+            className={`relative pt-3 bg-[#f6f6f7] ${
+              showPdf ? "px-4 w-[20%]" : "px-2 w-[3%]"
+            }`}
+          >
+            <div
+              className={`flex items-center ${
+                showPdf ? "justify-between" : "justify-center"
+              }`}
+            >
               {showPdf && <h1 className="text-2xl font-bold">QueryPac</h1>}
               <span
-                className={`cursor-pointer z-10 ${
-                  showPdf ? "" : ""
-                }`}
+                className={`cursor-pointer z-10 ${showPdf ? "" : ""}`}
                 onClick={() => setShowPdf(!showPdf)}
               >
                 {showPdf ? (
@@ -325,17 +364,20 @@ const RagChat = () => {
                 deleteConversation={deleteConversation}
               /> */}
           </div>
-          <div className={`relative ${showPdf ? "w-[40%]" : "w-[57%]"}`}>
+          <div className={`relative h-full ${showPdf ? "w-[40%]" : "w-[57%]"}`}>
             {selectedPdf && (
               <PdfViewer
                 selectedPdf={selectedPdf}
                 selectedPage={selectedPage}
                 setSelectedPdf={setSelectedPdf}
+                setMessageObj={setMessageObj}
               />
             )}
           </div>
           <div className="relative w-[40%] px-6 border-l border-l-[#e6e6e6]">
-            <div className="flex flex-col-reverse h-[calc(100vh-60px)] overflow-auto no-scrollbar pb-[124px] outline-none">
+            <div
+              className="flex flex-col-reverse h-[calc(100vh-60px)] overflow-auto no-scrollbar pb-[124px] outline-none"
+            >
               {generatingLoader && <GeneratingLoader />}
               {messages.map((message, index) => (
                 <Message
@@ -360,6 +402,8 @@ const RagChat = () => {
               createNewChat={createNewChat}
               updateConversation={updateConversation}
               deleteConversation={deleteConversation}
+              fetchConversations={fetchConversations}
+              totalConversations={totalConversations}
             />
           </div>
         </div>

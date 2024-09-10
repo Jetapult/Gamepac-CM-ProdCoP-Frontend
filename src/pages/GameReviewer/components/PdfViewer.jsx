@@ -9,10 +9,16 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import { useSelector } from "react-redux";
+import useTextSelection from "./useTextSelection";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
+const PdfViewer = ({
+  selectedPdf,
+  selectedPage,
+  setSelectedPdf,
+  setMessageObj,
+}) => {
   const knowledgebases = useSelector(
     (state) => state.knowledgebase.knowledgebase
   );
@@ -26,7 +32,15 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [isHighlightVisible, setIsHighlightVisible] = useState(true);
   const wrapperRef = useRef(null);
+  const {
+    selectedText,
+    selectionInfo,
+    buttonRef,
+    highlightRef,
+    handleTextSelection,
+  } = useTextSelection(containerRef);
   useOutsideAlerter(wrapperRef);
   function useOutsideAlerter(ref) {
     useEffect(() => {
@@ -45,9 +59,10 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
   const resetSearch = () => {
     setSearchText("");
     setSearchResults([]);
-  }
+  };
 
   function onDocumentLoadSuccess(numPages, isLoadingNewPdf, selectedPage) {
+    setIsHighlightVisible(false);
     setNumPages(numPages.numPages);
     if (isLoadingNewPdf && selectedPage) {
       setTimeout(() => {
@@ -177,10 +192,18 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
     [searchText, isSearchActive]
   );
 
+  const handleSummarizeClick = () => {
+    setMessageObj((prev) => ({
+      ...prev,
+      quote: selectedText,
+    }));
+    setIsHighlightVisible(false);
+  };
+
   return (
-    <div className="pdf-viewer">
+    <div className="pdf-viewer h-full flex flex-col relative">
       <div
-        className="pdf-toolbar"
+        className="pdf-toolbar z-50"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -260,12 +283,16 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
       </div>
       <div
         ref={containerRef}
-        className="pdf-container"
+        className="pdf-container flex-grow relative"
         style={{
           height: "calc(100vh - 130px)",
           overflow: "auto",
           display: "flex",
           justifyContent: "flex-start",
+        }}
+        onMouseUp={() => {
+          handleTextSelection();
+          setIsHighlightVisible(true);
         }}
       >
         <Document
@@ -287,6 +314,33 @@ const PdfViewer = ({ selectedPdf, selectedPage, setSelectedPdf }) => {
           ))}
         </Document>
       </div>
+
+      {/* Highlight layer */}
+      {isHighlightVisible && (
+        <div
+          ref={highlightRef}
+          className="highlight-layer"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
+      {selectedText && isHighlightVisible && (
+        <div ref={buttonRef} className="z-10">
+          <button
+            onClick={handleSummarizeClick}
+            className="bg-[#ff1053] text-white px-2 py-1 rounded-md w-16"
+          >
+            Ask AI
+          </button>
+        </div>
+      )}
     </div>
   );
 };

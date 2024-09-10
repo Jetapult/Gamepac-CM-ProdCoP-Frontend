@@ -82,7 +82,7 @@ const UploadFile = ({
   return (
     <>
       <div
-        className={` ${showPdf ? "border border-[#ccc] rounded-2xl h-24" : ""}`}
+        className={` ${showPdf ? "border border-[#ccc] rounded-2xl" : ""}`}
       >
         {showPdf ? (
           <>
@@ -90,14 +90,14 @@ const UploadFile = ({
               Upload your files to get started
             </p>
             <button
-              className="px-4 py-2 border border-[#ccc] rounded-full px-14 mx-auto flex hover:bg-[#e6e6e6]"
+              className="px-4 py-1 border border-[#ccc] rounded-full px-14 mx-auto flex hover:bg-[#e6e6e6] mb-3"
               onClick={handleButtonClick}
             >
               Upload PDF
             </button>
           </>
         ) : (
-          <div onClick={handleButtonClick} className="flex items-center justify-center">
+          <div onClick={handleButtonClick} className="flex items-center justify-center cursor-pointer">
             <ArrowUpTrayIcon className="w-6 h-6" />
           </div>
         )}

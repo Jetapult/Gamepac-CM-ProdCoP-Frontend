@@ -194,7 +194,36 @@ const KnowledgeBase = ({
         <>
           {knowledgebase.length ? (
             <>
-              <p className="text-sm font-bold text-gray-700 my-3">
+              <p className="text-sm font-bold text-gray-700 my-3 px-2">
+                <input
+                  id="default-checkbox"
+                  type="checkbox"
+                  value={2}
+                  name="name"
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded mr-3 pt-2 mt-[4px]"
+                  onChange={(e) => {
+                    setSelectedKnowledgebase((prev) => {
+                      const isSelected = knowledgebase.every((knowledge) =>
+                        prev.some((item) => item.id === knowledge.id)
+                      );
+                      if (!isSelected) {
+                        return knowledgebase;
+                      } else {
+                        return [];
+                      }
+                    });
+                  }}
+                  checked={knowledgebase.every((knowledge) =>
+                    selectedKnowledgebase.some((item) => item.id === knowledge.id)
+                  )}
+                  ref={(el) => {
+                    if (el) {
+                      el.indeterminate =
+                        selectedKnowledgebase.length > 0 &&
+                        selectedKnowledgebase.length < knowledgebase.length;
+                    }
+                  }}
+                />
                 Knowledge Bases
               </p>
             </>
@@ -237,7 +266,7 @@ const KnowledgeBase = ({
                   )}
                 />{" "}
                 <div className="w-[88%] group">
-                  <p className="truncate">{knowledge.title}</p>
+                  <p className="line-clamp-2">{knowledge.title}</p>
                   <p className="text-[14px] flex items-center justify-between text-gray-500 mb-1">
                     <span>
                       <ClockIcon className="inline w-4 h-4 mr-1 mb-[3px] text-black" />
