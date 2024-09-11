@@ -273,8 +273,14 @@ const RagChat = () => {
           searchText ? `&searchText=${searchText}` : ""
         }`
       );
-      setConversations((prev) => [...prev, ...response.data.data]);
-      setSelectedConversation(response.data.data[0]);
+      if((searchText.length && currentPage === 1) || currentPage === 1){
+        setConversations(response.data.data);
+      }else{
+        setConversations((prev) => [...prev, ...response.data.data]);
+      }
+      if(searchText.length === 0 && currentPage === 1){
+        setSelectedConversation(response.data.data[0]);
+      }
       setTotalConversations(response.data.total);
     } catch (err) {
       console.log(err);
