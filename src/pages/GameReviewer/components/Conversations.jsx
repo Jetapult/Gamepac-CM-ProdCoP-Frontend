@@ -94,7 +94,7 @@ const Conversations = ({
                     ? "bg-[#e5e5e5]"
                     : ""
                 }`}
-                key={conversation.id + index}
+                key={`convo` + conversation.id + index}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (isEditTitle === "") {
@@ -184,7 +184,7 @@ const SearchConversation = ({
   useEffect(() => {
     const timer = setTimeout(() => {
       if (search.length > 2) {
-        fetchConversations(currentPage, search);
+        fetchConversations(1, search);
       }
     }, 500);
     return () => {
