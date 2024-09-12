@@ -23,9 +23,7 @@ const Message = ({ message, setSelectedPage }) => {
   return (
     <div
       className={`flex flex-col my-2  ${
-        message.type === "ai"
-          ? "items-start"
-          : " ml-auto bg-white items-end"
+        message.type === "ai" ? "items-start" : " ml-auto bg-white items-end"
       }`}
     >
       <div className="flex flex-wrap w-[60%] justify-end">
@@ -55,9 +53,13 @@ const Message = ({ message, setSelectedPage }) => {
       {/* {message.type === "ai" && message.latest ? (
         <TypingEffect message={message.message} />
       ) : ( */}
-      {message.quote && <div className="pl-2 relative border-l-4 border-l-[#e6e6e6]">
-            <p className="text-gray-600"><span className=" text-4xl">“</span> {message.quote}</p>
-          </div>}
+      {message.quote && (
+        <div className="pl-2 relative border-l-4 border-l-[#e6e6e6]">
+          <p className="text-gray-600">
+            <span className=" text-4xl">“</span> {message.quote}
+          </p>
+        </div>
+      )}
       <div
         className={`rounded-2xl ${
           message.type === "ai"
@@ -103,10 +105,10 @@ const Message = ({ message, setSelectedPage }) => {
                     </React.Fragment>
                   ))}{" "}
                   ]
+                  {showPdfName === source?.filename && (
+                    <Popover name={source?.filename?.split("/")?.pop()} />
+                  )}
                 </p>
-                {showPdfName === source?.filename && (
-                  <Popover name={source?.filename?.split("/")?.pop()} />
-                )}
               </React.Fragment>
             ))}
           </div>
@@ -124,7 +126,7 @@ const Message = ({ message, setSelectedPage }) => {
 
 const Popover = ({ name }) => {
   return (
-    <div className="absolute top-[-35px] bg-[#ff1053] rounded-md px-2 pt-1 pb-0.5 text-white leading-2">
+    <div className="absolute top-[-35px] bg-[#ff1053] rounded-md px-2 pt-1 pb-0.5 text-white leading-2 w-max">
       {name}
     </div>
   );

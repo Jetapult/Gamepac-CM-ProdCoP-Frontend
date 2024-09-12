@@ -140,13 +140,13 @@ const SendWeeklyReportPopup = ({
           </div>
           <div className="flex p-5 pt-6 border-t border-t-blueGray-200">
             <button
-              className={`bg-[#000000] text-white rounded-md px-5 py-2 mr-4`}
+              className={`bg-[#000000] text-white rounded-md px-5 py-2 mr-4 hover:opacity-80`}
               onClick={sendWeeklyreport}
             >
               Save
             </button>
             <button
-              className={`border border-[#000000] rounded-md px-5 py-2`}
+              className={`border border-[#000000] rounded-md px-5 py-2 hover:bg-gray-200`}
               onClick={() => setShowSendReportPopup(false)}
             >
               Cancel

@@ -113,13 +113,13 @@ const StudioUsers = ({
         /> */}
         <div className="">
           <button
-            className="bg-[#ff1053] text-white px-4 py-2 rounded-md mr-3"
+            className="bg-[#ff1053] text-white px-4 py-2 rounded-md mr-3 hover:opacity-80"
             onClick={() => setShowBulkUploadPopup(!showBulkUploadPopup)}
           >
             Upload CSV
           </button>
           <button
-            className="bg-[#ff1053] text-white px-4 py-2 rounded-md"
+            className="bg-[#ff1053] text-white px-4 py-2 rounded-md hover:opacity-80"
             onClick={() => setShowAddUserPopup(!showAddUserPopup)}
           >
             <PlusIcon className="h-5 w-5 inline mr-1" /> New
@@ -179,7 +179,7 @@ const StudioUsers = ({
                     </button>
                   ) : (
                     <button
-                      className="bg-[#ff1053] text-white px-4 py-1 rounded-md"
+                      className="bg-[#ff1053] text-white px-4 py-1 rounded-md hover:opacity-80"
                       onClick={() => InviteUser(user)}
                     >
                       Invite

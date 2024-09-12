@@ -91,7 +91,7 @@ const StudioDetails = () => {
           <React.Fragment key={tab.id}>
             {tab.show && (
               <p
-                className={`mr-6 cursor-pointer text-lg tab-${tab.id} ${
+                className={`mr-6 cursor-pointer text-lg tab-${tab.id} hover:text-gray-500 hover:border-b-[2px] hover:border-gray-500 ${
                   selectedTab === tab.value
                     ? "text-black border-b-[2px] border-black"
                     : "text-[#808080]"

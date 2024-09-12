@@ -226,7 +226,7 @@ const StudioSettings = ({ studioData, setToastMessage, setSelectedTab }) => {
           )}
         </div>
         <button
-          className="bg-[#ff1053] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 mt-4"
+          className="bg-[#ff1053] text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 mt-4 hover:opacity-80"
           type="button"
           onClick={updateStudio}
         >

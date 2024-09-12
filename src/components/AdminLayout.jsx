@@ -72,7 +72,7 @@ const AdminLayout = ({ children }) => {
         <div className="p-4">
           <Menu as="div" className="relative mb-2">
             <div>
-              <Menu.Button className="inline-flex w-full text-xl font-bold">
+              <Menu.Button className="inline-flex w-full text-xl font-bold hover:bg-gray-100 hover:rounded p-1">
                 <p>
                   {selectedStudio?.studio_name}{" "}
                   <ChevronDownIcon className="w-5 h-5 inline text-2xl font-bold" />

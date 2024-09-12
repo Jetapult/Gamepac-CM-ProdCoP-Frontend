@@ -631,7 +631,7 @@ const ReviewsCard = ({
                     <div className="flex pr-2 pb-2">
                       {review.isAIReply && (
                         <button
-                          className="border border-[#ccc] rounded py-1 px-3 mr-2 text-sm"
+                          className="border border-[#ccc] rounded py-1 px-3 mr-2 text-sm hover:bg-gray-100"
                           onClick={() => {
                             setSelectedTemplate({
                               review_type: "",
@@ -648,7 +648,7 @@ const ReviewsCard = ({
                       )}
 
                       <button
-                        className={`bg-[#ff1053] rounded px-3 py-1 mr-2 text-white text-sm ${
+                        className={`bg-[#ff1053] rounded px-3 py-1 mr-2 text-white text-sm hover:opacity-40 ${
                           generativeAILoader === review?.id ? "opacity-40" : ""
                         }`}
                         onClick={() => {
@@ -662,7 +662,7 @@ const ReviewsCard = ({
                       </button>
                       <div className="relative">
                         <button
-                          className="border border-[#ccc] flex justify-between items-center rounded py-1 px-3 mr-2 text-sm w-[150px]"
+                          className="border border-[#ccc] flex justify-between items-center rounded py-1 px-3 mr-2 text-sm w-[150px] hover:bg-gray-100"
                           onClick={() => setShowTemplateDropdown(review.id)}
                         >
                           {review.template_type
@@ -688,7 +688,7 @@ const ReviewsCard = ({
                         )}
                       </div>
                       <button
-                        className={`bg-[#ff1053] rounded px-3 py-1 mr-2 text-white text-sm ${
+                        className={`bg-[#ff1053] rounded px-3 py-1 mr-2 text-white text-sm hover:opacity-40 ${
                           translateLoader === review.id ? "opacity-40" : ""
                         }`}
                         onClick={() => {
@@ -700,7 +700,7 @@ const ReviewsCard = ({
                         Translate
                       </button>
                       <button
-                        className={`bg-[#ff1053] rounded px-3 py-1  text-white text-sm ${
+                        className={`bg-[#ff1053] rounded px-3 py-1  text-white text-sm hover:opacity-40 ${
                           postLoader ===
                           (review?.reviewId || review?.appstorereviewid)
                             ? "opacity-40"

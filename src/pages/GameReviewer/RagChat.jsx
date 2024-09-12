@@ -12,6 +12,7 @@ import {
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
 } from "@heroicons/react/20/solid";
+import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/20/solid";
 
 export const isPDF = (url) => {
   return url.toLowerCase().endsWith(".pdf");
@@ -64,8 +65,29 @@ const RagChat = () => {
   const [isFirstChat, setIsFirstChat] = useState(false);
   const [showPdf, setShowPdf] = useState(true);
   const [totalConversations, setTotalConversations] = useState(0);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const wrapperRef = useRef(null);
   const messagesEndRef = useRef(null);
+
+  const scrollToTop = () => {
+    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const scrollToBottom = () => {
+    wrapperRef.current.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  const handleScroll = () => {
+    if (isAtBottom) {
+      scrollToTop();
+    } else {
+      scrollToBottom();
+    }
+    setIsAtBottom(!isAtBottom);
+  };
 
   const createNewChat = async () => {
     try {
@@ -382,7 +404,12 @@ const RagChat = () => {
           </div>
           <div className="relative w-[40%] px-6 border-l border-l-[#e6e6e6]">
             <div
+              ref={wrapperRef}
               className="flex flex-col-reverse h-[calc(100vh-60px)] overflow-auto no-scrollbar pb-[124px] outline-none"
+              onScroll={(e) => {
+                const { scrollTop, scrollHeight, clientHeight } = e.target;
+                setIsAtBottom(scrollTop === 0);
+              }}
             >
               {generatingLoader && <GeneratingLoader />}
               {messages.map((message, index) => (
@@ -392,8 +419,9 @@ const RagChat = () => {
                   setSelectedPage={setSelectedPage}
                 />
               ))}
+              <div ref={messagesEndRef} />
             </div>
-            <div ref={messagesEndRef} />
+            <ScrollButton isAtBottom={isAtBottom} onClick={handleScroll} />
             <InputFieldChat
               messageObj={messageObj}
               setMessageObj={setMessageObj}
@@ -423,5 +451,18 @@ const RagChat = () => {
     </div>
   );
 };
+
+const ScrollButton = ({ isAtBottom, onClick }) => (
+  <button
+    className="fixed bottom-32 right-8 bg-white border border-gray-200 hover:bg-gray-200 rounded-full p-1 shadow-md"
+    onClick={onClick}
+  >
+    {isAtBottom ? (
+      <ArrowUpIcon className="w-6 h-6" />
+    ) : (
+      <ArrowDownIcon className="w-6 h-6" />
+    )}
+  </button>
+);
 
 export default RagChat;

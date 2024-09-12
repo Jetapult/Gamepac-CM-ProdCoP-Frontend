@@ -114,7 +114,7 @@ const BulkUploadPopup = ({ setShowModal, studio_id, getUsersBystudioSlug }) => {
               </button>
             ) : (
               <button
-                className="bg-[#ff1053] text-white px-4 py-2 rounded-md mr-3 mt-3"
+                className="bg-[#ff1053] text-white px-4 py-2 rounded-md mr-3 mt-3 hover:opacity-80"
                 onClick={onBulkUploadUsers}
               >
                 Upload CSV
