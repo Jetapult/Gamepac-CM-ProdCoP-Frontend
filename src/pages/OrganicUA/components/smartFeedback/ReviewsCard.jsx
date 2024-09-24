@@ -9,6 +9,7 @@ import { PencilSquareIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import CreateReplyTemplatePopup from "../CreateReplyTemplatePopup";
 import AddTagPopup from "./AddTagPopup";
 import HighlightText from "../../../../components/HighlightText";
+import { tagDistributionlabelData } from "../ReviewInsights/ReviewInsights";
 
 const ratingColor = {
   5: `#62b47b`,
@@ -492,7 +493,8 @@ const ReviewsCard = ({
               Tags:{" "}
               {review?.tags?.map((tag, index) => (
                 <span
-                  className={`px-2 py-1 text-sm border border-dashed rounded mx-1 ${getRandomColor()}`}
+                  className={`px-2 py-1 text-sm rounded-full mx-1 ${getRandomColor()}`}
+                  style={{ backgroundColor: tagDistributionlabelData[tag] + '33', color: tagDistributionlabelData[tag] }}
                   key={`tag${index}`}
                 >
                   {tag}

@@ -349,13 +349,13 @@ const RagChat = () => {
       <div className="bg-white h-[calc(100vh-60px)]">
         <div className="flex">
           <div
-            className={`relative pt-3 bg-[#f6f6f7] ${
-              showPdf ? "px-4 w-[20%]" : "px-2 w-[3%]"
+            className={`relative pt-3 ${
+              showPdf ? "px-2 w-[20%]" : " w-[3%]"
             }`}
           >
             <div
               className={`flex items-center ${
-                showPdf ? "justify-between" : "justify-center"
+                showPdf ? "justify-between px-4" : "justify-center px-3"
               }`}
             >
               {showPdf && <h1 className="text-2xl font-bold">QueryPac</h1>}

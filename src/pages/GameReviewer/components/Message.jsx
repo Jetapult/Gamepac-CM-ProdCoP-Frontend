@@ -75,7 +75,7 @@ const Message = ({ message, setSelectedPage }) => {
           <div className="flex flex-wrap relative my-2">
             {message.sources.map((source, i) => (
               <React.Fragment key={i}>
-                <p
+                <div
                   className={`mr-3 mb-1 px-1 rounded border-2 border-[#ff1053] cursor-pointer ${
                     showPdfName === source?.filename
                       ? "bg-[#ff1053] text-white"
@@ -108,7 +108,7 @@ const Message = ({ message, setSelectedPage }) => {
                   {showPdfName === source?.filename && (
                     <Popover name={source?.filename?.split("/")?.pop()} />
                   )}
-                </p>
+                </div>
               </React.Fragment>
             ))}
           </div>

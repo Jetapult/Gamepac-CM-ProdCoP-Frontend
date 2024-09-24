@@ -41,7 +41,7 @@ const tagDistributionlabels = [
   "Appreciation",
 ];
 
-const tagDistributionlabelData = {
+export const tagDistributionlabelData = {
   "ads concern": "#fb9c00",
   "crashes/ANR": "#8d0934",
   "IAP concern": "#334fde",
