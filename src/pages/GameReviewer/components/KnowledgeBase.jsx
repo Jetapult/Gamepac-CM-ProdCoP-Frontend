@@ -199,7 +199,7 @@ const KnowledgeBase = ({
         </div> : <></>}
         {showKnowledgebaseCategories && (
           <div
-            className="bg-white rounded-lg absolute top-[140px] max-h-[350px] w-[270px] z-10 shadow-lg p-2 overflow-y-auto"
+            className="bg-white rounded-lg absolute top-[124px] max-h-[350px] w-[270px] z-10 shadow-lg p-2 overflow-y-auto"
             ref={wrapperRef}
           >
             {knowledgebaseCategories.map((category) => (

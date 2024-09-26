@@ -73,7 +73,7 @@ const Message = ({ message, setSelectedPage }) => {
         />
         {message.type === "ai" && (
           <div className="flex flex-wrap relative my-2">
-            {message.sources.map((source, i) => (
+            {message?.sources?.map((source, i) => (
               <React.Fragment key={i}>
                 <div
                   className={`mr-3 mb-1 px-1 rounded border-2 border-[#ff1053] cursor-pointer ${

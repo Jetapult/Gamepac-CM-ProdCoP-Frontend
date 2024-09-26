@@ -185,12 +185,12 @@ function Navbar() {
               ) : (
                 <></>
               )}
-              <ul className="text-gray-700 justify-end items-center space-y-6 md:flex md:space-x-6 md:space-y-0 md:text-gray-600 md:font-medium">
+              <ul className="justify-end items-center space-y-6 md:flex md:space-x-6 md:space-y-0 ">
                 {(!studioSlug || studioSlug === userData?.slug) &&
                   !userData.studio_type?.includes("external_studio") && (
                     <>
                       <li
-                        className={`duration-150 hover:text-gray-500 relative cursor-pointer notetaker hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[46%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
+                        className={`cursor-pointer duration-150 hover:text-gray-500 relative cursor-pointer notetaker hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[46%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
                           location.pathname.includes("note-taker") ||
                           location.pathname.includes("online")
                             ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[46%] after:translate-x-[-50%] after:rounded-full"
@@ -199,17 +199,15 @@ function Navbar() {
                         ref={wrapperRef}
                       >
                         <a
-                          className="block cursor-pointer"
+                          className="block font-normal"
                           onClick={() => {
                             setShowNoteTakerDropdown(!showNoteTakerDropdown);
                             setDropdownOpen(false);
                             setShowUserDropdown(false);
                           }}
                         >
-                          <div className="flex items-center">
                             Note Taker
                             <ChevronDownIcon className="w-5 h-5 inline ml-1" />
-                          </div>
                         </a>
                         {showNoteTakerDropdown && (
                           <div
@@ -240,19 +238,17 @@ function Navbar() {
                         )}
                       </li>
                       <li
-                        className={`duration-150 hover:text-gray-500 relative ai-tools hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
+                        className={`cursor-pointer duration-150 hover:text-gray-500 relative ai-tools hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
                           location.pathname.includes("ai-")
                             ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
                             : ""
                         }`}
                       >
                         <a
-                          className="block cursor-pointer"
+                          className="block font-normal"
                           onClick={() => navigate("/ai-tools")}
                         >
-                          <div className="flex gap-2 items-center">
                             AI Tools
-                          </div>
                         </a>
                       </li>
                     </>
@@ -265,17 +261,17 @@ function Navbar() {
                   </ReactPopover>
                 )}
                 <li
-                  className={`duration-150 hover:text-gray-500 relative ai-tools hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
+                  className={`duration-150 cursor-pointer hover:text-gray-500 relative ai-tools hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
                     location.pathname.includes("docs")
                       ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
                       : ""
                   }`}
                 >
                   <a
-                    className="block cursor-pointer"
+                    className="block font-normal"
                     onClick={() => navigate("/docs/overview")}
                   >
-                    <div className="flex gap-2 items-center">Docs</div>
+                    Docs
                   </a>
                 </li>
                 <li

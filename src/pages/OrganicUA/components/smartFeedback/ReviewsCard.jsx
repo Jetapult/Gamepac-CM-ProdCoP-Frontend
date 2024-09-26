@@ -493,7 +493,7 @@ const ReviewsCard = ({
               Tags:{" "}
               {review?.tags?.map((tag, index) => (
                 <span
-                  className={`px-2 py-1 text-sm rounded-full mx-1 ${getRandomColor()}`}
+                  className={`px-2 py-1 text-sm rounded-full mx-1 capitalize  ${getRandomColor()}`}
                   style={{ backgroundColor: tagDistributionlabelData[tag] + '33', color: tagDistributionlabelData[tag] }}
                   key={`tag${index}`}
                 >

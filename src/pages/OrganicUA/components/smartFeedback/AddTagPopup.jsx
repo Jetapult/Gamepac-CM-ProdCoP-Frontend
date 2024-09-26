@@ -5,6 +5,7 @@ import Select from "react-select";
 import { useSelector } from "react-redux";
 import api from "../../../../api";
 import { TagsList } from "../../../../constants/organicUA";
+import { tagDistributionlabelData } from "../ReviewInsights/ReviewInsights";
 
 const AddTagPopup = ({
   showAddTagPopup,
@@ -103,6 +104,48 @@ const AddTagPopup = ({
                 value={selectedTags}
                 isMulti={true}
                 onChange={(val) => setSelectedTags(val)}
+                styles={{
+                  option: (styles, { data, isDisabled, isFocused, isSelected }) => {
+                    return {
+                      ...styles,
+                      backgroundColor: isDisabled
+                        ? null
+                        : isSelected
+                        ? tagDistributionlabelData[data.label] + '33'
+                        : isFocused
+                        ? tagDistributionlabelData[data.label] + '33'
+                        : null,
+                      color: isDisabled
+                        ? '#ccc'
+                        : isSelected
+                        ? tagDistributionlabelData[data.label]
+                        : isFocused
+                        ? tagDistributionlabelData[data.label]
+                        : null,
+                    };
+                  },
+                  multiValue: (styles, { data }) => {
+                    return {
+                      ...styles,
+                      backgroundColor: tagDistributionlabelData[data.label] + '33',
+                      color: tagDistributionlabelData[data.label],
+                      borderRadius: '24px',
+                      textTransform: 'capitalize',
+                    };
+                  },
+                  multiValueLabel: (styles, { data }) => ({
+                    ...styles,
+                    color: tagDistributionlabelData[data.label],
+                  }),
+                  multiValueRemove: (styles, { data }) => ({
+                    ...styles,
+                    color: tagDistributionlabelData[data.label],
+                    ':hover': {
+                      backgroundColor: 'transparent',
+                      color: tagDistributionlabelData[data.label],
+                    },
+                  }),
+                }}
               />
             </div>
           </form>

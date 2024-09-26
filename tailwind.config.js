@@ -1,4 +1,7 @@
 /** @type {import('tailwindcss').Config} */
+
+const defaultTheme = require('tailwindcss/defaultTheme')
+
 export default {
   content: [
     "./index.html",
@@ -14,7 +17,10 @@ export default {
         rating3: '#fcd66b',
         rating2: '#ffb46f',
         rating1: '#fd7779',
-      }
+      },
+      fontFamily: {
+        sans: ['SF Pro Display', ...defaultTheme.fontFamily.sans],
+     },
     },
   },
   plugins: [],

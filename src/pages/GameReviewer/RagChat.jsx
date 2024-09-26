@@ -159,7 +159,7 @@ const RagChat = () => {
       }
       const response = await api.post(`/v1/chat/chat-with-ai`, requestbody);
       const aiResponse = {
-        ...response.data.data.saved_message,
+        ...response.data.data.response,
         latest: true,
       };
       setMessages((prev) => [aiResponse, ...prev]);
@@ -421,7 +421,7 @@ const RagChat = () => {
               ))}
               <div ref={messagesEndRef} />
             </div>
-            <ScrollButton isAtBottom={isAtBottom} onClick={handleScroll} />
+            {messages?.length > 2 && <ScrollButton isAtBottom={isAtBottom} onClick={handleScroll} />}
             <InputFieldChat
               messageObj={messageObj}
               setMessageObj={setMessageObj}
