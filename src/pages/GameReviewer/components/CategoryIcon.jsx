@@ -7,7 +7,7 @@ import Notice from "../../../assets/notice.png";
 import Money from "../../../assets/money.png";
 import Market from "../../../assets/market.png";
 import Meeting from "../../../assets/meetings-transcript.png";
-import Book from "../../../assets/book.png";
+import Book from "../../../assets/Book.png";
 
 const CategoryIcon = ({ categoryName }) => {
   const lowerCaseName = categoryName?.toLowerCase();

@@ -13,6 +13,7 @@ import {
   ChevronDoubleRightIcon,
 } from "@heroicons/react/20/solid";
 import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/20/solid";
+import TxtViewer from "./components/TxtViewer";
 
 export const isPDF = (url) => {
   return url.toLowerCase().endsWith(".pdf");
@@ -415,14 +416,15 @@ const RagChat = () => {
               /> */}
           </div>
           <div className={`relative h-full ${showPdf ? "w-[40%]" : "w-[57%]"}`}>
-            {selectedPdf && (
+            {selectedPdf?.file_url && <>
+            {isPDF(selectedPdf?.file_url) ? (
               <PdfViewer
                 selectedPdf={selectedPdf}
                 selectedPage={selectedPage}
                 setSelectedPdf={setSelectedPdf}
                 setMessageObj={setMessageObj}
               />
-            )}
+            ) : <TxtViewer url={selectedPdf?.file_url} selectedPdf={selectedPdf} />}</>}
           </div>
           <div className="relative w-[40%] px-6 border-l border-l-[#e6e6e6]">
             <div

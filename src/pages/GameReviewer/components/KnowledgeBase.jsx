@@ -217,7 +217,7 @@ const KnowledgeBase = ({
   }, [queryPacType]);
 
   useEffect(() => {
-    if (selectedKnowledgebaseCategories.id) {
+    if (selectedKnowledgebaseCategories?.id) {
       fetchKnowledgebase();
     }
   }, [selectedKnowledgebaseCategories?.id]);
@@ -409,7 +409,7 @@ const KnowledgeBase = ({
                         )}
                       </span>
                       <span className="flex items-center">
-                        {queryPacType === "lite" && <span className="hidden group-hover:block pr-2" onClick={(e) => sendSlackMessage(e, knowledge)}>
+                        {queryPacType === "lite" && knowledge.file_url.endsWith(".pdf") && <span className="hidden group-hover:block pr-2" onClick={(e) => sendSlackMessage(e, knowledge)}>
                           <DocumentCurrencyDollarIcon className="w-4 h-4 text-black" />
                         </span>}
                         <span

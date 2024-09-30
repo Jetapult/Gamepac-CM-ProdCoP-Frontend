@@ -289,7 +289,7 @@ const UploadDocPopup = ({
                   />
                 )}
                 <input
-                  accept=".pdf,application/pdf"
+                  accept=".pdf,application/pdf,.txt"
                   type="file"
                   ref={fileInputRef}
                   style={{ display: "none" }}
