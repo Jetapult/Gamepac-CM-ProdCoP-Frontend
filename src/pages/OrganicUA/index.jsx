@@ -85,7 +85,7 @@ const OrganicUA = () => {
         {menuItems.map((item) => (
           <div key={item.id}>
             <p
-              className={`menu-item p-1.5 pl-5 cursor-pointer rounded ${
+              className={`menu-item p-1.5 pl-5 cursor-pointer rounded hover:bg-gray-100 ${
                 activeMenu === item.id
                   ? "active bg-[#f7e5e5] text-[#ff1053]"
                   : ""
@@ -108,7 +108,7 @@ const OrganicUA = () => {
               {item?.subMenu?.map((subItem) => (
                 <p
                   key={subItem.id}
-                  className={`p-1 px-2 pl-8 cursor-pointer rounded ${
+                  className={`p-1 px-2 pl-8 cursor-pointer rounded hover:bg-gray-100 ${
                     activeMenu === subItem.id
                       ? "active bg-[#f7e5e5] text-[#ff1053]"
                       : ""

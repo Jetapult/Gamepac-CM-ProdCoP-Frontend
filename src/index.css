@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=League+Spartan&display=swap');
+/* @import url('https://fonts.googleapis.com/css2?family=League+Spartan&display=swap'); */
 
 @tailwind base;
 @tailwind components;
@@ -16,10 +16,37 @@
 }
 }
 
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./fonts/SF-Pro-Display-Black.otf') format('otf');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./fonts/SF-Pro-Display-Bold.otf') format('otf');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./fonts/SF-Pro-Display-Regular.otf') format('otf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./fonts/SF-Pro-Display-Semibold.otf') format('otf');
+  font-weight: 600;
+  font-style: normal;
+}
 
 
 body {
-  font-family: 'League Spartan', sans-serif;
+  font-family: 'SF Pro Display', sans-serif;
   background-color: #f6f6f7;
   margin-top: 56px;
 }
@@ -89,6 +116,118 @@ textarea{
 .page-wrapper {
   max-width: 100%;
   overflow-x: auto;
+}
+
+.switch {
+   --_switch-clr-bg: rgb(12, 10, 9);
+  --_switch-clr-txt: rgb(255 255 255);
+  --_switch-clr-outline: rgba(255 255 255 / 0.3);
+
+  --_switch-padding: 4px;
+  --_label-padding: 6px 10px;
+  --_toggle-clr-bg: #ff1053;
+  --_toggle-clr-bg-on: #ff1053;
+  --_toggle-speed: 300ms;
+  --_toggle-easing: cubic-bezier(0.47, 1.64, 0.41, 0.8);
+
+  color: var(--_switch-clr-txt);
+  background-color: var(--_switch-clr-bg);
+  position: relative;
+  cursor: pointer;
+  border-radius: 2px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  isolation: isolate;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.3), 0 1px rgba(255, 255, 255, 0.1);
+  transition: outline 300ms ease-in-out;
+  outline: 1px dashed transparent;
+}
+.switch.rounded {
+  border-radius: 9999px;
+}
+.switch span{
+  font-size: 14px;
+}
+.switch:has(input:focus-visible) {
+  outline: 1px dashed var(--_switch-clr-outline);
+  outline-offset: 4px;
+}
+
+.switch input[type="checkbox"] {
+  appearance: none;
+  border: none;
+  outline: none;
+  position: absolute;
+  border-radius: inherit;
+  background-color: var(--_toggle-clr-bg);
+  transform-origin: left;
+  inset: var(--_switch-padding) calc(50% + var(--_switch-padding))  var(--_switch-padding) var(--_switch-padding);
+  transition: background-color var(--_toggle-speed) var(--_toggle-easing),
+    scale var(--_toggle-speed) var(--_toggle-easing);
+  z-index: -1;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.3), 0 1px rgba(255, 255, 255, 0.3);
+  animation: toggle-off var(--_toggle-speed) linear forwards;
+}
+.switch:hover > input[type="checkbox"] {
+  scale: 1.1 1;
+}
+/* checked - move slider to right */
+.switch input[type="checkbox"]:checked {
+  transform-origin: right;
+  animation: toggle-on var(--_toggle-speed) linear forwards;
+  background-color: var(--_toggle-clr-bg-on);
+}
+
+/* labels */
+.switch > span {
+/*  outline: 1px dashed white;*/
+  display: grid;
+  place-content: center;
+  transition: opacity 300ms ease-in-out;
+  padding: var(--_label-padding);
+}
+
+/* checked - set opacity */
+.switch > span:last-of-type,
+.switch > input:checked + span:first-of-type {
+  opacity: 0.5;
+}
+.switch > input:checked ~ span:last-of-type,
+.switch:hover span {
+  opacity: 1;
+}
+@keyframes toggle-on {
+  /*0%{  inset: var(--_switch-padding) 45% var(--_switch-padding) var(--_switch-padding);}*/
+  50% {
+    inset: var(--_switch-padding) var(--_switch-padding) var(--_switch-padding)
+      65%;
+  }
+  80% {
+    inset: var(--_switch-padding) var(--_switch-padding) var(--_switch-padding)
+      50%;
+  }
+  100% {
+    inset: var(--_switch-padding) var(--_switch-padding) var(--_switch-padding)
+      calc(50% + var(--_switch-padding));
+  }
+}
+@keyframes toggle-off {
+  0% {
+    inset: var(--_switch-padding) var(--_switch-padding) var(--_switch-padding)
+      calc(50% + var(--_switch-padding));
+  }
+  50% {
+    inset: var(--_switch-padding) 65% var(--_switch-padding)
+      var(--_switch-padding);
+  }
+  80% {
+    inset: var(--_switch-padding) 50% var(--_switch-padding)
+      var(--_switch-padding);
+  }
+  100% {
+    inset: var(--_switch-padding) calc(50% + var(--_switch-padding)) var(--_switch-padding)
+      var(--_switch-padding);
+  }
 }
 
 @keyframes loader-3-bounce {

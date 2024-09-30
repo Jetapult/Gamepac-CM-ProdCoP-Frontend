@@ -12,6 +12,8 @@ import {
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
 } from "@heroicons/react/20/solid";
+import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/20/solid";
+import TxtViewer from "./components/TxtViewer";
 
 export const isPDF = (url) => {
   return url.toLowerCase().endsWith(".pdf");
@@ -64,8 +66,30 @@ const RagChat = () => {
   const [isFirstChat, setIsFirstChat] = useState(false);
   const [showPdf, setShowPdf] = useState(true);
   const [totalConversations, setTotalConversations] = useState(0);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [queryPacType, setQueryPacType] = useState("lite");
   const wrapperRef = useRef(null);
   const messagesEndRef = useRef(null);
+
+  const scrollToTop = () => {
+    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const scrollToBottom = () => {
+    wrapperRef.current.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  const handleScroll = () => {
+    if (isAtBottom) {
+      scrollToTop();
+    } else {
+      scrollToBottom();
+    }
+    setIsAtBottom(!isAtBottom);
+  };
 
   const createNewChat = async () => {
     try {
@@ -116,6 +140,7 @@ const RagChat = () => {
         message: messageObj.message,
         conversation_id: conversationId || selectedConversation.id,
         selectedKnowledgebase: selectedKnowledgebase.id,
+        type: queryPacType,
       };
       if (selectedKnowledgebase.length) {
         const knowledgebase_ids = [];
@@ -136,7 +161,10 @@ const RagChat = () => {
         requestbody.quote = messageObj.quote;
       }
       const response = await api.post(`/v1/chat/chat-with-ai`, requestbody);
-      const aiResponse = {
+      const aiResponse = queryPacType === "super" ? {
+        ...response.data.data.response,
+        latest: true,
+      } : {
         ...response.data.data.saved_message,
         latest: true,
       };
@@ -212,6 +240,7 @@ const RagChat = () => {
         game_id: selectedGame.id || 1,
         title: convoTitle,
         platform: selectedGame.platform === "apple" ? "ios" : "android",
+        type: queryPacType,
       };
       const createConversationResponse = await api.post(
         `/v1/chat/conversations`,
@@ -271,7 +300,7 @@ const RagChat = () => {
           selectedGame.platform === "apple" ? "ios" : "android"
         }/${selectedGame.id || 1}?current_page=${currentPage}${
           searchText ? `&searchText=${searchText}` : ""
-        }`
+        }&type=${queryPacType}`
       );
       if((searchText.length && currentPage === 1) || currentPage === 1){
         setConversations(response.data.data);
@@ -280,6 +309,9 @@ const RagChat = () => {
       }
       if(searchText.length === 0 && currentPage === 1){
         setSelectedConversation(response.data.data[0]);
+        if(response.data.data.length === 0){
+          setMessages([]);
+        }
       }
       setTotalConversations(response.data.total);
     } catch (err) {
@@ -314,7 +346,7 @@ const RagChat = () => {
     if (selectedGame.id || 1) {
       fetchConversations(1, "");
     }
-  }, []);
+  }, [queryPacType]);
 
   useEffect(() => {
     if (selectedConversation?.id && !isFirstChat) {
@@ -327,16 +359,28 @@ const RagChat = () => {
       <div className="bg-white h-[calc(100vh-60px)]">
         <div className="flex">
           <div
-            className={`relative pt-3 bg-[#f6f6f7] ${
-              showPdf ? "px-4 w-[20%]" : "px-2 w-[3%]"
-            }`}
+            className={`relative pt-3 ${showPdf ? "px-2 w-[20%]" : " w-[3%]"}`}
           >
             <div
               className={`flex items-center ${
-                showPdf ? "justify-between" : "justify-center"
+                showPdf ? "justify-between px-4" : "justify-center px-3"
               }`}
             >
               {showPdf && <h1 className="text-2xl font-bold">QueryPac</h1>}
+              {showPdf && (
+                <label
+                  htmlFor="filter"
+                  className="switch rounded"
+                  aria-label="Toggle Filter"
+                >
+                  <input type="checkbox" id="filter" onChange={(e) => {
+                    setQueryPacType(e.target.checked ? "super" : "lite");
+                    setSelectedKnowledgebase([]);
+                  }} checked={queryPacType === "super"} />
+                  <span>Lite</span>
+                  <span>Super</span>
+                </label>
+              )}
               <span
                 className={`cursor-pointer z-10 ${showPdf ? "" : ""}`}
                 onClick={() => setShowPdf(!showPdf)}
@@ -360,6 +404,7 @@ const RagChat = () => {
               setToastMessage={setToastMessage}
               showPdf={showPdf}
               setShowPdf={setShowPdf}
+              queryPacType={queryPacType}
             />
             {/* <Conversations
                 conversations={conversations}
@@ -371,18 +416,24 @@ const RagChat = () => {
               /> */}
           </div>
           <div className={`relative h-full ${showPdf ? "w-[40%]" : "w-[57%]"}`}>
-            {selectedPdf && (
+            {selectedPdf?.file_url && <>
+            {isPDF(selectedPdf?.file_url) ? (
               <PdfViewer
                 selectedPdf={selectedPdf}
                 selectedPage={selectedPage}
                 setSelectedPdf={setSelectedPdf}
                 setMessageObj={setMessageObj}
               />
-            )}
+            ) : <TxtViewer url={selectedPdf?.file_url} selectedPdf={selectedPdf} />}</>}
           </div>
           <div className="relative w-[40%] px-6 border-l border-l-[#e6e6e6]">
             <div
+              ref={wrapperRef}
               className="flex flex-col-reverse h-[calc(100vh-60px)] overflow-auto no-scrollbar pb-[124px] outline-none"
+              onScroll={(e) => {
+                const { scrollTop, scrollHeight, clientHeight } = e.target;
+                setIsAtBottom(scrollTop === 0);
+              }}
             >
               {generatingLoader && <GeneratingLoader />}
               {messages.map((message, index) => (
@@ -392,8 +443,11 @@ const RagChat = () => {
                   setSelectedPage={setSelectedPage}
                 />
               ))}
+              <div ref={messagesEndRef} />
             </div>
-            <div ref={messagesEndRef} />
+            {messages?.length > 2 && (
+              <ScrollButton isAtBottom={isAtBottom} onClick={handleScroll} />
+            )}
             <InputFieldChat
               messageObj={messageObj}
               setMessageObj={setMessageObj}
@@ -423,5 +477,18 @@ const RagChat = () => {
     </div>
   );
 };
+
+const ScrollButton = ({ isAtBottom, onClick }) => (
+  <button
+    className="fixed bottom-32 right-8 bg-white border border-gray-200 hover:bg-gray-200 rounded-full p-1 shadow-md"
+    onClick={onClick}
+  >
+    {isAtBottom ? (
+      <ArrowUpIcon className="w-6 h-6" />
+    ) : (
+      <ArrowDownIcon className="w-6 h-6" />
+    )}
+  </button>
+);
 
 export default RagChat;

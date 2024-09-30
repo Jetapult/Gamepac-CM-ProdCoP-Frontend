@@ -24,7 +24,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
           onClick={() =>
             currentPage === 1 ? {} : setCurrentPage((prev) => prev - 1)
           }
-          className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
         >
           Previous
         </a>
@@ -34,7 +34,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
               ? setCurrentPage((prev) => prev + 1)
               : {}
           }
-          className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
         >
           Next
         </a>
@@ -54,7 +54,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
           aria-label="Pagination"
         >
           <a
-            className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+            className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-100 focus:z-20 focus:outline-offset-0 ${
               currentPage < totalPages ? "" : "cursor-default"
             }`}
             onClick={() => setPage(1)}
@@ -66,7 +66,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
             />
           </a>
           <a
-            className="relative inline-flex items-center px-2 py-2 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+            className="relative inline-flex items-center px-2 py-2 ring-1 ring-inset ring-gray-300 hover:bg-gray-100 focus:z-20 focus:outline-offset-0"
             onClick={() =>
               currentPage === 1 ? {} : setCurrentPage((prev) => prev - 1)
             }
@@ -89,7 +89,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
               className={`relative z-10 inline-flex items-center ${
                 currentPage === page
                   ? "bg-[#ff1053] text-white"
-                  : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                  : "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-100"
               } px-4 py-2 text-sm font-semibold focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600`}
               onClick={() => setPage(page)}
               disabled={page === currentPage}
@@ -98,7 +98,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
             </a>
           ))}
           <a
-            className="relative inline-flex items-center px-2 py-2 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+            className="relative inline-flex items-center px-2 py-2 ring-1 ring-inset ring-gray-300 hover:bg-gray-100 focus:z-20 focus:outline-offset-0"
             onClick={() =>
               currentPage < totalPages ? setCurrentPage((prev) => prev + 1) : {}
             }
@@ -112,7 +112,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
             />
           </a>
           <a
-            className={`relative inline-flex items-center rounded-r-md px-2 py-2 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+            className={`relative inline-flex items-center rounded-r-md px-2 py-2 ring-1 ring-inset ring-gray-300 hover:bg-gray-100 focus:z-20 focus:outline-offset-0 ${
               currentPage < totalPages ? "" : "cursor-default"
             }`}
             onClick={() => setPage(totalPages)}
