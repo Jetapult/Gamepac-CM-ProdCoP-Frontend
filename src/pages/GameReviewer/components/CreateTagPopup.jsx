@@ -13,7 +13,8 @@ const CreateTagPopup = ({
   setKnowledgebaseCategories,
   setToastMessage,
   knowledgebaseCategoriesEdit,
-  setKnowledgebaseCategoriesEdit
+  setKnowledgebaseCategoriesEdit,
+  queryPacType
 }) => {
   const [submitLoader, setSubmitLoader] = useState(false);
   const [tagName, setTagName] = useState("");
@@ -48,6 +49,7 @@ const CreateTagPopup = ({
         description: description,
         is_public: isPublic,
         color: color,
+        type: queryPacType
       };
       const templatesResponse = knowledgebaseCategoriesEdit.id ? await api.put(
         `/v1/chat/knowledgebase-categories/${knowledgebaseCategoriesEdit.id}`,

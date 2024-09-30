@@ -66,6 +66,7 @@ const RagChat = () => {
   const [showPdf, setShowPdf] = useState(true);
   const [totalConversations, setTotalConversations] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [queryPacType, setQueryPacType] = useState("lite");
   const wrapperRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -138,6 +139,7 @@ const RagChat = () => {
         message: messageObj.message,
         conversation_id: conversationId || selectedConversation.id,
         selectedKnowledgebase: selectedKnowledgebase.id,
+        type: queryPacType,
       };
       if (selectedKnowledgebase.length) {
         const knowledgebase_ids = [];
@@ -158,8 +160,11 @@ const RagChat = () => {
         requestbody.quote = messageObj.quote;
       }
       const response = await api.post(`/v1/chat/chat-with-ai`, requestbody);
-      const aiResponse = {
+      const aiResponse = queryPacType === "super" ? {
         ...response.data.data.response,
+        latest: true,
+      } : {
+        ...response.data.data.saved_message,
         latest: true,
       };
       setMessages((prev) => [aiResponse, ...prev]);
@@ -234,6 +239,7 @@ const RagChat = () => {
         game_id: selectedGame.id || 1,
         title: convoTitle,
         platform: selectedGame.platform === "apple" ? "ios" : "android",
+        type: queryPacType,
       };
       const createConversationResponse = await api.post(
         `/v1/chat/conversations`,
@@ -293,7 +299,7 @@ const RagChat = () => {
           selectedGame.platform === "apple" ? "ios" : "android"
         }/${selectedGame.id || 1}?current_page=${currentPage}${
           searchText ? `&searchText=${searchText}` : ""
-        }`
+        }&type=${queryPacType}`
       );
       if((searchText.length && currentPage === 1) || currentPage === 1){
         setConversations(response.data.data);
@@ -302,6 +308,9 @@ const RagChat = () => {
       }
       if(searchText.length === 0 && currentPage === 1){
         setSelectedConversation(response.data.data[0]);
+        if(response.data.data.length === 0){
+          setMessages([]);
+        }
       }
       setTotalConversations(response.data.total);
     } catch (err) {
@@ -336,7 +345,7 @@ const RagChat = () => {
     if (selectedGame.id || 1) {
       fetchConversations(1, "");
     }
-  }, []);
+  }, [queryPacType]);
 
   useEffect(() => {
     if (selectedConversation?.id && !isFirstChat) {
@@ -349,9 +358,7 @@ const RagChat = () => {
       <div className="bg-white h-[calc(100vh-60px)]">
         <div className="flex">
           <div
-            className={`relative pt-3 ${
-              showPdf ? "px-2 w-[20%]" : " w-[3%]"
-            }`}
+            className={`relative pt-3 ${showPdf ? "px-2 w-[20%]" : " w-[3%]"}`}
           >
             <div
               className={`flex items-center ${
@@ -359,6 +366,20 @@ const RagChat = () => {
               }`}
             >
               {showPdf && <h1 className="text-2xl font-bold">QueryPac</h1>}
+              {showPdf && (
+                <label
+                  htmlFor="filter"
+                  className="switch rounded"
+                  aria-label="Toggle Filter"
+                >
+                  <input type="checkbox" id="filter" onChange={(e) => {
+                    setQueryPacType(e.target.checked ? "super" : "lite");
+                    setSelectedKnowledgebase([]);
+                  }} checked={queryPacType === "super"} />
+                  <span>Lite</span>
+                  <span>Super</span>
+                </label>
+              )}
               <span
                 className={`cursor-pointer z-10 ${showPdf ? "" : ""}`}
                 onClick={() => setShowPdf(!showPdf)}
@@ -382,6 +403,7 @@ const RagChat = () => {
               setToastMessage={setToastMessage}
               showPdf={showPdf}
               setShowPdf={setShowPdf}
+              queryPacType={queryPacType}
             />
             {/* <Conversations
                 conversations={conversations}
@@ -421,7 +443,9 @@ const RagChat = () => {
               ))}
               <div ref={messagesEndRef} />
             </div>
-            {messages?.length > 2 && <ScrollButton isAtBottom={isAtBottom} onClick={handleScroll} />}
+            {messages?.length > 2 && (
+              <ScrollButton isAtBottom={isAtBottom} onClick={handleScroll} />
+            )}
             <InputFieldChat
               messageObj={messageObj}
               setMessageObj={setMessageObj}

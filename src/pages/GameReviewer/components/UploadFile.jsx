@@ -19,7 +19,8 @@ const UploadFile = ({
   setShowPdf,
   knowledgebaseCategories,
   setKnowledgebaseCategories,
-  setSelectedKnowledgebaseCategories
+  setSelectedKnowledgebaseCategories,
+  queryPacType
 }) => {
   const [showUploadProgressPopup, setShowUploadProgressPopup] = useState(false);
   const [files, setFiles] = useState([]);
@@ -70,6 +71,7 @@ const UploadFile = ({
           selectedKnowledgebaseCategories={selectedKnowledgebaseCategories}
           setKnowledgebaseCategories={setKnowledgebaseCategories}
           setSelectedKnowledgebaseCategories={setSelectedKnowledgebaseCategories}
+          queryPacType={queryPacType}
         />
       )}
     </>
@@ -109,7 +111,8 @@ const UploadDocPopup = ({
   userData,
   selectedKnowledgebaseCategories,
   setKnowledgebaseCategories,
-  setSelectedKnowledgebaseCategories
+  setSelectedKnowledgebaseCategories,
+  queryPacType
 }) => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -160,6 +163,7 @@ const UploadDocPopup = ({
       formData.append("files", selectedFiles[0]);
       formData.append("slug", userData.slug);
       categoryIds.forEach((id) => formData.append("category_ids", id));
+      formData.append("type", queryPacType);
       const response = await api.post("/v1/chat/attachments", formData);
       setMessageObj({
         ...messageObj,
