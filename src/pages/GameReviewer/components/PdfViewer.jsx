@@ -203,7 +203,7 @@ const PdfViewer = ({
   return (
     <div className="pdf-viewer h-full flex flex-col relative">
       <div
-        className="pdf-toolbar z-50"
+        className="pdf-toolbar z-20"
         style={{
           display: "flex",
           justifyContent: "space-between",
