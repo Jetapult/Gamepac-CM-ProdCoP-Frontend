@@ -412,7 +412,7 @@ const KnowledgeBase = ({
                         {queryPacType === "lite" && knowledge.file_url.endsWith(".pdf") && <span className="hidden group-hover:block pr-2" onClick={(e) => sendSlackMessage(e, knowledge)}>
                           <DocumentCurrencyDollarIcon className="w-4 h-4 text-black" />
                         </span>}
-                        <span
+                        {parseInt(knowledge?.user_id) === parseInt(userData?.id) && <span
                           className="hidden group-hover:block pr-2"
                           onClick={(event) => {
                             event.stopPropagation();
@@ -423,8 +423,8 @@ const KnowledgeBase = ({
                           }}
                         >
                           <PencilIcon className="w-4 h-4 text-black" />
-                        </span>
-                        {queryPacType === "lite" && <span
+                        </span>}
+                        {queryPacType === "lite" && parseInt(knowledge?.user_id) === parseInt(userData?.id) && <span
                           className="hidden group-hover:block"
                           onClick={(event) => onhandleDelete(event, knowledge)}
                         >
