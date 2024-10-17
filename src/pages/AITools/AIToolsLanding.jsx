@@ -28,22 +28,14 @@ const AIToolsLanding = () => {
             </div>
           </div>
           <div className="grid gap-6">
-            <div
-              className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-colors hover:bg-gray-100 cursor-pointer"
-              onClick={() => navigate("/aistories")}
-            >
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold">
-                  <SparklesIcon className="w-6 h-6 inline" /> AI Story Weaver
-                </h3>
+          <div className="group rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-colors hover:bg-gray-100 relative">
+              <div className="space-y-2" onClick={() => navigate("/html5-games")}>
+                <h3 className="text-xl font-bold">HTML5 playables</h3>
                 <p className="text-gray-500">
-                  Unleash your creativity with StoryWeaver, our platform for
-                  crafting immersive narratives and generating AI assets and
-                  Game Ready word search levels.
+                  check out our HTML5 playables
                 </p>
                 <button
-                  className="inline-flex h-9 items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-gray-50 shadow transition-colors hover:bg-gray-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50"
-                  //   onClick={() => navigate("/aistories")}
+                  className="mt-4 inline-flex h-9 items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-gray-50 shadow transition-colors hover:bg-gray-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950"
                 >
                   Try Now
                 </button>
@@ -62,28 +54,24 @@ const AIToolsLanding = () => {
                 </button>
               </div>
             </div>
-            <div className="group rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-colors hover:bg-gray-100 relative">
-              <div className="space-y-2 blur-sm opacity-50">
-                <h3 className="text-xl font-bold">AI Game Analytics</h3>
+            <div
+              className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-colors hover:bg-gray-100 cursor-pointer"
+              onClick={() => navigate("/aistories")}
+            >
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold">
+                  <SparklesIcon className="w-6 h-6 inline" /> AI Story Weaver
+                </h3>
                 <p className="text-gray-500">
-                  Analyze your game data to understand player behavior and
-                  improve your gameplay.
+                  Unleash your creativity with StoryWeaver, our platform for
+                  crafting immersive narratives and generating AI assets and
+                  Game Ready word search levels.
                 </p>
-                <div className="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm font-medium text-gray-500">
-                  Coming Soon
-                </div>
                 <button
-                  className="mt-4 inline-flex h-9 items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-gray-50 shadow transition-colors hover:bg-gray-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50"
-                  disabled
-                  href="#"
+                  className="inline-flex h-9 items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-gray-50 shadow transition-colors hover:bg-gray-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50"
+                  //   onClick={() => navigate("/aistories")}
                 >
                   Try Now
-                </button>
-              </div>
-
-              <div className="hidden group-hover:flex absolute top-0 bottom-0 left-0 right-0 items-center justify-center bg-[#12111157] rounded-lg">
-                <button className="inline-flex h-9 items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-gray-50 shadow transition-colors hover:bg-gray-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50">
-                  Coming Soon
                 </button>
               </div>
             </div>
