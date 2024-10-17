@@ -12,12 +12,18 @@ import UploadFile from "./UploadFile";
 import { useDispatch } from "react-redux";
 import { addKnowledgebase } from "../../../store/reducer/knowledgebaseSlice";
 import moment from "moment";
-import { ClockIcon, DocumentCurrencyDollarIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import {
+  ClockIcon,
+  DocumentCurrencyDollarIcon,
+  PencilIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
 import SearchKnowledgebase from "./SearchKnowledgebase";
 import ConfirmationPopup from "../../../components/ConfirmationPopup";
 import CreateTagPopup from "./CreateTagPopup";
 import UpdateKnowledgebasePopup from "./UpdateKnowledgebase";
 import CategoryIcon from "./CategoryIcon";
+import { Tooltip as ReactTooltip } from "react-tooltip";
 
 const KnowledgeBase = ({
   messageObj,
@@ -30,7 +36,7 @@ const KnowledgeBase = ({
   setToastMessage,
   showPdf,
   setShowPdf,
-  queryPacType
+  queryPacType,
 }) => {
   const [knowledgebaseCategories, setKnowledgebaseCategories] = useState([]);
   const [selectedKnowledgebaseCategories, setSelectedKnowledgebaseCategories] =
@@ -45,7 +51,8 @@ const KnowledgeBase = ({
   const [showUpdateKnowledgebasePopup, setShowUpdateKnowledgebasePopup] =
     useState(false);
   const [knowledgebaseToUpdate, setKnowledgebaseToUpdate] = useState({});
-  const [knowledgebaseCategoriesEdit, setKnowledgebaseCategoriesEdit] = useState({});
+  const [knowledgebaseCategoriesEdit, setKnowledgebaseCategoriesEdit] =
+    useState({});
   const dispatch = useDispatch();
   const wrapperRef = useRef(null);
   useOutsideAlerter(wrapperRef);
@@ -98,19 +105,21 @@ const KnowledgeBase = ({
         );
       }
       setDeleteDocument({});
-      setKnowledgebaseCategories((prevCategories) => 
+      setKnowledgebaseCategories((prevCategories) =>
         prevCategories.map((category) => {
-          const isInCurrent = deleteDocument.categories?.some(prevCat => prevCat?.id === category?.id);
+          const isInCurrent = deleteDocument.categories?.some(
+            (prevCat) => prevCat?.id === category?.id
+          );
           if (isInCurrent) {
             return { ...category, document_count: category.document_count - 1 };
           }
           return category;
         })
       );
-      setSelectedKnowledgebaseCategories(prev => ({
+      setSelectedKnowledgebaseCategories((prev) => ({
         ...prev,
-        document_count: prev.document_count - 1
-      }))
+        document_count: prev.document_count - 1,
+      }));
     } catch (error) {
       console.log(error);
       setToastMessage({
@@ -130,7 +139,9 @@ const KnowledgeBase = ({
   };
   const fetchKnowledgebaseCategories = async () => {
     try {
-      const response = await api.get(`/v1/chat/knowledgebase-categories?type=${queryPacType}`);
+      const response = await api.get(
+        `/v1/chat/knowledgebase-categories?type=${queryPacType}`
+      );
       const knowledgebaseCategories = response.data.data.filter((category) => {
         category.label = category.name;
         category.value = category.name;
@@ -160,44 +171,47 @@ const KnowledgeBase = ({
   const sendSlackMessage = async (event, knowledge) => {
     try {
       event.stopPropagation();
-      const slackNotifyResponse = await api.post("/v1/chat/upload-lite-doc-slack-notification", {
-        message: {
-          text: "New QueryPAC Super Upload Request",
-          blocks: [
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text: "*New request to upload data from QueryPAC Lite to Super*"
-              }
-            },
-            {
-              type: "section",
-              fields: [
-                {
+      const slackNotifyResponse = await api.post(
+        "/v1/chat/upload-lite-doc-slack-notification",
+        {
+          message: {
+            text: "New QueryPAC Super Upload Request",
+            blocks: [
+              {
+                type: "section",
+                text: {
                   type: "mrkdwn",
-                  text: `*File Name:*\n${knowledge?.title}`
+                  text: "*New request to upload data from QueryPAC Lite to Super*",
                 },
-                {
+              },
+              {
+                type: "section",
+                fields: [
+                  {
+                    type: "mrkdwn",
+                    text: `*File Name:*\n${knowledge?.title}`,
+                  },
+                  {
+                    type: "mrkdwn",
+                    text: `*Requested By:*\n${userData?.email}`,
+                  },
+                  {
+                    type: "mrkdwn",
+                    text: `*s3 url:*\n${knowledge?.file_url}`,
+                  },
+                ],
+              },
+              {
+                type: "section",
+                text: {
                   type: "mrkdwn",
-                  text: `*Requested By:*\n${userData?.email}`
+                  text: "This file has been processed in QueryPAC Lite for text summarization. For advanced summarization including images and tables, it can be further processed in QueryPAC Super using Unstructured API.",
                 },
-                {
-                  type: "mrkdwn",
-                  text: `*s3 url:*\n${knowledge?.file_url}`
-                }
-              ]
-            },
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text: "This file has been processed in QueryPAC Lite for text summarization. For advanced summarization including images and tables, it can be further processed in QueryPAC Super using Unstructured API."
-              }
-            }
-          ]
+              },
+            ],
+          },
         }
-      });
+      );
       setToastMessage({
         show: true,
         message: "Successfuly notified to AI Team",
@@ -209,7 +223,7 @@ const KnowledgeBase = ({
         message: "Something went wrong! Please try again later",
         type: "error",
       });
-      console.log('Error sending message to Slack:', error);
+      console.log("Error sending message to Slack:", error);
     }
   };
   useEffect(() => {
@@ -224,36 +238,40 @@ const KnowledgeBase = ({
   return (
     <>
       <div className={`mt-2 pt-2 bg-[#F8F9FD] px-2`}>
-        {showPdf ? <div
-          className="flex items-center justify-between bg-white border border-[#ccc] rounded-lg px-2 py-2 relative mb-2 cursor-pointer"
-          onClick={() =>
-            setShowKnowledgebaseCategories(!showKnowledgebaseCategories)
-          }
-        >
-          <div className="flex items-center">
-            {selectedKnowledgebaseCategories?.name && (
-              <CategoryIcon
-                categoryName={selectedKnowledgebaseCategories?.name}
-              />
-            )}
-            <div className="pl-2">
-              <p className="text-sm font-bold text-gray-700 capitalize">
-                {selectedKnowledgebaseCategories?.name
-                  ? selectedKnowledgebaseCategories?.name
-                  : "Knowledge Tags"}
-              </p>
-              {selectedKnowledgebaseCategories?.document_count ? (
-                <p className="text-xs text-gray-500">
-                  {selectedKnowledgebaseCategories?.document_count} documents
-                </p>
-              ) : (
-                ""
+        {showPdf ? (
+          <div
+            className="flex items-center justify-between bg-white border border-[#ccc] rounded-lg px-2 py-2 relative mb-2 cursor-pointer"
+            onClick={() =>
+              setShowKnowledgebaseCategories(!showKnowledgebaseCategories)
+            }
+          >
+            <div className="flex items-center">
+              {selectedKnowledgebaseCategories?.name && (
+                <CategoryIcon
+                  categoryName={selectedKnowledgebaseCategories?.name}
+                />
               )}
+              <div className="pl-2">
+                <p className="text-sm font-bold text-gray-700 capitalize">
+                  {selectedKnowledgebaseCategories?.name
+                    ? selectedKnowledgebaseCategories?.name
+                    : "Knowledge Tags"}
+                </p>
+                {selectedKnowledgebaseCategories?.document_count ? (
+                  <p className="text-xs text-gray-500">
+                    {selectedKnowledgebaseCategories?.document_count} documents
+                  </p>
+                ) : (
+                  ""
+                )}
+              </div>
             </div>
-          </div>
 
-          <ChevronDownIcon className="w-5 h-5 inline text-2xl font-bold" />
-        </div> : <></>}
+            <ChevronDownIcon className="w-5 h-5 inline text-2xl font-bold" />
+          </div>
+        ) : (
+          <></>
+        )}
         {showKnowledgebaseCategories && (
           <div
             className="bg-white rounded-lg absolute top-[124px] max-h-[350px] w-[270px] z-10 shadow-lg p-2 overflow-y-auto"
@@ -342,22 +360,33 @@ const KnowledgeBase = ({
                     }}
                   />
                   {knowledgebase.every((knowledge) =>
-                      selectedKnowledgebase.some(
-                        (item) => item.id === knowledge.id
-                      )
-                    ) ? "Uns" : "S"}elect all docs
+                    selectedKnowledgebase.some(
+                      (item) => item.id === knowledge.id
+                    )
+                  )
+                    ? "Uns"
+                    : "S"}
+                  elect all docs
                 </p>
               </>
             ) : (
               <></>
             )}
-            <div className={`flex flex-col overflow-auto ${queryPacType === "lite" || (queryPacType === "super" && userData?.roles?.includes("admin")) ? "h-[calc(100vh-310px)]" : "h-[calc(100vh-220px)]"}`}>
+            <div
+              className={`flex flex-col overflow-auto ${
+                queryPacType === "lite" ||
+                (queryPacType === "super" && userData?.roles?.includes("admin"))
+                  ? "h-[calc(100vh-310px)]"
+                  : "h-[calc(100vh-220px)]"
+              }`}
+            >
               {knowledgebase.map((knowledge) => (
                 <div
                   key={knowledge.id}
                   className={`flex items-center runded mb-2 p-2 rounded-lg hover:bg-white cursor-pointer ${
                     selectedPdf?.id === knowledge.id ? "bg-white" : ""
                   }`}
+                  style={{ zIndex: 9999999999 }}
                   onClick={() => setSelectedPdf(knowledge)}
                 >
                   <input
@@ -390,15 +419,18 @@ const KnowledgeBase = ({
                   />
                   <div className="w-full group">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                    {knowledge?.categories?.map((category) => (
-                      <p
-                        className={`text-xs capitalize inline px-1.5 py-[2px] rounded-full`}
-                        style={{ backgroundColor: category.color + '33', color: category.color }}
-                        key={category.id}
-                      >
-                        {category.name}
-                      </p>
-                    ))}
+                      {knowledge?.categories?.map((category) => (
+                        <p
+                          className={`text-xs capitalize inline px-1.5 py-[2px] rounded-full`}
+                          style={{
+                            backgroundColor: category.color + "33",
+                            color: category.color,
+                          }}
+                          key={category.id}
+                        >
+                          {category.name}
+                        </p>
+                      ))}
                     </div>
                     <p className="line-clamp-2 text-sm">{knowledge.title}</p>
                     <p className="text-xs flex items-center justify-between text-gray-500 mb-1">
@@ -409,27 +441,51 @@ const KnowledgeBase = ({
                         )}
                       </span>
                       <span className="flex items-center">
-                        {queryPacType === "lite" && knowledge.file_url.endsWith(".pdf") && <span className="hidden group-hover:block pr-2" onClick={(e) => sendSlackMessage(e, knowledge)}>
-                          <DocumentCurrencyDollarIcon className="w-4 h-4 text-black" />
-                        </span>}
-                        {parseInt(knowledge?.user_id) === parseInt(userData?.id) && <span
-                          className="hidden group-hover:block pr-2"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setShowUpdateKnowledgebasePopup(
-                              !showUpdateKnowledgebasePopup
-                            );
-                            setKnowledgebaseToUpdate(knowledge);
-                          }}
-                        >
-                          <PencilIcon className="w-4 h-4 text-black" />
-                        </span>}
-                        {queryPacType === "lite" && parseInt(knowledge?.user_id) === parseInt(userData?.id) && <span
-                          className="hidden group-hover:block"
-                          onClick={(event) => onhandleDelete(event, knowledge)}
-                        >
-                          <TrashIcon className="w-4 h-4 text-black" />
-                        </span>}
+                        {queryPacType === "lite" &&
+                          knowledge.file_url.endsWith(".pdf") && (
+                            <>
+                              <span
+                                data-tooltip-id="my-tooltip-1"
+                                className="hidden group-hover:block pr-2"
+                                onClick={(e) => sendSlackMessage(e, knowledge)}
+                              >
+                                <DocumentCurrencyDollarIcon className="w-4 h-4 text-black" />
+                              </span>
+                              <ReactTooltip
+                                id="my-tooltip-1"
+                                place="top"
+                                className="hidden group-hover:block"
+                                content="Requesting the file to move to super"
+                              />
+                            </>
+                          )}
+                        {parseInt(knowledge?.user_id) ===
+                          parseInt(userData?.id) && (
+                          <span
+                            className="hidden group-hover:block pr-2"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setShowUpdateKnowledgebasePopup(
+                                !showUpdateKnowledgebasePopup
+                              );
+                              setKnowledgebaseToUpdate(knowledge);
+                            }}
+                          >
+                            <PencilIcon className="w-4 h-4 text-black" />
+                          </span>
+                        )}
+                        {queryPacType === "lite" &&
+                          parseInt(knowledge?.user_id) ===
+                            parseInt(userData?.id) && (
+                            <span
+                              className="hidden group-hover:block"
+                              onClick={(event) =>
+                                onhandleDelete(event, knowledge)
+                              }
+                            >
+                              <TrashIcon className="w-4 h-4 text-black" />
+                            </span>
+                          )}
                       </span>
                     </p>
                   </div>
@@ -441,22 +497,29 @@ const KnowledgeBase = ({
           <></>
         )}
       </div>
-      {queryPacType === "lite" || (queryPacType === "super" && userData?.roles?.includes("admin")) ? <UploadFile
-        messageObj={messageObj}
-        setMessageObj={setMessageObj}
-        userData={userData}
-        setKnowledgebase={setKnowledgebase}
-        selectedKnowledgebaseCategories={selectedKnowledgebaseCategories}
-        setSelectedPdf={setSelectedPdf}
-        setSelectedKnowledgebase={setSelectedKnowledgebase}
-        setToastMessage={setToastMessage}
-        showPdf={showPdf}
-        setShowPdf={setShowPdf}
-        knowledgebaseCategories={knowledgebaseCategories}
-        setKnowledgebaseCategories={setKnowledgebaseCategories}
-        setSelectedKnowledgebaseCategories={setSelectedKnowledgebaseCategories}
-        queryPacType={queryPacType}
-      /> : <></>}
+      {queryPacType === "lite" ||
+      (queryPacType === "super" && userData?.roles?.includes("admin")) ? (
+        <UploadFile
+          messageObj={messageObj}
+          setMessageObj={setMessageObj}
+          userData={userData}
+          setKnowledgebase={setKnowledgebase}
+          selectedKnowledgebaseCategories={selectedKnowledgebaseCategories}
+          setSelectedPdf={setSelectedPdf}
+          setSelectedKnowledgebase={setSelectedKnowledgebase}
+          setToastMessage={setToastMessage}
+          showPdf={showPdf}
+          setShowPdf={setShowPdf}
+          knowledgebaseCategories={knowledgebaseCategories}
+          setKnowledgebaseCategories={setKnowledgebaseCategories}
+          setSelectedKnowledgebaseCategories={
+            setSelectedKnowledgebaseCategories
+          }
+          queryPacType={queryPacType}
+        />
+      ) : (
+        <></>
+      )}
       {showDeleteConfirmationPopup && (
         <ConfirmationPopup
           heading={`Delete document? \n ${deleteDocument?.title}`}
