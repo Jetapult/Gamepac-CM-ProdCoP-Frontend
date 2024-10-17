@@ -386,7 +386,7 @@ const KnowledgeBase = ({
                   className={`flex items-center runded mb-2 p-2 rounded-lg hover:bg-white cursor-pointer ${
                     selectedPdf?.id === knowledge.id ? "bg-white" : ""
                   }`}
-                  style={{ zIndex: 9999999999 }}
+                  style={{ zIndex: 9 }}
                   onClick={() => setSelectedPdf(knowledge)}
                 >
                   <input
