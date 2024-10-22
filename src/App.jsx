@@ -44,6 +44,7 @@ import HiddenObjectsGame from "./pages/HTML5Games/HiddenObjectsGame";
 import AINarrations from "./pages/HTML5Games/AINarrations";
 import RagChat from "./pages/GameReviewer/RagChat";
 import HdwPlayable from "./pages/HTML5Games/HdwPlayable";
+import Footer from "./components/Footer";
 
 
 function App() {

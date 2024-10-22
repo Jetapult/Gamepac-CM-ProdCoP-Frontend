@@ -170,7 +170,7 @@ const AIReplies = () => {
             onClick={() => navigate("/docs/app-onboarding")}
           >
             <span className="block">Previous</span>
-            <p className="text-[#ff1053] text-lg font-black">
+            <p className="text-black text-lg font-black">
               <ChevronDoubleLeftIcon className="inline w-4 h-4 mr-2" />
               App Onboarding Setup
             </p>
@@ -180,7 +180,7 @@ const AIReplies = () => {
             onClick={() => navigate("/docs/campaign")}
           >
             <span className="block">Next</span>
-            <p className="text-[#ff1053] text-lg font-black">
+            <p className="text-black text-lg font-black">
               Campaign Integration
               <ChevronDoubleRightIcon className="inline w-4 h-4 ml-2" />
             </p>
@@ -195,7 +195,7 @@ const AIReplies = () => {
                 href="#what-are-ai-replies"
                 className={`table-of-contents__link toc-highlight block py-2 w-full pl-3 rounded ${
                   activeSection === "what-are-ai-replies"
-                    ? "active bg-[#f7e5e5] text-[#ff1053]"
+                    ? "active bg-[#F3F3F3] text-black"
                     : ""
                 }`}
                 onClick={() => handleClick("what-are-ai-replies")}
@@ -208,7 +208,7 @@ const AIReplies = () => {
                 href="#understanding-ai-replies"
                 className={`table-of-contents__link toc-highlight block py-2 w-full pl-3 rounded ${
                   activeSection === "understanding-ai-replies"
-                    ? "active bg-[#f7e5e5] text-[#ff1053]"
+                    ? "active bg-[#F3F3F3] text-black"
                     : ""
                 }`}
                 onClick={() => handleClick("understanding-ai-replies")}
@@ -221,7 +221,7 @@ const AIReplies = () => {
                 href="#review-ai-replies"
                 className={`table-of-contents__link toc-highlight block py-2 w-full pl-3 rounded ${
                   activeSection === "review-ai-replies"
-                    ? "active bg-[#f7e5e5] text-[#ff1053]"
+                    ? "active bg-[#F3F3F3] text-black"
                     : ""
                 }`}
                 onClick={() => handleClick("review-ai-replies")}
@@ -234,7 +234,7 @@ const AIReplies = () => {
                 href="#creating-custom-templates"
                 className={`table-of-contents__link toc-highlight block py-2 w-full pl-3 rounded ${
                   activeSection === "creating-custom-templates"
-                    ? "active bg-[#f7e5e5] text-[#ff1053]"
+                    ? "active bg-[#F3F3F3] text-black"
                     : ""
                 }`}
                 onClick={() => handleClick("creating-custom-templates")}
@@ -247,7 +247,7 @@ const AIReplies = () => {
                 href="#using-tags-for-smarter-automation"
                 className={`table-of-contents__link toc-highlight block py-2 w-full pl-3 rounded ${
                   activeSection === "using-tags-for-smarter-automation"
-                    ? "active bg-[#f7e5e5] text-[#ff1053]"
+                    ? "active bg-[#F3F3F3] text-black"
                     : ""
                 }`}
                 onClick={() => handleClick("using-tags-for-smarter-automation")}
