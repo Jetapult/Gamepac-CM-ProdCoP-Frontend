@@ -77,7 +77,7 @@ const Onboarding = () => {
             <a
               href="https://developers.google.com/android-publisher/getting_started#setting_up_api_access_clients"
               target="_blank"
-              className="text-[#ff1053]"
+              className="text-black underline underline-offset-1"
             >
               here
             </a>
@@ -90,7 +90,7 @@ const Onboarding = () => {
                 <a
                   href="https://console.cloud.google.com/projectcreate"
                   target="_blank"
-                  className="text-[#ff1053]"
+                  className="text-black underline underline-offset-1"
                 >
                   Google Play Console
                 </a>
@@ -102,7 +102,7 @@ const Onboarding = () => {
                 <a
                   href="https://console.developers.google.com/apis/api/androidpublisher.googleapis.com/"
                   target="_blank"
-                  className="text-[#ff1053]"
+                  className="text-black underline underline-offset-1"
                 >
                   Google Play Developer API page
                 </a>
@@ -191,7 +191,7 @@ const Onboarding = () => {
             <a
               href="https://appstoreconnect.apple.com/access/api"
               target="_blank"
-              className="text-[#ff1053]"
+              className="text-black underline underline-offset-1"
             >
               Users page
             </a>
@@ -202,7 +202,7 @@ const Onboarding = () => {
                 <a
                   href="https://developer.apple.com/documentation/appstoreconnectapi/creating_api_keys_for_app_store_connect_api"
                   target="_blank"
-                  className="text-[#ff1053]"
+                  className="text-black underline underline-offset-1"
                 >
                   App Store Connect API Docs
                 </a>
@@ -273,7 +273,7 @@ const Onboarding = () => {
           reviews and feedback from your app store listings. You can also start
           using AI replies to respond to player reviews. Simply head over to{" "}
           <a
-            className="text-[#ff1053] cursor-pointer"
+            className="text-black underline underline-offset-1 cursor-pointer"
             onClick={() => navigate("/docs/ai-replies")}
           >
             AI Replies
@@ -286,7 +286,7 @@ const Onboarding = () => {
             onClick={() => navigate("/docs/overview")}
           >
             <span className="block">Previous</span>
-            <p className="text-[#ff1053] text-lg font-black">
+            <p className="text-black text-lg font-black">
               <ChevronDoubleLeftIcon className="inline w-4 h-4 mr-2" />
               Overview
             </p>
@@ -296,7 +296,7 @@ const Onboarding = () => {
             onClick={() => navigate("/docs/ai-replies")}
           >
             <span className="block">Next</span>
-            <p className="text-[#ff1053] text-lg font-black">
+            <p className="text-black text-lg font-black">
               AI Replies
               <ChevronDoubleRightIcon className="inline w-4 h-4 ml-2" />
             </p>
@@ -311,7 +311,7 @@ const Onboarding = () => {
                 href="#google-play-store"
                 className={`table-of-contents__link toc-highlight block py-2 w-full pl-3 rounded ${
                   activeSection === "google-play-store"
-                    ? "active bg-[#f7e5e5] text-[#ff1053]"
+                    ? "active bg-[#F3F3F3] text-black"
                     : ""
                 }`}
                 onClick={() => handleClick("google-play-store")}
@@ -324,7 +324,7 @@ const Onboarding = () => {
                 href="#apple-app-store"
                 className={`table-of-contents__link toc-highlight block py-2 w-full pl-3 rounded ${
                   activeSection === "apple-app-store"
-                    ? "active bg-[#f7e5e5] text-[#ff1053]"
+                    ? "active bg-[#F3F3F3] text-black"
                     : ""
                 }`}
                 onClick={() => handleClick("apple-app-store")}
@@ -337,7 +337,7 @@ const Onboarding = () => {
                 href="#next-steps"
                 className={`table-of-contents__link toc-highlight block py-2 w-full pl-3 rounded ${
                   activeSection === "next-steps"
-                    ? "active bg-[#f7e5e5] text-[#ff1053]"
+                    ? "active bg-[#F3F3F3] text-black"
                     : ""
                 }`}
                 onClick={() => handleClick("next-steps")}

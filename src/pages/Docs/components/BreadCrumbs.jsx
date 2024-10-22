@@ -6,13 +6,13 @@ const BreadCrumbs = ({ name }) => {
   return (
     <div className="flex items-center">
       <p
-        className="group hover:bg-[#0000000d] px-3 hover:rounded-full cursor-pointer"
+        className="group hover:bg-[#F3F3F3] px-3 hover:rounded-full cursor-pointer"
         onClick={() => navigate("/docs/overview")}
       >
         <HomeIcon className="inline w-4 h-4 text-[#092139] group-hover:text-[#ff1053]" />
       </p>
       <ChevronRightIcon className="inline w-4 h-4 opacity-50 mr-2" />
-      <p className="bg-[#0000000d] px-3 rounded-full py-1 text-[14px] text-[#ff1053]">
+      <p className="bg-[#B9FF66] px-3 rounded-full py-1 text-[14px] text-black font-bold">
         {name}
       </p>
     </div>
