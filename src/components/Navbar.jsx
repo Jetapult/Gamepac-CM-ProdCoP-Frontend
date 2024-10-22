@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { auth, signInWithGogle } from "../config";
-import image from "../assets/jetlogo.png";
+import image from "../assets/jetLogo.png";
 import "./Navbar.css";
 import { useNavigate } from "react-router-dom";
 import audioImg from "../assets/icons8-audio-48.png";
