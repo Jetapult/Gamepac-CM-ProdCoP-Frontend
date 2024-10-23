@@ -402,7 +402,7 @@ const UploadHistory = ({ uploadHistory, setUploadHistory, languages }) => {
 
 const TextTranslate = ({ targetLanguage, setToastMessage }) => {
   const [text, setText] = useState("");
-  const [translatedData, setTranslatedData] = useState("");
+  const [translatedData, setTranslatedData] = useState({});
   const [translating, setTranslating] = useState(false);
   const [showLLMs, setShowLLMs] = useState(false);
   const [selectedLLM, setSelectedLLM] = useState(LLM[0]);
@@ -437,6 +437,7 @@ const TextTranslate = ({ targetLanguage, setToastMessage }) => {
   }, []);
   const handleTranslate = async () => {
     try {
+      setTranslatedData({});
       setTranslating(true);
       const response = await api.post("/v1/gen-ai/translate-text", {
         text,
