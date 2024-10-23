@@ -13,12 +13,48 @@ const Message = ({ message, setSelectedPage }) => {
   const [selectedImage, setSelectedImage] = useState("");
   const [showPdfName, setShowPdfName] = useState("");
   const cleanMessage = (message) => {
-    const formattedMessage = message?.replace(/^###\s+(.*)$/gm, "<h3>$1</h3>");
-    const furtherFormattedMessage = formattedMessage?.replace(
-      /\*\*(.*?)\*\*/g,
-      "<strong>$1</strong>"
-    );
-    return furtherFormattedMessage;
+    if (!message) return "";
+  
+    // Format headers
+    let formattedMessage = message?.replace(/^###\s+(.*)$/gm, "<h3>$1</h3>");
+    
+    // Format bold text
+    formattedMessage = formattedMessage?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    
+    // Format tables
+    formattedMessage = formattedMessage?.replace(/(\|[^\n]+\|\n?)+/g, (match) => {
+      const rows = match.split('\n')
+        .filter(row => row.trim() !== '')
+        .filter(row => !/^\|[\s-]+\|$/.test(row)); // Remove rows with only dashes
+  
+      let tableHtml = '<table class="border-collapse border border-gray-300 my-2">';
+      
+      rows.forEach((row, rowIndex) => {
+        const cells = row.split('|').filter(cell => cell.trim() !== '');
+        if (rowIndex === 0) {
+          tableHtml += '<thead><tr>';
+          cells.forEach((cell) => {
+            tableHtml += `<th class="border border-gray-300 px-4 py-2 bg-gray-200 font-bold">${cell.trim()}</th>`;
+          });
+          tableHtml += '</tr></thead><tbody>';
+        } else {
+          tableHtml += '<tr>';
+          cells.forEach((cell, cellIndex) => {
+            if (cellIndex === 0) {
+              tableHtml += `<th class="border border-gray-300 px-4 py-2 bg-gray-100 font-semibold text-left">${cell.trim()}</th>`;
+            } else {
+              tableHtml += `<td class="border border-gray-300 px-4 py-2">${cell.trim()}</td>`;
+            }
+          });
+          tableHtml += '</tr>';
+        }
+      });
+      
+      tableHtml += '</tbody></table>';
+      return tableHtml;
+    });
+  
+    return formattedMessage;
   };
   return (
     <div
