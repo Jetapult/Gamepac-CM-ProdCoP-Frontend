@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { auth, signInWithGogle } from "../config";
-import image from "../assets/jetapult-logo.svg";
+import image from "../assets/jetLogo.png";
 import "./Navbar.css";
 import { useNavigate } from "react-router-dom";
 import audioImg from "../assets/icons8-audio-48.png";
@@ -123,7 +123,7 @@ function Navbar() {
                 <li
                   className={`duration-150 hover:text-gray-500 hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
                     location.pathname.includes("dashboard")
-                      ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                      ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
                       : ""
                   }`}
                 >
@@ -143,7 +143,7 @@ function Navbar() {
                     <li
                       className={`relative duration-150 hover:text-gray-500 hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
                         location.pathname.includes("analytics")
-                          ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                          ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
                           : ""
                       }`}
                     >
@@ -165,7 +165,7 @@ function Navbar() {
                 <div
                   className={`duration-150 hover:text-gray-500 relative ai-tools hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
                     location.pathname.includes("organic-ua")
-                      ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                      ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
                       : ""
                   }`}
                 >
@@ -193,13 +193,13 @@ function Navbar() {
                         className={`cursor-pointer duration-150 hover:text-gray-500 relative cursor-pointer notetaker hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[46%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
                           location.pathname.includes("note-taker") ||
                           location.pathname.includes("online")
-                            ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[46%] after:translate-x-[-50%] after:rounded-full"
+                            ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black after:absolute after:bottom-[-16px] after:left-[46%] after:translate-x-[-50%] after:rounded-full"
                             : ""
                         }`}
                         ref={wrapperRef}
                       >
                         <a
-                          className="block font-normal"
+                          className="block"
                           onClick={() => {
                             setShowNoteTakerDropdown(!showNoteTakerDropdown);
                             setDropdownOpen(false);
@@ -240,12 +240,12 @@ function Navbar() {
                       <li
                         className={`cursor-pointer duration-150 hover:text-gray-500 relative ai-tools hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
                           location.pathname.includes("ai-")
-                            ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                            ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black  after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
                             : ""
                         }`}
                       >
                         <a
-                          className="block font-normal"
+                          className="block"
                           onClick={() => navigate("/ai-tools")}
                         >
                             AI Tools
@@ -263,12 +263,12 @@ function Navbar() {
                 <li
                   className={`duration-150 cursor-pointer hover:text-gray-500 relative ai-tools hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
                     location.pathname.includes("docs")
-                      ? "text-[#ff1053] after:content-[''] after:h-[3px] after:w-10 after:bg-[#ff1053] after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                      ? "text-black after:content-[''] after:h-[3px] after:w-10 after:bg-black font-bold after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
                       : ""
                   }`}
                 >
                   <a
-                    className="block font-normal"
+                    className="block"
                     onClick={() => navigate("/docs/overview")}
                   >
                     Docs
