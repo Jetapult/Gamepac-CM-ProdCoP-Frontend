@@ -206,7 +206,7 @@ const Online = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-[#f58174] text-white py-2 px-4 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:border-gray-400"
+            className="w-full bg-[#B9FF66] text-[#000] py-2 px-4 rounded-md hover:bg-[#000] hover:text-[#B9FF66] focus:outline-none focus:ring focus:border-gray-400"
           >
             Give Action Items
           </button>
@@ -214,7 +214,7 @@ const Online = () => {
         <div className="mt-4">
         {isLoading ? (
           <button
-            className="w-full bg-[#f1efe7]  py-2 px-4 rounded-md cursor-not-allowed opacity-50"
+            className="w-full bg-[#B9FF66] text-[#000]  py-2 px-4 rounded-md cursor-not-allowed opacity-50"
             disabled
           >
             Loading...
@@ -222,7 +222,7 @@ const Online = () => {
         ) : null}
         {actionId && (
           <button
-            className="w-full bg-[#f1efe7]  py-2 px-4 rounded-md hover:bg-[#eaa399] focus:outline-none focus:ring focus:bg-[#eaa399]"
+            className="w-full bg-[#B9FF66] text-[#000]  py-2 px-4 rounded-md hover:bg-[#000] hover:text-[#B9FF66] focus:outline-none focus:ring focus:bg-[#eaa399]"
             onClick={() =>
               navigate(`/actions/${actionId}`, { state: { label } })
             }

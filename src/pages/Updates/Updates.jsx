@@ -349,12 +349,12 @@ const Updates = () => {
           </div>
           {show === item.id && (
             <div className="bg-[#1a1a1a] text-white mt-3">
-              <header className="bg-gradient-to-r from-[#6b3fa0] to-[#8b5cf6] py-12 px-4 md:px-6 lg:px-8">
+              <header className="bg-[#B9FF66] py-12 px-4 md:px-6 lg:px-8">
                 <div className="container mx-auto max-w-5xl flex flex-col items-center">
-                  <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl">
+                  <h1 className="text-3xl text-[#000] font-extrabold tracking-tight md:text-4xl lg:text-5xl">
                     Jetapult AI Updates
                   </h1>
-                  <p className="mt-3 text-sm text-gray-300">
+                  <p className="mt-3 text-sm text-[#000] text-center">
                     {item.short_description}
                   </p>
                 </div>

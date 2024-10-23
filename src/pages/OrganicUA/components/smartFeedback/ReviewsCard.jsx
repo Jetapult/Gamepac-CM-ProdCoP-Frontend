@@ -633,7 +633,7 @@ const ReviewsCard = ({
                     <div className="flex pr-2 pb-2">
                       {review.isAIReply && (
                         <button
-                          className="border border-[#ccc] rounded py-1 px-3 mr-2 text-sm hover:bg-gray-100"
+                          className="border border-[#ccc] rounded py-1 px-3 mr-2 text-sm hover:bg-[#000] hover:text-[#B9FF66] hover:border-none"
                           onClick={() => {
                             setSelectedTemplate({
                               review_type: "",
@@ -650,8 +650,8 @@ const ReviewsCard = ({
                       )}
 
                       <button
-                        className={`bg-[#ff1053] rounded px-3 py-1 mr-2 text-white text-sm hover:opacity-40 ${
-                          generativeAILoader === review?.id ? "opacity-40" : ""
+                        className={`bg-[#B9FF66] rounded px-3 py-1 mr-2 text-[#000] text-sm hover:bg-[#000] hover:text-[#B9FF66] ${
+                          generativeAILoader === review?.id ? "cursor-not-allowed" : ""
                         }`}
                         onClick={() => {
                           if (generativeAILoader === "") {
@@ -664,7 +664,7 @@ const ReviewsCard = ({
                       </button>
                       <div className="relative">
                         <button
-                          className="border border-[#ccc] flex justify-between items-center rounded py-1 px-3 mr-2 text-sm w-[150px] hover:bg-gray-100"
+                          className="border border-[#ccc] flex justify-between items-center rounded py-1 px-3 mr-2 text-sm w-[170px] hover:bg-[#000] hover:text-[#B9FF66] hover:border-none"
                           onClick={() => setShowTemplateDropdown(review.id)}
                         >
                           {review.template_type
@@ -690,8 +690,8 @@ const ReviewsCard = ({
                         )}
                       </div>
                       <button
-                        className={`bg-[#ff1053] rounded px-3 py-1 mr-2 text-white text-sm hover:opacity-40 ${
-                          translateLoader === review.id ? "opacity-40" : ""
+                        className={`bg-[#B9FF66] rounded px-3 py-1 mr-2 text-[#000] text-sm hover:bg-[#000] hover:text-[#B9FF66] ${
+                          translateLoader === review.id ? "cursor-not-allowed" : ""
                         }`}
                         onClick={() => {
                           if (translateLoader === "") {
@@ -702,10 +702,10 @@ const ReviewsCard = ({
                         Translate
                       </button>
                       <button
-                        className={`bg-[#ff1053] rounded px-3 py-1  text-white text-sm hover:opacity-40 ${
+                        className={`bg-[#B9FF66] rounded px-3 py-1  text-[#000] text-sm hover:bg-[#000] hover:text-[#B9FF66] ${
                           postLoader ===
                           (review?.reviewId || review?.appstorereviewid)
-                            ? "opacity-40"
+                            ? "cursor-not-allowed"
                             : ""
                         }`}
                         onClick={() => {
