@@ -134,7 +134,7 @@ const InputFieldChat = ({
             />
             <PaperAirplaneIcon
               className={`w-6 h-6 cursor-pointer ${
-                messageObj.message.length ? "text-[#ff1053]" : "opacity-20"
+                messageObj.message.length ? "text-[#B9FF66]" : "opacity-20"
               }`}
               onClick={handleSendMessage}
             />

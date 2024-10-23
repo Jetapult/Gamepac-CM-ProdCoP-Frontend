@@ -98,7 +98,7 @@ textarea{
   margin-left: 5px;
   width: 15px;
   height: 15px;
-  background-color: #ff1053;
+  background-color: #000;
   border-radius: 50%;
   display: inline-block;
   animation: loader-3-bounce 1.4s infinite ease-in-out both;
@@ -119,14 +119,15 @@ textarea{
 }
 
 .switch {
-   --_switch-clr-bg: rgb(12, 10, 9);
+   --_switch-clr-bg: #B9FF66;
   --_switch-clr-txt: rgb(255 255 255);
   --_switch-clr-outline: rgba(255 255 255 / 0.3);
+  --_switch-clr-txt-checked: rgb(0, 0, 0); 
 
   --_switch-padding: 4px;
   --_label-padding: 6px 10px;
-  --_toggle-clr-bg: #ff1053;
-  --_toggle-clr-bg-on: #ff1053;
+  --_toggle-clr-bg: #000;
+  --_toggle-clr-bg-on: #000;
   --_toggle-speed: 300ms;
   --_toggle-easing: cubic-bezier(0.47, 1.64, 0.41, 0.8);
 
@@ -190,7 +191,8 @@ textarea{
 /* checked - set opacity */
 .switch > span:last-of-type,
 .switch > input:checked + span:first-of-type {
-  opacity: 0.5;
+  /* opacity: 0.5; */
+  color: var(--_switch-clr-txt);
 }
 .switch > input:checked ~ span:last-of-type,
 .switch:hover span {

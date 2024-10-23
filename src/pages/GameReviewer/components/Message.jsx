@@ -100,7 +100,7 @@ const Message = ({ message, setSelectedPage }) => {
         className={`rounded-2xl ${
           message.type === "ai"
             ? "bg-[#f6f6f7] rounded-bl-none"
-            : "bg-[#ff1053] text-white rounded-tr-none"
+            : "bg-[#B9FF66] text-[#000] rounded-tr-none"
         } py-2 px-4`}
       >
         <p
@@ -112,9 +112,9 @@ const Message = ({ message, setSelectedPage }) => {
             {message?.sources?.map((source, i) => (
               <React.Fragment key={i}>
                 <div
-                  className={`mr-3 mb-1 px-1 rounded border-2 border-[#ff1053] cursor-pointer ${
+                  className={`mr-3 mb-1 px-1 rounded border-2 border-[#000] cursor-pointer ${
                     showPdfName === source?.filename
-                      ? "bg-[#ff1053] text-white"
+                      ? "bg-[#B9FF66] text-[#000] border-[#B9FF66]"
                       : ""
                   }`}
                   key={i}
@@ -162,7 +162,7 @@ const Message = ({ message, setSelectedPage }) => {
 
 const Popover = ({ name }) => {
   return (
-    <div className="absolute top-[-35px] bg-[#ff1053] rounded-md px-2 pt-1 pb-0.5 text-white leading-2 w-max">
+    <div className="absolute top-[-35px] bg-[#B9FF66] text-[#000] rounded-md px-2 pt-1 pb-0.5 leading-2 w-max">
       {name}
     </div>
   );

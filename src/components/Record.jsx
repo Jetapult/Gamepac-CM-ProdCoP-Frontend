@@ -188,7 +188,7 @@ const Record = (props) => {
             </div>
           ) : (
             <button
-              className=" bg-[#f58174] hover:bg-[#f1efe7] hover:text-black text-white px-4 py-2 rounded transition-transform hover:scale-105"
+              className=" bg-[#B9FF66] text-[#000] hover:bg-[#000] hover:text-[#B9FF66] px-4 py-2 rounded transition-transform hover:scale-105"
               onClick={startRecording}
             >
               Start Recording

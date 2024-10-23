@@ -140,8 +140,8 @@ const Login = () => {
               <button
                 type="submit"
                 className={`w-full ${
-                  emailRegex.test(email) ? "bg-[#f58174]" : "bg-gray-500"
-                } text-white py-2 px-4 rounded-md focus:outline-none focus:ring focus:border-gray-400`}
+                  emailRegex.test(email) ? "bg-[#B9FF66] text-[#000]" : "bg-gray-500 text-white"
+                } py-2 px-4 rounded-md focus:outline-none focus:ring focus:border-gray-400`}
                 onClick={handleForgotPassword}
               >
                 Send Email

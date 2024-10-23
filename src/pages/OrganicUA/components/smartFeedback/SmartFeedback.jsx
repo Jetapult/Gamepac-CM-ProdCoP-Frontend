@@ -523,7 +523,7 @@ const SmartFeedback = ({
               onChange={(val) => setSortBy(val)}
             />
             <button
-              className="border border-[#ff1053] rounded-md w-full my-4 py-1 text-[#ff1053] hover:bg-[#ff1053] hover:text-white"
+              className="border border-[#000] rounded-md w-full my-4 py-1 text-[#000] hover:bg-[#B9FF66] hover:text-[#000] hover:border-[#B9FF66]"
               onClick={() => fetchReviews(1)}
             >
               Search

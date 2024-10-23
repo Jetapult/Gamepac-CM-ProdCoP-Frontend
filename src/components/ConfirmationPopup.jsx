@@ -19,13 +19,13 @@ const ConfirmationPopup = ({ heading, subHeading, onCancel, onConfirm }) => {
           </div>
           <div className="flex justify-end gap-4 border-t border-solid border-blueGray-200 p-4">
             <button
-              className="bg-red-500 text-white px-4 py-2 rounded-md"
+              className="bg-[#f3f3f3] text-[#000] px-4 py-2 rounded-md"
               onClick={onCancel}
             >
               Cancel
             </button>
             <button
-              className="bg-blue-500 text-white px-4 py-2 rounded-md"
+              className="bg-[#B9FF66] text-[#000] px-4 py-2 rounded-md hover:bg-[#000] hover:text-[#B9FF66]"
               onClick={onConfirm}
             >
               Confirm
