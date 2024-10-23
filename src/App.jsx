@@ -44,6 +44,7 @@ import HiddenObjectsGame from "./pages/HTML5Games/HiddenObjectsGame";
 import AINarrations from "./pages/HTML5Games/AINarrations";
 import RagChat from "./pages/GameReviewer/RagChat";
 import HdwPlayable from "./pages/HTML5Games/HdwPlayable";
+import Translate from "./pages/Translate";
 
 
 function App() {
@@ -304,6 +305,7 @@ function App() {
 
             <Route path="/ai-chat" element={<PrivateRoute><RagChat /></PrivateRoute>} />
             <Route path="/ai-chat/:studio_slug" element={<PrivateRoute><RagChat /></PrivateRoute>} />
+            <Route path="/translate" element={<PrivateRoute><Translate /></PrivateRoute>} />
             <Route
               path="*"
               element={<PageNotFound />}
