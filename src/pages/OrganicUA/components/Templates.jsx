@@ -59,7 +59,7 @@ const Templates = ({ studio_slug, templates, setTemplates }) => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl mb-4">Reply Templates</h1>
         <button
-          className="bg-[#ff1053] text-white font-bold uppercase text-sm px-6 py-2 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+          className="bg-[#B9FF66] text-[#000] font-bold uppercase text-sm px-6 py-2 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
           type="button"
           onClick={() => {
             setSelectedTemplate({});
@@ -87,7 +87,7 @@ const Templates = ({ studio_slug, templates, setTemplates }) => {
             <p>{template.review_reply}</p>
             <div className="flex justify-end">
               <button
-                className="mr-4 border border-[#ccc] rounded py-1 px-3 mr-2 text-sm"
+                className="mr-4 border border-[#000] rounded py-1 px-3 mr-2 text-sm"
                 onClick={() => {
                   setSelectedTemplate(template);
                   setShowCreateReplyTemplatePopup(
@@ -98,7 +98,7 @@ const Templates = ({ studio_slug, templates, setTemplates }) => {
                 Edit
               </button>
               <button
-                className="border border-[#be261f] text-[#f44337] rounded py-1 px-3 mr-2 text-sm"
+                className="border border-[#000] text-[#000] rounded py-1 px-3 mr-2 text-sm"
                 onClick={() => {
                   setSelectedTemplate(template);
                   setShowConfirmationPopup(!showConfirmationPopup);

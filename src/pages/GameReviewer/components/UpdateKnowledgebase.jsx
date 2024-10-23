@@ -200,7 +200,7 @@ const UpdateKnowledgebasePopup = ({
           <div className="flex items-center p-6 border-t border-solid border-blueGray-200 rounded-b">
             {submitLoader ? (
               <button
-                className="bg-[#ff1053] text-white font-bold uppercase text-sm px-6 py-1.5 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                className="bg-[#000] text-[#fff] font-bold uppercase text-sm px-6 py-1.5 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                 type="button"
               >
                 <img src={loadingIcon} alt="loading" className="w-8 h-8" />
@@ -209,7 +209,7 @@ const UpdateKnowledgebasePopup = ({
               <>
                 {knowledgebaseTitle.length && category_ids.length ? (
                   <button
-                    className="bg-[#ff1053] text-white font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                    className="bg-[#B9FF66] text-[#000] font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 hover:bg-[#000] hover:text-[#fff]"
                     type="button"
                     onClick={addTagToKnowledgeBase}
                   >
@@ -217,7 +217,7 @@ const UpdateKnowledgebasePopup = ({
                   </button>
                 ) : (
                   <button
-                    className="bg-[#ff1053] opacity-40 cursor-not-allowed text-white font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                    className="bg-[#B9FF66] cursor-not-allowed text-[#000] font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                     type="button"
                   >
                     Update

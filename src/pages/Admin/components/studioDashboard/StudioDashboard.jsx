@@ -45,14 +45,20 @@ const StudioDashboard = ({ studioData }) => {
     <div className="grid grid-cols-12 gap-10 mt-10">
       {data.map((item) => (
         <React.Fragment key={item.id}>
-          {item.show && <div className="col-span-3">
-            <div className="rounded-md bg-white p-4 shadow border-[0.5px] border-[#f6f6f7]">
-              <p className="text-5xl">{item.name === 'studios' ? totalStudio - 1 : overview[item.name]}</p>
-              <p className="text-xl text-gray-700 capitalize">
-                Total {item.name}
-              </p>
+          {item.show && (
+            <div className="col-span-3">
+              <div className="rounded-3xl bg-white p-4 shadow border border-[#000] border-b-4 min-h-40 items-center flex flex-col justify-center transition-transform duration-300 hover:scale-105 hover:bg-[#f3f3f3]">
+                <p className="text-5xl">
+                  {item.name === "studios"
+                    ? totalStudio - 1
+                    : overview[item.name]}
+                </p>
+                <p className="text-xl text-gray-700 capitalize">
+                  Total {item.name}
+                </p>
+              </div>
             </div>
-          </div>}
+          )}
         </React.Fragment>
       ))}
     </div>

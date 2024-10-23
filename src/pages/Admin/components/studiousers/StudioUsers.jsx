@@ -113,13 +113,13 @@ const StudioUsers = ({
         /> */}
         <div className="">
           <button
-            className="bg-[#ff1053] text-white px-4 py-2 rounded-md mr-3 hover:opacity-80"
+            className="bg-[#B9FF66] text-[#000] px-4 py-2 rounded-md mr-3 hover:bg-[#000] hover:text-[#B9FF66]"
             onClick={() => setShowBulkUploadPopup(!showBulkUploadPopup)}
           >
             Upload CSV
           </button>
           <button
-            className="bg-[#ff1053] text-white px-4 py-2 rounded-md hover:opacity-80"
+            className="bg-[#B9FF66] text-[#000] px-4 py-2 rounded-md hover:bg-[#000] hover:text-[#B9FF66]"
             onClick={() => setShowAddUserPopup(!showAddUserPopup)}
           >
             <PlusIcon className="h-5 w-5 inline mr-1" /> New
@@ -127,7 +127,7 @@ const StudioUsers = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-12 border-y-[0.5px] border-[#e5e5e5] py-3 items-center bg-[#f7e5e5] px-3 mt-4">
+      <div className="grid grid-cols-12 border-y-[0.5px] border-[#e5e5e5] py-3 items-center bg-[#000] text-white px-3 mt-4">
         <div className="col-span-1">
           <p>No.</p>
         </div>
@@ -168,7 +168,7 @@ const StudioUsers = ({
                 <>
                   {inviteLoader === user.id ? (
                     <button
-                      className="bg-[#ff1053] text-white rounded-md font-bold uppercase text-sm px-4 py-0 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                      className="bg-[#B9FF66] text-[#000] rounded-md font-bold uppercase text-sm px-4 py-0 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                       type="button"
                     >
                       <img
@@ -179,7 +179,7 @@ const StudioUsers = ({
                     </button>
                   ) : (
                     <button
-                      className="bg-[#ff1053] text-white px-4 py-1 rounded-md hover:opacity-80"
+                      className="bg-[#B9FF66] text-[#000] px-4 py-1 rounded-md hover:bg-[#000] hover:text-[#B9FF66]"
                       onClick={() => InviteUser(user)}
                     >
                       Invite

@@ -56,6 +56,32 @@ const PdfViewer = ({
     }, [ref]);
   }
 
+  const inputRef = useRef(null);
+
+  const adjustInputWidth = () => {
+    if (inputRef.current) {
+      const length = inputRef.current.value.length;
+      inputRef.current.style.width = `${Math.max(length * 9, 20)}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustInputWidth();
+  }, [pageNumber]);
+
+  const handlePageChange = (e) => {
+    const value = e.target.value;
+    if (value === '' || value <= numPages) {
+      setPageNumber(value);
+      // if (containerRef.current) {
+      //   containerRef.current.scrollTo({
+      //     top: (value - 1) * containerRef.current.clientHeight,
+      //     behavior: 'smooth'
+      //   });
+      // }
+    }
+  };
+
   const resetSearch = () => {
     setSearchText("");
     setSearchResults([]);
@@ -277,8 +303,16 @@ const PdfViewer = ({
             </>
           )}
         </div>
-        <span className="bg-white rounded px-2 py-1">
-          {pageNumber} <span className="text-gray-500">/ {numPages}</span>
+        <span className="bg-white rounded px-2 py-1 flex items-center">
+          <input
+            ref={inputRef}
+            type="text"
+            value={pageNumber}
+            onChange={handlePageChange}
+            className="outline-none"
+            style={{ appearance: "textfield" }}
+          />
+          <span className="text-gray-500">/ {numPages}</span>
         </span>
       </div>
       <div

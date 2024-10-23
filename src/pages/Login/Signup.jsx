@@ -129,7 +129,7 @@ const Signup = () => {
                 {signupLoader ? (
                   <button
                     type="submit"
-                    className="w-full bg-[#f58174] text-white flex justify-center py-2 px-4 rounded-md outline-none"
+                    className="w-full bg-[#000] text-white flex justify-center py-2 px-4 rounded-md outline-none"
                     onClick={handleSignup}
                   >
                     <img src={loadingIcon} alt="loading" className="w-8 h-8" />
@@ -137,7 +137,7 @@ const Signup = () => {
                 ) : (
                   <button
                     type="submit"
-                    className="w-full bg-[#f58174] text-white py-2 px-4 rounded-md outline-none"
+                    className="w-full bg-[#B9FF66] text-[#000] py-2 px-4 rounded-md outline-none hover:bg-[#000] hover:text-[#B9FF66]"
                     onClick={handleSignup}
                   >
                     Signup
