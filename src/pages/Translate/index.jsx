@@ -211,13 +211,13 @@ const Translate = () => {
                 <>
                   {file?.name && targetLanguage?.code && !translating ? (
                     <button
-                      className="bg-black text-white p-2 px-4 rounded-md ml-auto block"
+                      className="bg-[#000] text-[#B9FF66] p-2 px-4 rounded-md ml-auto block hover:bg-[#B9FF66] hover:text-[#000]"
                       onClick={handleTranslate}
                     >
                       Translate
                     </button>
                   ) : (
-                    <button className="bg-black text-white p-2 px-4 rounded-md ml-auto block cursor-not-allowed">
+                    <button className="bg-[#000] text-[#B9FF66] p-2 px-4 rounded-md ml-auto block cursor-not-allowed">
                       {translating && (
                         <img
                           src={loadingIcon}
@@ -283,9 +283,7 @@ const LanguageSelect = ({
     <div className="relative">
       <p
         onClick={() => setShowLanguages(!showLanguages)}
-        className={`cursor-pointer ${
-          activeTab === "Text" ? "pl-[80px]" : ""
-        }`}
+        className={`cursor-pointer`}
       >
         {targetLanguage.name
           ? targetLanguage.name
@@ -460,7 +458,7 @@ const TextTranslate = ({ targetLanguage, setToastMessage }) => {
   };
   return (
     <div className="relative flex">
-      <div className="absolute right-0 top-[-28px]">
+      {/* <div className="absolute right-0 top-[-28px]">
         <p className="cursor-pointer" onClick={() => setShowLLMs(!showLLMs)}>
           {selectedLLM?.name}
           <ChevronDownIcon className="w-6 h-6 text-gray-500 inline" />
@@ -481,7 +479,7 @@ const TextTranslate = ({ targetLanguage, setToastMessage }) => {
             ))}
           </div>
         )}
-      </div>
+      </div> */}
       <div className="w-1/2 border border-gray-300 rounded min-h-32 mr-2 flex flex-col">
         <div className="flex-grow relative">
           <textarea
@@ -496,13 +494,13 @@ const TextTranslate = ({ targetLanguage, setToastMessage }) => {
         <div className="p-2">
           {text && !translating ? (
             <button
-              className="bg-black text-white p-2 px-4 rounded-md ml-auto block"
+              className="bg-[#000] text-[#B9FF66] p-2 px-4 rounded-md ml-auto block hover:bg-[#B9FF66] hover:text-[#000]"
               onClick={handleTranslate}
             >
               Translate
             </button>
           ) : (
-            <button className="bg-black text-white p-2 px-4 rounded-md ml-auto block cursor-not-allowed">
+            <button className="bg-[#000] text-[#B9FF66] p-2 px-4 rounded-md ml-auto block cursor-not-allowed">
               {translating && (
                 <img
                   src={loadingIcon}
@@ -523,7 +521,7 @@ const TextTranslate = ({ targetLanguage, setToastMessage }) => {
               : "text-left"
           }`}
         >
-          {translatedData[selectedLLM?.slug]}
+          {translatedData?.gpt_translation}
         </p>
       </div>
     </div>
