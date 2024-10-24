@@ -69,7 +69,7 @@ const HTML5Games = () => {
               <img src={game.image} alt="game-logo" className="rounded-xl" />
               <h2 className="text-xl font-black mt-2">{game.name}</h2>
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 transition duration-300 ease-in-out hover:bg-opacity-50">
-                <button className="bg-[#ff1053] text-white px-4 py-2 rounded opacity-0 group-hover:opacity-100">
+                <button className="bg-[#B9FF66] text-[#000] px-4 py-2 rounded opacity-0 group-hover:opacity-100">
                   Play Now
                 </button>
               </div>
