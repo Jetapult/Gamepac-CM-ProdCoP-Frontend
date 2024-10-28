@@ -6,6 +6,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
+import { debounce } from 'lodash';
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import { useSelector } from "react-redux";
@@ -33,6 +34,7 @@ const PdfViewer = ({
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [isHighlightVisible, setIsHighlightVisible] = useState(true);
+  const [pageNumberValue, setPageNumberValue] = useState(pageNumber);
   const wrapperRef = useRef(null);
   const {
     selectedText,
@@ -69,16 +71,28 @@ const PdfViewer = ({
     adjustInputWidth();
   }, [pageNumber]);
 
+
+  const debouncedScroll = useCallback(
+    debounce((value) => {
+      if (containerRef.current) {
+        containerRef.current.scrollTo({
+          top: (value - 1) * containerRef.current.clientHeight,
+          behavior: 'smooth'
+        });
+      }
+    }, 500), // 500ms delay
+    [containerRef]
+  );
+
   const handlePageChange = (e) => {
     const value = e.target.value;
-    if (value === '' || value <= numPages) {
+    setPageNumberValue(value);
+    if (parseInt(value) && parseInt(value) <= numPages) {
       setPageNumber(value);
-      // if (containerRef.current) {
-      //   containerRef.current.scrollTo({
-      //     top: (value - 1) * containerRef.current.clientHeight,
-      //     behavior: 'smooth'
-      //   });
-      // }
+      debouncedScroll(value);
+    }
+    if(parseInt(value) > numPages){
+      setPageNumberValue(pageNumber);
     }
   };
 
@@ -307,7 +321,7 @@ const PdfViewer = ({
           <input
             ref={inputRef}
             type="text"
-            value={pageNumber}
+            value={pageNumberValue}
             onChange={handlePageChange}
             className="outline-none"
             style={{ appearance: "textfield" }}

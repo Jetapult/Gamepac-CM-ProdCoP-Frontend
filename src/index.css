@@ -209,6 +209,9 @@ textarea{
   color: #a0b1b5;
   margin-right: 1px;
 }
+.queryPacTheme{
+  color: #000 !important;
+}
 @keyframes toggle-on {
   /*0%{  inset: var(--_switch-padding) 45% var(--_switch-padding) var(--_switch-padding);}*/
   50% {

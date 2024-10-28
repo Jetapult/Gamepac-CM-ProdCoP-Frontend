@@ -377,8 +377,8 @@ const RagChat = () => {
                     setQueryPacType(e.target.checked ? "super" : "lite");
                     setSelectedKnowledgebase([]);
                   }} checked={queryPacType === "super"} />
-                  <span>Lite</span>
-                  <span>Super</span>
+                  <span className={`${queryPacType === "lite" ? "" : "queryPacTheme"}`}>Lite</span>
+                  <span className={`${queryPacType === "super" ? "" : "queryPacTheme"}`}>Super</span>
                 </label>
               )}
               <span
