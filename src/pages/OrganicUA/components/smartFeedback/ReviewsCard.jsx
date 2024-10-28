@@ -256,6 +256,7 @@ const ReviewsCard = ({
               ...x,
               originalReply: review.reply,
               reply: translatedReply,
+              totalReplytextCount: translatedReply?.length,
               translatedReply,
             };
           }
@@ -264,6 +265,13 @@ const ReviewsCard = ({
       );
     } catch (error) {
       console.error("Error translating reply:", error);
+      if (error?.response?.data?.message) {
+        setToastMessage({
+          show: true,
+          message: error?.response?.data?.message,
+          type: "error",
+        });
+      }
     } finally {
       setTranslateloader("");
     }
