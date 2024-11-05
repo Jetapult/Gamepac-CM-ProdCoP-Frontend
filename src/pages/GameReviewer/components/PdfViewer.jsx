@@ -6,11 +6,12 @@ import {
 } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { debounce } from 'lodash';
+import { debounce } from "lodash";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import { useSelector } from "react-redux";
 import useTextSelection from "./useTextSelection";
+import { ArrowDownTrayIcon } from "@heroicons/react/20/solid";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -71,16 +72,10 @@ const PdfViewer = ({
     adjustInputWidth();
   }, [pageNumber]);
 
-
   const debouncedScroll = useCallback(
-    debounce((value) => {
-      if (containerRef.current) {
-        containerRef.current.scrollTo({
-          top: (value - 1) * containerRef.current.clientHeight,
-          behavior: 'smooth'
-        });
-      }
-    }, 500), // 500ms delay
+    debounce((value, totalPages) => {
+      scrollToPage(parseInt(value), totalPages);
+    }, 500),
     [containerRef]
   );
 
@@ -89,9 +84,9 @@ const PdfViewer = ({
     setPageNumberValue(value);
     if (parseInt(value) && parseInt(value) <= numPages) {
       setPageNumber(value);
-      debouncedScroll(value);
+      debouncedScroll(value, numPages);
     }
-    if(parseInt(value) > numPages){
+    if (parseInt(value) > numPages) {
       setPageNumberValue(pageNumber);
     }
   };
@@ -103,6 +98,8 @@ const PdfViewer = ({
 
   function onDocumentLoadSuccess(numPages, isLoadingNewPdf, selectedPage) {
     setIsHighlightVisible(false);
+    setPageNumber(1);
+    setPageNumberValue(1);
     setNumPages(numPages.numPages);
     if (isLoadingNewPdf && selectedPage) {
       setTimeout(() => {
@@ -121,8 +118,10 @@ const PdfViewer = ({
         const scrollPercentage = scrollTop / scrollableHeight;
         const page = Math.floor(scrollPercentage * numPages) + 1;
         setPageNumber(Math.min(Math.max(page, 1), numPages));
+        setPageNumberValue(page);
       } else {
         setPageNumber(1);
+        setPageNumberValue(1);
       }
     }
   };
@@ -135,8 +134,12 @@ const PdfViewer = ({
     ) {
       const pageHeight =
         containerRef.current.scrollHeight / (totalPages || numPages);
-      containerRef.current.scrollTo(0, (pageNum - 1) * pageHeight);
+      containerRef.current.scrollTo({
+        top: (pageNum - 1) * pageHeight,
+        behavior: "smooth",
+      });
       setPageNumber(pageNum);
+      setPageNumberValue(pageNum);
     }
   };
 
@@ -240,6 +243,23 @@ const PdfViewer = ({
     setIsHighlightVisible(false);
   };
 
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = url.split("/").pop() || "document.pdf";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
+  };
+
   return (
     <div className="pdf-viewer h-full flex flex-col relative">
       <div
@@ -317,17 +337,22 @@ const PdfViewer = ({
             </>
           )}
         </div>
-        <span className="bg-white rounded px-2 py-1 flex items-center">
-          <input
-            ref={inputRef}
-            type="text"
-            value={pageNumberValue}
-            onChange={handlePageChange}
-            className="outline-none"
-            style={{ appearance: "textfield" }}
-          />
-          <span className="text-gray-500">/ {numPages}</span>
-        </span>
+        <div className="flex items-center">
+          <button className="mr-2 cursor-pointer bg-white rounded-md px-2 py-1.5" onClick={handleDownload}>
+            <ArrowDownTrayIcon className="w-5 h-5" />
+          </button>
+          <span className="bg-white rounded px-2 py-1 flex items-center">
+            <input
+              ref={inputRef}
+              type="text"
+              value={pageNumberValue}
+              onChange={handlePageChange}
+              className="outline-none"
+              style={{ appearance: "textfield" }}
+            />
+            <span className="text-gray-500">/ {numPages}</span>
+          </span>
+        </div>
       </div>
       <div
         ref={containerRef}
