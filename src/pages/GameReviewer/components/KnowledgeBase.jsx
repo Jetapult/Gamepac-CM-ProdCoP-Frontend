@@ -24,6 +24,7 @@ import CreateTagPopup from "./CreateTagPopup";
 import UpdateKnowledgebasePopup from "./UpdateKnowledgebase";
 import CategoryIcon from "./CategoryIcon";
 import { Tooltip as ReactTooltip } from "react-tooltip";
+import InfiniteScroll from "react-infinite-scroll-component";
 
 const KnowledgeBase = ({
   messageObj,
@@ -53,13 +54,17 @@ const KnowledgeBase = ({
   const [knowledgebaseToUpdate, setKnowledgebaseToUpdate] = useState({});
   const [knowledgebaseCategoriesEdit, setKnowledgebaseCategoriesEdit] =
     useState({});
+  const [searchText, setSearchText] = useState("");
+  const [totalKnowledgebase, setTotalKnowledgebase] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const dispatch = useDispatch();
   const wrapperRef = useRef(null);
+  const toggleButtonRef = useRef(null);
   useOutsideAlerter(wrapperRef);
   function useOutsideAlerter(ref) {
     useEffect(() => {
       function handleClickOutside(event) {
-        if (ref.current && !ref.current.contains(event.target)) {
+        if (ref.current && !ref.current.contains(event.target) && !toggleButtonRef.current?.contains(event.target)) {
           setShowKnowledgebaseCategories(false);
         }
       }
@@ -153,15 +158,34 @@ const KnowledgeBase = ({
       console.log(err);
     }
   };
-  const fetchKnowledgebase = async () => {
+  const fetchKnowledgebase = async (currentPage, searchText) => {
     try {
+      const paramData = {
+        current_page: currentPage,
+        limit: 30,
+      };
+      if (searchText) {
+        paramData.searchText = searchText;
+      }
       const response = await api.get(
-        `/v1/chat/knowledgebase/${selectedKnowledgebaseCategories.id}`
+        `/v1/chat/knowledgebase/${selectedKnowledgebaseCategories.id}`,
+        { params: paramData }
       );
-      setKnowledgebase(response.data.data);
+      if (currentPage === 1) {
+        setKnowledgebase(response.data.data);
+      } else {
+        setKnowledgebase((prev) => [...prev, ...response.data.data]);
+      }
+      setCurrentPage(currentPage);
+      setTotalKnowledgebase(response.data.total);
       dispatch(addKnowledgebase(response.data.data));
-      if (response.data.data.length) {
+      if (
+        response.data.data.length &&
+        searchText === undefined &&
+        currentPage === 1
+      ) {
         setSelectedPdf(response.data.data[0]);
+        setSelectedKnowledgebase([response.data.data[0]]);
       }
     } catch (err) {
       console.log(err);
@@ -226,20 +250,37 @@ const KnowledgeBase = ({
       console.log("Error sending message to Slack:", error);
     }
   };
+
+  const fetchMoreData = () => {
+    fetchKnowledgebase(currentPage + 1, searchText);
+  };
+
   useEffect(() => {
     fetchKnowledgebaseCategories();
   }, [queryPacType]);
 
   useEffect(() => {
     if (selectedKnowledgebaseCategories?.id) {
-      fetchKnowledgebase();
+      fetchKnowledgebase(1);
     }
   }, [selectedKnowledgebaseCategories?.id]);
+  useEffect(() => {
+    let timeout;
+    if (searchText.length > 2) {
+      timeout = setTimeout(() => {
+        fetchKnowledgebase(1, searchText);
+      }, 500);
+    }
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [searchText]);
   return (
     <>
       <div className={`mt-2 pt-2 bg-[#F8F9FD] px-2`}>
         {showPdf ? (
           <div
+            ref={toggleButtonRef}
             className="flex items-center justify-between bg-white border border-[#ccc] rounded-lg px-2 py-2 relative mb-2 cursor-pointer"
             onClick={() =>
               setShowKnowledgebaseCategories(!showKnowledgebaseCategories)
@@ -267,7 +308,7 @@ const KnowledgeBase = ({
               </div>
             </div>
 
-            <ChevronDownIcon className="w-5 h-5 inline text-2xl font-bold" />
+            <ChevronDownIcon className={`w-5 h-5 inline text-2xl font-bold ${showKnowledgebaseCategories ? "rotate-180" : ""} transition-transform duration-500 ease-in-out`} />
           </div>
         ) : (
           <></>
@@ -288,6 +329,7 @@ const KnowledgeBase = ({
                 onClick={() => {
                   setSelectedKnowledgebaseCategories(category);
                   setShowKnowledgebaseCategories(!showKnowledgebaseCategories);
+                  setSearchText("");
                 }}
               >
                 <div className="flex items-center w-14 justify-center">
@@ -322,7 +364,11 @@ const KnowledgeBase = ({
             </button> */}
           </div>
         )}
-        {/* <SearchKnowledgebase /> */}
+        {showPdf && <SearchKnowledgebase
+          fetchKnowledgebase={fetchKnowledgebase}
+          searchText={searchText}
+          setSearchText={setSearchText}
+        />}
         {showPdf ? (
           <>
             {knowledgebase.length ? (
@@ -376,27 +422,38 @@ const KnowledgeBase = ({
               className={`flex flex-col overflow-auto ${
                 queryPacType === "lite" ||
                 (queryPacType === "super" && userData?.roles?.includes("admin"))
-                  ? "h-[calc(100vh-310px)]"
+                  ? "h-[calc(100vh-360px)]"
                   : "h-[calc(100vh-220px)]"
               }`}
             >
-              {knowledgebase.map((knowledge) => (
-                <div
-                  key={knowledge.id}
-                  className={`flex items-center runded mb-2 p-2 rounded-lg hover:bg-white cursor-pointer ${
-                    selectedPdf?.id === knowledge.id ? "bg-white" : ""
-                  }`}
-                  style={{ zIndex: 9 }}
-                  onClick={() => setSelectedPdf(knowledge)}
-                >
-                  <input
-                    id="default-checkbox"
-                    type="checkbox"
-                    value={2}
-                    name="name"
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded mr-2 pt-2"
-                    onChange={(e) => {
-                      e.stopPropagation();
+              <InfiniteScroll
+                dataLength={knowledgebase.length}
+                next={fetchMoreData}
+                hasMore={knowledgebase.length < totalKnowledgebase}
+                loader={<h4>Loading...</h4>}
+                endMessage={
+                  <p style={{ textAlign: "center" }}>
+                    <b></b>
+                  </p>
+                }
+                scrollableTarget="scrollableDiv"
+                height={
+                  queryPacType === "lite" ||
+                  (queryPacType === "super" &&
+                    userData?.roles?.includes("admin"))
+                    ? "calc(100vh - 360px)"
+                    : "calc(100vh - 220px)"
+                }
+              >
+                {knowledgebase.map((knowledge) => (
+                  <div
+                    key={knowledge.id}
+                    className={`flex items-center runded mb-2 p-2 rounded-lg hover:bg-white cursor-pointer ${
+                      selectedPdf?.id === knowledge.id ? "bg-white" : ""
+                    }`}
+                    style={{ zIndex: 9 }}
+                    onClick={() => {
+                      setSelectedPdf(knowledge);
                       setSelectedKnowledgebase((prev) => {
                         const isAlreadySelected = prev.some(
                           (item) => item.id === knowledge.id
@@ -410,87 +467,112 @@ const KnowledgeBase = ({
                         }
                       });
                     }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                    checked={selectedKnowledgebase?.some(
-                      (item) => item.id === knowledge.id
-                    )}
-                  />
-                  <div className="w-full group">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      {knowledge?.categories?.map((category) => (
-                        <p
-                          className={`text-xs capitalize inline px-1.5 py-[2px] rounded-full`}
-                          style={{
-                            backgroundColor: category.color + "33",
-                            color: category.color,
-                          }}
-                          key={category.id}
-                        >
-                          {category.name}
-                        </p>
-                      ))}
-                    </div>
-                    <p className="line-clamp-2 text-sm">{knowledge.title}</p>
-                    <p className="text-xs flex items-center justify-between text-gray-500 mb-1">
-                      <span>
-                        <ClockIcon className="inline w-3 h-3 mr-1 mb-[3px] text-black" />
-                        {moment(knowledge.created_at).format(
-                          "YYYY-MM-DD HH:MM:SS"
-                        )}
-                      </span>
-                      <span className="flex items-center">
-                        {queryPacType === "lite" &&
-                          knowledge.file_url.endsWith(".pdf") && (
-                            <>
-                              <span
-                                data-tooltip-id="my-tooltip-1"
-                                className="hidden group-hover:block pr-2"
-                                onClick={(e) => sendSlackMessage(e, knowledge)}
-                              >
-                                <DocumentCurrencyDollarIcon className="w-4 h-4 text-black" />
-                              </span>
-                              <ReactTooltip
-                                id="my-tooltip-1"
-                                place="top"
-                                className="hidden group-hover:block"
-                                content="Requesting the file to move to super"
-                              />
-                            </>
-                          )}
-                        {parseInt(knowledge?.user_id) ===
-                          parseInt(userData?.id) && (
-                          <span
-                            className="hidden group-hover:block pr-2"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setShowUpdateKnowledgebasePopup(
-                                !showUpdateKnowledgebasePopup
-                              );
-                              setKnowledgebaseToUpdate(knowledge);
+                  >
+                    <input
+                      id="default-checkbox"
+                      type="checkbox"
+                      value={2}
+                      name="name"
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded mr-2 pt-2"
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setSelectedKnowledgebase((prev) => {
+                          const isAlreadySelected = prev.some(
+                            (item) => item.id === knowledge.id
+                          );
+                          if (isAlreadySelected) {
+                            return prev.filter(
+                              (item) => item.id !== knowledge.id
+                            );
+                          } else {
+                            return [...prev, knowledge];
+                          }
+                        });
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                      checked={selectedKnowledgebase?.some(
+                        (item) => item.id === knowledge.id
+                      )}
+                    />
+                    <div className="w-full group">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        {knowledge?.categories?.map((category) => (
+                          <p
+                            className={`text-xs capitalize inline px-1.5 py-[2px] rounded-full`}
+                            style={{
+                              backgroundColor: category.color + "33",
+                              color: category.color,
                             }}
+                            key={category.id}
                           >
-                            <PencilIcon className="w-4 h-4 text-black" />
-                          </span>
-                        )}
-                        {queryPacType === "lite" &&
-                          parseInt(knowledge?.user_id) ===
+                            {category.name}
+                          </p>
+                        ))}
+                      </div>
+                      <p className="line-clamp-2 text-sm">{knowledge.title}</p>
+                      <p className="text-xs flex items-center justify-between text-gray-500 mb-1">
+                        <span>
+                          <ClockIcon className="inline w-3 h-3 mr-1 mb-[3px] text-black" />
+                          {moment(knowledge.created_at).format(
+                            "YYYY-MM-DD HH:MM:SS"
+                          )}
+                        </span>
+                        <span className="flex items-center">
+                          {queryPacType === "lite" &&
+                            knowledge.file_url.endsWith(".pdf") && (
+                              <>
+                                <span
+                                  data-tooltip-id="my-tooltip-1"
+                                  className="hidden group-hover:block pr-2"
+                                  onClick={(e) =>
+                                    sendSlackMessage(e, knowledge)
+                                  }
+                                >
+                                  <DocumentCurrencyDollarIcon className="w-4 h-4 text-black" />
+                                </span>
+                                <ReactTooltip
+                                  id="my-tooltip-1"
+                                  place="top"
+                                  className="hidden group-hover:block"
+                                  content="Requesting the file to move to super"
+                                />
+                              </>
+                            )}
+                          {parseInt(knowledge?.user_id) ===
                             parseInt(userData?.id) && (
                             <span
-                              className="hidden group-hover:block"
-                              onClick={(event) =>
-                                onhandleDelete(event, knowledge)
-                              }
+                              className="hidden group-hover:block pr-2"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setShowUpdateKnowledgebasePopup(
+                                  !showUpdateKnowledgebasePopup
+                                );
+                                setKnowledgebaseToUpdate(knowledge);
+                              }}
                             >
-                              <TrashIcon className="w-4 h-4 text-black" />
+                              <PencilIcon className="w-4 h-4 text-black" />
                             </span>
                           )}
-                      </span>
-                    </p>
+                          {queryPacType === "lite" &&
+                            parseInt(knowledge?.user_id) ===
+                              parseInt(userData?.id) && (
+                              <span
+                                className="hidden group-hover:block"
+                                onClick={(event) =>
+                                  onhandleDelete(event, knowledge)
+                                }
+                              >
+                                <TrashIcon className="w-4 h-4 text-black" />
+                              </span>
+                            )}
+                        </span>
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </InfiniteScroll>
             </div>
           </>
         ) : (

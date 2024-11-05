@@ -12,48 +12,167 @@ import ReactPopover from "../../../components/Popover";
 const Message = ({ message, setSelectedPage }) => {
   const [selectedImage, setSelectedImage] = useState("");
   const [showPdfName, setShowPdfName] = useState("");
+
+  // Handle nested bullet points
+  const convertToNestedList = (text) => {
+    const lines = text.split("\n");
+    let html = '<ul class="list-disc ml-6">';
+    let currentLevel = 0;
+
+    lines.forEach((line) => {
+      if (line.trim() === "") return;
+
+      // Count the indent level (2 spaces = 1 level)
+      const indent = line.match(/^\s*/)[0].length;
+      const level = Math.floor(indent / 2);
+      const content = line.replace(/^\s*-\s*/, "").trim();
+
+      // Add closing tags for previous levels if we're going back up
+      while (currentLevel > level) {
+        html += "</ul>";
+        currentLevel--;
+      }
+
+      // Add opening tags for new levels if we're going deeper
+      while (currentLevel < level) {
+        html += '<ul class="list-[circle] ml-6">';
+        currentLevel++;
+      }
+
+      html += `<li>${content}</li>`;
+    });
+
+    // Close any remaining levels
+    while (currentLevel > 0) {
+      html += "</ul>";
+      currentLevel--;
+    }
+
+    html += "</ul>"; // Close the first ul
+
+    return html;
+  };
+
   const cleanMessage = (message) => {
     if (!message) return "";
-  
-    // Format headers
-    let formattedMessage = message?.replace(/^###\s+(.*)$/gm, "<h3>$1</h3>");
-    
-    // Format bold text
-    formattedMessage = formattedMessage?.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-    
-    // Format tables
-    formattedMessage = formattedMessage?.replace(/(\|[^\n]+\|\n?)+/g, (match) => {
-      const rows = match.split('\n')
-        .filter(row => row.trim() !== '')
-        .filter(row => !/^\|[\s-]+\|$/.test(row)); // Remove rows with only dashes
-  
-      let tableHtml = '<table class="border-collapse border border-gray-300 my-2">';
-      
-      rows.forEach((row, rowIndex) => {
-        const cells = row.split('|').filter(cell => cell.trim() !== '');
-        if (rowIndex === 0) {
-          tableHtml += '<thead><tr>';
-          cells.forEach((cell) => {
-            tableHtml += `<th class="border border-gray-300 px-4 py-2 bg-gray-200 font-bold">${cell.trim()}</th>`;
-          });
-          tableHtml += '</tr></thead><tbody>';
-        } else {
-          tableHtml += '<tr>';
-          cells.forEach((cell, cellIndex) => {
-            if (cellIndex === 0) {
-              tableHtml += `<th class="border border-gray-300 px-4 py-2 bg-gray-100 font-semibold text-left">${cell.trim()}</th>`;
-            } else {
-              tableHtml += `<td class="border border-gray-300 px-4 py-2">${cell.trim()}</td>`;
+
+    // Split the text into sections
+    const sections = message.split(/(?=(?:^|\n)(?:[#]{1,4}|\d+\.|-))/);
+
+    let formattedMessage = sections
+      .map((section) => {
+        const trimmedSection = section.trim();
+
+        // Handle headers
+        if (trimmedSection.startsWith("#")) {
+          return section
+            .replace(
+              /^#\s+(.*)$/gm,
+              '<h1 class="text-2xl font-bold mb-3">$1</h1>'
+            )
+            .replace(
+              /^##\s+(.*)$/gm,
+              '<h2 class="text-xl font-semibold mb-2">$1</h2>'
+            )
+            .replace(
+              /^###\s+(.*)$/gm,
+              '<h3 class="text-lg font-medium mb-2">$1</h3>'
+            )
+            .replace(
+              /^####\s+(.*)$/gm,
+              '<h4 class="text-base font-medium mb-2">$1</h4>'
+            );
+        }
+
+        // Handle numbered lists with nested content
+        else if (/^\d+\./.test(trimmedSection)) {
+          const lines = section.split("\n");
+          let html = '<div class="mb-2">';
+          let inBulletList = false;
+
+          lines.forEach((line) => {
+            const trimmedLine = line.trim();
+            if (/^\d+\./.test(trimmedLine)) {
+              if (inBulletList) {
+                html += "</ul>";
+                inBulletList = false;
+              }
+              html += `<div class="text-md mb-3">${trimmedLine}</div>`;
+            } else if (trimmedLine.startsWith("-")) {
+              if (!inBulletList) {
+                html += '<ul class="list-disc ml-8 space-y-1">';
+                inBulletList = true;
+              }
+              const content = trimmedLine.replace(/^-\s*/, "").trim();
+              html += `<li class="mb-1">${content}</li>`;
+            } else if (trimmedLine) {
+              if (inBulletList) {
+                html += "</ul>";
+                inBulletList = false;
+              }
+              html += `<div class="mb-2">${trimmedLine}</div>`;
             }
           });
-          tableHtml += '</tr>';
+
+          if (inBulletList) html += "</ul>";
+          html += "</div>";
+          return html;
         }
-      });
-      
-      tableHtml += '</tbody></table>';
-      return tableHtml;
-    });
-  
+
+        // Handle normal and nested bullet points
+        else if (trimmedSection.startsWith("-")) {
+          return convertToNestedList(section);
+        }
+
+        // Return other content as is
+        return `<div class="mb-2">${section}</div>`;
+      })
+      .join("");
+
+    // Format bold text
+    formattedMessage = formattedMessage?.replace(
+      /\*\*(.*?)\*\*/g,
+      "<strong class='font-semibold'>$1</strong>"
+    );
+
+    // Format tables
+    formattedMessage = formattedMessage?.replace(
+      /(\|[^\n]+\|\n?)+/g,
+      (match) => {
+        const rows = match
+          .split("\n")
+          .filter((row) => row.trim() !== "")
+          .filter((row) => !/^\|[\s-]+\|$/.test(row)); // Remove rows with only dashes
+
+        let tableHtml =
+          '<table class="border-collapse border border-gray-300 my-2">';
+
+        rows.forEach((row, rowIndex) => {
+          const cells = row.split("|").filter((cell) => cell.trim() !== "");
+          if (rowIndex === 0) {
+            tableHtml += "<thead><tr>";
+            cells.forEach((cell) => {
+              tableHtml += `<th class="border border-gray-300 px-4 py-2 bg-gray-200 font-bold">${cell.trim()}</th>`;
+            });
+            tableHtml += "</tr></thead><tbody>";
+          } else {
+            tableHtml += "<tr>";
+            cells.forEach((cell, cellIndex) => {
+              if (cellIndex === 0) {
+                tableHtml += `<th class="border border-gray-300 px-4 py-2 bg-gray-100 font-semibold text-left">${cell.trim()}</th>`;
+              } else {
+                tableHtml += `<td class="border border-gray-300 px-4 py-2">${cell.trim()}</td>`;
+              }
+            });
+            tableHtml += "</tr>";
+          }
+        });
+
+        tableHtml += "</tbody></table>";
+        return tableHtml;
+      }
+    );
+
     return formattedMessage;
   };
   return (
