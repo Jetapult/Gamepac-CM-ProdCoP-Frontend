@@ -281,7 +281,7 @@ const StudioGames = ({
                         </a>
                       )}
                     </Menu.Item>
-                    <Menu.Item>
+                    {/* <Menu.Item>
                       {({ active }) => (
                         <a
                           className={classNames(
@@ -298,7 +298,7 @@ const StudioGames = ({
                           Delete
                         </a>
                       )}
-                    </Menu.Item>
+                    </Menu.Item> */}
                   </div>
                 </Menu.Items>
               </Transition>
