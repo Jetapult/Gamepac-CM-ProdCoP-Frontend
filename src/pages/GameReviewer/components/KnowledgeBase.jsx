@@ -85,7 +85,7 @@ const KnowledgeBase = ({
           deleteDocument.id
         }?source=${`/tmp/${deleteDocument?.file_url
           ?.split("/")
-          ?.pop()}`}&category_ids=${docCategoryIds.join(",")}`
+          ?.pop()}`}&category_ids=${docCategoryIds.join(",")}&type=${queryPacType}`
       );
       setShowDeleteConfirmationPopup(false);
       setToastMessage({
@@ -555,8 +555,7 @@ const KnowledgeBase = ({
                               <PencilIcon className="w-4 h-4 text-black" />
                             </span>
                           )}
-                          {queryPacType === "lite" &&
-                            parseInt(knowledge?.user_id) ===
+                          {parseInt(knowledge?.user_id) ===
                               parseInt(userData?.id) && (
                               <span
                                 className="hidden group-hover:block"
