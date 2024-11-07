@@ -6,7 +6,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/20/solid";
 import UploadIcon from "../../assets/upload-icon.png";
-import { DocumentIcon } from "@heroicons/react/24/outline";
+import { DocumentIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
 import loadingIcon from "../../assets/transparent-spinner.svg";
 import ToastMessage from "../../components/ToastMessage";
 import CSVFile from "../../assets/csv-file.png";
@@ -20,6 +20,47 @@ const tabs = [
   {
     name: "CSV",
     icon: <DocumentIcon className="w-8 h-8" />,
+  },
+];
+
+const genders = [
+  {
+    id: "1",
+    name: "Male",
+    code: "masculine",
+  },
+  {
+    id: "2",
+    name: "Female",
+    code: "feminine",
+  },
+  {
+    id: "3",
+    name: "Neutral",
+    code: "neutral",
+  },
+];
+
+const contextTypes = [
+  {
+    id: 1,
+    name: "Title",
+    code: "title",
+  },
+  {
+    id: 2,
+    name: "Description",
+    code: "description",
+  },
+  {
+    id: 3,
+    name: "Dialogue",
+    code: "dialogue",
+  },
+  {
+    id: 4,
+    name: "UI Text",
+    code: "ui",
   },
 ];
 
@@ -128,12 +169,17 @@ const Translate = () => {
   }, []);
   return (
     <div className="text-center h-screen pt-6 mx-52">
-      <div className="flex gap-4 py-2">
+      <div className="flex justify-start gap-2 py-1 bg-gray-200 rounded-md w-40 px-1">
         {tabs.map((tab) => (
           <p
             key={tab.name}
-            className={`cursor-pointer border border-[#000] rounded-md py-[3px] px-5 ${
-              activeTab === tab.name ? "bg-black text-white opacity-75" : ""
+            // className={`cursor-pointer border border-[#000] rounded-md py-[3px] px-5 ${
+            //   activeTab === tab.name ? "bg-black text-white opacity-75" : ""
+            // }`}
+            className={`cursor-pointer py-[3px] px-5 ${
+              activeTab === tab.name
+                ? "ring-1 ring-inset ring-gray-300 rounded-md bg-white text-black"
+                : "text-gray-500"
             }`}
             onClick={() => setActiveTab(tab.name)}
           >
@@ -141,13 +187,16 @@ const Translate = () => {
           </p>
         ))}
       </div>
-      <LanguageSelect
-        languages={languages}
-        targetLanguage={targetLanguage}
-        setTargetLanguage={setTargetLanguage}
-        activeTab={activeTab}
-      />
       <>
+        {activeTab === "CSV" && (
+          <div className="flex gap-4 mb-2">
+            <LanguageSelect
+              languages={languages}
+              targetLanguage={targetLanguage}
+              setTargetLanguage={setTargetLanguage}
+            />
+          </div>
+        )}
         {activeTab === "CSV" ? (
           <div className="border border-gray-300 rounded-md">
             <div className="w-2/4 py-5 mx-auto">
@@ -239,7 +288,12 @@ const Translate = () => {
           </div>
         ) : (
           <div className="">
-            <TextTranslate targetLanguage={targetLanguage} setToastMessage={setToastMessage} />
+            <TextTranslate
+              targetLanguage={targetLanguage}
+              setToastMessage={setToastMessage}
+              languages={languages}
+              setTargetLanguage={setTargetLanguage}
+            />
           </div>
         )}
       </>
@@ -253,12 +307,7 @@ const Translate = () => {
   );
 };
 
-const LanguageSelect = ({
-  languages,
-  targetLanguage,
-  setTargetLanguage,
-  activeTab
-}) => {
+const LanguageSelect = ({ languages, targetLanguage, setTargetLanguage }) => {
   const [showLanguages, setShowLanguages] = useState(false);
   const [search, setSearch] = useState("");
   const filteredLanguages = languages.filter((language) =>
@@ -280,19 +329,19 @@ const LanguageSelect = ({
     }, [ref]);
   }
   return (
-    <div className="relative">
+    <div className="relative mt-2">
       <p
         onClick={() => setShowLanguages(!showLanguages)}
-        className={`cursor-pointer`}
+        className={`cursor-pointer bg-white rounded-md shadow-sm ring-1 ring-inset ring-gray-300 px-2 py-[6px] text-sm min-w-28 flex items-center justify-between`}
       >
         {targetLanguage.name
           ? targetLanguage.name
           : "Select the language you want to translate to"}
-        <ChevronDownIcon className="w-8 h-8 text-gray-500 inline" />
+        <ChevronDownIcon className="w-6 h-6 text-gray-500 inline pointer-events-none ml-4" />
       </p>
       {showLanguages && (
-        <div className="absolute w-full z-10" ref={wrapperRef}>
-          <div className="bg-white rounded-md p-2 mx-52">
+        <div className="absolute w-full z-10 top-10" ref={wrapperRef}>
+          <div className="bg-white rounded-md p-2 min-w-96">
             <input
               type="text"
               className="border border-gray-300 rounded-md p-2 w-full mb-2"
@@ -300,11 +349,11 @@ const LanguageSelect = ({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search"
             />
-            <div className="flex flex-wrap gap-2 justify-between">
+            <div className="flex flex-wrap justify-between">
               {filteredLanguages.map((language) => (
                 <p
                   key={language.code}
-                  className="w-52 text-left hover:bg-gray-100 p-2 rounded-md cursor-pointer"
+                  className="w-40 text-sm text-left hover:bg-gray-100 p-2 rounded-md cursor-pointer"
                   onClick={() => {
                     setTargetLanguage(language);
                     setShowLanguages(false);
@@ -398,12 +447,26 @@ const UploadHistory = ({ uploadHistory, setUploadHistory, languages }) => {
   );
 };
 
-const TextTranslate = ({ targetLanguage, setToastMessage }) => {
+const TextTranslate = ({
+  targetLanguage,
+  setToastMessage,
+  languages,
+  setTargetLanguage,
+}) => {
   const [text, setText] = useState("");
   const [translatedData, setTranslatedData] = useState({});
   const [translating, setTranslating] = useState(false);
   const [showLLMs, setShowLLMs] = useState(false);
   const [selectedLLM, setSelectedLLM] = useState(LLM[0]);
+  const [selectedGender, setSelectedGender] = useState(genders[0]);
+  const [showGender, setShowGender] = useState(false);
+  const [selectedContextType, setSelectedContextType] = useState(
+    contextTypes[0]
+  );
+  const [showContextType, setShowContextType] = useState(false);
+  const [showAdditionalInstructions, setShowAdditionalInstructions] =
+    useState(false);
+  const [additionalInstructions, setAdditionalInstructions] = useState("");
   const textareaRef = useRef(null);
   const wrapperRef = useRef(null);
   useOutsideAlerter(wrapperRef);
@@ -412,6 +475,8 @@ const TextTranslate = ({ targetLanguage, setToastMessage }) => {
       function handleClickOutside(event) {
         if (ref.current && !ref.current.contains(event.target)) {
           setShowLLMs(false);
+          setShowGender(false);
+          setShowContextType(false);
         }
       }
       document.addEventListener("mousedown", handleClickOutside);
@@ -440,6 +505,9 @@ const TextTranslate = ({ targetLanguage, setToastMessage }) => {
       const response = await api.post("/v1/gen-ai/translate-text", {
         text,
         targetLanguage: targetLanguage.code,
+        content_type: selectedContextType.code,
+        narrator_gender: selectedGender.code,
+        additional_context: additionalInstructions,
       });
       setTranslatedData(response.data.data);
       setTranslating(false);
@@ -457,74 +525,170 @@ const TextTranslate = ({ targetLanguage, setToastMessage }) => {
     }
   };
   return (
-    <div className="relative flex">
-      {/* <div className="absolute right-0 top-[-28px]">
-        <p className="cursor-pointer" onClick={() => setShowLLMs(!showLLMs)}>
-          {selectedLLM?.name}
-          <ChevronDownIcon className="w-6 h-6 text-gray-500 inline" />
-        </p>
-        {showLLMs && (
-          <div className="absolute bg-white rounded-md p-2 w-max" ref={wrapperRef}>
-            {LLM.map((llm) => (
-              <p
-                key={llm.id}
-                className="text-left cursor-pointer hover:bg-gray-100 p-2 rounded-md"
-                onClick={() => {
-                  setSelectedLLM(llm);
-                  setShowLLMs(false);
-                }}
-              >
-                {llm.name}
-              </p>
-            ))}
-          </div>
-        )}
-      </div> */}
-      <div className="w-1/2 border border-gray-300 rounded min-h-32 mr-2 flex flex-col">
-        <div className="flex-grow relative">
-          <textarea
-            ref={textareaRef}
-            className="w-full h-full p-2 rounded outline-none bg-transparent text-xl resize-none"
-            autoFocus
-            style={{ minHeight: "200px" }}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          ></textarea>
-        </div>
-        <div className="p-2">
-          {text && !translating ? (
-            <button
-              className="bg-[#000] text-[#B9FF66] p-2 px-4 rounded-md ml-auto block hover:bg-[#B9FF66] hover:text-[#000]"
-              onClick={handleTranslate}
+    <>
+      <div className="flex items-center gap-2 mb-2">
+        <div class="relative mt-2 min-w-28">
+          <button
+            type="button"
+            class="relative w-full cursor-default rounded-md bg-white py-1.5 px-2 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none sm:text-sm/6 cursor-pointer hover:bg-[#f3f3f3]"
+            aria-haspopup="listbox"
+            aria-expanded="true"
+            aria-labelledby="listbox-label"
+            onClick={() => setShowGender(!showGender)}
+          >
+            <span class="flex items-center justify-between">
+              <span class="block truncate">{selectedGender?.name}</span>
+              <ChevronDownIcon className="w-6 h-6 text-gray-500 inline pointer-events-none ml-3" />
+            </span>
+          </button>
+
+          {showGender && (
+            <ul
+              class="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+              tabIndex="-1"
+              role="listbox"
+              aria-labelledby="listbox-label"
+              aria-activedescendant="listbox-option-3"
+              ref={wrapperRef}
             >
-              Translate
-            </button>
-          ) : (
-            <button className="bg-[#000] text-[#B9FF66] p-2 px-4 rounded-md ml-auto block cursor-not-allowed">
-              {translating && (
-                <img
-                  src={loadingIcon}
-                  alt="Loading Icon"
-                  className="w-7 h-7 inline"
-                />
-              )}
-              {translating ? "Translating..." : "Translate"}
-            </button>
+              {genders.map((gender) => (
+                <li
+                  key={gender.id}
+                  class="relative cursor-default select-none py-2 px-3 text-gray-900 cursor-pointer hover:bg-[#f3f3f3]"
+                  id="listbox-option-0"
+                  role="option"
+                  onClick={() => {
+                    setSelectedGender(gender);
+                    setShowGender(false);
+                  }}
+                >
+                  <div class="flex items-center">
+                    <span class="block truncate font-normal">
+                      {gender.name}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
+        <div class="relative mt-2 min-w-28">
+          <button
+            type="button"
+            class="relative w-full cursor-default rounded-md bg-white py-1.5 px-2 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none sm:text-sm/6 cursor-pointer hover:bg-[#f3f3f3]"
+            aria-haspopup="listbox"
+            aria-expanded="true"
+            aria-labelledby="listbox-label"
+            onClick={() => setShowContextType(!showContextType)}
+          >
+            <span class="flex items-center justify-between">
+              <span class="block truncate">{selectedContextType?.name}</span>
+              <ChevronDownIcon className="w-6 h-6 text-gray-500 inline pointer-events-none ml-3" />
+            </span>
+          </button>
+
+          {showContextType && (
+            <ul
+              class="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+              tabIndex="-1"
+              role="listbox"
+              aria-labelledby="listbox-label"
+              aria-activedescendant="listbox-option-3"
+              ref={wrapperRef}
+            >
+              {contextTypes.map((contextType) => (
+                <li
+                  key={contextType.id}
+                  class="relative cursor-default select-none py-2 px-3 text-gray-900 cursor-pointer hover:bg-[#f3f3f3]"
+                  id="listbox-option-0"
+                  role="option"
+                  onClick={() => {
+                    setSelectedContextType(contextType);
+                    setShowContextType(false);
+                  }}
+                >
+                  <div class="flex items-center">
+                    <span class="block truncate font-normal">
+                      {contextType.name}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <LanguageSelect
+          languages={languages}
+          targetLanguage={targetLanguage}
+          setTargetLanguage={setTargetLanguage}
+        />
+        {!showAdditionalInstructions && (
+          <span
+            className="text-sm text-gray-500 mt-2 cursor-pointer"
+            onClick={() =>
+              setShowAdditionalInstructions(!showAdditionalInstructions)
+            }
+          >
+            <PlusCircleIcon className="w-4 h-4 inline mb-[1px]" /> Additional
+            context
+          </span>
+        )}
       </div>
-      <div className="w-1/2 min-h-32 bg-gray-200 rounded">
-        <p
-          className={`p-2 ${
-            translatedData?.target_language === "ar"
-              ? "text-right"
-              : "text-left"
-          }`}
-        >
-          {translatedData?.gpt_translation}
-        </p>
+      {showAdditionalInstructions && (
+        <textarea
+          className="w-full border border-gray-300 rounded p-2 mb-2 outline-none text-sm"
+          value={additionalInstructions}
+          onChange={(e) => setAdditionalInstructions(e.target.value)}
+          placeholder="Additional context"
+        ></textarea>
+      )}
+      <div className="relative flex">
+        <div className="w-1/2 border border-gray-300 rounded min-h-32 mr-2 flex flex-col">
+          <div className="flex-grow relative">
+            <textarea
+              ref={textareaRef}
+              className="w-full h-full p-2 rounded outline-none bg-transparent text-xl resize-none"
+              autoFocus
+              style={{ minHeight: "200px" }}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            ></textarea>
+          </div>
+          <div className="p-2">
+            {text && !translating ? (
+              <button
+                className="bg-[#000] text-[#B9FF66] p-2 px-4 rounded-md ml-auto block hover:bg-[#B9FF66] hover:text-[#000]"
+                onClick={handleTranslate}
+              >
+                Translate
+              </button>
+            ) : (
+              <button className="bg-[#000] text-[#B9FF66] p-2 px-4 rounded-md ml-auto block cursor-not-allowed">
+                {translating && (
+                  <img
+                    src={loadingIcon}
+                    alt="Loading Icon"
+                    className="w-7 h-7 inline"
+                  />
+                )}
+                {translating ? "Translating..." : "Translate"}
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="w-1/2 min-h-32 bg-gray-200 rounded">
+          <p
+            className={`p-2 ${
+              translatedData?.target_language === "ar"
+                ? "text-right"
+                : "text-left"
+            }`}
+          >
+            {translatedData?.gpt_translation}
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
