@@ -14,11 +14,15 @@ import {
 } from "@heroicons/react/20/solid";
 import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/20/solid";
 import TxtViewer from "./components/TxtViewer";
+import ExcelViewer from "./components/ExcelViewer";
 
 export const isPDF = (url) => {
   return url.toLowerCase().endsWith(".pdf");
 };
 
+const isExcel = (url) => {
+  return /\.(xlsx|xls)$/i.test(url);
+};
 const isImage = (url) => {
   return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url);
 };
@@ -416,15 +420,22 @@ const RagChat = () => {
               /> */}
           </div>
           <div className={`relative h-full ${showPdf ? "w-[40%]" : "w-[57%]"}`}>
-            {selectedPdf?.file_url && <>
-            {isPDF(selectedPdf?.file_url) ? (
-              <PdfViewer
-                selectedPdf={selectedPdf}
-                selectedPage={selectedPage}
-                setSelectedPdf={setSelectedPdf}
-                setMessageObj={setMessageObj}
-              />
-            ) : <TxtViewer url={selectedPdf?.file_url} selectedPdf={selectedPdf} />}</>}
+          {selectedPdf?.file_url && (
+    <>
+      {isPDF(selectedPdf?.file_url) ? (
+        <PdfViewer
+          selectedPdf={selectedPdf}
+          selectedPage={selectedPage}
+          setSelectedPdf={setSelectedPdf}
+          setMessageObj={setMessageObj}
+        />
+      ) : isExcel(selectedPdf?.file_url) ? (
+        <ExcelViewer file={selectedPdf?.file_url} />
+      ) : (
+        <TxtViewer url={selectedPdf?.file_url} selectedPdf={selectedPdf} />
+      )}
+    </>
+  )}
           </div>
           <div className="relative w-[40%] px-6 border-l border-l-[#e6e6e6]">
             <div
