@@ -289,7 +289,7 @@ const UploadDocPopup = ({
                   />
                 )}
                 <input
-                  accept=".pdf,application/pdf,.txt"
+                  accept=".pdf,application/pdf,.txt,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                   type="file"
                   ref={fileInputRef}
                   style={{ display: "none" }}
