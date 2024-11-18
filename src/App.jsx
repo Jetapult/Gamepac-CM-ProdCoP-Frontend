@@ -292,12 +292,12 @@ function App() {
             <Route path="/aistories" element={<PrivateRoute><Weaver /></PrivateRoute>} />
             <Route path="/storiesHistory" element={<PrivateRoute><WeaverHistory /></PrivateRoute>} />
             <Route path ="/aiStories/:id" element={<PrivateRoute><StoryPage /></PrivateRoute>}/>
-            <Route path ="/html5-games" element={<HTML5Games />}/>
-            <Route path ="/html5-games/match-3" element={<Match3Game />}/>
-            <Route path ="/html5-games/word-search-puzzle" element={<WordSearchPuzzleGame />}/>
-            <Route path ="/html5-games/hidden-objects" element={<HiddenObjectsGame />}/>
-            <Route path ="/html5-games/narration" element={<AINarrations />}/>
-            <Route path ="/html5-games/word-match" element={<HdwPlayable/>}/>
+            <Route path ="/html5-games" element={<PrivateRoute><HTML5Games /></PrivateRoute>}/>
+            <Route path ="/html5-games/match-3" element={<PrivateRoute><Match3Game /></PrivateRoute>}/>
+            <Route path ="/html5-games/word-search-puzzle" element={<PrivateRoute><WordSearchPuzzleGame /></PrivateRoute>}/>
+            <Route path ="/html5-games/hidden-objects" element={<PrivateRoute><HiddenObjectsGame /></PrivateRoute>}/>
+            <Route path ="/html5-games/narration" element={<PrivateRoute><AINarrations /></PrivateRoute>}/>
+            <Route path ="/html5-games/word-match" element={<PrivateRoute><HdwPlayable/></PrivateRoute>}/>
             <Route path="/docs/overview" element={<Docs />} />
             <Route path="/docs/app-onboarding" element={<Docs />} />
             <Route path="/docs/ai-replies" element={<Docs />} />
