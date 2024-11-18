@@ -5,7 +5,7 @@ import { signInWithGogle } from "../config";
 import { auth } from "../config";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
-import image from "../assets/landing1.png"
+import image from "../assets/landing-img.png"
 import holycow from "../assets/holycow.png"
 import umx from "../assets/umx.png"
 import search from "../assets/search.png"
@@ -18,8 +18,7 @@ import landing5 from '../assets/landing5.png'
 import landing6 from '../assets/landing6.png'
 import smiley from '../assets/smiley.png'
 import Footer from "../components/Footer";
-
-
+import styles from "../components/landing.css"
 
 function Landing() {
   const [user, setUser] = useState("");
@@ -40,21 +39,42 @@ function Landing() {
     return styles[index % 3];
   };
   return (
-    <div className="flex flex-col  items-center justify-center">
-      <div className="flex flex-row h-[30%] items-center p-10">
-        <div className="flex flex-col w-1/2 pr-8">
-          <h1 className="text-3xl font-bold mb-4">
-          Accelerate Your Growth Journey with GamePac!</h1>
-          <p className="text-lg">GamePac by Jetapult is the first AI co-pilot platform for indie gaming studios to help them grow faster and smarter. With our powerful generative AI and data analytics solutions, you can create, grow and monetise like never before.</p>
-          <button className="text-xl py-2 px-4 rounded text-white bg-black hover:bg-slate-700 w-fit mt-4" onClick={()=>window.location.href="/login"}>Join Now</button>
+    <div className="flex flex-col items-center justify-center">
+      <div className="relative isolate w-full overflow-hidden bg-gradient-to-r from-[#b9ff66] via-white to-[#e8ffcc]">
+        <div className="max-w-7xl mx-auto px-6 pt-16 lg:px-8">
+          <div className="pt-10 lg:py-0 lg:pb-0 sm:pt-2">
+          <header className="text-center relative mx-2 h-[1200px] max-h-[900px] min-h-[1200px] lg:min-h-[650px] lg:h-[650px] font-bold leading-none">
+          <div className="z-10 pb-36 mt-16 lg:mt-10 md:mt-10">
+                <div className="mb-8 max-w-5xl mx-auto">
+                  <h1 className="text-6xl lg:text-5xl font-bold tracking-tighter mb-4 text-black">
+                    Accelerate Your Growth Journey with{' '}
+                    <div className="flex flex-wrap justify-center items-baseline gap-2">
+                      <span className="liquid-text">GamePac</span>
+                    </div>
+                  </h1>
+                  <p className="text-lg max-w-xl mx-auto mt-4 text-gray-700">
+                    With our powerful generative AI and data analytics solutions, you can create, grow and monetise like never before.
+                  </p>
+                  <div className="flex mt-8 items-center justify-center">
+                    <button 
+                      className="z-10 text-lg py-3 px-6 rounded-[35px] text-[#B9FF66] bg-black hover:bg-[#B9FF66] hover:text-black transition-colors duration-300"
+                      onClick={() => window.location.href="/login"}
+                    >
+                      Join Now
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-8">
+                  <img 
+                    src={image} 
+                    alt="Meeting" 
+                    className="w-[80%] md:w-full mx-auto rounded-2xl object-contain"
+                  />
+                </div>
+              </div>
+            </header>
+          </div>
         </div>
-        <div className="flex w-1/2 p-10"> 
-          <img src={image} alt="Meeting" className="w-auto h-[300] object-contain" />
-        </div>
-      </div>
-      <div className="h-[58px] w-full flex flex-row items-center justify-center space-x-10">
-        <img src={holycow} alt="Holy Cow Logo" className="h-[58px] w-auto object-contain" />
-        <img src={umx} alt="UMX Logo" className="h-[58px] w-auto object-contain" />
       </div>
       <section>
         <div className="flex flex-row p-10 items-center">
@@ -78,6 +98,7 @@ create, grow and monetise like never before.</p>
       </div>
     </div>
   ))}
+  
 </div>
       </section>
       <div className="h-[20%] flex flex-row  items-center justify-center bg-[#F3F3F3] border-2 rounded-[45px] w-fit mb-6">
