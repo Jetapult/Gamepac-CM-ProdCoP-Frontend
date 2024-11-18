@@ -14,7 +14,32 @@
     box-shadow: 0px 38.4869px 71.4756px rgba(0, 0, 0, 0.192);
     border-radius: 5;
 }
-div{
-/* font-family: 'League Spartan', sans-serif; */
-
-}
+.liquid-text {
+    position: relative;
+    background: linear-gradient(
+      to right,
+      #000 20%,
+      #96CC52 20%,
+      #96CC52 70%,
+      #000 80%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% auto;
+    animation: textShine 3s linear infinite;
+  }
+  
+  
+  @keyframes textShine {
+    0% {
+      background-position: 200% center;
+    }
+    100% {
+      background-position: -200% center;
+    }
+  }
+  
+  .liquid-text:hover {
+    animation-play-state: paused;
+  }
