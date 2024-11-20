@@ -5,6 +5,99 @@ import { Helmet } from "react-helmet";
 
 const data = [
   {
+    id: "5",
+    title: "Jetapult AI Update - 20th November 2024",
+    short_description: "New analysis tool, AI asset pipelines and much more. ",
+    feature: [
+      {
+        id: "1",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/querypac.png",
+        update_type: "QueryPac",
+        title: "KnowledgeBase + Copilot for your research journey.",
+        // short_description: "Quick insights about reviews.",
+        description: `<ul><li>- Your KnowledgeBase + Copilot for your research journey. Works with large PDF containing charts, diagrams and others. Also works with excel and CSVs. </li>
+       </ul>`,
+      },
+      {
+        id: "2",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/landing.png",
+        update_type: "UI updates",
+        title: "GamePac revamped to Jetapult brand colours.",
+        // short_description: `Quick search filters for advanced searches. `,
+        description: `<ul>
+        <li>- GamePac revamped to Jetapult brand colours.	GamePac revamped to Jetapult brand colours. </a></li>
+        </ul>
+        `,
+      },
+      {
+        id: "3",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/translatepac.png",
+        update_type: "TranslatePac",
+        title:
+          "Use AI translations with high accuracy for better ASO and UA listings ",
+        short_description: "We can welcome external studios to Gamepac Suite",
+        description: `<ul><li>- Use AI translations with high accuracy for better ASO and UA listings </li></ul>`,
+      },
+      {
+        id: "4",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/aipipeline.png",
+        update_type: "AI Assets",
+        title: "Successfully generated a christmas room!",
+        // short_description: "High level dashboards with daa from authoratative sources now possible.",
+        description: `<ul>
+        <li>- AI Generated pipeline for Christmas, Valentines and future seasons being worked on with advisor Dr. Arjun Jain. </li> 
+        <li>- We see better room quality and variations in style than previous pipelines. .  </li>
+           <li>- Gameplay Link - <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://drive.google.com/drive/folders/1V2U2shwnR3nrJQ8HMkc4qO384i0Yxpkg">link</a>
+        </ul>`,
+      },
+      {
+        id: "5",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/datainfra.png",
+        update_type: "Data update",
+        title: "Data Enrichment for Marketing and Product Analytics",
+        // short_description: "Jetapult's first playable ads.",
+        description: `<ul>
+        <li>- Enhanced data pipelines with attribution and engagement metrics from Adjust & Clevertap, supporting marketing and product analytics for user acquisition and retention insights. </li>
+        </ul>`,
+      },
+      {
+        id: "6",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/Murdermysterylogo.png",
+        update_type: "AI Game update",
+        title: "Adjust Added.",
+        short_description: `Play the Murder Mystery Game.`,
+        description: `<ul>
+        <li>- Adjust Added and will go to Open testing next week ! <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://play.google.com/store/apps/details?id=com.curiouscalf.murder.mystery.minds.story.unsolved.detective.crime.choice.hidden.criminal.games">Play now</a> </li>
+        </ul>`,
+      },
+      {
+        id: "7",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/gcpcost.webp",
+        update_type: "GCP update",
+        title: "GCP workload and cost management",
+        // short_description: "Jetapult's first playable ads.",
+        description: `<ul>
+        <li>- Conducted experiments with GCP plans to understand estimated workload requirements and resource usage. We also worked with analysts to rationalise queries and analyst time on GCP machines. </li>
+        </ul>`,
+      },
+      {
+        id: "8",
+        img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/datapipeline.png",
+        update_type: "Data update",
+        title: "Pipeline Maintenance and Issue Resolution",
+        short_description: `Pipeline Maintenance and Issue Resolution`,
+        description: `<ul>
+        <li>- Managed and maintained the following data pipelines:
+          Adjust to Cloud Bucket,CleverTap to Cloud Bucket,Cloud Bucket to BigQuery Table,Ad Networks Pipelines:,AdMob,Amazon Appstore,AppLovin,DT Exchange,IronSource,Liftoff,Meta,Mintegr,alPangle,Unity.</li>
+
+          <li>-This involved monitoring data flows, troubleshooting and resolving failures caused by server-side changes, and ensuring seamless integration and consistent data updates across all systems for reliable analytics.</li>
+           </li>
+        </ul>`,
+      },
+    ],
+    date: "Released on 20th November 2024",
+  },
+  {
     id: "4",
     title: "Jetapult AI Update - 21st June 2024",
     short_description: "Brand New Community Management Suite, Playable Ads and much more. Deep Dive into the work put in by the Data + AI from the last three weeks. Do reach out for giving feedback and to test things out. ",
@@ -75,7 +168,8 @@ const data = [
   {
     id: "3",
     title: "Jetapult AI Update - 31st May 2024",
-    short_description: "Hello Team, We are excited to share a bunch of exciting updates with you regarding HTML5 ads, our AI games, asset generation and more.",
+    short_description:
+      "Hello Team, We are excited to share a bunch of exciting updates with you regarding HTML5 ads, our AI games, asset generation and more.",
     feature: [
       {
         id: "1",
@@ -102,7 +196,8 @@ const data = [
         img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/playable-screenshot.png",
         update_type: "Playable Ad updates",
         title: "Playable Ad Minified Version",
-        short_description: "Our Playable Ads passed some technical checks and is ready for large ad networks!",
+        short_description:
+          "Our Playable Ads passed some technical checks and is ready for large ad networks!",
         description: `<ul><li>-Our Playable Ads have successfully passed comprehensive technical evaluations, ensuring seamless integration across prominent ad networks. With a focus on captivating interactions, they're poised to elevate engagement and drive significant campaign success on a vast scale. Get ready to harness their potential and unlock unparalleled audience connections. <a style="text-decoration: underline; color:#007bff" target="_blank" href="https://app.gamepacai.com/html5-games/word-search-puzzle">link</a></li></ul>`,
       },
       {
@@ -110,7 +205,8 @@ const data = [
         img: "https://gamepacbucket.s3.ap-south-1.amazonaws.com/production/studioLogos/jetapult/Sc3.2.jpg",
         update_type: "AI Game updates",
         title: "Murder Mystery Game - Analytics implemeted",
-        short_description: "Murder Mystery: Word Detective is now ready for launch. Play test our latest build.",
+        short_description:
+          "Murder Mystery: Word Detective is now ready for launch. Play test our latest build.",
         description: `<ul>
         <li>Our game is closed testing phase. We have added analytics, IAP options, ad monetisation for the muder mystery game. The developer account on Play Store has been setup. We will be discussing and planning the launch of the game next week.<a style="text-decoration: underline; color:#007bff" target="_blank" href="https://drive.google.com/file/d/1o2rKReCmToHjnovyrZCA_qiS9PHo1bBj/view?usp=drive_link">link</a></li>   </li>
         </ul>`,
@@ -131,7 +227,8 @@ const data = [
   {
     id: "2",
     title: "Jetapult AI Update - 15th May 2024",
-    short_description: "Hello Team, We are excited to share a bunch of exciting updates with you regarding HTML5 ads, our AI games, asset generation and more.",
+    short_description:
+      "Hello Team, We are excited to share a bunch of exciting updates with you regarding HTML5 ads, our AI games, asset generation and more.",
     feature: [
       {
         id: "1",
@@ -202,7 +299,8 @@ const data = [
   {
     id: "1",
     title: "Jetapult AI Update - 29th April 2024",
-    short_description: "Bi-weekly updates on current and future AI developments at Jetapult",
+    short_description:
+      "Bi-weekly updates on current and future AI developments at Jetapult",
     feature: [
       {
         id: "1",
