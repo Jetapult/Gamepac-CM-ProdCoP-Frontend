@@ -6,7 +6,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/20/solid";
 import UploadIcon from "../../assets/upload-icon.png";
-import { DocumentIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
+import { DocumentIcon, PlusCircleIcon, Square2StackIcon } from "@heroicons/react/24/outline";
 import loadingIcon from "../../assets/transparent-spinner.svg";
 import ToastMessage from "../../components/ToastMessage";
 import CSVFile from "../../assets/csv-file.png";
@@ -524,6 +524,17 @@ const TextTranslate = ({
       }
     }
   };
+
+  const handleCopyText = () => {
+    navigator.clipboard.writeText(translatedData?.gpt_translation);
+    setToastMessage({
+      show: true,
+      message: "Translation copied to clipboard",
+      type: "success",
+      duration: 3000,
+    });
+  };
+
   return (
     <>
       <div className="flex items-center gap-2 mb-2">
@@ -676,7 +687,7 @@ const TextTranslate = ({
             )}
           </div>
         </div>
-        <div className="w-1/2 min-h-32 bg-gray-200 rounded">
+        <div className="w-1/2 min-h-32 bg-gray-200 rounded relative">
           <p
             className={`p-2 ${
               translatedData?.target_language === "ar"
@@ -686,6 +697,14 @@ const TextTranslate = ({
           >
             {translatedData?.gpt_translation}
           </p>
+          {translatedData?.gpt_translation && (
+            <button
+              className="absolute bottom-2 left-2 cursor-pointer"
+              onClick={handleCopyText}
+            >
+              <Square2StackIcon className="w-6 h-6" />  
+            </button>
+          )}
         </div>
       </div>
     </>
