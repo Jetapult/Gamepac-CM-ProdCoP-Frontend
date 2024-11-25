@@ -699,7 +699,7 @@ const TextTranslate = ({
           </p>
           {translatedData?.gpt_translation && (
             <button
-              className="absolute bottom-2 left-2 cursor-pointer"
+              className="absolute bottom-2 right-2 cursor-pointer"
               onClick={handleCopyText}
             >
               <Square2StackIcon className="w-6 h-6" />  
