@@ -34,6 +34,13 @@ const aiTools = [
     icon: LanguageIcon,
     link: "/translate",
   },
+  {
+    id: 5,
+    name: "UGC Ads",
+    description: "Create UGC Ads with AI.",
+    icon: null,
+    link: "/ugc-ads",
+  }
 ];
 
 const AIToolsLanding = () => {
