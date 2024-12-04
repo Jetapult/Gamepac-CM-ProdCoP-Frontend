@@ -32,6 +32,12 @@ const games = [
     name:"HDW",
     image: hdwlogo,
     type:"word-match"
+  },
+  {
+    id:"6",
+    name:"MHM",
+    image: hdwlogo,
+    type:"home-decore"
   }
 ];
 const HTML5Games = () => {

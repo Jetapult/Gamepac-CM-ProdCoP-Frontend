@@ -45,6 +45,7 @@ import AINarrations from "./pages/HTML5Games/AINarrations";
 import RagChat from "./pages/GameReviewer/RagChat";
 import HdwPlayable from "./pages/HTML5Games/HdwPlayable";
 import Translate from "./pages/Translate";
+import MhmPlayable from "./pages/HTML5Games/MhmPlayable";
 
 
 function App() {
@@ -298,6 +299,7 @@ function App() {
             <Route path ="/html5-games/hidden-objects" element={<HiddenObjectsGame />}/>
             <Route path ="/html5-games/narration" element={<AINarrations />}/>
             <Route path ="/html5-games/word-match" element={<HdwPlayable/>}/>
+            <Route path ="/html5-games/home-decore" element={<MhmPlayable/>}/>
             <Route path="/docs/overview" element={<Docs />} />
             <Route path="/docs/app-onboarding" element={<Docs />} />
             <Route path="/docs/ai-replies" element={<Docs />} />
