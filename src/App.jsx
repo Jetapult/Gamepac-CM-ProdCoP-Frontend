@@ -300,7 +300,7 @@ function App() {
             <Route path ="/html5-games/hidden-objects" element={<HiddenObjectsGame />}/>
             <Route path ="/html5-games/narration" element={<AINarrations />}/>
             <Route path ="/html5-games/word-match" element={<HdwPlayable/>}/>
-            <Route path ="/html5-games/home-decore" element={<MhmPlayable/>}/>
+            <Route path ="/html5-games/home-decor" element={<MhmPlayable/>}/>
             <Route path="/docs/overview" element={<Docs />} />
             <Route path="/docs/app-onboarding" element={<Docs />} />
             <Route path="/docs/ai-replies" element={<Docs />} />

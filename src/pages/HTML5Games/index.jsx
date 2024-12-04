@@ -1,6 +1,7 @@
 import HDDLogo from "../../assets/hdd-logo.webp";
 import AIGame from "../../assets/game-icon.png";
 import hdwlogo from '../../assets/hdw-logo.jpg'
+import mhmLogo from '../../assets/mhm-logo.webp'
 import { useNavigate } from "react-router-dom";
 const games = [
   {
@@ -36,8 +37,8 @@ const games = [
   {
     id:"6",
     name:"MHM",
-    image: hdwlogo,
-    type:"home-decore"
+    image: mhmLogo,
+    type:"home-decor"
   }
 ];
 const HTML5Games = () => {
