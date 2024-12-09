@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import PositionAnimationPanel from "./PositionAnimationPanel";
 import ScaleAnimationPanel from "./ScaleAnimationPanel";
 import VisibilityAnimationPanel from "./VisibilityAnimationPanel";
+import SlideInAnimationPanel from "./SlideInAnimationPanel";
 
 const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
   const [activePanel, setActivePanel] = useState("");
@@ -64,66 +65,100 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
     });
     activeTweens.current = [];
 
-    // Position Animation
-    if (sprite.animations.position.isEnabled) {
-      const positionTween = scene.tweens.add({
-        targets: target,
-        x: baseProps.current.x + sprite.animations.position.config.x * 100,
-        y: baseProps.current.y + sprite.animations.position.config.y * 100,
-        duration: sprite.animations.position.config.duration,
-        repeat: sprite.animations.position.config.repeat,
-        yoyo: sprite.animations.position.config.yoyo,
-        ease: sprite.animations.position.config.ease,
-        onComplete: () => {
-          if (!sprite.animations.position.isEnabled) {
-            target.setPosition(baseProps.current.x, baseProps.current.y);
-          }
-        },
-      });
-      activeTweens.current.push(positionTween);
-    } else {
-      target.setPosition(baseProps.current.x, baseProps.current.y);
-    }
+    // Function to start common animations
+    const startCommonAnimations = () => {
+      // Position Animation
+      if (sprite.animations.position.isEnabled) {
+        const positionTween = scene.tweens.add({
+          targets: target,
+          x: baseProps.current.x + sprite.animations.position.config.x * 100,
+          y: baseProps.current.y + sprite.animations.position.config.y * 100,
+          duration: sprite.animations.position.config.duration,
+          repeat: sprite.animations.position.config.repeat,
+          yoyo: sprite.animations.position.config.yoyo,
+          ease: sprite.animations.position.config.ease,
+          onComplete: () => {
+            if (!sprite.animations.position.isEnabled) {
+              target.setPosition(baseProps.current.x, baseProps.current.y);
+            }
+          },
+        });
+        activeTweens.current.push(positionTween);
+      }
 
-    // Scale Animation
-    if (sprite.animations.scale.isEnabled) {
-      const scaleTween = scene.tweens.add({
-        targets: target,
-        scaleX: sprite.animations.scale.config.scaleX,
-        scaleY: sprite.animations.scale.config.scaleY,
-        duration: sprite.animations.scale.config.duration,
-        repeat: sprite.animations.scale.config.repeat,
-        yoyo: sprite.animations.scale.config.yoyo,
-        ease: sprite.animations.scale.config.ease,
-        onComplete: () => {
-          if (!sprite.animations.scale.isEnabled) {
-            target.setScale(baseProps.current.scale);
-          }
-        },
-      });
-      activeTweens.current.push(scaleTween);
-    } else {
-      target.setScale(baseProps.current.scale);
-    }
+      // Scale Animation
+      if (sprite.animations.scale.isEnabled) {
+        const scaleTween = scene.tweens.add({
+          targets: target,
+          scaleX: sprite.animations.scale.config.scaleX,
+          scaleY: sprite.animations.scale.config.scaleY,
+          duration: sprite.animations.scale.config.duration,
+          repeat: sprite.animations.scale.config.repeat,
+          yoyo: sprite.animations.scale.config.yoyo,
+          ease: sprite.animations.scale.config.ease,
+          onComplete: () => {
+            if (!sprite.animations.scale.isEnabled) {
+              target.setScale(baseProps.current.scale);
+            }
+          },
+        });
+        activeTweens.current.push(scaleTween);
+      }
 
-    // Transparency Animation
-    if (sprite.animations.transparency.isEnabled) {
-      const alphaTween = scene.tweens.add({
+      // Transparency Animation
+      if (sprite.animations.transparency.isEnabled) {
+        const alphaTween = scene.tweens.add({
+          targets: target,
+          alpha: sprite.animations.transparency.config.alpha,
+          duration: sprite.animations.transparency.config.duration,
+          repeat: sprite.animations.transparency.config.repeat,
+          yoyo: sprite.animations.transparency.config.yoyo,
+          ease: sprite.animations.transparency.config.ease,
+          onComplete: () => {
+            if (!sprite.animations.transparency.isEnabled) {
+              target.setAlpha(baseProps.current.alpha);
+            }
+          },
+        });
+        activeTweens.current.push(alphaTween);
+      }
+    };
+
+    // Handle Slide-in Animation first
+    if (sprite.animations.slideIn.isEnabled) {
+      const getInitialPosition = () => {
+        const { direction, distance } = sprite.animations.slideIn.config;
+        switch (direction) {
+          case 'left':
+            return { x: baseProps.current.x - distance, y: baseProps.current.y };
+          case 'right':
+            return { x: baseProps.current.x + distance, y: baseProps.current.y };
+          case 'top':
+            return { x: baseProps.current.x, y: baseProps.current.y - distance };
+          case 'bottom':
+            return { x: baseProps.current.x, y: baseProps.current.y + distance };
+          default:
+            return { x: baseProps.current.x, y: baseProps.current.y };
+        }
+      };
+
+      const initialPos = getInitialPosition();
+      target.setPosition(initialPos.x, initialPos.y);
+
+      const slideInTween = scene.tweens.add({
         targets: target,
-        alpha: sprite.animations.transparency.config.alpha,
-        duration: sprite.animations.transparency.config.duration,
-        repeat: sprite.animations.transparency.config.repeat,
-        yoyo: sprite.animations.transparency.config.yoyo,
-        ease: sprite.animations.transparency.config.ease,
-        onComplete: () => {
-          if (!sprite.animations.transparency.isEnabled) {
-            target.setAlpha(baseProps.current.alpha);
-          }
-        },
+        x: baseProps.current.x,
+        y: baseProps.current.y,
+        duration: sprite.animations.slideIn.config.duration,
+        ease: sprite.animations.slideIn.config.ease,
+        delay: sprite.animations.slideIn.config.priority * 200,
+        onComplete: startCommonAnimations // Start common animations after slide-in completes
       });
-      activeTweens.current.push(alphaTween);
+
+      activeTweens.current.push(slideInTween);
     } else {
-      target.setAlpha(baseProps.current.alpha);
+      // If no slide-in animation, start common animations immediately
+      startCommonAnimations();
     }
 
     // Cleanup function
@@ -191,6 +226,18 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
         >
           <span className="text-white">👁</span>
         </button>
+        <button
+          className={`p-2 border rounded ${
+            activePanel === "slideIn"
+              ? "border-purple-500 bg-purple-500/20"
+              : "border-[#444]"
+          } ${sprite.animations.slideIn.isEnabled ? "bg-purple-500/10" : ""}`}
+          onClick={() =>
+            setActivePanel((prev) => (prev === "slideIn" ? "" : "slideIn"))
+          }
+        >
+          <span className="text-white">↳</span>
+        </button>
       </div>
 
       {activePanel === "move" && (
@@ -240,6 +287,22 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
                 ...sprite.animations.transparency.config,
                 ...newConfig,
               },
+            })
+          }
+        />
+      )}
+      {activePanel === "slideIn" && (
+        <SlideInAnimationPanel
+          config={sprite.animations.slideIn.config}
+          isEnabled={sprite.animations.slideIn.isEnabled}
+          onToggle={() =>
+            updateAnimation("slideIn", {
+              isEnabled: !sprite.animations.slideIn.isEnabled,
+            })
+          }
+          onChange={(newConfig) =>
+            updateAnimation("slideIn", {
+              config: { ...sprite.animations.slideIn.config, ...newConfig },
             })
           }
         />

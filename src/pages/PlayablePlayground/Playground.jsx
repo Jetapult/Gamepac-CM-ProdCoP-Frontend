@@ -36,6 +36,17 @@ const createDefaultAnimations = () => ({
       yoyo: true,
     },
   },
+  slideIn: {
+    isEnabled: false,
+    priority: 0,
+    config: {
+      direction: 'left',
+      distance: 100,
+      duration: 500,
+      ease: 'Power2',
+      delay: 0,
+    }
+  }
 });
 
 const Playground = () => {
@@ -290,9 +301,7 @@ const Playground = () => {
     // Base sprite code with all properties
     let code = `// ${sprite.frameName} sprite
 const ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")} = this.add
-  .sprite(${Math.round(sprite.x)}, ${Math.round(
-      sprite.y
-    )}, 'spritesheetname', '${sprite.frameName}')
+  .sprite(${Math.round(sprite.x)}, ${Math.round(sprite.y)}, 'spritesheetname', '${sprite.frameName}')
   .setOrigin(0, 0)`;
 
     // Add properties if they're different from defaults
@@ -309,29 +318,111 @@ const ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")} = this.add
 
     // Add animation code if animations are enabled
     if (sprite.animations) {
-      // Position animation
-      if (sprite.animations.position.isEnabled) {
-        const posConfig = sprite.animations.position.config;
-        code += `\n\n// Position animation
+      // Handle slide-in animation first
+      if (sprite.animations.slideIn.isEnabled) {
+        const slideConfig = sprite.animations.slideIn.config;
+        let initialX, initialY;
+        
+        // Calculate initial position based on direction
+        switch (slideConfig.direction) {
+          case 'left':
+            initialX = `${Math.round(sprite.x)} - ${slideConfig.distance}`;
+            initialY = `${Math.round(sprite.y)}`;
+            break;
+          case 'right':
+            initialX = `${Math.round(sprite.x)} + ${slideConfig.distance}`;
+            initialY = `${Math.round(sprite.y)}`;
+            break;
+          case 'top':
+            initialX = `${Math.round(sprite.x)}`;
+            initialY = `${Math.round(sprite.y)} - ${slideConfig.distance}`;
+            break;
+          case 'bottom':
+            initialX = `${Math.round(sprite.x)}`;
+            initialY = `${Math.round(sprite.y)} + ${slideConfig.distance}`;
+            break;
+          default:
+            initialX = `${Math.round(sprite.x)}`;
+            initialY = `${Math.round(sprite.y)}`;
+        }
+
+        code += `\n\n// Slide-in animation
+// Set initial position
+${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")}.setPosition(${initialX}, ${initialY});
+
+// Create slide-in tween with callback for common animations
+const slideInTween = this.tweens.add({
+  targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+  x: ${Math.round(sprite.x)},
+  y: ${Math.round(sprite.y)},
+  duration: ${slideConfig.duration},
+  ease: '${slideConfig.ease}',
+  delay: ${slideConfig.priority * 200}, // Delay based on priority
+  onComplete: function() {`;
+
+        // Add common animations inside the onComplete callback
+        if (sprite.animations.position.isEnabled) {
+          const posConfig = sprite.animations.position.config;
+          code += `\n    // Position animation
+    this.tweens.add({
+      targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+      x: ${Math.round(sprite.x)} + ${Math.round(posConfig.x * 100)},
+      y: ${Math.round(sprite.y)} + ${Math.round(posConfig.y * 100)},
+      duration: ${posConfig.duration},
+      repeat: ${posConfig.repeat},
+      yoyo: ${posConfig.yoyo},
+      ease: '${posConfig.ease}'
+    });`;
+        }
+
+        if (sprite.animations.scale.isEnabled) {
+          const scaleConfig = sprite.animations.scale.config;
+          code += `\n    // Scale animation
+    this.tweens.add({
+      targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+      scaleX: ${scaleConfig.scaleX},
+      scaleY: ${scaleConfig.scaleY},
+      duration: ${scaleConfig.duration},
+      repeat: ${scaleConfig.repeat},
+      yoyo: ${scaleConfig.yoyo},
+      ease: '${scaleConfig.ease}'
+    });`;
+        }
+
+        if (sprite.animations.transparency.isEnabled) {
+          const alphaConfig = sprite.animations.transparency.config;
+          code += `\n    // Transparency animation
+    this.tweens.add({
+      targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+      alpha: ${alphaConfig.alpha},
+      duration: ${alphaConfig.duration},
+      repeat: ${alphaConfig.repeat},
+      yoyo: ${alphaConfig.yoyo},
+      ease: '${alphaConfig.ease}'
+    });`;
+        }
+
+        code += `\n  }
+});`;
+      } else {
+        // If no slide-in animation, add common animations directly
+        if (sprite.animations.position.isEnabled) {
+          const posConfig = sprite.animations.position.config;
+          code += `\n\n// Position animation
 this.tweens.add({
   targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
-  x: ${Math.round(sprite.x)} + ${Math.round(posConfig.x * 100)}, // Move ${
-          posConfig.x * 100
-        }px on X
-  y: ${Math.round(sprite.y)} + ${Math.round(posConfig.y * 100)}, // Move ${
-          posConfig.y * 100
-        }px on Y
+  x: ${Math.round(sprite.x)} + ${Math.round(posConfig.x * 100)},
+  y: ${Math.round(sprite.y)} + ${Math.round(posConfig.y * 100)},
   duration: ${posConfig.duration},
   repeat: ${posConfig.repeat},
   yoyo: ${posConfig.yoyo},
   ease: '${posConfig.ease}'
 });`;
-      }
+        }
 
-      // Scale animation
-      if (sprite.animations.scale.isEnabled) {
-        const scaleConfig = sprite.animations.scale.config;
-        code += `\n\n// Scale animation
+        if (sprite.animations.scale.isEnabled) {
+          const scaleConfig = sprite.animations.scale.config;
+          code += `\n\n// Scale animation
 this.tweens.add({
   targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
   scaleX: ${scaleConfig.scaleX},
@@ -341,12 +432,11 @@ this.tweens.add({
   yoyo: ${scaleConfig.yoyo},
   ease: '${scaleConfig.ease}'
 });`;
-      }
+        }
 
-      // Transparency animation
-      if (sprite.animations.transparency.isEnabled) {
-        const alphaConfig = sprite.animations.transparency.config;
-        code += `\n\n// Transparency animation
+        if (sprite.animations.transparency.isEnabled) {
+          const alphaConfig = sprite.animations.transparency.config;
+          code += `\n\n// Transparency animation
 this.tweens.add({
   targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
   alpha: ${alphaConfig.alpha},
@@ -355,6 +445,7 @@ this.tweens.add({
   yoyo: ${alphaConfig.yoyo},
   ease: '${alphaConfig.ease}'
 });`;
+        }
       }
     }
 
