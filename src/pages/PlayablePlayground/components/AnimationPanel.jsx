@@ -3,6 +3,7 @@ import PositionAnimationPanel from "./PositionAnimationPanel";
 import ScaleAnimationPanel from "./ScaleAnimationPanel";
 import VisibilityAnimationPanel from "./VisibilityAnimationPanel";
 import SlideInAnimationPanel from "./SlideInAnimationPanel";
+import FadeInAnimationPanel from "./FadeInAnimationPanel";
 
 const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
   const [activePanel, setActivePanel] = useState("");
@@ -161,6 +162,26 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
       startCommonAnimations();
     }
 
+    // Handle Fade-in Animation
+    if (sprite.animations.fadeIn.isEnabled) {
+      // Set initial alpha
+      target.setAlpha(0);
+
+      const fadeInTween = scene.tweens.add({
+        targets: target,
+        alpha: 1,
+        duration: sprite.animations.fadeIn.config.duration,
+        ease: sprite.animations.fadeIn.config.ease,
+        delay: sprite.animations.fadeIn.config.priority * 200,
+        onComplete: startCommonAnimations // Start common animations after fade-in completes
+      });
+
+      activeTweens.current.push(fadeInTween);
+    } else if (!sprite.animations.slideIn.isEnabled) {
+      // Only start common animations if neither slide-in nor fade-in are enabled
+      startCommonAnimations();
+    }
+
     // Cleanup function
     return () => {
       activeTweens.current.forEach((tween) => {
@@ -238,6 +259,18 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
         >
           <span className="text-white">↳</span>
         </button>
+        <button
+          className={`p-2 border rounded ${
+            activePanel === "fadeIn"
+              ? "border-purple-500 bg-purple-500/20"
+              : "border-[#444]"
+          } ${sprite.animations.fadeIn.isEnabled ? "bg-purple-500/10" : ""}`}
+          onClick={() =>
+            setActivePanel((prev) => (prev === "fadeIn" ? "" : "fadeIn"))
+          }
+        >
+          <span className="text-white">🌓</span>
+        </button>
       </div>
 
       {activePanel === "move" && (
@@ -303,6 +336,22 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
           onChange={(newConfig) =>
             updateAnimation("slideIn", {
               config: { ...sprite.animations.slideIn.config, ...newConfig },
+            })
+          }
+        />
+      )}
+      {activePanel === "fadeIn" && (
+        <FadeInAnimationPanel
+          config={sprite.animations.fadeIn.config}
+          isEnabled={sprite.animations.fadeIn.isEnabled}
+          onToggle={() =>
+            updateAnimation("fadeIn", {
+              isEnabled: !sprite.animations.fadeIn.isEnabled,
+            })
+          }
+          onChange={(newConfig) =>
+            updateAnimation("fadeIn", {
+              config: { ...sprite.animations.fadeIn.config, ...newConfig },
             })
           }
         />
