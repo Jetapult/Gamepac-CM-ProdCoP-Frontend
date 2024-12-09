@@ -4,6 +4,7 @@ import ScaleAnimationPanel from "./ScaleAnimationPanel";
 import VisibilityAnimationPanel from "./VisibilityAnimationPanel";
 import SlideInAnimationPanel from "./SlideInAnimationPanel";
 import FadeInAnimationPanel from "./FadeInAnimationPanel";
+import DisappearAnimationPanel from "./DisappearAnimationPanel";
 
 const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
   const [activePanel, setActivePanel] = useState("");
@@ -182,18 +183,46 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
       startCommonAnimations();
     }
 
-    // Cleanup function
-    return () => {
-      activeTweens.current.forEach((tween) => {
-        if (tween.isPlaying) {
-          tween.stop();
+    // Handle Disappear Animation
+    if (sprite.animations.disappear.isEnabled) {
+      const disappearTimer = scene.time.delayedCall(
+        sprite.animations.disappear.config.delay,
+        () => {
+          const disappearTween = scene.tweens.add({
+            targets: target,
+            alpha: 0,
+            duration: sprite.animations.disappear.config.duration,
+            ease: sprite.animations.disappear.config.ease,
+            onComplete: () => {
+              target.destroy();
+              // Remove the sprite from placedSprites
+              setPlacedSprites(prev => prev.map(s => 
+                s.id === sprite.id 
+                  ? { ...s, isDestroyed: true }
+                  : s
+              ));
+            }
+          });
+          activeTweens.current.push(disappearTween);
         }
-      });
-      // Reset to base properties on cleanup
-      target.setPosition(baseProps.current.x, baseProps.current.y);
-      target.setScale(baseProps.current.scale);
-      target.setAlpha(baseProps.current.alpha);
-    };
+      );
+
+      // Store the timer reference for cleanup
+      return () => {
+        disappearTimer.remove();
+        activeTweens.current.forEach((tween) => {
+          if (tween.isPlaying) {
+            tween.stop();
+          }
+        });
+        // Reset to base properties on cleanup
+        if (target && !target.destroyed) {
+          target.setPosition(baseProps.current.x, baseProps.current.y);
+          target.setScale(baseProps.current.scale);
+          target.setAlpha(baseProps.current.alpha);
+        }
+      };
+    }
   }, [
     sprite.animations,
     game,
@@ -270,6 +299,18 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
           }
         >
           <span className="text-white">🌓</span>
+        </button>
+        <button
+          className={`p-2 border rounded ${
+            activePanel === "disappear"
+              ? "border-purple-500 bg-purple-500/20"
+              : "border-[#444]"
+          } ${sprite.animations.disappear.isEnabled ? "bg-purple-500/10" : ""}`}
+          onClick={() =>
+            setActivePanel((prev) => (prev === "disappear" ? "" : "disappear"))
+          }
+        >
+          <span className="text-white">⌛</span>
         </button>
       </div>
 
@@ -352,6 +393,22 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
           onChange={(newConfig) =>
             updateAnimation("fadeIn", {
               config: { ...sprite.animations.fadeIn.config, ...newConfig },
+            })
+          }
+        />
+      )}
+      {activePanel === "disappear" && (
+        <DisappearAnimationPanel
+          config={sprite.animations.disappear.config}
+          isEnabled={sprite.animations.disappear.isEnabled}
+          onToggle={() =>
+            updateAnimation("disappear", {
+              isEnabled: !sprite.animations.disappear.isEnabled,
+            })
+          }
+          onChange={(newConfig) =>
+            updateAnimation("disappear", {
+              config: { ...sprite.animations.disappear.config, ...newConfig },
             })
           }
         />

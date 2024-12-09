@@ -56,6 +56,14 @@ const createDefaultAnimations = () => ({
       delay: 0,
     },
   },
+  disappear: {
+    isEnabled: false,
+    config: {
+      delay: 2000,
+      duration: 1000,
+      ease: "Power2",
+    },
+  },
 });
 
 const Playground = () => {
@@ -67,6 +75,7 @@ const Playground = () => {
   const [selectedFrame, setSelectedFrame] = useState("");
   const [placedSprites, setPlacedSprites] = useState([]);
   const [orientation, setOrientation] = useState("landscape");
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     if (!gameContainerRef.current) return;
@@ -299,7 +308,7 @@ const Playground = () => {
   const deleteSprite = useCallback((id) => {
     setPlacedSprites((prev) => {
       const spriteToDelete = prev.find((sprite) => sprite.id === id);
-      if (spriteToDelete?.phaserSprite) {
+      if (spriteToDelete?.phaserSprite && !spriteToDelete.isDestroyed) {
         spriteToDelete.phaserSprite.destroy();
       }
       return prev.filter((sprite) => sprite.id !== id);
@@ -308,29 +317,22 @@ const Playground = () => {
 
   // Modify generatePhaserCode to include animations
   const generatePhaserCode = (sprite) => {
-    // Base sprite code with all properties
+    // Create a counter for the variable name
+    const counter = placedSprites.findIndex((s) => s.id === sprite.id) + 1;
+    const varName = `sprite${counter}`;
+
+    // Base sprite code with all properties including scale
     let code = `// ${sprite.frameName} sprite
-const ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")} = this.add
+const ${varName} = this.add
   .sprite(${Math.round(sprite.x)}, ${Math.round(
       sprite.y
     )}, 'spritesheetname', '${sprite.frameName}')
-  .setOrigin(0, 0)`;
+  .setOrigin(0, 0)
+  .setScale(${sprite.scale})`;
+  console.log(sprite.frameName, 'frameName')
 
-    // Add properties if they're different from defaults
-    if (sprite.scale !== 1) {
-      code += `\n  .setScale(${sprite.scale})`;
-    }
-    if (sprite.rotation) {
-      code += `\n  .setAngle(${sprite.rotation})`;
-    }
-    if (sprite.alpha !== 1) {
-      code += `\n  .setAlpha(${sprite.alpha})`;
-    }
-    code += ";";
-
-    // Add animation code if animations are enabled
+    // Update all references to use varName instead of uniqueVarName
     if (sprite.animations) {
-      // Handle slide-in animation first
       if (sprite.animations.slideIn.isEnabled) {
         const slideConfig = sprite.animations.slideIn.config;
         let initialX, initialY;
@@ -360,14 +362,12 @@ const ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")} = this.add
 
         code += `\n\n// Slide-in animation
 // Set initial position
-${sprite.frameName.replace(
-  /[^a-zA-Z0-9]/g,
-  "_"
-)}.setPosition(${initialX}, ${initialY});
+${varName}.setPosition(${initialX}, ${initialY});`;
 
-// Create slide-in tween with callback for common animations
-const slideInTween = this.tweens.add({
-  targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+        // Create slide-in tween with callback for common animations
+        code += `\n\n// Create slide-in tween with callback for common animations
+const slideInTween${counter} = this.tweens.add({
+  targets: ${varName},
   x: ${Math.round(sprite.x)},
   y: ${Math.round(sprite.y)},
   duration: ${slideConfig.duration},
@@ -379,8 +379,8 @@ const slideInTween = this.tweens.add({
         if (sprite.animations.position.isEnabled) {
           const posConfig = sprite.animations.position.config;
           code += `\n    // Position animation
-    this.tweens.add({
-      targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+    const positionTween${counter} = this.tweens.add({
+      targets: ${varName},
       x: ${Math.round(sprite.x)} + ${Math.round(posConfig.x * 100)},
       y: ${Math.round(sprite.y)} + ${Math.round(posConfig.y * 100)},
       duration: ${posConfig.duration},
@@ -393,8 +393,8 @@ const slideInTween = this.tweens.add({
         if (sprite.animations.scale.isEnabled) {
           const scaleConfig = sprite.animations.scale.config;
           code += `\n    // Scale animation
-    this.tweens.add({
-      targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+    const scaleTween${counter} = this.tweens.add({
+      targets: ${varName},
       scaleX: ${scaleConfig.scaleX},
       scaleY: ${scaleConfig.scaleY},
       duration: ${scaleConfig.duration},
@@ -407,8 +407,8 @@ const slideInTween = this.tweens.add({
         if (sprite.animations.transparency.isEnabled) {
           const alphaConfig = sprite.animations.transparency.config;
           code += `\n    // Transparency animation
-    this.tweens.add({
-      targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+    const transparencyTween${counter} = this.tweens.add({
+      targets: ${varName},
       alpha: ${alphaConfig.alpha},
       duration: ${alphaConfig.duration},
       repeat: ${alphaConfig.repeat},
@@ -423,11 +423,11 @@ const slideInTween = this.tweens.add({
         const fadeConfig = sprite.animations.fadeIn.config;
         code += `\n\n// Fade-in animation
 // Set initial alpha
-${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")}.setAlpha(0);
+${varName}.setAlpha(0);
 
 // Create fade-in tween with callback for common animations
-const fadeInTween = this.tweens.add({
-  targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+const fadeInTween${counter} = this.tweens.add({
+  targets: ${varName},
   alpha: 1,
   duration: ${fadeConfig.duration},
   ease: '${fadeConfig.ease}',
@@ -438,8 +438,8 @@ const fadeInTween = this.tweens.add({
         if (sprite.animations.position.isEnabled) {
           const posConfig = sprite.animations.position.config;
           code += `\n    // Position animation
-    this.tweens.add({
-      targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+    const positionTween${counter} = this.tweens.add({
+      targets: ${varName},
       x: ${Math.round(sprite.x)} + ${Math.round(posConfig.x * 100)},
       y: ${Math.round(sprite.y)} + ${Math.round(posConfig.y * 100)},
       duration: ${posConfig.duration},
@@ -452,8 +452,8 @@ const fadeInTween = this.tweens.add({
         if (sprite.animations.scale.isEnabled) {
           const scaleConfig = sprite.animations.scale.config;
           code += `\n    // Scale animation
-    this.tweens.add({
-      targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+    const scaleTween${counter} = this.tweens.add({
+      targets: ${varName},
       scaleX: ${scaleConfig.scaleX},
       scaleY: ${scaleConfig.scaleY},
       duration: ${scaleConfig.duration},
@@ -466,8 +466,8 @@ const fadeInTween = this.tweens.add({
         if (sprite.animations.transparency.isEnabled) {
           const alphaConfig = sprite.animations.transparency.config;
           code += `\n    // Transparency animation
-    this.tweens.add({
-      targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+    const transparencyTween${counter} = this.tweens.add({
+      targets: ${varName},
       alpha: ${alphaConfig.alpha},
       duration: ${alphaConfig.duration},
       repeat: ${alphaConfig.repeat},
@@ -484,7 +484,7 @@ const fadeInTween = this.tweens.add({
           const posConfig = sprite.animations.position.config;
           code += `\n\n// Position animation
 this.tweens.add({
-  targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+  targets: ${varName},
   x: ${Math.round(sprite.x)} + ${Math.round(posConfig.x * 100)},
   y: ${Math.round(sprite.y)} + ${Math.round(posConfig.y * 100)},
   duration: ${posConfig.duration},
@@ -498,7 +498,7 @@ this.tweens.add({
           const scaleConfig = sprite.animations.scale.config;
           code += `\n\n// Scale animation
 this.tweens.add({
-  targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+  targets: ${varName},
   scaleX: ${scaleConfig.scaleX},
   scaleY: ${scaleConfig.scaleY},
   duration: ${scaleConfig.duration},
@@ -512,7 +512,7 @@ this.tweens.add({
           const alphaConfig = sprite.animations.transparency.config;
           code += `\n\n// Transparency animation
 this.tweens.add({
-  targets: ${sprite.frameName.replace(/[^a-zA-Z0-9]/g, "_")},
+  targets: ${varName},
   alpha: ${alphaConfig.alpha},
   duration: ${alphaConfig.duration},
   repeat: ${alphaConfig.repeat},
@@ -520,6 +520,23 @@ this.tweens.add({
   ease: '${alphaConfig.ease}'
 });`;
         }
+      }
+
+      // Add this inside generatePhaserCode after the other animations
+      if (sprite.animations.disappear.isEnabled) {
+        const disappearConfig = sprite.animations.disappear.config;
+        code += `\n\n// Disappear animation
+const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay}, () => {
+  this.tweens.add({
+    targets: ${varName},
+    alpha: 0,
+    duration: ${disappearConfig.duration},
+    ease: '${disappearConfig.ease}',
+    onComplete: function(tween, targets) {
+      targets[0].destroy();
+    }
+  });
+});`;
       }
     }
 
@@ -550,6 +567,101 @@ this.tweens.add({
     });
   };
 
+  // Add this new function to handle playback
+  const handlePlay = () => {
+    if (!game?.playground) return;
+    
+    setIsPlaying(true);
+    const scene = game.playground;
+    
+    // Reset and remove all existing sprites
+    placedSprites.forEach(sprite => {
+      if (sprite.phaserSprite && !sprite.isDestroyed) {
+        sprite.phaserSprite.destroy();
+      }
+    });
+    
+    // Recreate all sprites with their animations
+    placedSprites.forEach(sprite => {
+      const newSprite = scene.add
+        .sprite(sprite.x, sprite.y, 'charactersprite', sprite.frameName)
+        .setOrigin(0, 0)
+        .setScale(sprite.scale);
+        
+      // Handle slide-in animation
+      if (sprite.animations.slideIn.isEnabled) {
+        const slideConfig = sprite.animations.slideIn.config;
+        let initialX = sprite.x;
+        let initialY = sprite.y;
+        
+        switch (slideConfig.direction) {
+          case "left":
+            initialX = sprite.x - slideConfig.distance;
+            break;
+          case "right":
+            initialX = sprite.x + slideConfig.distance;
+            break;
+          case "top":
+            initialY = sprite.y - slideConfig.distance;
+            break;
+          case "bottom":
+            initialY = sprite.y + slideConfig.distance;
+            break;
+        }
+        
+        newSprite.setPosition(initialX, initialY);
+        
+        scene.tweens.add({
+          targets: newSprite,
+          x: sprite.x,
+          y: sprite.y,
+          duration: slideConfig.duration,
+          ease: slideConfig.ease,
+          delay: slideConfig.priority * 200
+        });
+      }
+      
+      // Handle fade-in animation
+      if (sprite.animations.fadeIn.isEnabled) {
+        newSprite.setAlpha(0);
+        scene.tweens.add({
+          targets: newSprite,
+          alpha: 1,
+          duration: sprite.animations.fadeIn.config.duration,
+          ease: sprite.animations.fadeIn.config.ease,
+          delay: sprite.animations.fadeIn.config.priority * 200
+        });
+      }
+      
+      // Handle disappear animation if enabled
+      if (sprite.animations.disappear.isEnabled) {
+        scene.time.delayedCall(sprite.animations.disappear.config.delay, () => {
+          scene.tweens.add({
+            targets: newSprite,
+            alpha: 0,
+            duration: sprite.animations.disappear.config.duration,
+            ease: sprite.animations.disappear.config.ease,
+            onComplete: function() {
+              newSprite.destroy();
+            }
+          });
+        });
+      }
+    });
+    
+    // Reset playing state after all animations complete
+    const maxDuration = Math.max(...placedSprites.map(sprite => {
+      if (sprite.animations.disappear.isEnabled) {
+        return sprite.animations.disappear.config.delay + sprite.animations.disappear.config.duration;
+      }
+      return 0;
+    }));
+    
+    scene.time.delayedCall(maxDuration + 100, () => {
+      setIsPlaying(false);
+    });
+  };
+
   return (
     <div className="flex w-full h-[calc(100vh-55px)] bg-[#1e1e1e] relative">
       <div
@@ -561,12 +673,23 @@ this.tweens.add({
       <div className="w-[300px] bg-[#252525] p-5 border-l border-[#333] h-full overflow-y-auto">
         {/* Add this button at the top of the sidebar */}
         {placedSprites.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-6 flex gap-2">
             <button
               onClick={handleCopyAllCode}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
+              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
             >
               Copy All Sprites Code
+            </button>
+            <button
+              onClick={handlePlay}
+              disabled={isPlaying}
+              className={`flex-1 ${
+                isPlaying 
+                  ? 'bg-gray-500 cursor-not-allowed' 
+                  : 'bg-green-500 hover:bg-green-600'
+              } text-white px-4 py-2 rounded transition-colors`}
+            >
+              {isPlaying ? 'Playing...' : 'Play Preview'}
             </button>
           </div>
         )}
@@ -641,11 +764,16 @@ this.tweens.add({
               {[...placedSprites].reverse().map((sprite) => (
                 <div
                   key={sprite.id}
-                  className="bg-[#333] p-3 rounded border border-[#444]"
+                  className={`bg-[#333] p-3 rounded border ${
+                    sprite.isDestroyed
+                      ? "border-red-500 opacity-50"
+                      : "border-[#444]"
+                  }`}
                 >
                   <div className="flex justify-between items-center mb-3">
                     <span className="text-white text-sm font-medium truncate flex-1 mr-2">
                       {sprite.frameName}
+                      {sprite.isDestroyed && " (Destroyed)"}
                     </span>
                     <div className="flex gap-2">
                       <button
