@@ -85,7 +85,7 @@ function App() {
     }
   }, []);
   return (
-    <div className=" bg-[#f6f6f7] h-[calc(100vh-3.5rem)]">
+    <div className=" bg-[#f6f6f7]">
       <>
         <Router>
           <Navbar />

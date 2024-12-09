@@ -369,16 +369,41 @@ this.tweens.add({
     });
   };
 
+  // Add this new function near generatePhaserCode
+  const generateAllPhaserCode = (sprites) => {
+    const allCode = sprites.map((sprite) => generatePhaserCode(sprite)).join('\n\n');
+    return `// All Sprites and Animations\n${allCode}`;
+  };
+
+  // Add this new function near handleCopyCode
+  const handleCopyAllCode = () => {
+    const code = generateAllPhaserCode(placedSprites);
+    navigator.clipboard.writeText(code).then(() => {
+      console.log("All sprite code copied to clipboard");
+    });
+  };
 
   return (
-    <div className="flex w-full h-screen bg-[#1e1e1e] relative overflow-hidden">
+    <div className="flex w-full h-[calc(100vh-55px)] bg-[#1e1e1e] relative">
       <div
         ref={gameContainerRef}
-        className="flex-1 h-screen mr-[300px] bg-[#2d2d2d] flex items-center justify-center"
+        className="w-[calc(100%-300px)] bg-[#2d2d2d] flex justify-center"
         onClick={handleCanvasClick}
       />
 
-      <div className="w-[300px] bg-[#252525] p-5 border-l border-[#333] fixed right-0 top-0 h-full overflow-y-auto">
+      <div className="w-[300px] bg-[#252525] p-5 border-l border-[#333] h-full overflow-y-auto">
+        {/* Add this button at the top of the sidebar */}
+        {placedSprites.length > 0 && (
+          <div className="mb-6">
+            <button
+              onClick={handleCopyAllCode}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
+            >
+              Copy All Sprites Code
+            </button>
+          </div>
+        )}
+
         <div className="mb-6">
           <h3 className="text-white text-lg font-medium mb-4">Assets</h3>
           <div className="mb-4">
