@@ -574,90 +574,39 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     setIsPlaying(true);
     const scene = game.playground;
     
-    // Reset and remove all existing sprites
+    // Reset all existing sprites to initial state
     placedSprites.forEach(sprite => {
       if (sprite.phaserSprite && !sprite.isDestroyed) {
         sprite.phaserSprite.destroy();
       }
     });
     
-    // Recreate all sprites with their animations
+    // Recreate all sprites from scratch
     placedSprites.forEach(sprite => {
+      // Create new sprite with initial properties
       const newSprite = scene.add
         .sprite(sprite.x, sprite.y, 'charactersprite', sprite.frameName)
         .setOrigin(0, 0)
-        .setScale(sprite.scale);
+        .setScale(sprite.scale)
+        .setRotation(sprite.rotation || 0)
+        .setAlpha(sprite.alpha || 1);
         
-      // Handle slide-in animation
-      if (sprite.animations.slideIn.isEnabled) {
-        const slideConfig = sprite.animations.slideIn.config;
-        let initialX = sprite.x;
-        let initialY = sprite.y;
-        
-        switch (slideConfig.direction) {
-          case "left":
-            initialX = sprite.x - slideConfig.distance;
-            break;
-          case "right":
-            initialX = sprite.x + slideConfig.distance;
-            break;
-          case "top":
-            initialY = sprite.y - slideConfig.distance;
-            break;
-          case "bottom":
-            initialY = sprite.y + slideConfig.distance;
-            break;
-        }
-        
-        newSprite.setPosition(initialX, initialY);
-        
-        scene.tweens.add({
-          targets: newSprite,
-          x: sprite.x,
-          y: sprite.y,
-          duration: slideConfig.duration,
-          ease: slideConfig.ease,
-          delay: slideConfig.priority * 200
-        });
-      }
-      
-      // Handle fade-in animation
-      if (sprite.animations.fadeIn.isEnabled) {
-        newSprite.setAlpha(0);
-        scene.tweens.add({
-          targets: newSprite,
-          alpha: 1,
-          duration: sprite.animations.fadeIn.config.duration,
-          ease: sprite.animations.fadeIn.config.ease,
-          delay: sprite.animations.fadeIn.config.priority * 200
-        });
-      }
-      
-      // Handle disappear animation if enabled
-      if (sprite.animations.disappear.isEnabled) {
-        scene.time.delayedCall(sprite.animations.disappear.config.delay, () => {
-          scene.tweens.add({
-            targets: newSprite,
-            alpha: 0,
-            duration: sprite.animations.disappear.config.duration,
-            ease: sprite.animations.disappear.config.ease,
-            onComplete: function() {
-              newSprite.destroy();
-            }
-          });
-        });
-      }
+      // Update the reference in placedSprites
+      sprite.phaserSprite = newSprite;
     });
     
-    // Reset playing state after all animations complete
-    const maxDuration = Math.max(...placedSprites.map(sprite => {
-      if (sprite.animations.disappear.isEnabled) {
-        return sprite.animations.disappear.config.delay + sprite.animations.disappear.config.duration;
-      }
-      return 0;
-    }));
+    // Start all animations from beginning
+    scene.time.delayedCall(100, () => {
+      placedSprites.forEach(sprite => {
+        if (sprite.phaserSprite && !sprite.isDestroyed) {
+          // This will trigger all animations to start again
+          sprite.phaserSprite.emit('animationstart');
+        }
+      });
+    });
     
-    scene.time.delayedCall(maxDuration + 100, () => {
+    // Reset playing state after a short delay
+    scene.time.delayedCall(500, () => {
       setIsPlaying(false);
     });
   };
