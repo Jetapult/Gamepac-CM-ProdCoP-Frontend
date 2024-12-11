@@ -553,10 +553,137 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
 
   // Add this new function near generatePhaserCode
   const generateAllPhaserCode = (sprites) => {
-    const allCode = sprites
-      .map((sprite) => generatePhaserCode(sprite))
-      .join("\n\n");
-    return `// All Sprites and Animations\n${allCode}`;
+    // Group sprites by priority
+    const groupedSprites = sprites.reduce((acc, sprite) => {
+      const priority = sprite.animations.slideIn?.config?.priority || 
+                      sprite.animations.fadeIn?.config?.priority || 0;
+      if (!acc[priority]) acc[priority] = [];
+      acc[priority].push(sprite);
+      return acc;
+    }, {});
+
+    // Sort priorities
+    const priorities = Object.keys(groupedSprites).sort((a, b) => Number(a) - Number(b));
+    
+    let code = '// All Sprites and Animations\n\n';
+    let totalDelay = 0;
+
+    priorities.forEach((priority) => {
+      const sprites = groupedSprites[priority];
+      code += `// Sequence ${priority}\n`;
+      
+      sprites.forEach((sprite) => {
+        const counter = sprites.indexOf(sprite) + 1;
+        const varName = `sprite${counter}_seq${priority}`;
+        
+        code += `const ${varName} = this.add
+  .sprite(${Math.round(sprite.x)}, ${Math.round(sprite.y)}, 'spritesheetname', '${sprite.frameName}')
+  .setOrigin(0, 0)
+  .setScale(${sprite.scale});\n\n`;
+
+        if (sprite.animations.slideIn.isEnabled) {
+          const slideConfig = sprite.animations.slideIn.config;
+          let initialPos;
+          switch (slideConfig.direction) {
+            case "left":
+              initialPos = `${varName}.setPosition(${Math.round(sprite.x)} - ${slideConfig.distance}, ${Math.round(sprite.y)});`;
+              break;
+            case "right":
+              initialPos = `${varName}.setPosition(${Math.round(sprite.x)} + ${slideConfig.distance}, ${Math.round(sprite.y)});`;
+              break;
+            case "top":
+              initialPos = `${varName}.setPosition(${Math.round(sprite.x)}, ${Math.round(sprite.y)} - ${slideConfig.distance});`;
+              break;
+            case "bottom":
+              initialPos = `${varName}.setPosition(${Math.round(sprite.x)}, ${Math.round(sprite.y)} + ${slideConfig.distance});`;
+              break;
+          }
+          
+          code += `${initialPos}\n
+this.time.delayedCall(${totalDelay}, () => {
+  this.tweens.add({
+    targets: ${varName},
+    x: ${Math.round(sprite.x)},
+    y: ${Math.round(sprite.y)},
+    duration: ${slideConfig.duration},
+    ease: '${slideConfig.ease}'
+  });
+});\n`;
+        }
+
+        if (sprite.animations.fadeIn.isEnabled) {
+          const fadeConfig = sprite.animations.fadeIn.config;
+          code += `${varName}.setAlpha(0);\n
+this.time.delayedCall(${totalDelay}, () => {
+  this.tweens.add({
+    targets: ${varName},
+    alpha: 1,
+    duration: ${fadeConfig.duration},
+    ease: '${fadeConfig.ease}'
+  });
+});\n`;
+        }
+
+        // Add common animations
+        if (sprite.animations.position.isEnabled || 
+            sprite.animations.scale.isEnabled || 
+            sprite.animations.transparency.isEnabled) {
+          code += `\nthis.time.delayedCall(${totalDelay + 500}, () => {\n`;
+          
+          if (sprite.animations.position.isEnabled) {
+            const posConfig = sprite.animations.position.config;
+            code += `  this.tweens.add({
+    targets: ${varName},
+    x: ${Math.round(sprite.x)} + ${Math.round(posConfig.x * 100)},
+    y: ${Math.round(sprite.y)} + ${Math.round(posConfig.y * 100)},
+    duration: ${posConfig.duration},
+    repeat: ${posConfig.repeat},
+    yoyo: ${posConfig.yoyo},
+    ease: '${posConfig.ease}'
+  });\n`;
+          }
+
+          // Add scale and transparency animations similarly...
+          
+          code += `});\n`;
+        }
+
+        if (sprite.animations.disappear.isEnabled) {
+          const disappearConfig = sprite.animations.disappear.config;
+          code += `\nthis.time.delayedCall(${totalDelay + disappearConfig.delay}, () => {
+    this.tweens.add({
+      targets: ${varName},
+      alpha: 0,
+      duration: ${disappearConfig.duration},
+      ease: '${disappearConfig.ease}',
+      onComplete: () => ${varName}.destroy()
+    });
+  });\n`;
+        }
+        
+        code += '\n';
+      });
+
+      // Calculate delay for next sequence
+      const maxDuration = Math.max(...sprites.map(sprite => {
+        let duration = 0;
+        if (sprite.animations.slideIn.isEnabled) {
+          duration = Math.max(duration, sprite.animations.slideIn.config.duration);
+        }
+        if (sprite.animations.fadeIn.isEnabled) {
+          duration = Math.max(duration, sprite.animations.fadeIn.config.duration);
+        }
+        if (sprite.animations.disappear.isEnabled) {
+          duration = Math.max(duration, sprite.animations.disappear.config.delay + sprite.animations.disappear.config.duration);
+        }
+        return duration;
+      }));
+
+      totalDelay += maxDuration + 1000; // Add 1 second gap between sequences
+      code += '\n';
+    });
+
+    return code;
   };
 
   // Add this new function near handleCopyCode
@@ -574,41 +701,153 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     setIsPlaying(true);
     const scene = game.playground;
     
-    // Reset all existing sprites to initial state
-    placedSprites.forEach(sprite => {
-      if (sprite.phaserSprite && !sprite.isDestroyed) {
-        sprite.phaserSprite.destroy();
-      }
-    });
+    // Clear any existing preview sprites
+    scene.children.list
+      .filter(child => child.type === 'Sprite')
+      .forEach(sprite => sprite.destroy());
     
-    // Recreate all sprites from scratch
-    placedSprites.forEach(sprite => {
-      // Create new sprite with initial properties
-      const newSprite = scene.add
-        .sprite(sprite.x, sprite.y, 'charactersprite', sprite.frameName)
-        .setOrigin(0, 0)
-        .setScale(sprite.scale)
-        .setRotation(sprite.rotation || 0)
-        .setAlpha(sprite.alpha || 1);
-        
-      // Update the reference in placedSprites
-      sprite.phaserSprite = newSprite;
-    });
-    
-    // Start all animations from beginning
-    scene.time.delayedCall(100, () => {
-      placedSprites.forEach(sprite => {
-        if (sprite.phaserSprite && !sprite.isDestroyed) {
-          // This will trigger all animations to start again
-          sprite.phaserSprite.emit('animationstart');
-        }
+    // Group sprites by their sequence number (using priority as sequence)
+    const groupedSprites = placedSprites.reduce((acc, sprite) => {
+      const sequence = sprite.animations.slideIn?.config?.priority || 
+                      sprite.animations.fadeIn?.config?.priority || 0;
+      if (!acc[sequence]) acc[sequence] = [];
+      acc[sequence].push(sprite);
+      return acc;
+    }, {});
+
+    const sequences = Object.keys(groupedSprites).sort((a, b) => Number(a) - Number(b));
+    let totalDelay = 0;
+
+    sequences.forEach((sequence) => {
+      const sprites = groupedSprites[sequence];
+      
+      scene.time.delayedCall(totalDelay, () => {
+        sprites.forEach(sprite => {
+          const newSprite = scene.add
+            .sprite(sprite.x, sprite.y, 'charactersprite', sprite.frameName)
+            .setOrigin(0, 0)
+            .setScale(sprite.scale)
+            .setRotation(sprite.rotation || 0);
+
+          // Handle slide-in animation
+          if (sprite.animations.slideIn.isEnabled) {
+            const slideConfig = sprite.animations.slideIn.config;
+            let initialX = sprite.x;
+            let initialY = sprite.y;
+            
+            switch (slideConfig.direction) {
+              case "left":
+                initialX = sprite.x - slideConfig.distance;
+                break;
+              case "right":
+                initialX = sprite.x + slideConfig.distance;
+                break;
+              case "top":
+                initialY = sprite.y - slideConfig.distance;
+                break;
+              case "bottom":
+                initialY = sprite.y + slideConfig.distance;
+                break;
+            }
+            
+            newSprite.setPosition(initialX, initialY);
+            
+            scene.tweens.add({
+              targets: newSprite,
+              x: sprite.x,
+              y: sprite.y,
+              duration: slideConfig.duration,
+              ease: slideConfig.ease,
+              onComplete: () => handleCommonAnimations(sprite, newSprite, scene)
+            });
+          } else if (sprite.animations.fadeIn.isEnabled) {
+            newSprite.setAlpha(0);
+            scene.tweens.add({
+              targets: newSprite,
+              alpha: 1,
+              duration: sprite.animations.fadeIn.config.duration,
+              ease: sprite.animations.fadeIn.config.ease,
+              onComplete: () => handleCommonAnimations(sprite, newSprite, scene)
+            });
+          } else {
+            handleCommonAnimations(sprite, newSprite, scene);
+          }
+
+          // Handle disappear animation
+          if (sprite.animations.disappear.isEnabled) {
+            scene.time.delayedCall(sprite.animations.disappear.config.delay, () => {
+              scene.tweens.add({
+                targets: newSprite,
+                alpha: 0,
+                duration: sprite.animations.disappear.config.duration,
+                ease: sprite.animations.disappear.config.ease,
+                onComplete: () => newSprite.destroy()
+              });
+            });
+          }
+        });
       });
+
+      // Calculate sequence duration including all animations
+      const sequenceDuration = Math.max(...sprites.map(sprite => {
+        let duration = 0;
+        if (sprite.animations.slideIn.isEnabled) {
+          duration = sprite.animations.slideIn.config.duration;
+        }
+        if (sprite.animations.fadeIn.isEnabled) {
+          duration = sprite.animations.fadeIn.config.duration;
+        }
+        if (sprite.animations.disappear.isEnabled) {
+          duration = sprite.animations.disappear.config.delay + 
+                    sprite.animations.disappear.config.duration;
+        }
+        return duration;
+      }));
+
+      totalDelay += sequenceDuration + 1000; // Add 1 second gap between sequences
     });
-    
-    // Reset playing state after a short delay
-    scene.time.delayedCall(500, () => {
+
+    scene.time.delayedCall(totalDelay + 500, () => {
       setIsPlaying(false);
     });
+  };
+
+  // Add this helper function for common animations
+  const handleCommonAnimations = (sprite, target, scene) => {
+    if (sprite.animations.position.isEnabled) {
+      scene.tweens.add({
+        targets: target,
+        x: sprite.x + Math.round(sprite.animations.position.config.x * 100),
+        y: sprite.y + Math.round(sprite.animations.position.config.y * 100),
+        duration: sprite.animations.position.config.duration,
+        repeat: sprite.animations.position.config.repeat,
+        yoyo: sprite.animations.position.config.yoyo,
+        ease: sprite.animations.position.config.ease
+      });
+    }
+
+    if (sprite.animations.scale.isEnabled) {
+      scene.tweens.add({
+        targets: target,
+        scaleX: sprite.animations.scale.config.scaleX,
+        scaleY: sprite.animations.scale.config.scaleY,
+        duration: sprite.animations.scale.config.duration,
+        repeat: sprite.animations.scale.config.repeat,
+        yoyo: sprite.animations.scale.config.yoyo,
+        ease: sprite.animations.scale.config.ease
+      });
+    }
+
+    if (sprite.animations.transparency.isEnabled) {
+      scene.tweens.add({
+        targets: target,
+        alpha: sprite.animations.transparency.config.alpha,
+        duration: sprite.animations.transparency.config.duration,
+        repeat: sprite.animations.transparency.config.repeat,
+        yoyo: sprite.animations.transparency.config.yoyo,
+        ease: sprite.animations.transparency.config.ease
+      });
+    }
   };
 
   return (
