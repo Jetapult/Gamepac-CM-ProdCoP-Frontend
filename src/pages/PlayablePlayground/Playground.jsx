@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, useCallback, useContext } from "react";
 import Phaser from "phaser";
 import AnimationPanel from "./components/AnimationPanel";
+import PlayModePanel from "./components/PlayModePanel";
 
 // Create default animation config outside component
-const createDefaultAnimations = () => ({
+export const createDefaultAnimations = () => ({
   position: {
     isEnabled: false,
     config: {
@@ -64,6 +65,15 @@ const createDefaultAnimations = () => ({
       ease: "Power2",
     },
   },
+  clickAction: {
+    enabled: false,
+    type: "none",
+    config: {
+      framesToAdd: [], // Array of sprites to add
+      toUpdate: [], // Array of sprite updates
+      toRemove: [], // Array of sprite IDs to remove
+    },
+  },
 });
 
 const Playground = () => {
@@ -76,6 +86,8 @@ const Playground = () => {
   const [placedSprites, setPlacedSprites] = useState([]);
   const [orientation, setOrientation] = useState("landscape");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [canPlaceSprite, setCanPlaceSprite] = useState(true);
+  const [mode, setMode] = useState("edit"); // 'edit' or 'play'
 
   useEffect(() => {
     if (!gameContainerRef.current) return;
@@ -214,31 +226,156 @@ const Playground = () => {
 
   // Handle sprite placement
   const handleCanvasClick = (e) => {
-    if (!game || !spritesheet || !selectedFrame) return;
-
+    if (mode !== "edit" || !game || !spritesheet) return;
     const scene = game.playground;
     const rect = e.target.getBoundingClientRect();
-
     const x = (e.clientX - rect.left) * (1920 / rect.width);
     const y = (e.clientY - rect.top) * (1080 / rect.height);
 
-    const sprite = scene.add
-      .sprite(x, y, "charactersprite", selectedFrame)
-      .setOrigin(0, 0);
+    // Check if we're placing a click action frame
+    const clickActionSprite = placedSprites.find(
+      (s) =>
+        s.clickAction?.enabled &&
+        s.clickAction.type === "add" &&
+        s.clickAction.config?.framesToAdd?.some(
+          (frame) => frame.x === 0 && frame.y === 0
+        )
+    );
 
-    const newSprite = {
-      id: Date.now(),
-      frameName: selectedFrame,
-      x,
-      y,
-      scale: 1,
-      rotation: 0,
-      alpha: 1,
-      phaserSprite: sprite,
-      animations: createDefaultAnimations(), // Add default animations
-    };
+    if (clickActionSprite) {
+      setPlacedSprites((prev) =>
+        prev.map((s) => {
+          if (s.id === clickActionSprite.id) {
+            const updatedFrames = s.clickAction.config.framesToAdd.map(
+              (frame) => {
+                if (frame.x === 0 && frame.y === 0) {
+                  return { ...frame, x, y, baseX: x, baseY: y };
+                }
+                return frame;
+              }
+            );
 
-    setPlacedSprites((prev) => [...prev, newSprite]);
+            return {
+              ...s,
+              clickAction: {
+                ...s.clickAction,
+                config: {
+                  ...s.clickAction.config,
+                  framesToAdd: updatedFrames,
+                },
+              },
+            };
+          }
+          return s;
+        })
+      );
+
+      // Create visual indicator for the new frame position
+      const unplacedFrame =
+        clickActionSprite.clickAction.config.framesToAdd.find(
+          (frame) => frame.x === 0 && frame.y === 0
+        );
+
+      if (unplacedFrame) {
+        const frameSprite = scene.add
+          .sprite(x, y, "charactersprite", unplacedFrame.frameName)
+          .setOrigin(0, 0)
+          .setScale(unplacedFrame.scale)
+          .setRotation(unplacedFrame.rotation)
+          .setAlpha(0.6);
+
+        const indicator = scene.add.text(x, y - 20, "🖱️ Click Action", {
+          fontSize: "14px",
+          backgroundColor: "#333",
+          padding: { x: 5, y: 2 },
+          color: "#fff",
+        });
+
+        frameSprite.setData("frameConfig", { ...unplacedFrame, x, y });
+        frameSprite.setData("parentId", clickActionSprite.id);
+        frameSprite.setData("indicator", indicator);
+      }
+    } else if (selectedFrame && canPlaceSprite) {
+      // Normal sprite placement (unchanged)
+      const sprite = scene.add
+        .sprite(x, y, "charactersprite", selectedFrame)
+        .setOrigin(0, 0)
+        .setInteractive();
+
+      const newSprite = {
+        id: Date.now(),
+        frameName: selectedFrame,
+        x,
+        y,
+        scale: 1,
+        rotation: 0,
+        alpha: 1,
+        phaserSprite: sprite,
+        animations: createDefaultAnimations(),
+        clickAction: {
+          enabled: false,
+          type: "none",
+          config: {
+            framesToAdd: [],
+          },
+        },
+      };
+
+      sprite.on("pointerdown", () => {
+        if (newSprite.clickAction.enabled) {
+          handleSpriteClick(newSprite);
+        }
+      });
+
+      setPlacedSprites((prev) => [...prev, newSprite]);
+      setCanPlaceSprite(false);
+    }
+  };
+
+  // Add click handler function
+  const handleSpriteClick = (clickedSprite) => {
+    if (!game?.playground || mode !== "play") return;
+    const { type, config } = clickedSprite.clickAction;
+    const scene = game.playground;
+
+    switch (type) {
+      case "add":
+        if (
+          Array.isArray(config.framesToAdd) &&
+          config.framesToAdd.length > 0
+        ) {
+          config.framesToAdd.forEach((frameConfig) => {
+            const newSprite = scene.add
+              .sprite(
+                clickedSprite.x + (frameConfig.position?.x || 0),
+                clickedSprite.y + (frameConfig.position?.y || 0),
+                "charactersprite",
+                frameConfig.frameName
+              )
+              .setOrigin(0, 0)
+              .setScale(frameConfig.scale || 1)
+              .setRotation(frameConfig.rotation || 0)
+              .setAlpha(frameConfig.alpha || 1);
+
+            const spriteObj = {
+              id: Date.now() + Math.random(),
+              frameName: frameConfig.frameName,
+              x: clickedSprite.x + (frameConfig.position?.x || 0),
+              y: clickedSprite.y + (frameConfig.position?.y || 0),
+              scale: frameConfig.scale || 1,
+              rotation: frameConfig.rotation || 0,
+              alpha: frameConfig.alpha || 1,
+              phaserSprite: newSprite,
+              animations: createDefaultAnimations(),
+              isClickActionResult: true,
+              parentId: clickedSprite.id,
+            };
+
+            setPlacedSprites((prev) => [...prev, spriteObj]);
+          });
+        }
+        break;
+    }
   };
 
   // Update sprite position
@@ -329,7 +466,7 @@ const ${varName} = this.add
     )}, 'spritesheetname', '${sprite.frameName}')
   .setOrigin(0, 0)
   .setScale(${sprite.scale})`;
-  console.log(sprite.frameName, 'frameName')
+    console.log(sprite.frameName, "frameName");
 
     // Update all references to use varName instead of uniqueVarName
     if (sprite.animations) {
@@ -404,7 +541,7 @@ const slideInTween${counter} = this.tweens.add({
     });`;
         }
 
-        if (sprite.animations.transparency.isEnabled) {
+        if (sprite.animations?.transparency?.isEnabled) {
           const alphaConfig = sprite.animations.transparency.config;
           code += `\n    // Transparency animation
     const transparencyTween${counter} = this.tweens.add({
@@ -463,7 +600,7 @@ const fadeInTween${counter} = this.tweens.add({
     });`;
         }
 
-        if (sprite.animations.transparency.isEnabled) {
+        if (sprite.animations?.transparency?.isEnabled) {
           const alphaConfig = sprite.animations.transparency.config;
           code += `\n    // Transparency animation
     const transparencyTween${counter} = this.tweens.add({
@@ -508,7 +645,7 @@ this.tweens.add({
 });`;
         }
 
-        if (sprite.animations.transparency.isEnabled) {
+        if (sprite?.animations?.transparency?.isEnabled) {
           const alphaConfig = sprite.animations.transparency.config;
           code += `\n\n// Transparency animation
 this.tweens.add({
@@ -555,29 +692,35 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
   const generateAllPhaserCode = (sprites) => {
     // Group sprites by priority
     const groupedSprites = sprites.reduce((acc, sprite) => {
-      const priority = sprite.animations.slideIn?.config?.priority || 
-                      sprite.animations.fadeIn?.config?.priority || 0;
+      const priority =
+        sprite.animations.slideIn?.config?.priority ||
+        sprite.animations.fadeIn?.config?.priority ||
+        0;
       if (!acc[priority]) acc[priority] = [];
       acc[priority].push(sprite);
       return acc;
     }, {});
 
     // Sort priorities
-    const priorities = Object.keys(groupedSprites).sort((a, b) => Number(a) - Number(b));
-    
-    let code = '// All Sprites and Animations\n\n';
+    const priorities = Object.keys(groupedSprites).sort(
+      (a, b) => Number(a) - Number(b)
+    );
+
+    let code = "// All Sprites and Animations\n\n";
     let totalDelay = 0;
 
     priorities.forEach((priority) => {
       const sprites = groupedSprites[priority];
       code += `// Sequence ${priority}\n`;
-      
+
       sprites.forEach((sprite) => {
         const counter = sprites.indexOf(sprite) + 1;
         const varName = `sprite${counter}_seq${priority}`;
-        
+
         code += `const ${varName} = this.add
-  .sprite(${Math.round(sprite.x)}, ${Math.round(sprite.y)}, 'spritesheetname', '${sprite.frameName}')
+  .sprite(${Math.round(sprite.x)}, ${Math.round(
+          sprite.y
+        )}, 'spritesheetname', '${sprite.frameName}')
   .setOrigin(0, 0)
   .setScale(${sprite.scale});\n\n`;
 
@@ -586,19 +729,27 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
           let initialPos;
           switch (slideConfig.direction) {
             case "left":
-              initialPos = `${varName}.setPosition(${Math.round(sprite.x)} - ${slideConfig.distance}, ${Math.round(sprite.y)});`;
+              initialPos = `${varName}.setPosition(${Math.round(sprite.x)} - ${
+                slideConfig.distance
+              }, ${Math.round(sprite.y)});`;
               break;
             case "right":
-              initialPos = `${varName}.setPosition(${Math.round(sprite.x)} + ${slideConfig.distance}, ${Math.round(sprite.y)});`;
+              initialPos = `${varName}.setPosition(${Math.round(sprite.x)} + ${
+                slideConfig.distance
+              }, ${Math.round(sprite.y)});`;
               break;
             case "top":
-              initialPos = `${varName}.setPosition(${Math.round(sprite.x)}, ${Math.round(sprite.y)} - ${slideConfig.distance});`;
+              initialPos = `${varName}.setPosition(${Math.round(
+                sprite.x
+              )}, ${Math.round(sprite.y)} - ${slideConfig.distance});`;
               break;
             case "bottom":
-              initialPos = `${varName}.setPosition(${Math.round(sprite.x)}, ${Math.round(sprite.y)} + ${slideConfig.distance});`;
+              initialPos = `${varName}.setPosition(${Math.round(
+                sprite.x
+              )}, ${Math.round(sprite.y)} + ${slideConfig.distance});`;
               break;
           }
-          
+
           code += `${initialPos}\n
 this.time.delayedCall(${totalDelay}, () => {
   this.tweens.add({
@@ -625,11 +776,13 @@ this.time.delayedCall(${totalDelay}, () => {
         }
 
         // Add common animations
-        if (sprite.animations.position.isEnabled || 
-            sprite.animations.scale.isEnabled || 
-            sprite.animations.transparency.isEnabled) {
+        if (
+          sprite.animations?.position?.isEnabled ||
+          sprite.animations?.scale?.isEnabled ||
+          sprite.animations?.transparency?.isEnabled
+        ) {
           code += `\nthis.time.delayedCall(${totalDelay + 500}, () => {\n`;
-          
+
           if (sprite.animations.position.isEnabled) {
             const posConfig = sprite.animations.position.config;
             code += `  this.tweens.add({
@@ -644,13 +797,15 @@ this.time.delayedCall(${totalDelay}, () => {
           }
 
           // Add scale and transparency animations similarly...
-          
+
           code += `});\n`;
         }
 
         if (sprite.animations.disappear.isEnabled) {
           const disappearConfig = sprite.animations.disappear.config;
-          code += `\nthis.time.delayedCall(${totalDelay + disappearConfig.delay}, () => {
+          code += `\nthis.time.delayedCall(${
+            totalDelay + disappearConfig.delay
+          }, () => {
     this.tweens.add({
       targets: ${varName},
       alpha: 0,
@@ -660,27 +815,39 @@ this.time.delayedCall(${totalDelay}, () => {
     });
   });\n`;
         }
-        
-        code += '\n';
+
+        code += "\n";
       });
 
       // Calculate delay for next sequence
-      const maxDuration = Math.max(...sprites.map(sprite => {
-        let duration = 0;
-        if (sprite.animations.slideIn.isEnabled) {
-          duration = Math.max(duration, sprite.animations.slideIn.config.duration);
-        }
-        if (sprite.animations.fadeIn.isEnabled) {
-          duration = Math.max(duration, sprite.animations.fadeIn.config.duration);
-        }
-        if (sprite.animations.disappear.isEnabled) {
-          duration = Math.max(duration, sprite.animations.disappear.config.delay + sprite.animations.disappear.config.duration);
-        }
-        return duration;
-      }));
+      const maxDuration = Math.max(
+        ...sprites.map((sprite) => {
+          let duration = 0;
+          if (sprite.animations.slideIn.isEnabled) {
+            duration = Math.max(
+              duration,
+              sprite.animations.slideIn.config.duration
+            );
+          }
+          if (sprite.animations.fadeIn.isEnabled) {
+            duration = Math.max(
+              duration,
+              sprite.animations.fadeIn.config.duration
+            );
+          }
+          if (sprite.animations.disappear.isEnabled) {
+            duration = Math.max(
+              duration,
+              sprite.animations.disappear.config.delay +
+                sprite.animations.disappear.config.duration
+            );
+          }
+          return duration;
+        })
+      );
 
       totalDelay += maxDuration + 1000; // Add 1 second gap between sequences
-      code += '\n';
+      code += "\n";
     });
 
     return code;
@@ -697,157 +864,478 @@ this.time.delayedCall(${totalDelay}, () => {
   // Add this new function to handle playback
   const handlePlay = () => {
     if (!game?.playground) return;
-    
+
+    setMode("play");
     setIsPlaying(true);
     const scene = game.playground;
-    
-    // Clear any existing preview sprites
+    const spriteRefs = new Map();
+
+    // Clear existing sprites
     scene.children.list
-      .filter(child => child.type === 'Sprite')
-      .forEach(sprite => sprite.destroy());
-    
-    // Group sprites by their sequence number (using priority as sequence)
-    const groupedSprites = placedSprites.reduce((acc, sprite) => {
-      const sequence = sprite.animations.slideIn?.config?.priority || 
-                      sprite.animations.fadeIn?.config?.priority || 0;
+      .filter((child) => child.type === "Sprite")
+      .forEach((sprite) => sprite.destroy());
+
+    // Only create initial sprites (not click-action results)
+    const initialSprites = placedSprites.filter((sprite) => {
+      // Don't show sprites that were created from click actions
+      if (sprite.isClickActionResult) return false;
+
+      // Don't show sprites that are meant to be added on click
+      const isClickActionTarget = placedSprites.some(
+        (s) =>
+          s.clickAction?.enabled &&
+          s.clickAction.type === "add" &&
+          s.clickAction.config.frameToAdd === sprite.frameName
+      );
+
+      return !isClickActionTarget;
+    });
+
+    // Group sprites by sequence
+    const groupedSprites = initialSprites.reduce((acc, sprite) => {
+      const sequence =
+        sprite.animations.slideIn?.config?.priority ||
+        sprite.animations.fadeIn?.config?.priority ||
+        0;
       if (!acc[sequence]) acc[sequence] = [];
       acc[sequence].push(sprite);
       return acc;
     }, {});
 
-    const sequences = Object.keys(groupedSprites).sort((a, b) => Number(a) - Number(b));
+    const sequences = Object.keys(groupedSprites).sort(
+      (a, b) => Number(a) - Number(b)
+    );
     let totalDelay = 0;
 
     sequences.forEach((sequence) => {
       const sprites = groupedSprites[sequence];
-      
+
       scene.time.delayedCall(totalDelay, () => {
-        sprites.forEach(sprite => {
-          const newSprite = scene.add
-            .sprite(sprite.x, sprite.y, 'charactersprite', sprite.frameName)
-            .setOrigin(0, 0)
-            .setScale(sprite.scale)
-            .setRotation(sprite.rotation || 0);
+        sprites.forEach((sprite) => {
+          if (!sprite.isClickActionResult) {
+            const newSprite = scene.add
+              .sprite(sprite.x, sprite.y, "charactersprite", sprite.frameName)
+              .setOrigin(0, 0)
+              .setScale(sprite.scale)
+              .setRotation(sprite.rotation || 0)
+              .setAlpha(sprite.alpha || 1)
+              .setInteractive();
 
-          // Handle slide-in animation
-          if (sprite.animations.slideIn.isEnabled) {
-            const slideConfig = sprite.animations.slideIn.config;
-            let initialX = sprite.x;
-            let initialY = sprite.y;
-            
-            switch (slideConfig.direction) {
-              case "left":
-                initialX = sprite.x - slideConfig.distance;
-                break;
-              case "right":
-                initialX = sprite.x + slideConfig.distance;
-                break;
-              case "top":
-                initialY = sprite.y - slideConfig.distance;
-                break;
-              case "bottom":
-                initialY = sprite.y + slideConfig.distance;
-                break;
-            }
-            
-            newSprite.setPosition(initialX, initialY);
-            
-            scene.tweens.add({
-              targets: newSprite,
-              x: sprite.x,
-              y: sprite.y,
-              duration: slideConfig.duration,
-              ease: slideConfig.ease,
-              onComplete: () => handleCommonAnimations(sprite, newSprite, scene)
+            spriteRefs.set(sprite.id, {
+              sprite: newSprite,
+              data: sprite,
             });
-          } else if (sprite.animations.fadeIn.isEnabled) {
-            newSprite.setAlpha(0);
-            scene.tweens.add({
-              targets: newSprite,
-              alpha: 1,
-              duration: sprite.animations.fadeIn.config.duration,
-              ease: sprite.animations.fadeIn.config.ease,
-              onComplete: () => handleCommonAnimations(sprite, newSprite, scene)
-            });
-          } else {
-            handleCommonAnimations(sprite, newSprite, scene);
-          }
 
-          // Handle disappear animation
-          if (sprite.animations.disappear.isEnabled) {
-            scene.time.delayedCall(sprite.animations.disappear.config.delay, () => {
-              scene.tweens.add({
-                targets: newSprite,
-                alpha: 0,
-                duration: sprite.animations.disappear.config.duration,
-                ease: sprite.animations.disappear.config.ease,
-                onComplete: () => newSprite.destroy()
+            if (sprite.clickAction?.enabled) {
+              newSprite.on("pointerdown", function () {
+                handlePreviewClick(sprite, spriteRefs, scene);
               });
-            });
+            }
+
+            handleSpriteAnimations(sprite, newSprite, scene);
           }
         });
       });
 
-      // Calculate sequence duration including all animations
-      const sequenceDuration = Math.max(...sprites.map(sprite => {
-        let duration = 0;
-        if (sprite.animations.slideIn.isEnabled) {
-          duration = sprite.animations.slideIn.config.duration;
-        }
-        if (sprite.animations.fadeIn.isEnabled) {
-          duration = sprite.animations.fadeIn.config.duration;
-        }
-        if (sprite.animations.disappear.isEnabled) {
-          duration = sprite.animations.disappear.config.delay + 
-                    sprite.animations.disappear.config.duration;
-        }
-        return duration;
-      }));
-
-      totalDelay += sequenceDuration + 1000; // Add 1 second gap between sequences
-    });
-
-    scene.time.delayedCall(totalDelay + 500, () => {
-      setIsPlaying(false);
+      totalDelay += calculateSequenceDuration(sprites);
     });
   };
 
-  // Add this helper function for common animations
-  const handleCommonAnimations = (sprite, target, scene) => {
-    if (sprite.animations.position.isEnabled) {
+  const handlePreviewClick = (clickedSprite) => {
+    if (!game?.playground) return;
+    const { type, config } = clickedSprite.clickAction;
+    const scene = game.playground;
+
+    switch (type) {
+      case "add":
+        if (
+          Array.isArray(config.framesToAdd) &&
+          config.framesToAdd.length > 0
+        ) {
+          config.framesToAdd.forEach((frameConfig) => {
+            // Create the sprite at the original configured position
+            const newSprite = scene.add
+              .sprite(
+                frameConfig.x,
+                frameConfig.y,
+                "charactersprite",
+                frameConfig.frameName
+              )
+              .setOrigin(0, 0)
+              .setScale(frameConfig.scale)
+              .setRotation(frameConfig.rotation)
+              .setAlpha(frameConfig.alpha);
+
+            const spriteObj = {
+              id: Date.now() + Math.random(),
+              frameName: frameConfig.frameName,
+              x: frameConfig.x,
+              y: frameConfig.y,
+              baseX: frameConfig.x,
+              baseY: frameConfig.y,
+              scale: frameConfig.scale,
+              rotation: frameConfig.rotation,
+              alpha: frameConfig.alpha,
+              phaserSprite: newSprite,
+              animations: frameConfig.animations,
+              isClickActionResult: true,
+              parentId: clickedSprite.id,
+            };
+
+            // Handle custom animations
+            if (frameConfig.animations?.slideIn?.isEnabled) {
+              const { direction, distance } =
+                frameConfig.animations.slideIn.config;
+              let initialPos = { x: frameConfig.x, y: frameConfig.y };
+
+              switch (direction) {
+                case "left":
+                  initialPos.x = frameConfig.x - distance;
+                  break;
+                case "right":
+                  initialPos.x = frameConfig.x + distance;
+                  break;
+                case "top":
+                  initialPos.y = frameConfig.y - distance;
+                  break;
+                case "bottom":
+                  initialPos.y = frameConfig.y + distance;
+                  break;
+              }
+
+              newSprite.setPosition(initialPos.x, initialPos.y);
+              scene.tweens.add({
+                targets: newSprite,
+                x: frameConfig.x,
+                y: frameConfig.y,
+                duration: frameConfig.animations.slideIn.config.duration,
+                ease: frameConfig.animations.slideIn.config.ease,
+                onComplete: () =>
+                  handleCommonAnimations(spriteObj, newSprite, scene),
+              });
+            } else {
+              handleCommonAnimations(spriteObj, newSprite, scene);
+            }
+
+            setPlacedSprites((prev) => [...prev, spriteObj]);
+          });
+        }
+        break;
+    }
+  };
+
+  const handleCommonAnimations = (spriteObj, target, scene) => {
+    // Position Animation
+    if (spriteObj.animations?.position?.isEnabled) {
       scene.tweens.add({
         targets: target,
-        x: sprite.x + Math.round(sprite.animations.position.config.x * 100),
-        y: sprite.y + Math.round(sprite.animations.position.config.y * 100),
-        duration: sprite.animations.position.config.duration,
-        repeat: sprite.animations.position.config.repeat,
-        yoyo: sprite.animations.position.config.yoyo,
-        ease: sprite.animations.position.config.ease
+        x: spriteObj.baseX + spriteObj.animations.position.config.x * 100,
+        y: spriteObj.baseY + spriteObj.animations.position.config.y * 100,
+        duration: spriteObj.animations.position.config.duration,
+        repeat: spriteObj.animations.position.config.repeat,
+        yoyo: spriteObj.animations.position.config.yoyo,
+        ease: spriteObj.animations.position.config.ease,
       });
     }
 
-    if (sprite.animations.scale.isEnabled) {
+    // Scale Animation
+    if (spriteObj.animations?.scale?.isEnabled) {
       scene.tweens.add({
         targets: target,
-        scaleX: sprite.animations.scale.config.scaleX,
-        scaleY: sprite.animations.scale.config.scaleY,
-        duration: sprite.animations.scale.config.duration,
-        repeat: sprite.animations.scale.config.repeat,
-        yoyo: sprite.animations.scale.config.yoyo,
-        ease: sprite.animations.scale.config.ease
+        scaleX: spriteObj.animations.scale.config.scaleX,
+        scaleY: spriteObj.animations.scale.config.scaleY,
+        duration: spriteObj.animations.scale.config.duration,
+        repeat: spriteObj.animations.scale.config.repeat,
+        yoyo: spriteObj.animations.scale.config.yoyo,
+        ease: spriteObj.animations.scale.config.ease,
       });
     }
 
-    if (sprite.animations.transparency.isEnabled) {
+    // Alpha Animation
+    if (spriteObj.animations?.alpha?.isEnabled) {
       scene.tweens.add({
         targets: target,
-        alpha: sprite.animations.transparency.config.alpha,
-        duration: sprite.animations.transparency.config.duration,
-        repeat: sprite.animations.transparency.config.repeat,
-        yoyo: sprite.animations.transparency.config.yoyo,
-        ease: sprite.animations.transparency.config.ease
+        alpha: spriteObj.animations.alpha.config.alpha,
+        duration: spriteObj.animations.alpha.config.duration,
+        repeat: spriteObj.animations.alpha.config.repeat,
+        yoyo: spriteObj.animations.alpha.config.yoyo,
+        ease: spriteObj.animations.alpha.config.ease,
       });
     }
+  };
+
+  // Add duplicate function
+  const handleDuplicate = (originalSprite) => {
+    if (!game?.playground) return;
+
+    const scene = game.playground;
+    const offsetX = 20; // Offset for duplicate
+    const offsetY = 20;
+
+    const duplicateSprite = scene.add
+      .sprite(
+        originalSprite.x + offsetX,
+        originalSprite.y + offsetY,
+        "charactersprite",
+        originalSprite.frameName
+      )
+      .setOrigin(0, 0)
+      .setInteractive();
+
+    const newSprite = {
+      ...originalSprite,
+      id: Date.now(),
+      x: originalSprite.x + offsetX,
+      y: originalSprite.y + offsetY,
+      phaserSprite: duplicateSprite,
+      clickAction: {
+        ...originalSprite.clickAction,
+        targetIds: [], // Reset target IDs for duplicate
+      },
+    };
+
+    duplicateSprite.on("pointerdown", () => {
+      if (newSprite.clickAction.enabled) {
+        handleSpriteClick(newSprite);
+      }
+    });
+
+    setPlacedSprites((prev) => [...prev, newSprite]);
+  };
+
+  // Add this useEffect to handle frame selection changes
+  useEffect(() => {
+    setCanPlaceSprite(true); // Enable sprite placement when frame changes
+  }, [selectedFrame]);
+
+  // Update the frame selection handler
+  const handleFrameSelect = (e) => {
+    const scene = game?.playground;
+    if (scene) {
+      // Clean up click action indicators when changing frames
+      scene.children.list
+        .filter(
+          (child) => child.type === "Sprite" && child.getData("indicator")
+        )
+        .forEach((sprite) => {
+          sprite.getData("indicator").destroy();
+          sprite.destroy();
+        });
+    }
+
+    setSelectedFrame(e.target.value);
+    setCanPlaceSprite(true);
+  };
+
+  const handleSpriteAnimations = (sprite, target, scene) => {
+    // Handle Slide-in Animation
+    if (sprite.animations?.slideIn?.isEnabled) {
+      const getInitialPosition = () => {
+        const { direction, distance } = sprite.animations.slideIn.config;
+        switch (direction) {
+          case "left":
+            return { x: sprite.x - distance, y: sprite.y };
+          case "right":
+            return { x: sprite.x + distance, y: sprite.y };
+          case "top":
+            return { x: sprite.x, y: sprite.y - distance };
+          case "bottom":
+            return { x: sprite.x, y: sprite.y + distance };
+          default:
+            return { x: sprite.x, y: sprite.y };
+        }
+      };
+
+      const initialPos = getInitialPosition();
+      target.setPosition(initialPos.x, initialPos.y);
+
+      scene.tweens.add({
+        targets: target,
+        x: sprite.x,
+        y: sprite.y,
+        duration: sprite.animations.slideIn.config.duration,
+        ease: sprite.animations.slideIn.config.ease,
+        delay: sprite.animations.slideIn.config.delay,
+        onComplete: () => handleCommonAnimations(sprite, target, scene),
+      });
+    } else if (sprite.animations?.fadeIn?.isEnabled) {
+      target.setAlpha(0);
+      scene.tweens.add({
+        targets: target,
+        alpha: 1,
+        duration: sprite.animations.fadeIn.config.duration,
+        ease: sprite.animations.fadeIn.config.ease,
+        delay: sprite.animations.fadeIn.config.delay,
+        onComplete: () => handleCommonAnimations(sprite, target, scene),
+      });
+    } else {
+      handleCommonAnimations(sprite, target, scene);
+    }
+
+    // Handle Disappear Animation
+    if (sprite.animations?.disappear?.isEnabled) {
+      scene.time.delayedCall(sprite.animations.disappear.config.delay, () => {
+        scene.tweens.add({
+          targets: target,
+          alpha: 0,
+          duration: sprite.animations.disappear.config.duration,
+          ease: sprite.animations.disappear.config.ease,
+          onComplete: () => target.destroy(),
+        });
+      });
+    }
+  };
+
+  const calculateSequenceDuration = (sprites) => {
+    return Math.max(
+      ...sprites.map((sprite) => {
+        let duration = 0;
+
+        // Add slide-in duration if enabled
+        if (sprite.animations.slideIn.isEnabled) {
+          duration = Math.max(
+            duration,
+            sprite.animations.slideIn.config.duration +
+              sprite.animations.slideIn.config.delay
+          );
+        }
+
+        // Add fade-in duration if enabled
+        if (sprite.animations.fadeIn.isEnabled) {
+          duration = Math.max(
+            duration,
+            sprite.animations.fadeIn.config.duration +
+              sprite.animations.fadeIn.config.delay
+          );
+        }
+
+        // Add disappear duration if enabled
+        if (sprite.animations.disappear.isEnabled) {
+          duration +=
+            sprite.animations.disappear.config.delay +
+            sprite.animations.disappear.config.duration;
+        }
+
+        return duration;
+      }),
+      0
+    );
+  };
+
+  // Modify handleStopPreview to handle click action sprites
+  const handleStopPreview = (scene) => {
+    // Clear all sprites
+    scene.children.list
+      .filter((child) => child.type === "Sprite")
+      .forEach((sprite) => sprite.destroy());
+
+    // Reset placedSprites to remove any click-action results
+    const initialSprites = placedSprites.filter(
+      (sprite) => !sprite.isClickActionResult
+    );
+    setPlacedSprites(initialSprites);
+
+    // Recreate original sprites in edit mode
+    initialSprites.forEach((sprite) => {
+      // Create the main sprite
+      const newSprite = scene.add
+        .sprite(sprite.x, sprite.y, "charactersprite", sprite.frameName)
+        .setOrigin(0, 0)
+        .setScale(sprite.scale)
+        .setRotation(sprite.rotation || 0)
+        .setAlpha(sprite.alpha || 1)
+        .setInteractive();
+
+      sprite.phaserSprite = newSprite;
+      scene.input.setDraggable(newSprite);
+
+      // If sprite has click actions, create visual indicators
+      if (sprite.clickAction?.enabled && sprite.clickAction.type === "add") {
+        sprite.clickAction.config.framesToAdd.forEach((frameConfig) => {
+          const frameSprite = scene.add
+            .sprite(
+              frameConfig.x,
+              frameConfig.y,
+              "charactersprite",
+              frameConfig.frameName
+            )
+            .setOrigin(0, 0)
+            .setScale(frameConfig.scale)
+            .setRotation(frameConfig.rotation)
+            .setAlpha(0.6) // Semi-transparent to indicate edit mode
+            .setInteractive();
+
+          // Add a visual indicator that this is a click action frame
+          const indicator = scene.add.text(
+            frameConfig.x,
+            frameConfig.y - 20,
+            "🖱️ Click Action",
+            {
+              fontSize: "14px",
+              backgroundColor: "#333",
+              padding: { x: 5, y: 2 },
+              color: "#fff",
+            }
+          );
+
+          frameSprite.setData("frameConfig", frameConfig);
+          frameSprite.setData("parentId", sprite.id);
+          frameSprite.setData("indicator", indicator);
+        });
+      }
+
+      newSprite.on("pointerdown", () => {
+        if (mode === "edit") {
+          handleSpriteClick(sprite);
+        }
+      });
+    });
+
+    setMode("edit");
+    setIsPlaying(false);
+    setCanPlaceSprite(true);
+
+    scene.children.list
+      .filter((child) => child.type === "Sprite" && child.getData("indicator"))
+      .forEach((sprite) => {
+        sprite.getData("indicator").destroy();
+        sprite.destroy();
+      });
+
+    // Recreate click action visual indicators for existing sprites
+    placedSprites.forEach((sprite) => {
+      if (sprite.clickAction?.enabled && sprite.clickAction.type === "add") {
+        sprite.clickAction.config.framesToAdd.forEach((frameConfig) => {
+          const frameSprite = scene.add
+            .sprite(
+              frameConfig.x,
+              frameConfig.y,
+              "charactersprite",
+              frameConfig.frameName
+            )
+            .setOrigin(0, 0)
+            .setScale(frameConfig.scale)
+            .setRotation(frameConfig.rotation)
+            .setAlpha(0.6);
+
+          const indicator = scene.add.text(
+            frameConfig.x,
+            frameConfig.y - 20,
+            "🖱️ Click Action",
+            {
+              fontSize: "14px",
+              backgroundColor: "#333",
+              padding: { x: 5, y: 2 },
+              color: "#fff",
+            }
+          );
+
+          frameSprite.setData("frameConfig", frameConfig);
+          frameSprite.setData("parentId", sprite.id);
+          frameSprite.setData("indicator", indicator);
+        });
+      }
+    });
   };
 
   return (
@@ -859,27 +1347,35 @@ this.time.delayedCall(${totalDelay}, () => {
       />
 
       <div className="w-[300px] bg-[#252525] p-5 border-l border-[#333] h-full overflow-y-auto">
-        {/* Add this button at the top of the sidebar */}
-        {placedSprites.length > 0 && (
-          <div className="mb-6 flex gap-2">
-            <button
-              onClick={handleCopyAllCode}
-              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
-            >
-              Copy All Sprites Code
-            </button>
-            <button
-              onClick={handlePlay}
-              disabled={isPlaying}
-              className={`flex-1 ${
-                isPlaying 
-                  ? 'bg-gray-500 cursor-not-allowed' 
-                  : 'bg-green-500 hover:bg-green-600'
-              } text-white px-4 py-2 rounded transition-colors`}
-            >
-              {isPlaying ? 'Playing...' : 'Play Preview'}
-            </button>
-          </div>
+        {mode === "play" ? (
+          <PlayModePanel onStopPreview={handleStopPreview} game={game} />
+        ) : (
+          <>
+            {/* Existing edit mode controls */}
+            {placedSprites.length > 0 && (
+              <div className="flex gap-2 mb-4">
+                <button
+                  onClick={handleCopyAllCode}
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
+                >
+                  Copy All Sprites Code
+                </button>
+                <button
+                  onClick={handlePlay}
+                  disabled={isPlaying}
+                  className={`flex-1 ${
+                    isPlaying
+                      ? "bg-gray-500 cursor-not-allowed"
+                      : "bg-green-500 hover:bg-green-600"
+                  } text-white px-4 py-2 rounded transition-colors`}
+                >
+                  {isPlaying ? "Playing..." : "Play Preview"}
+                </button>
+              </div>
+            )}
+
+            {/* Rest of your existing edit mode controls */}
+          </>
         )}
 
         <div className="mb-6">
@@ -912,7 +1408,7 @@ this.time.delayedCall(${totalDelay}, () => {
             <div className="mb-4">
               <select
                 value={selectedFrame}
-                onChange={(e) => setSelectedFrame(e.target.value)}
+                onChange={handleFrameSelect}
                 className="w-full p-2 bg-[#333] border border-[#444] text-white rounded hover:border-[#555]"
               >
                 {frameNames.map((name) => (
@@ -927,7 +1423,17 @@ this.time.delayedCall(${totalDelay}, () => {
                 Preview: (Click canvas to place)
               </label>
               <div className="bg-[#333] border border-[#444] rounded p-2 flex items-center justify-center">
-                <FramePreview frameName={selectedFrame} />
+                <div className="flex items-center gap-2">
+                  <FramePreview frameName={selectedFrame} />
+                  <button
+                    className={`p-2 border rounded ${
+                      !canPlaceSprite ? "bg-purple-500/20" : ""
+                    }`}
+                    onClick={() => setCanPlaceSprite(true)}
+                  >
+                    Place New
+                  </button>
+                </div>
               </div>
               {spriteData &&
                 selectedFrame &&
@@ -1109,6 +1615,9 @@ this.time.delayedCall(${totalDelay}, () => {
                     sprite={sprite}
                     game={game}
                     setPlacedSprites={setPlacedSprites}
+                    placedSprites={placedSprites}
+                    spriteData={spriteData}
+                    onDuplicate={handleDuplicate}
                   />
                 </div>
               ))}

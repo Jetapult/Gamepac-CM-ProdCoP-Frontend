@@ -5,8 +5,9 @@ import VisibilityAnimationPanel from "./VisibilityAnimationPanel";
 import SlideInAnimationPanel from "./SlideInAnimationPanel";
 import FadeInAnimationPanel from "./FadeInAnimationPanel";
 import DisappearAnimationPanel from "./DisappearAnimationPanel";
+import ClickActionPanel from "./ClickActionPanel";
 
-const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
+const AnimationPanel = ({ sprite, game, setPlacedSprites, placedSprites, spriteData, onDuplicate }) => {
   const [activePanel, setActivePanel] = useState("");
 
   const updateAnimation = (type, updates) => {
@@ -108,7 +109,7 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
       }
 
       // Transparency Animation
-      if (sprite.animations.transparency.isEnabled) {
+      if (sprite.animations?.transparency?.isEnabled) {
         const alphaTween = scene.tweens.add({
           targets: target,
           alpha: sprite.animations.transparency.config.alpha,
@@ -127,7 +128,7 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
     };
 
     // Handle Slide-in Animation first
-    if (sprite.animations.slideIn.isEnabled) {
+    if (sprite.animations?.slideIn?.isEnabled) {
       const getInitialPosition = () => {
         const { direction, distance } = sprite.animations.slideIn.config;
         switch (direction) {
@@ -164,7 +165,7 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
     }
 
     // Handle Fade-in Animation
-    if (sprite.animations.fadeIn.isEnabled) {
+    if (sprite.animations?.fadeIn?.isEnabled) {
       // Set initial alpha
       target.setAlpha(0);
 
@@ -178,13 +179,13 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
       });
 
       activeTweens.current.push(fadeInTween);
-    } else if (!sprite.animations.slideIn.isEnabled) {
+    } else if (!sprite.animations?.slideIn?.isEnabled) {
       // Only start common animations if neither slide-in nor fade-in are enabled
       startCommonAnimations();
     }
 
     // Handle Disappear Animation
-    if (sprite.animations.disappear.isEnabled) {
+    if (sprite.animations?.disappear?.isEnabled) {
       const disappearTimer = scene.time.delayedCall(
         sprite.animations.disappear.config.delay,
         () => {
@@ -235,82 +236,102 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
 
   return (
     <div className="mt-4 border-t border-[#444] pt-4">
-      <div className="flex gap-2 mb-4">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex gap-2">
+          <button
+            className={`p-2 border rounded ${
+              activePanel === "move"
+                ? "border-purple-500 bg-purple-500/20"
+                : "border-[#444]"
+            } ${sprite.animations.position.isEnabled ? "bg-purple-500/10" : ""}`}
+            onClick={() =>
+              setActivePanel((prev) => (prev === "move" ? "" : "move"))
+            }
+          >
+            <span className="text-white">↔️</span>
+          </button>
+          <button
+            className={`p-2 border rounded ${
+              activePanel === "scale"
+                ? "border-purple-500 bg-purple-500/20"
+                : "border-[#444]"
+            } ${sprite.animations?.scale.isEnabled ? "bg-purple-500/10" : ""}`}
+            onClick={() =>
+              setActivePanel((prev) => (prev === "scale" ? "" : "scale"))
+            }
+          >
+            <span className="text-white">⤢</span>
+          </button>
+          <button
+            className={`p-2 border rounded ${
+              activePanel === "visibility"
+                ? "border-purple-500 bg-purple-500/20"
+                : "border-[#444]"
+            } ${
+              sprite.animations?.transparency?.isEnabled ? "bg-purple-500/10" : ""
+            }`}
+            onClick={() =>
+              setActivePanel((prev) =>
+                prev === "visibility" ? "" : "visibility"
+              )
+            }
+          >
+            <span className="text-white">👁</span>
+          </button>
+          <button
+            className={`p-2 border rounded ${
+              activePanel === "slideIn"
+                ? "border-purple-500 bg-purple-500/20"
+                : "border-[#444]"
+            } ${sprite.animations?.slideIn?.isEnabled ? "bg-purple-500/10" : ""}`}
+            onClick={() =>
+              setActivePanel((prev) => (prev === "slideIn" ? "" : "slideIn"))
+            }
+          >
+            <span className="text-white">↳</span>
+          </button>
+          <button
+            className={`p-2 border rounded ${
+              activePanel === "fadeIn"
+                ? "border-purple-500 bg-purple-500/20"
+                : "border-[#444]"
+            } ${sprite.animations?.fadeIn?.isEnabled ? "bg-purple-500/10" : ""}`}
+            onClick={() =>
+              setActivePanel((prev) => (prev === "fadeIn" ? "" : "fadeIn"))
+            }
+          >
+            <span className="text-white">🌓</span>
+          </button>
+          <button
+            className={`p-2 border rounded ${
+              activePanel === "disappear"
+                ? "border-purple-500 bg-purple-500/20"
+                : "border-[#444]"
+            } ${sprite.animations?.disappear?.isEnabled ? "bg-purple-500/10" : ""}`}
+            onClick={() =>
+              setActivePanel((prev) => (prev === "disappear" ? "" : "disappear"))
+            }
+          >
+            <span className="text-white">⌛</span>
+          </button>
+          <button
+            className={`p-2 border rounded ${
+              activePanel === "click"
+                ? "border-purple-500 bg-purple-500/20"
+                : "border-[#444]"
+            } ${sprite.clickAction?.enabled ? "bg-purple-500/10" : ""}`}
+            onClick={() =>
+              setActivePanel((prev) => (prev === "click" ? "" : "click"))
+            }
+          >
+            <span className="text-white">🖱️</span>
+          </button>
+        </div>
         <button
-          className={`p-2 border rounded ${
-            activePanel === "move"
-              ? "border-purple-500 bg-purple-500/20"
-              : "border-[#444]"
-          } ${sprite.animations.position.isEnabled ? "bg-purple-500/10" : ""}`}
-          onClick={() =>
-            setActivePanel((prev) => (prev === "move" ? "" : "move"))
-          }
+          className="p-2 border rounded border-[#444] hover:bg-purple-500/10"
+          onClick={() => onDuplicate(sprite)}
         >
-          <span className="text-white">↔️</span>
-        </button>
-        <button
-          className={`p-2 border rounded ${
-            activePanel === "scale"
-              ? "border-purple-500 bg-purple-500/20"
-              : "border-[#444]"
-          } ${sprite.animations.scale.isEnabled ? "bg-purple-500/10" : ""}`}
-          onClick={() =>
-            setActivePanel((prev) => (prev === "scale" ? "" : "scale"))
-          }
-        >
-          <span className="text-white">⤢</span>
-        </button>
-        <button
-          className={`p-2 border rounded ${
-            activePanel === "visibility"
-              ? "border-purple-500 bg-purple-500/20"
-              : "border-[#444]"
-          } ${
-            sprite.animations.transparency.isEnabled ? "bg-purple-500/10" : ""
-          }`}
-          onClick={() =>
-            setActivePanel((prev) =>
-              prev === "visibility" ? "" : "visibility"
-            )
-          }
-        >
-          <span className="text-white">👁</span>
-        </button>
-        <button
-          className={`p-2 border rounded ${
-            activePanel === "slideIn"
-              ? "border-purple-500 bg-purple-500/20"
-              : "border-[#444]"
-          } ${sprite.animations.slideIn.isEnabled ? "bg-purple-500/10" : ""}`}
-          onClick={() =>
-            setActivePanel((prev) => (prev === "slideIn" ? "" : "slideIn"))
-          }
-        >
-          <span className="text-white">↳</span>
-        </button>
-        <button
-          className={`p-2 border rounded ${
-            activePanel === "fadeIn"
-              ? "border-purple-500 bg-purple-500/20"
-              : "border-[#444]"
-          } ${sprite.animations.fadeIn.isEnabled ? "bg-purple-500/10" : ""}`}
-          onClick={() =>
-            setActivePanel((prev) => (prev === "fadeIn" ? "" : "fadeIn"))
-          }
-        >
-          <span className="text-white">🌓</span>
-        </button>
-        <button
-          className={`p-2 border rounded ${
-            activePanel === "disappear"
-              ? "border-purple-500 bg-purple-500/20"
-              : "border-[#444]"
-          } ${sprite.animations.disappear.isEnabled ? "bg-purple-500/10" : ""}`}
-          onClick={() =>
-            setActivePanel((prev) => (prev === "disappear" ? "" : "disappear"))
-          }
-        >
-          <span className="text-white">⌛</span>
+          <span className="text-white">📋</span>
         </button>
       </div>
 
@@ -368,10 +389,10 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
       {activePanel === "slideIn" && (
         <SlideInAnimationPanel
           config={sprite.animations.slideIn.config}
-          isEnabled={sprite.animations.slideIn.isEnabled}
+          isEnabled={sprite.animations?.slideIn?.isEnabled}
           onToggle={() =>
             updateAnimation("slideIn", {
-              isEnabled: !sprite.animations.slideIn.isEnabled,
+              isEnabled: !sprite.animations?.slideIn?.isEnabled,
             })
           }
           onChange={(newConfig) =>
@@ -384,10 +405,10 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
       {activePanel === "fadeIn" && (
         <FadeInAnimationPanel
           config={sprite.animations.fadeIn.config}
-          isEnabled={sprite.animations.fadeIn.isEnabled}
+          isEnabled={sprite.animations?.fadeIn?.isEnabled}
           onToggle={() =>
             updateAnimation("fadeIn", {
-              isEnabled: !sprite.animations.fadeIn.isEnabled,
+              isEnabled: !sprite.animations?.fadeIn?.isEnabled,
             })
           }
           onChange={(newConfig) =>
@@ -411,6 +432,15 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites }) => {
               config: { ...sprite.animations.disappear.config, ...newConfig },
             })
           }
+        />
+      )}
+      {activePanel === "click" && (
+        <ClickActionPanel 
+          sprite={sprite} 
+          setPlacedSprites={setPlacedSprites}
+          placedSprites={placedSprites}
+          spriteData={spriteData}
+          game={game}
         />
       )}
     </div>
