@@ -57,14 +57,12 @@ const ClickActionPanel = ({
   const handleAddFrame = (frameName) => {
     if (!game?.playground) return;
 
-    const scene = game.playground;
-
     setPlacedSprites((prev) =>
       prev.map((s) => {
         if (s.id === sprite.id) {
           const newFrame = {
             frameName,
-            x: 0, // Initial position will be set on canvas click
+            x: 0,
             y: 0,
             baseX: 0,
             baseY: 0,
@@ -81,6 +79,7 @@ const ClickActionPanel = ({
               type: "add",
               config: {
                 ...s.clickAction?.config,
+                isPlacingFrame: true,
                 framesToAdd: [
                   ...(s.clickAction?.config?.framesToAdd || []),
                   newFrame,

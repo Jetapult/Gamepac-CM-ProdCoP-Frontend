@@ -3,6 +3,29 @@ import Phaser from "phaser";
 import AnimationPanel from "./components/AnimationPanel";
 import PlayModePanel from "./components/PlayModePanel";
 
+// Add these constants at the top of Playground.jsx
+const STORAGE_KEY = 'playgroundState';
+
+// Helper functions for localStorage
+const saveToLocalStorage = (state) => {
+  try {
+    const serializedState = JSON.stringify(state);
+    localStorage.setItem(STORAGE_KEY, serializedState);
+  } catch (err) {
+    console.error('Error saving to localStorage:', err);
+  }
+};
+
+const loadFromLocalStorage = () => {
+  try {
+    const serializedState = localStorage.getItem(STORAGE_KEY);
+    return serializedState ? JSON.parse(serializedState) : null;
+  } catch (err) {
+    console.error('Error loading from localStorage:', err);
+    return null;
+  }
+};
+
 // Create default animation config outside component
 export const createDefaultAnimations = () => ({
   position: {
@@ -107,9 +130,17 @@ const Playground = () => {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
+      physics: {
+        default: 'arcade',
+        arcade: {
+          debug: false
+        }
+      },
       scene: {
         create: function () {
           this.game.playground = this;
+          // Enable input plugin
+          this.input.enabled = true;
         },
       },
     };
@@ -136,16 +167,13 @@ const Playground = () => {
       const img = new Image();
       img.onload = () => {
         setSpritesheet(img);
-
-        // Load the image into Phaser's texture manager
         if (game && game.playground) {
           const scene = game.playground;
-          // First clear any existing texture
           if (scene.textures.exists("charactersprite")) {
             scene.textures.remove("charactersprite");
           }
-          // Add the spritesheet with frame data
           scene.textures.addImage("charactersprite", img);
+          saveCurrentState();
         }
       };
       img.src = event.target.result;
@@ -167,21 +195,14 @@ const Playground = () => {
         setFrameNames(names);
         setSelectedFrame(names[0]);
 
-        // Add frame data to Phaser texture
         if (game && game.playground && spritesheet) {
           const scene = game.playground;
           Object.entries(jsonData.frames).forEach(([key, frame]) => {
             scene.textures
               .get("charactersprite")
-              .add(
-                key,
-                0,
-                frame.frame.x,
-                frame.frame.y,
-                frame.frame.w,
-                frame.frame.h
-              );
+              .add(key, 0, frame.frame.x, frame.frame.y, frame.frame.w, frame.frame.h);
           });
+          saveCurrentState();
         }
       } catch (error) {
         console.error("Error parsing JSON:", error);
@@ -226,82 +247,70 @@ const Playground = () => {
 
   // Handle sprite placement
   const handleCanvasClick = (e) => {
-    if (mode !== "edit" || !game || !spritesheet) return;
+    if (mode !== "edit" || !game || !spritesheet || !selectedFrame) return;
     const scene = game.playground;
     const rect = e.target.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (1920 / rect.width);
     const y = (e.clientY - rect.top) * (1080 / rect.height);
 
-    // Check if we're placing a click action frame
-    const clickActionSprite = placedSprites.find(
-      (s) =>
-        s.clickAction?.enabled &&
-        s.clickAction.type === "add" &&
-        s.clickAction.config?.framesToAdd?.some(
-          (frame) => frame.x === 0 && frame.y === 0
-        )
+    // Check if we're placing a frame for click action
+    const clickActionSprite = placedSprites.find(sprite => 
+      sprite.clickAction?.type === "add" && 
+      sprite.clickAction.config.framesToAdd?.length > 0 &&
+      sprite.clickAction.config.isPlacingFrame
     );
 
     if (clickActionSprite) {
-      setPlacedSprites((prev) =>
-        prev.map((s) => {
-          if (s.id === clickActionSprite.id) {
-            const updatedFrames = s.clickAction.config.framesToAdd.map(
-              (frame) => {
-                if (frame.x === 0 && frame.y === 0) {
-                  return { ...frame, x, y, baseX: x, baseY: y };
-                }
-                return frame;
-              }
-            );
+      const lastFrameIndex = clickActionSprite.clickAction.config.framesToAdd.length - 1;
+      const frameConfig = clickActionSprite.clickAction.config.framesToAdd[lastFrameIndex];
 
-            return {
-              ...s,
-              clickAction: {
-                ...s.clickAction,
-                config: {
-                  ...s.clickAction.config,
-                  framesToAdd: updatedFrames,
+      // Create the preview sprite with full opacity
+      const previewSprite = scene.add
+        .sprite(x, y, "charactersprite", frameConfig.frameName)
+        .setOrigin(0, 0)
+        .setScale(frameConfig.scale || 1)
+        .setAlpha(1);
+
+      // Store reference data
+      previewSprite.setData("frameConfig", frameConfig);
+      previewSprite.setData("parentId", clickActionSprite.id);
+
+      // Update the placedSprites state
+      setPlacedSprites(prev =>
+        prev.map(s =>
+          s.id === clickActionSprite.id
+            ? {
+                ...s,
+                clickAction: {
+                  ...s.clickAction,
+                  config: {
+                    ...s.clickAction.config,
+                    isPlacingFrame: false,
+                    framesToAdd: s.clickAction.config.framesToAdd.map((frame, idx) =>
+                      idx === lastFrameIndex
+                        ? { ...frame, x, y, baseX: x, baseY: y }
+                        : frame
+                    ),
+                  },
                 },
-              },
-            };
-          }
-          return s;
-        })
+              }
+            : s
+        )
       );
+      return;
+    }
 
-      // Create visual indicator for the new frame position
-      const unplacedFrame =
-        clickActionSprite.clickAction.config.framesToAdd.find(
-          (frame) => frame.x === 0 && frame.y === 0
-        );
-
-      if (unplacedFrame) {
-        const frameSprite = scene.add
-          .sprite(x, y, "charactersprite", unplacedFrame.frameName)
-          .setOrigin(0, 0)
-          .setScale(unplacedFrame.scale)
-          .setRotation(unplacedFrame.rotation)
-          .setAlpha(0.6);
-
-        const indicator = scene.add.text(x, y - 20, "🖱️ Click Action", {
-          fontSize: "14px",
-          backgroundColor: "#333",
-          padding: { x: 5, y: 2 },
-          color: "#fff",
-        });
-
-        frameSprite.setData("frameConfig", { ...unplacedFrame, x, y });
-        frameSprite.setData("parentId", clickActionSprite.id);
-        frameSprite.setData("indicator", indicator);
-      }
-    } else if (selectedFrame && canPlaceSprite) {
-      // Normal sprite placement (unchanged)
+    // Regular sprite placement logic for selectedFrame
+    if (selectedFrame && canPlaceSprite) {
+      // Create the sprite with all necessary properties
       const sprite = scene.add
         .sprite(x, y, "charactersprite", selectedFrame)
         .setOrigin(0, 0)
-        .setInteractive();
+        .setInteractive({ draggable: true }) // Enable both interaction and dragging
+        .setScale(1)
+        .setAlpha(1);
 
+      // Create the sprite object
       const newSprite = {
         id: Date.now(),
         frameName: selectedFrame,
@@ -321,14 +330,29 @@ const Playground = () => {
         },
       };
 
+      // Add event listeners
       sprite.on("pointerdown", () => {
-        if (newSprite.clickAction.enabled) {
+        if (mode === "edit") {
           handleSpriteClick(newSprite);
         }
       });
 
-      setPlacedSprites((prev) => [...prev, newSprite]);
+      sprite.on('drag', (pointer, dragX, dragY) => {
+        sprite.setPosition(dragX, dragY);
+        newSprite.x = dragX;
+        newSprite.y = dragY;
+        // Update the placedSprites array with new position
+        setPlacedSprites(prev => 
+          prev.map(s => s.id === newSprite.id ? {...s, x: dragX, y: dragY} : s)
+        );
+      });
+
+      // Add to placedSprites array
+      setPlacedSprites(prev => [...prev, newSprite]);
       setCanPlaceSprite(false);
+      
+      // Save the current state
+      saveCurrentState();
     }
   };
 
@@ -380,8 +404,8 @@ const Playground = () => {
 
   // Update sprite position
   const updateSpritePosition = (id, newX, newY) => {
-    setPlacedSprites((prev) =>
-      prev.map((sprite) => {
+    setPlacedSprites(prev => {
+      const updated = prev.map(sprite => {
         if (sprite.id === id) {
           sprite.phaserSprite.setPosition(Number(newX), Number(newY));
           return {
@@ -391,8 +415,10 @@ const Playground = () => {
           };
         }
         return sprite;
-      })
-    );
+      });
+      saveCurrentState();
+      return updated;
+    });
   };
 
   // Update sprite scale
@@ -409,6 +435,7 @@ const Playground = () => {
         return sprite;
       })
     );
+    saveCurrentState();
   };
 
   // Update sprite rotation
@@ -416,15 +443,18 @@ const Playground = () => {
     setPlacedSprites((prev) =>
       prev.map((sprite) => {
         if (sprite.id === id) {
-          sprite.phaserSprite.setAngle(Number(newRotation));
+          // Convert degrees to radians for Phaser
+          const rotationInRadians = (Number(newRotation) * Math.PI) / 180;
+          sprite.phaserSprite.setRotation(rotationInRadians);
           return {
             ...sprite,
-            rotation: Number(newRotation),
+            rotation: Number(newRotation), // Store rotation in degrees
           };
         }
         return sprite;
       })
     );
+    saveCurrentState();
   };
 
   const updateSpriteTransparency = (id, newAlpha) => {
@@ -440,6 +470,7 @@ const Playground = () => {
         return sprite;
       })
     );
+    saveCurrentState();
   };
 
   const deleteSprite = useCallback((id) => {
@@ -448,7 +479,9 @@ const Playground = () => {
       if (spriteToDelete?.phaserSprite && !spriteToDelete.isDestroyed) {
         spriteToDelete.phaserSprite.destroy();
       }
-      return prev.filter((sprite) => sprite.id !== id);
+      const updated = prev.filter((sprite) => sprite.id !== id);
+      saveCurrentState();
+      return updated;
     });
   }, []);
 
@@ -816,6 +849,109 @@ this.time.delayedCall(${totalDelay}, () => {
   });\n`;
         }
 
+        // Add click action code if enabled
+        if (sprite.clickAction?.enabled && sprite.clickAction.type === "add") {
+          code += `\n// Click Action Setup
+${varName}.setInteractive();
+${varName}.on('pointerdown', function() {`;
+
+          sprite.clickAction.config.framesToAdd.forEach((frameConfig, idx) => {
+            const clickFrameVarName = `clickFrame${counter}_${idx}`;
+            
+            code += `\n  const ${clickFrameVarName} = this.add
+    .sprite(${Math.round(frameConfig.x)}, ${Math.round(frameConfig.y)}, 'spritesheetname', '${frameConfig.frameName}')
+    .setOrigin(0, 0)
+    .setScale(${frameConfig.scale || 1})
+    .setRotation(${frameConfig.rotation || 0})
+    .setAlpha(${frameConfig.alpha || 1});`;
+
+            // Add slide-in animation if enabled
+            if (frameConfig.animations?.slideIn?.isEnabled) {
+              const slideConfig = frameConfig.animations.slideIn.config;
+              let initialPos;
+              switch (slideConfig.direction) {
+                case "left":
+                  initialPos = `${clickFrameVarName}.setPosition(${Math.round(frameConfig.x)} - ${slideConfig.distance}, ${Math.round(frameConfig.y)});`;
+                  break;
+                case "right":
+                  initialPos = `${clickFrameVarName}.setPosition(${Math.round(frameConfig.x)} + ${slideConfig.distance}, ${Math.round(frameConfig.y)});`;
+                  break;
+                case "top":
+                  initialPos = `${clickFrameVarName}.setPosition(${Math.round(frameConfig.x)}, ${Math.round(frameConfig.y)} - ${slideConfig.distance});`;
+                  break;
+                case "bottom":
+                  initialPos = `${clickFrameVarName}.setPosition(${Math.round(frameConfig.x)}, ${Math.round(frameConfig.y)} + ${slideConfig.distance});`;
+                  break;
+              }
+
+              code += `\n  ${initialPos}
+  this.tweens.add({
+    targets: ${clickFrameVarName},
+    x: ${Math.round(frameConfig.x)},
+    y: ${Math.round(frameConfig.y)},
+    duration: ${slideConfig.duration},
+    ease: '${slideConfig.ease}'
+  });`;
+            }
+
+            // Add fade-in animation if enabled
+            if (frameConfig.animations?.fadeIn?.isEnabled) {
+              const fadeConfig = frameConfig.animations.fadeIn.config;
+              code += `\n  ${clickFrameVarName}.setAlpha(0);
+  this.tweens.add({
+    targets: ${clickFrameVarName},
+    alpha: 1,
+    duration: ${fadeConfig.duration},
+    ease: '${fadeConfig.ease}'
+  });`;
+            }
+
+            // Add position animation if enabled
+            if (frameConfig.animations?.position?.isEnabled) {
+              const posConfig = frameConfig.animations.position.config;
+              code += `\n  this.tweens.add({
+    targets: ${clickFrameVarName},
+    x: ${Math.round(frameConfig.x)} + ${Math.round(posConfig.x * 100)},
+    y: ${Math.round(frameConfig.y)} + ${Math.round(posConfig.y * 100)},
+    duration: ${posConfig.duration},
+    repeat: ${posConfig.repeat},
+    yoyo: ${posConfig.yoyo},
+    ease: '${posConfig.ease}'
+  });`;
+            }
+
+            // Add scale animation if enabled
+            if (frameConfig.animations?.scale?.isEnabled) {
+              const scaleConfig = frameConfig.animations.scale.config;
+              code += `\n  this.tweens.add({
+    targets: ${clickFrameVarName},
+    scaleX: ${scaleConfig.scaleX},
+    scaleY: ${scaleConfig.scaleY},
+    duration: ${scaleConfig.duration},
+    repeat: ${scaleConfig.repeat},
+    yoyo: ${scaleConfig.yoyo},
+    ease: '${scaleConfig.ease}'
+  });`;
+            }
+
+            // Add disappear animation if enabled
+            if (frameConfig.animations?.disappear?.isEnabled) {
+              const disappearConfig = frameConfig.animations.disappear.config;
+              code += `\n  this.time.delayedCall(${disappearConfig.delay}, () => {
+    this.tweens.add({
+      targets: ${clickFrameVarName},
+      alpha: 0,
+      duration: ${disappearConfig.duration},
+      ease: '${disappearConfig.ease}',
+      onComplete: () => ${clickFrameVarName}.destroy()
+    });
+  });`;
+            }
+          });
+
+          code += `\n}, this);\n\n`;
+        }
+
         code += "\n";
       });
 
@@ -948,10 +1084,7 @@ this.time.delayedCall(${totalDelay}, () => {
 
     switch (type) {
       case "add":
-        if (
-          Array.isArray(config.framesToAdd) &&
-          config.framesToAdd.length > 0
-        ) {
+        if (Array.isArray(config.framesToAdd) && config.framesToAdd.length > 0) {
           config.framesToAdd.forEach((frameConfig) => {
             // Create the sprite at the original configured position
             const newSprite = scene.add
@@ -966,26 +1099,9 @@ this.time.delayedCall(${totalDelay}, () => {
               .setRotation(frameConfig.rotation)
               .setAlpha(frameConfig.alpha);
 
-            const spriteObj = {
-              id: Date.now() + Math.random(),
-              frameName: frameConfig.frameName,
-              x: frameConfig.x,
-              y: frameConfig.y,
-              baseX: frameConfig.x,
-              baseY: frameConfig.y,
-              scale: frameConfig.scale,
-              rotation: frameConfig.rotation,
-              alpha: frameConfig.alpha,
-              phaserSprite: newSprite,
-              animations: frameConfig.animations,
-              isClickActionResult: true,
-              parentId: clickedSprite.id,
-            };
-
-            // Handle custom animations
+            // Handle animations without adding to placedSprites
             if (frameConfig.animations?.slideIn?.isEnabled) {
-              const { direction, distance } =
-                frameConfig.animations.slideIn.config;
+              const { direction, distance } = frameConfig.animations.slideIn.config;
               let initialPos = { x: frameConfig.x, y: frameConfig.y };
 
               switch (direction) {
@@ -1010,17 +1126,15 @@ this.time.delayedCall(${totalDelay}, () => {
                 y: frameConfig.y,
                 duration: frameConfig.animations.slideIn.config.duration,
                 ease: frameConfig.animations.slideIn.config.ease,
-                onComplete: () =>
-                  handleCommonAnimations(spriteObj, newSprite, scene),
+                onComplete: () => handleCommonAnimations({ ...frameConfig }, newSprite, scene),
               });
             } else {
-              handleCommonAnimations(spriteObj, newSprite, scene);
+              handleCommonAnimations({ ...frameConfig }, newSprite, scene);
             }
-
-            setPlacedSprites((prev) => [...prev, spriteObj]);
           });
         }
         break;
+      // ... other cases
     }
   };
 
@@ -1110,19 +1224,6 @@ this.time.delayedCall(${totalDelay}, () => {
 
   // Update the frame selection handler
   const handleFrameSelect = (e) => {
-    const scene = game?.playground;
-    if (scene) {
-      // Clean up click action indicators when changing frames
-      scene.children.list
-        .filter(
-          (child) => child.type === "Sprite" && child.getData("indicator")
-        )
-        .forEach((sprite) => {
-          sprite.getData("indicator").destroy();
-          sprite.destroy();
-        });
-    }
-
     setSelectedFrame(e.target.value);
     setCanPlaceSprite(true);
   };
@@ -1229,114 +1330,145 @@ this.time.delayedCall(${totalDelay}, () => {
       .filter((child) => child.type === "Sprite")
       .forEach((sprite) => sprite.destroy());
 
-    // Reset placedSprites to remove any click-action results
-    const initialSprites = placedSprites.filter(
-      (sprite) => !sprite.isClickActionResult
-    );
+    // Only restore the original sprites
+    const initialSprites = placedSprites;
     setPlacedSprites(initialSprites);
-
-    // Recreate original sprites in edit mode
-    initialSprites.forEach((sprite) => {
-      // Create the main sprite
-      const newSprite = scene.add
-        .sprite(sprite.x, sprite.y, "charactersprite", sprite.frameName)
-        .setOrigin(0, 0)
-        .setScale(sprite.scale)
-        .setRotation(sprite.rotation || 0)
-        .setAlpha(sprite.alpha || 1)
-        .setInteractive();
-
-      sprite.phaserSprite = newSprite;
-      scene.input.setDraggable(newSprite);
-
-      // If sprite has click actions, create visual indicators
-      if (sprite.clickAction?.enabled && sprite.clickAction.type === "add") {
-        sprite.clickAction.config.framesToAdd.forEach((frameConfig) => {
-          const frameSprite = scene.add
-            .sprite(
-              frameConfig.x,
-              frameConfig.y,
-              "charactersprite",
-              frameConfig.frameName
-            )
-            .setOrigin(0, 0)
-            .setScale(frameConfig.scale)
-            .setRotation(frameConfig.rotation)
-            .setAlpha(0.6) // Semi-transparent to indicate edit mode
-            .setInteractive();
-
-          // Add a visual indicator that this is a click action frame
-          const indicator = scene.add.text(
-            frameConfig.x,
-            frameConfig.y - 20,
-            "🖱️ Click Action",
-            {
-              fontSize: "14px",
-              backgroundColor: "#333",
-              padding: { x: 5, y: 2 },
-              color: "#fff",
-            }
-          );
-
-          frameSprite.setData("frameConfig", frameConfig);
-          frameSprite.setData("parentId", sprite.id);
-          frameSprite.setData("indicator", indicator);
-        });
-      }
-
-      newSprite.on("pointerdown", () => {
-        if (mode === "edit") {
-          handleSpriteClick(sprite);
-        }
-      });
-    });
 
     setMode("edit");
     setIsPlaying(false);
     setCanPlaceSprite(true);
-
-    scene.children.list
-      .filter((child) => child.type === "Sprite" && child.getData("indicator"))
-      .forEach((sprite) => {
-        sprite.getData("indicator").destroy();
-        sprite.destroy();
-      });
-
-    // Recreate click action visual indicators for existing sprites
-    placedSprites.forEach((sprite) => {
-      if (sprite.clickAction?.enabled && sprite.clickAction.type === "add") {
-        sprite.clickAction.config.framesToAdd.forEach((frameConfig) => {
-          const frameSprite = scene.add
-            .sprite(
-              frameConfig.x,
-              frameConfig.y,
-              "charactersprite",
-              frameConfig.frameName
-            )
-            .setOrigin(0, 0)
-            .setScale(frameConfig.scale)
-            .setRotation(frameConfig.rotation)
-            .setAlpha(0.6);
-
-          const indicator = scene.add.text(
-            frameConfig.x,
-            frameConfig.y - 20,
-            "🖱️ Click Action",
-            {
-              fontSize: "14px",
-              backgroundColor: "#333",
-              padding: { x: 5, y: 2 },
-              color: "#fff",
-            }
-          );
-
-          frameSprite.setData("frameConfig", frameConfig);
-          frameSprite.setData("parentId", sprite.id);
-          frameSprite.setData("indicator", indicator);
-        });
-      }
-    });
   };
+
+  const saveCurrentState = () => {
+    const state = {
+      placedSprites: placedSprites.map(sprite => ({
+        id: sprite.id,
+        frameName: sprite.frameName,
+        x: sprite.x,
+        y: sprite.y,
+        scale: sprite.scale,
+        rotation: sprite.rotation,
+        alpha: sprite.alpha,
+        animations: sprite.animations,
+        clickAction: sprite.clickAction
+      })),
+      selectedFrame,
+      orientation,
+      spritesheet: spritesheet?.src,
+      spriteData,
+      frameNames
+    };
+    saveToLocalStorage(state);
+  };
+
+  // Add this useEffect after the game initialization useEffect
+  useEffect(() => {
+    const savedState = loadFromLocalStorage();
+    if (!savedState || !game?.playground) return;
+
+    const scene = game.playground;
+
+    // First restore basic state
+    setOrientation(savedState.orientation);
+    setSelectedFrame(savedState.selectedFrame);
+    setFrameNames(savedState.frameNames || []);
+    setSpriteData(savedState.spriteData);
+
+    // Then restore spritesheet
+    if (savedState.spritesheet) {
+      const img = new Image();
+      img.onload = () => {
+        setSpritesheet(img);
+        
+        if (scene.textures.exists('charactersprite')) {
+          scene.textures.remove('charactersprite');
+        }
+        scene.textures.addImage('charactersprite', img);
+
+        // Add frame data to Phaser texture
+        if (savedState.spriteData) {
+          Object.entries(savedState.spriteData.frames).forEach(([key, frame]) => {
+            scene.textures
+              .get('charactersprite')
+              .add(
+                key,
+                0,
+                frame.frame.x,
+                frame.frame.y,
+                frame.frame.w,
+                frame.frame.h
+              );
+          });
+
+          // Clear existing sprites
+          scene.children.list
+            .filter(child => child.type === "Sprite")
+            .forEach(sprite => sprite.destroy());
+
+          // Now restore placed sprites
+          if (savedState.placedSprites?.length > 0) {
+            const restoredSprites = savedState.placedSprites.map(savedSprite => {
+              const sprite = scene.add
+                .sprite(savedSprite.x, savedSprite.y, 'charactersprite', savedSprite.frameName)
+                .setOrigin(0, 0)
+                .setScale(savedSprite.scale)
+                .setRotation((savedSprite.rotation * Math.PI) / 180)
+                .setAlpha(savedSprite.alpha || 1)
+                .setInteractive();
+
+              scene.input.setDraggable(sprite);
+
+              const newSprite = {
+                ...savedSprite,
+                phaserSprite: sprite,
+                animations: savedSprite.animations || createDefaultAnimations()
+              };
+
+              // Set up event listeners
+              sprite.on('pointerdown', () => {
+                if (mode === "edit") {
+                  handleSpriteClick(newSprite);
+                } else if (newSprite.clickAction?.enabled) {
+                  handlePreviewClick(newSprite);
+                }
+              });
+
+              sprite.on('drag', (pointer, dragX, dragY) => {
+                sprite.setPosition(dragX, dragY);
+                newSprite.x = dragX;
+                newSprite.y = dragY;
+                saveCurrentState();
+              });
+
+              return newSprite;
+            });
+
+            setPlacedSprites(restoredSprites);
+          }
+        }
+      };
+      img.src = savedState.spritesheet;
+    }
+  }, [game, mode]); // Add mode as dependency
+
+  const clearPlaygroundState = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setPlacedSprites([]);
+    setSelectedFrame("");
+    if (game?.playground) {
+      const scene = game.playground;
+      scene.children.list
+        .filter(child => child.type === "Sprite")
+        .forEach(sprite => sprite.destroy());
+    }
+  };
+
+  // Add this new useEffect to handle state saving
+  useEffect(() => {
+    if (placedSprites.length > 0) {
+      saveCurrentState();
+    }
+  }, [placedSprites]);
 
   return (
     <div className="flex w-full h-[calc(100vh-55px)] bg-[#1e1e1e] relative">
