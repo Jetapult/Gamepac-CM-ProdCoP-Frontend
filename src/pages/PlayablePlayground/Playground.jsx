@@ -89,13 +89,30 @@ export const createDefaultAnimations = () => ({
     },
   },
   clickAction: {
-    enabled: false,
-    type: "none",
-    config: {
-      framesToAdd: [], // Array of sprites to add
-      frameToUpdate: [], // Array of sprite updates with animations
-      toRemove: [], // Array of sprite IDs to remove
-    },
+    enabled: true,
+    actions: [
+      {
+        type: "add",
+        enabled: true,
+        config: {
+          framesToAdd: [],
+        },
+      },
+      {
+        type: "update",
+        enabled: true,
+        config: {
+          frameToUpdate: [],
+        },
+      },
+      {
+        type: "remove",
+        enabled: true,
+        config: {
+          framesToDelete: [],
+        },
+      },
+    ],
   },
 });
 
@@ -263,16 +280,22 @@ const Playground = () => {
     // Check if we're placing a frame for click action
     const clickActionSprite = placedSprites.find(
       (sprite) =>
-        sprite.clickAction?.type === "add" &&
-        sprite.clickAction.config.framesToAdd?.length > 0 &&
-        sprite.clickAction.config.isPlacingFrame
+        sprite.clickAction?.enabled &&
+        sprite.clickAction.actions?.some(
+          (action) =>
+            action.type === "add" &&
+            action.enabled &&
+            action.config.framesToAdd?.length > 0 &&
+            action.config.isPlacingFrame
+        )
     );
 
     if (clickActionSprite) {
-      const lastFrameIndex =
-        clickActionSprite.clickAction.config.framesToAdd.length - 1;
-      const frameConfig =
-        clickActionSprite.clickAction.config.framesToAdd[lastFrameIndex];
+      const addAction = clickActionSprite.clickAction.actions.find(
+        (action) => action.type === "add" && action.enabled
+      );
+      const lastFrameIndex = addAction.config.framesToAdd.length - 1;
+      const frameConfig = addAction.config.framesToAdd[lastFrameIndex];
 
       // Create the preview sprite with full opacity
       const previewSprite = scene.add
@@ -288,26 +311,36 @@ const Playground = () => {
 
       // Update the placedSprites state
       setPlacedSprites((prev) =>
-        prev.map((s) =>
-          s.id === clickActionSprite.id
-            ? {
-                ...s,
-                clickAction: {
-                  ...s.clickAction,
+        prev.map((s) => {
+          if (s.id === clickActionSprite.id) {
+            const updatedActions = s.clickAction.actions.map((action) => {
+              if (action.type === "add" && action.enabled) {
+                return {
+                  ...action,
                   config: {
-                    ...s.clickAction.config,
+                    ...action.config,
                     isPlacingFrame: false,
-                    framesToAdd: s.clickAction.config.framesToAdd.map(
-                      (frame, idx) =>
-                        idx === lastFrameIndex
-                          ? { ...frame, x, y, baseX: x, baseY: y }
-                          : frame
+                    framesToAdd: action.config.framesToAdd.map((frame, idx) =>
+                      idx === lastFrameIndex
+                        ? { ...frame, x, y, baseX: x, baseY: y }
+                        : frame
                     ),
                   },
-                },
+                };
               }
-            : s
-        )
+              return action;
+            });
+
+            return {
+              ...s,
+              clickAction: {
+                ...s.clickAction,
+                actions: updatedActions,
+              },
+            };
+          }
+          return s;
+        })
       );
       return;
     }
@@ -788,7 +821,6 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     });
   };
 
-  // Add this new function near generatePhaserCode
   const generateAllPhaserCode = (sprites) => {
     // Group sprites by priority
     const groupedSprites = sprites.reduce((acc, sprite) => {
@@ -801,11 +833,9 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
       return acc;
     }, {});
 
-    // Sort priorities
     const priorities = Object.keys(groupedSprites).sort(
       (a, b) => Number(a) - Number(b)
     );
-
     let code = "// All Sprites and Animations\n\n";
     let totalDelay = 0;
 
@@ -813,18 +843,22 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
       const sprites = groupedSprites[priority];
       code += `// Sequence ${priority}\n`;
 
-      sprites.forEach((sprite) => {
-        const counter = sprites.indexOf(sprite) + 1;
+      sprites.forEach((sprite, index) => {
+        const counter = index + 1;
         const varName = `sprite${counter}_seq${priority}`;
 
+        // Create sprite
         code += `const ${varName} = this.add
-  .sprite(${Math.round(sprite.x)}, ${Math.round(
+    .sprite(${Math.round(sprite.x)}, ${Math.round(
           sprite.y
         )}, 'spritesheetname', '${sprite.frameName}')
-  .setOrigin(0, 0)
-  .setScale(${sprite.scale})
-  .setData('id', ${sprite.id});\n\n`;
+    .setOrigin(0, 0)
+    .setScale(${sprite.scale})
+    .setRotation(${((sprite.rotation || 0) * Math.PI) / 180})
+    .setAlpha(${sprite.alpha || 1})
+    .setData('id', ${sprite.id});\n\n`;
 
+        // Add initial animations (slide-in and fade-in)
         if (sprite.animations.slideIn.isEnabled) {
           const slideConfig = sprite.animations.slideIn.config;
           let initialPos;
@@ -850,43 +884,36 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
               )}, ${Math.round(sprite.y)} + ${slideConfig.distance});`;
               break;
           }
-
-          code += `${initialPos}\n
-this.time.delayedCall(${totalDelay}, () => {
+          code += `// Slide-in animation
+  ${initialPos}
   this.tweens.add({
     targets: ${varName},
     x: ${Math.round(sprite.x)},
     y: ${Math.round(sprite.y)},
     duration: ${slideConfig.duration},
-    ease: '${slideConfig.ease}'
-  });
-});\n`;
+    ease: '${slideConfig.ease}',
+    delay: ${totalDelay + (slideConfig.delay || 0)}
+  });\n\n`;
         }
 
         if (sprite.animations.fadeIn.isEnabled) {
           const fadeConfig = sprite.animations.fadeIn.config;
-          code += `${varName}.setAlpha(0);\n
-this.time.delayedCall(${totalDelay}, () => {
+          code += `// Fade-in animation
+  ${varName}.setAlpha(0);
   this.tweens.add({
     targets: ${varName},
     alpha: 1,
     duration: ${fadeConfig.duration},
-    ease: '${fadeConfig.ease}'
-  });
-});\n`;
+    ease: '${fadeConfig.ease}',
+    delay: ${totalDelay + (fadeConfig.delay || 0)}
+  });\n\n`;
         }
 
         // Add common animations
-        if (
-          sprite.animations?.position?.isEnabled ||
-          sprite.animations?.scale?.isEnabled ||
-          sprite.animations?.transparency?.isEnabled
-        ) {
-          code += `\nthis.time.delayedCall(${totalDelay + 500}, () => {\n`;
-
-          if (sprite.animations.position.isEnabled) {
-            const posConfig = sprite.animations.position.config;
-            code += `  this.tweens.add({
+        if (sprite.animations.position.isEnabled) {
+          const posConfig = sprite.animations.position.config;
+          code += `// Position animation
+  this.tweens.add({
     targets: ${varName},
     x: ${Math.round(sprite.x)} + ${Math.round(posConfig.x * 100)},
     y: ${Math.round(sprite.y)} + ${Math.round(posConfig.y * 100)},
@@ -894,295 +921,345 @@ this.time.delayedCall(${totalDelay}, () => {
     repeat: ${posConfig.repeat},
     yoyo: ${posConfig.yoyo},
     ease: '${posConfig.ease}'
-  });\n`;
-          }
-
-          // Add scale and transparency animations similarly...
-
-          code += `});\n`;
+  });\n\n`;
         }
 
-        if (sprite.animations.disappear.isEnabled) {
+        if (sprite.animations.scale.isEnabled) {
+          const scaleConfig = sprite.animations.scale.config;
+          code += `// Scale animation
+  this.tweens.add({
+    targets: ${varName},
+    scaleX: ${scaleConfig.scaleX},
+    scaleY: ${scaleConfig.scaleY},
+    duration: ${scaleConfig.duration},
+    repeat: ${scaleConfig.repeat},
+    yoyo: ${scaleConfig.yoyo},
+    ease: '${scaleConfig.ease}'
+  });\n\n`;
+        }
+
+        if (sprite.animations.transparency.isEnabled) {
+          const alphaConfig = sprite.animations.transparency.config;
+          code += `// Transparency animation
+  this.tweens.add({
+    targets: ${varName},
+    alpha: ${alphaConfig.alpha},
+    duration: ${alphaConfig.duration},
+    repeat: ${alphaConfig.repeat},
+    yoyo: ${alphaConfig.yoyo},
+    ease: '${alphaConfig.ease}'
+  });\n\n`;
+        }
+
+        if (sprite.animations.disappear?.isEnabled) {
           const disappearConfig = sprite.animations.disappear.config;
-          code += `\nthis.time.delayedCall(${
-            totalDelay + disappearConfig.delay
-          }, () => {
-    this.tweens.add({
-      targets: ${varName},
-      alpha: 0,
-      duration: ${disappearConfig.duration},
-      ease: '${disappearConfig.ease}',
-      onComplete: () => ${varName}.destroy()
-    });
-  });\n`;
+          code += `
+    // Disappear animation
+    this.time.delayedCall(${disappearConfig.delay}, () => {
+      this.tweens.add({
+        targets: ${varName},
+        alpha: 0,
+        duration: ${disappearConfig.duration},
+        ease: '${disappearConfig.ease}',
+        onComplete: () => {
+          if (${varName} && ${varName}.destroy) {
+            ${varName}.destroy();
+          }
         }
+      });
+    });`;
+        }
+
+        // Add click actions
         if (sprite.clickAction?.enabled) {
-          if (sprite.clickAction.type === "add") {
-            code += `\n// Click Action Setup
+          code += `// Click Action Setup
   ${varName}.setInteractive();
   ${varName}.on('pointerdown', function() {`;
 
-            sprite.clickAction.config.framesToAdd.forEach(
-              (frameConfig, idx) => {
-                const clickFrameVarName = `clickFrame${counter}_${idx}`;
-
-                code += `\n  const ${clickFrameVarName} = this.add
+          sprite.clickAction.actions.forEach((action) => {
+            if (action.enabled) {
+              switch (action.type) {
+                case "add":
+                  action.config.framesToAdd?.forEach((frameConfig, idx) => {
+                    const clickFrameVarName = `clickFrame${counter}_${idx}`;
+                    code += `
+    const ${clickFrameVarName} = this.add
       .sprite(${Math.round(frameConfig.x)}, ${Math.round(
-                  frameConfig.y
-                )}, 'spritesheetname', '${frameConfig.frameName}')
+                      frameConfig.y
+                    )}, 'spritesheetname', '${frameConfig.frameName}')
       .setOrigin(0, 0)
-      .setScale(${frameConfig.scale || 1})
-      .setRotation(${frameConfig.rotation || 0})
-      .setAlpha(${frameConfig.alpha || 1});`;
+      .setScale(${frameConfig.scale})
+      .setRotation(${((frameConfig.rotation || 0) * Math.PI) / 180})
+      .setAlpha(${frameConfig.alpha || 1})
+      .setData('parentId', ${sprite.id})
+      .setData('frameConfig', ${JSON.stringify(frameConfig)});
 
-                // Add slide-in animation if enabled
-                if (frameConfig.animations?.slideIn?.isEnabled) {
-                  const slideConfig = frameConfig.animations.slideIn.config;
-                  let initialPos;
-                  switch (slideConfig.direction) {
-                    case "left":
-                      initialPos = `${clickFrameVarName}.setPosition(${Math.round(
-                        frameConfig.x
-                      )} - ${slideConfig.distance}, ${Math.round(
-                        frameConfig.y
-                      )});`;
-                      break;
-                    case "right":
-                      initialPos = `${clickFrameVarName}.setPosition(${Math.round(
-                        frameConfig.x
-                      )} + ${slideConfig.distance}, ${Math.round(
-                        frameConfig.y
-                      )});`;
-                      break;
-                    case "top":
-                      initialPos = `${clickFrameVarName}.setPosition(${Math.round(
-                        frameConfig.x
-                      )}, ${Math.round(frameConfig.y)} - ${
-                        slideConfig.distance
-                      });`;
-                      break;
-                    case "bottom":
-                      initialPos = `${clickFrameVarName}.setPosition(${Math.round(
-                        frameConfig.x
-                      )}, ${Math.round(frameConfig.y)} + ${
-                        slideConfig.distance
-                      });`;
-                      break;
-                  }
-
-                  code += `\n  ${initialPos}
-    this.tweens.add({
-      targets: ${clickFrameVarName},
-      x: ${Math.round(frameConfig.x)},
-      y: ${Math.round(frameConfig.y)},
-      duration: ${slideConfig.duration},
-      ease: '${slideConfig.ease}'
-    });`;
-                }
-
-                // Add fade-in animation if enabled
-                if (frameConfig.animations?.fadeIn?.isEnabled) {
-                  const fadeConfig = frameConfig.animations.fadeIn.config;
-                  code += `\n  ${clickFrameVarName}.setAlpha(0);
-    this.tweens.add({
-      targets: ${clickFrameVarName},
-      alpha: 1,
-      duration: ${fadeConfig.duration},
-      ease: '${fadeConfig.ease}'
-    });`;
-                }
-
-                // Add position animation if enabled
-                if (frameConfig.animations?.position?.isEnabled) {
-                  const posConfig = frameConfig.animations.position.config;
-                  code += `\n  this.tweens.add({
-      targets: ${clickFrameVarName},
-      x: ${Math.round(frameConfig.x)} + ${Math.round(posConfig.x * 100)},
-      y: ${Math.round(frameConfig.y)} + ${Math.round(posConfig.y * 100)},
-      duration: ${posConfig.duration},
-      repeat: ${posConfig.repeat},
-      yoyo: ${posConfig.yoyo},
-      ease: '${posConfig.ease}'
-    });`;
-                }
-
-                // Add scale animation if enabled
-                if (frameConfig.animations?.scale?.isEnabled) {
-                  const scaleConfig = frameConfig.animations.scale.config;
-                  code += `\n  this.tweens.add({
-      targets: ${clickFrameVarName},
-      scaleX: ${scaleConfig.scaleX},
-      scaleY: ${scaleConfig.scaleY},
-      duration: ${scaleConfig.duration},
-      repeat: ${scaleConfig.repeat},
-      yoyo: ${scaleConfig.yoyo},
-      ease: '${scaleConfig.ease}'
-    });`;
-                }
-
-                // Add disappear animation if enabled
-                if (frameConfig.animations?.disappear?.isEnabled) {
-                  const disappearConfig =
-                    frameConfig.animations.disappear.config;
-                  code += `\n  this.time.delayedCall(${disappearConfig.delay}, () => {
+      const startCommonAnimations = () => {
+    // Position animation
+    if (${clickFrameVarName}.getData('frameConfig').animations?.position?.isEnabled) {
+      const config = ${clickFrameVarName}.getData('frameConfig').animations.position.config;
       this.tweens.add({
         targets: ${clickFrameVarName},
-        alpha: 0,
-        duration: ${disappearConfig.duration},
-        ease: '${disappearConfig.ease}',
-        onComplete: () => ${clickFrameVarName}.destroy()
+        x: ${frameConfig.x} + (config.x || 0) * 100,
+        y: ${frameConfig.y} + (config.y || 0) * 100,
+        duration: config.duration || 1000,
+        repeat: config.repeat ?? -1,
+        yoyo: config.yoyo ?? true,
+        ease: config.ease || 'Linear'
       });
-    });`;
-                }
-              }
-            );
+    }
 
-            code += `\n}, this);\n\n`;
-          } else if (sprite.clickAction.type === "update") {
-            code += `\n// Click Action Setup
-  ${varName}.setInteractive();
-  ${varName}.on('pointerdown', function() {`;
-            sprite.clickAction.config.frameToUpdate?.forEach((update, idx) => {
-              code += `\n  const targetSprite${counter}_${idx} = this.children.list.find(
-    child => child.getData('id') === ${update.targetId}
-  );
-  
-  if (targetSprite${counter}_${idx}) {
-    ${
-      update.newFrameName
-        ? `targetSprite${counter}_${idx}.setTexture('spritesheetname', '${update.newFrameName}');`
-        : ""
-    }`;
-
-              // Add slide-in animation if enabled
-              if (update.animations?.slideIn?.isEnabled) {
-                const slideConfig = update.animations.slideIn.config;
-                let initialPos;
-                switch (slideConfig.direction) {
-                  case "left":
-                    initialPos = `targetSprite${counter}_${idx}.setPosition(${Math.round(
-                      update.x
-                    )} - ${slideConfig.distance}, ${Math.round(update.y)});`;
-                    break;
-                  case "right":
-                    initialPos = `targetSprite${counter}_${idx}.setPosition(${Math.round(
-                      update.x
-                    )} + ${slideConfig.distance}, ${Math.round(update.y)});`;
-                    break;
-                  case "top":
-                    initialPos = `targetSprite${counter}_${idx}.setPosition(${Math.round(
-                      update.x
-                    )}, ${Math.round(update.y)} - ${slideConfig.distance});`;
-                    break;
-                  case "bottom":
-                    initialPos = `targetSprite${counter}_${idx}.setPosition(${Math.round(
-                      update.x
-                    )}, ${Math.round(update.y)} + ${slideConfig.distance});`;
-                    break;
-                }
-
-                code += `\n    ${initialPos}
-    this.tweens.add({
-      targets: targetSprite${counter}_${idx},
-      x: ${Math.round(update.x)},
-      y: ${Math.round(update.y)},
-      duration: ${slideConfig.duration},
-      ease: '${slideConfig.ease}'
-    });`;
-              }
-
-              // Add fade-in animation if enabled
-              if (update.animations?.fadeIn?.isEnabled) {
-                const fadeConfig = update.animations.fadeIn.config;
-                code += `\n    targetSprite${counter}_${idx}.setAlpha(0);
-    this.tweens.add({
-      targets: targetSprite${counter}_${idx},
-      alpha: 1,
-      duration: ${fadeConfig.duration},
-      ease: '${fadeConfig.ease}'
-    });`;
-              }
-
-              // Add position animation if enabled
-              if (update.animations?.position?.isEnabled) {
-                const posConfig = update.animations.position.config;
-                code += `\n    this.tweens.add({
-      targets: targetSprite${counter}_${idx},
-      x: ${Math.round(update.x)} + ${Math.round(posConfig.x * 100)},
-      y: ${Math.round(update.y)} + ${Math.round(posConfig.y * 100)},
-      duration: ${posConfig.duration},
-      repeat: ${posConfig.repeat},
-      yoyo: ${posConfig.yoyo},
-      ease: '${posConfig.ease}'
-    });`;
-              }
-
-              // Add scale animation if enabled
-              if (update.animations?.scale?.isEnabled) {
-                const scaleConfig = update.animations.scale.config;
-                code += `\n    this.tweens.add({
-      targets: targetSprite${counter}_${idx},
-      scaleX: ${scaleConfig.scaleX},
-      scaleY: ${scaleConfig.scaleY},
-      duration: ${scaleConfig.duration},
-      repeat: ${scaleConfig.repeat},
-      yoyo: ${scaleConfig.yoyo},
-      ease: '${scaleConfig.ease}'
-    });`;
-              }
-
-              // Add disappear animation if enabled
-              if (update.animations?.disappear?.isEnabled) {
-                const disappearConfig = update.animations.disappear.config;
-                code += `\n    this.time.delayedCall(${disappearConfig.delay}, () => {
+    // Scale animation
+    if (${clickFrameVarName}.getData('frameConfig').animations?.scale?.isEnabled) {
+      const config = ${clickFrameVarName}.getData('frameConfig').animations.scale.config;
       this.tweens.add({
-        targets: targetSprite${counter}_${idx},
-        alpha: 0,
-        duration: ${disappearConfig.duration},
-        ease: '${disappearConfig.ease}',
-        onComplete: () => targetSprite${counter}_${idx}.destroy()
+        targets: ${clickFrameVarName},
+        scaleX: config.scaleX || 1,
+        scaleY: config.scaleY || 1,
+        duration: config.duration || 1000,
+        repeat: config.repeat ?? -1,
+        yoyo: config.yoyo ?? true,
+        ease: config.ease || 'Linear'
       });
-    });`;
-              }
+    }
 
-              code += `
-  }`;
-            });
-            code += `\n}, this);\n\n`;
-          } else if (
-            sprite.clickAction?.type === "remove" &&
-            sprite.clickAction.config.framesToDelete?.length > 0
-          ) {
-            code += `\n// Click Action Setup
-  ${varName}.setInteractive();
-  ${varName}.on('pointerdown', function() {`;
+    // Alpha animation
+    if (${clickFrameVarName}.getData('frameConfig').animations?.alpha?.isEnabled) {
+      const config = ${clickFrameVarName}.getData('frameConfig').animations.alpha.config;
+      this.tweens.add({
+        targets: ${clickFrameVarName},
+        alpha: config.alpha || 1,
+        duration: config.duration || 1000,
+        repeat: config.repeat ?? -1,
+        yoyo: config.yoyo ?? true,
+        ease: config.ease || 'Linear'
+      });
+    }
 
-            sprite.clickAction.config.framesToDelete.forEach(
-              (frameConfig, idx) => {
-                code += `
-    const targetSprite = this.children.list.find(
-      child => child.getData('id') === ${frameConfig.targetId}
-    );
+    // Disappear animation
+    if (${clickFrameVarName}.getData('frameConfig').animations?.disappear?.isEnabled) {
+      const config = ${clickFrameVarName}.getData('frameConfig').animations.disappear.config;
+      this.time.delayedCall(config.delay || 0, () => {
+        this.tweens.add({
+          targets: ${clickFrameVarName},
+          alpha: 0,
+          duration: config.duration || 1000,
+          ease: config.ease || 'Linear',
+          onComplete: () => ${clickFrameVarName}.destroy()
+        });
+      });
+    }
+  };
+
+  // Handle initial animations (slide-in or fade-in)
+  if (${clickFrameVarName}.getData('frameConfig').animations?.slideIn?.isEnabled) {
+    const config = ${clickFrameVarName}.getData('frameConfig').animations.slideIn.config;
+    let startX = ${frameConfig.x};
+    let startY = ${frameConfig.y};
     
-    if (targetSprite) {
-      this.tweens.add({
-        targets: targetSprite,
-        alpha: 0,
-        duration: ${frameConfig.fadeOutDuration || 500},
-        delay: ${frameConfig.delay || 0},
-        ease: '${frameConfig.ease || "Linear"}',
-        onComplete: () => targetSprite.destroy()
-      });
-    }`;
-              }
-            );
+    switch (config.direction) {
+      case 'left': startX -= config.distance; break;
+      case 'right': startX += config.distance; break;
+      case 'top': startY -= config.distance; break;
+      case 'bottom': startY += config.distance; break;
+    }
+    
+    ${clickFrameVarName}.setPosition(startX, startY);
+    this.tweens.add({
+      targets: ${clickFrameVarName},
+      x: ${frameConfig.x},
+      y: ${frameConfig.y},
+      duration: config.duration || 1000,
+      ease: config.ease || 'Linear',
+      onComplete: startCommonAnimations
+    });
+  } else if (${clickFrameVarName}.getData('frameConfig').animations?.fadeIn?.isEnabled) {
+    const config = ${clickFrameVarName}.getData('frameConfig').animations.fadeIn.config;
+    ${clickFrameVarName}.setAlpha(0);
+    this.tweens.add({
+      targets: ${clickFrameVarName},
+      alpha: 1,
+      duration: config.duration || 1000,
+      ease: config.ease || 'Linear',
+      onComplete: startCommonAnimations
+    });
+  } else {
+    startCommonAnimations();
+  }`;
+                  });
+                  break;
 
-            code += `
-  }, this);`;
-          }
+                case "update":
+                  action.config.frameToUpdate?.forEach((update, idx) => {
+                    code += `
+    const updateTarget${counter}_${idx} = this.children.list.find(
+      child => child.getData('id') === ${update.targetId}
+    );
+    if (updateTarget${counter}_${idx}) {
+    // Stop existing tweens
+      this.tweens.getTweensOf(updateTarget${counter}_${idx}).forEach((tween) => {
+        tween.stop();
+        tween.remove();
+      });
+      ${
+        update.newFrameName
+          ? `updateTarget${counter}_${idx}.setTexture('spritesheetname', '${update.newFrameName}');`
+          : ""
+      }
+      updateTarget${counter}_${idx}.setPosition(${update.x}, ${update.y});
+      updateTarget${counter}_${idx}.setScale(${update.scale});
+      updateTarget${counter}_${idx}.setRotation(${
+                      ((update.rotation || 0) * Math.PI) / 180
+                    });
+      updateTarget${counter}_${idx}.setAlpha(${update.alpha || 1});
+      // Handle animations
+      const startAnimations = () => {
+        // Position animation
+        ${
+          update.animations?.position?.isEnabled
+            ? `
+        this.tweens.add({
+          targets: updateTarget${counter}_${idx},
+          x: ${update.x} + ${Math.round(
+                (update.animations.position.config.x || 0) * 100
+              )},
+          y: ${update.y} + ${Math.round(
+                (update.animations.position.config.y || 0) * 100
+              )},
+          duration: ${update.animations.position.config.duration},
+          repeat: ${update.animations.position.config.repeat},
+          yoyo: ${update.animations.position.config.yoyo},
+          ease: '${update.animations.position.config.ease}'
+        });`
+            : ""
         }
 
-        // code += "\n";
+        // Scale animation
+        ${
+          update.animations?.scale?.isEnabled
+            ? `
+        this.tweens.add({
+          targets: updateTarget${counter}_${idx},
+          scaleX: ${update.animations.scale.config.scaleX},
+          scaleY: ${update.animations.scale.config.scaleY},
+          duration: ${update.animations.scale.config.duration},
+          repeat: ${update.animations.scale.config.repeat},
+          yoyo: ${update.animations.scale.config.yoyo},
+          ease: '${update.animations.scale.config.ease}'
+        });`
+            : ""
+        }
+
+        // Transparency animation
+        ${
+          update.animations?.transparency?.isEnabled
+            ? `
+        this.tweens.add({
+          targets: updateTarget${counter}_${idx},
+          alpha: ${update.animations.transparency.config.alpha},
+          duration: ${update.animations.transparency.config.duration},
+          repeat: ${update.animations.transparency.config.repeat},
+          yoyo: ${update.animations.transparency.config.yoyo},
+          ease: '${update.animations.transparency.config.ease}'
+        });`
+            : ""
+        }
+
+        // Fade-in animation
+        ${
+          update.animations?.fadeIn?.isEnabled
+            ? `
+        updateTarget${counter}_${idx}.setAlpha(0);
+        this.tweens.add({
+          targets: updateTarget${counter}_${idx},
+          alpha: 1,
+          duration: ${update.animations.fadeIn.config.duration},
+          ease: '${update.animations.fadeIn.config.ease}'
+        });`
+            : ""
+        }
+
+        // Disappear animation
+        ${
+          update.animations?.disappear?.isEnabled
+            ? `
+        this.time.delayedCall(${update.animations.disappear.config.delay}, () => {
+          this.tweens.add({
+            targets: updateTarget${counter}_${idx},
+            alpha: 0,
+            duration: ${update.animations.disappear.config.duration},
+            ease: '${update.animations.disappear.config.ease}',
+            onComplete: () => updateTarget${counter}_${idx}.destroy()
+          });
+        });`
+            : ""
+        }
+      };
+
+      // Handle slide-in animation
+      ${
+        update.animations?.slideIn?.isEnabled
+          ? `
+      let startX = ${update.x};
+      let startY = ${update.y};
+      switch ('${update.animations.slideIn.config.direction}') {
+        case 'left': startX -= ${update.animations.slideIn.config.distance}; break;
+        case 'right': startX += ${update.animations.slideIn.config.distance}; break;
+        case 'top': startY -= ${update.animations.slideIn.config.distance}; break;
+        case 'bottom': startY += ${update.animations.slideIn.config.distance}; break;
+      }
+      updateTarget${counter}_${idx}.setPosition(startX, startY);
+      this.tweens.add({
+        targets: updateTarget${counter}_${idx},
+        x: ${update.x},
+        y: ${update.y},
+        duration: ${update.animations.slideIn.config.duration},
+        ease: '${update.animations.slideIn.config.ease}',
+        onComplete: startAnimations
+      });`
+          : `
+      startAnimations();`
+      }
+    }`;
+                  });
+                  break;
+
+                case "remove":
+                  console.log("remove", action.config.frameToDelete);
+                  action.config.framesToDelete?.forEach((frame, idx) => {
+                    code += `
+    const targetToRemove_${idx} = this.children.list.find(
+      child => child.getData('id') === ${frame.targetId}
+    );
+    if (targetToRemove_${idx}) {
+      // Stop any existing tweens
+      this.tweens.getTweensOf(targetToRemove_${idx}).forEach((tween) => {
+        tween.stop();
+        tween.remove();
+      });
+
+      // Add fade out and destroy
+      this.tweens.add({
+        targets: targetToRemove_${idx},
+        alpha: 0,
+        duration: ${frame.fadeOutDuration || 500},
+        delay: ${frame.delay || 0},
+        ease: '${frame.ease || "Linear"}',
+        onComplete: () => {
+          if (targetToRemove_${idx} && targetToRemove_${idx}.destroy) {
+            targetToRemove_${idx}.destroy();
+          }
+        }
+      });
+    }`;
+                  });
+                  break;
+              }
+            }
+          });
+
+          code += `\n}, this);\n\n`;
+        }
       });
 
       // Calculate delay for next sequence
@@ -1201,23 +1278,447 @@ this.time.delayedCall(${totalDelay}, () => {
               sprite.animations.fadeIn.config.duration
             );
           }
-          if (sprite.animations.disappear.isEnabled) {
-            duration = Math.max(
-              duration,
-              sprite.animations.disappear.config.delay +
-                sprite.animations.disappear.config.duration
-            );
-          }
           return duration;
         })
       );
 
-      totalDelay += maxDuration + 1000; // Add 1 second gap between sequences
+      totalDelay += maxDuration + 1000;
       code += "\n";
     });
 
     return code;
   };
+
+  // Add this new function near generatePhaserCode
+  //   const generateAllPhaserCode = (sprites) => {
+  //     // Group sprites by priority
+  //     const groupedSprites = sprites.reduce((acc, sprite) => {
+  //       const priority =
+  //         sprite.animations.slideIn?.config?.priority ||
+  //         sprite.animations.fadeIn?.config?.priority ||
+  //         0;
+  //       if (!acc[priority]) acc[priority] = [];
+  //       acc[priority].push(sprite);
+  //       return acc;
+  //     }, {});
+
+  //     // Sort priorities
+  //     const priorities = Object.keys(groupedSprites).sort(
+  //       (a, b) => Number(a) - Number(b)
+  //     );
+
+  //     let code = "// All Sprites and Animations\n\n";
+  //     let totalDelay = 0;
+
+  //     priorities.forEach((priority) => {
+  //       const sprites = groupedSprites[priority];
+  //       code += `// Sequence ${priority}\n`;
+
+  //       sprites.forEach((sprite) => {
+  //         const counter = sprites.indexOf(sprite) + 1;
+  //         const varName = `sprite${counter}_seq${priority}`;
+
+  //         code += `const ${varName} = this.add
+  //   .sprite(${Math.round(sprite.x)}, ${Math.round(
+  //           sprite.y
+  //         )}, 'spritesheetname', '${sprite.frameName}')
+  //   .setOrigin(0, 0)
+  //   .setScale(${sprite.scale})
+  //   .setData('id', ${sprite.id});\n\n`;
+
+  //         if (sprite.animations.slideIn.isEnabled) {
+  //           const slideConfig = sprite.animations.slideIn.config;
+  //           let initialPos;
+  //           switch (slideConfig.direction) {
+  //             case "left":
+  //               initialPos = `${varName}.setPosition(${Math.round(sprite.x)} - ${
+  //                 slideConfig.distance
+  //               }, ${Math.round(sprite.y)});`;
+  //               break;
+  //             case "right":
+  //               initialPos = `${varName}.setPosition(${Math.round(sprite.x)} + ${
+  //                 slideConfig.distance
+  //               }, ${Math.round(sprite.y)});`;
+  //               break;
+  //             case "top":
+  //               initialPos = `${varName}.setPosition(${Math.round(
+  //                 sprite.x
+  //               )}, ${Math.round(sprite.y)} - ${slideConfig.distance});`;
+  //               break;
+  //             case "bottom":
+  //               initialPos = `${varName}.setPosition(${Math.round(
+  //                 sprite.x
+  //               )}, ${Math.round(sprite.y)} + ${slideConfig.distance});`;
+  //               break;
+  //           }
+
+  //           code += `${initialPos}\n
+  // this.time.delayedCall(${totalDelay}, () => {
+  //   this.tweens.add({
+  //     targets: ${varName},
+  //     x: ${Math.round(sprite.x)},
+  //     y: ${Math.round(sprite.y)},
+  //     duration: ${slideConfig.duration},
+  //     ease: '${slideConfig.ease}'
+  //   });
+  // });\n`;
+  //         }
+
+  //         if (sprite.animations.fadeIn.isEnabled) {
+  //           const fadeConfig = sprite.animations.fadeIn.config;
+  //           code += `${varName}.setAlpha(0);\n
+  // this.time.delayedCall(${totalDelay}, () => {
+  //   this.tweens.add({
+  //     targets: ${varName},
+  //     alpha: 1,
+  //     duration: ${fadeConfig.duration},
+  //     ease: '${fadeConfig.ease}'
+  //   });
+  // });\n`;
+  //         }
+
+  //         // Add common animations
+  //         if (
+  //           sprite.animations?.position?.isEnabled ||
+  //           sprite.animations?.scale?.isEnabled ||
+  //           sprite.animations?.transparency?.isEnabled
+  //         ) {
+  //           code += `\nthis.time.delayedCall(${totalDelay + 500}, () => {\n`;
+
+  //           if (sprite.animations.position.isEnabled) {
+  //             const posConfig = sprite.animations.position.config;
+  //             code += `  this.tweens.add({
+  //     targets: ${varName},
+  //     x: ${Math.round(sprite.x)} + ${Math.round(posConfig.x * 100)},
+  //     y: ${Math.round(sprite.y)} + ${Math.round(posConfig.y * 100)},
+  //     duration: ${posConfig.duration},
+  //     repeat: ${posConfig.repeat},
+  //     yoyo: ${posConfig.yoyo},
+  //     ease: '${posConfig.ease}'
+  //   });\n`;
+  //           }
+
+  //           // Add scale and transparency animations similarly...
+
+  //           code += `});\n`;
+  //         }
+
+  //         if (sprite.animations.disappear.isEnabled) {
+  //           const disappearConfig = sprite.animations.disappear.config;
+  //           code += `\nthis.time.delayedCall(${
+  //             totalDelay + disappearConfig.delay
+  //           }, () => {
+  //     this.tweens.add({
+  //       targets: ${varName},
+  //       alpha: 0,
+  //       duration: ${disappearConfig.duration},
+  //       ease: '${disappearConfig.ease}',
+  //       onComplete: () => ${varName}.destroy()
+  //     });
+  //   });\n`;
+  //         }
+  //         if (sprite.clickAction?.enabled) {
+  //           if (sprite.clickAction.type === "add") {
+  //             code += `\n// Click Action Setup
+  //   ${varName}.setInteractive();
+  //   ${varName}.on('pointerdown', function() {`;
+
+  //             sprite.clickAction.config.framesToAdd.forEach(
+  //               (frameConfig, idx) => {
+  //                 const clickFrameVarName = `clickFrame${counter}_${idx}`;
+
+  //                 code += `\n  const ${clickFrameVarName} = this.add
+  //       .sprite(${Math.round(frameConfig.x)}, ${Math.round(
+  //                   frameConfig.y
+  //                 )}, 'spritesheetname', '${frameConfig.frameName}')
+  //       .setOrigin(0, 0)
+  //       .setScale(${frameConfig.scale || 1})
+  //       .setRotation(${frameConfig.rotation || 0})
+  //       .setAlpha(${frameConfig.alpha || 1});`;
+
+  //                 // Add slide-in animation if enabled
+  //                 if (frameConfig.animations?.slideIn?.isEnabled) {
+  //                   const slideConfig = frameConfig.animations.slideIn.config;
+  //                   let initialPos;
+  //                   switch (slideConfig.direction) {
+  //                     case "left":
+  //                       initialPos = `${clickFrameVarName}.setPosition(${Math.round(
+  //                         frameConfig.x
+  //                       )} - ${slideConfig.distance}, ${Math.round(
+  //                         frameConfig.y
+  //                       )});`;
+  //                       break;
+  //                     case "right":
+  //                       initialPos = `${clickFrameVarName}.setPosition(${Math.round(
+  //                         frameConfig.x
+  //                       )} + ${slideConfig.distance}, ${Math.round(
+  //                         frameConfig.y
+  //                       )});`;
+  //                       break;
+  //                     case "top":
+  //                       initialPos = `${clickFrameVarName}.setPosition(${Math.round(
+  //                         frameConfig.x
+  //                       )}, ${Math.round(frameConfig.y)} - ${
+  //                         slideConfig.distance
+  //                       });`;
+  //                       break;
+  //                     case "bottom":
+  //                       initialPos = `${clickFrameVarName}.setPosition(${Math.round(
+  //                         frameConfig.x
+  //                       )}, ${Math.round(frameConfig.y)} + ${
+  //                         slideConfig.distance
+  //                       });`;
+  //                       break;
+  //                   }
+
+  //                   code += `\n  ${initialPos}
+  //     this.tweens.add({
+  //       targets: ${clickFrameVarName},
+  //       x: ${Math.round(frameConfig.x)},
+  //       y: ${Math.round(frameConfig.y)},
+  //       duration: ${slideConfig.duration},
+  //       ease: '${slideConfig.ease}'
+  //     });`;
+  //                 }
+
+  //                 // Add fade-in animation if enabled
+  //                 if (frameConfig.animations?.fadeIn?.isEnabled) {
+  //                   const fadeConfig = frameConfig.animations.fadeIn.config;
+  //                   code += `\n  ${clickFrameVarName}.setAlpha(0);
+  //     this.tweens.add({
+  //       targets: ${clickFrameVarName},
+  //       alpha: 1,
+  //       duration: ${fadeConfig.duration},
+  //       ease: '${fadeConfig.ease}'
+  //     });`;
+  //                 }
+
+  //                 // Add position animation if enabled
+  //                 if (frameConfig.animations?.position?.isEnabled) {
+  //                   const posConfig = frameConfig.animations.position.config;
+  //                   code += `\n  this.tweens.add({
+  //       targets: ${clickFrameVarName},
+  //       x: ${Math.round(frameConfig.x)} + ${Math.round(posConfig.x * 100)},
+  //       y: ${Math.round(frameConfig.y)} + ${Math.round(posConfig.y * 100)},
+  //       duration: ${posConfig.duration},
+  //       repeat: ${posConfig.repeat},
+  //       yoyo: ${posConfig.yoyo},
+  //       ease: '${posConfig.ease}'
+  //     });`;
+  //                 }
+
+  //                 // Add scale animation if enabled
+  //                 if (frameConfig.animations?.scale?.isEnabled) {
+  //                   const scaleConfig = frameConfig.animations.scale.config;
+  //                   code += `\n  this.tweens.add({
+  //       targets: ${clickFrameVarName},
+  //       scaleX: ${scaleConfig.scaleX},
+  //       scaleY: ${scaleConfig.scaleY},
+  //       duration: ${scaleConfig.duration},
+  //       repeat: ${scaleConfig.repeat},
+  //       yoyo: ${scaleConfig.yoyo},
+  //       ease: '${scaleConfig.ease}'
+  //     });`;
+  //                 }
+
+  //                 // Add disappear animation if enabled
+  //                 if (frameConfig.animations?.disappear?.isEnabled) {
+  //                   const disappearConfig =
+  //                     frameConfig.animations.disappear.config;
+  //                   code += `\n  this.time.delayedCall(${disappearConfig.delay}, () => {
+  //       this.tweens.add({
+  //         targets: ${clickFrameVarName},
+  //         alpha: 0,
+  //         duration: ${disappearConfig.duration},
+  //         ease: '${disappearConfig.ease}',
+  //         onComplete: () => ${clickFrameVarName}.destroy()
+  //       });
+  //     });`;
+  //                 }
+  //               }
+  //             );
+
+  //             code += `\n}, this);\n\n`;
+  //           } else if (sprite.clickAction.type === "update") {
+  //             code += `\n// Click Action Setup
+  //   ${varName}.setInteractive();
+  //   ${varName}.on('pointerdown', function() {`;
+  //             sprite.clickAction.config.frameToUpdate?.forEach((update, idx) => {
+  //               code += `\n  const targetSprite${counter}_${idx} = this.children.list.find(
+  //     child => child.getData('id') === ${update.targetId}
+  //   );
+
+  //   if (targetSprite${counter}_${idx}) {
+  //     ${
+  //       update.newFrameName
+  //         ? `targetSprite${counter}_${idx}.setTexture('spritesheetname', '${update.newFrameName}');`
+  //         : ""
+  //     }`;
+
+  //               // Add slide-in animation if enabled
+  //               if (update.animations?.slideIn?.isEnabled) {
+  //                 const slideConfig = update.animations.slideIn.config;
+  //                 let initialPos;
+  //                 switch (slideConfig.direction) {
+  //                   case "left":
+  //                     initialPos = `targetSprite${counter}_${idx}.setPosition(${Math.round(
+  //                       update.x
+  //                     )} - ${slideConfig.distance}, ${Math.round(update.y)});`;
+  //                     break;
+  //                   case "right":
+  //                     initialPos = `targetSprite${counter}_${idx}.setPosition(${Math.round(
+  //                       update.x
+  //                     )} + ${slideConfig.distance}, ${Math.round(update.y)});`;
+  //                     break;
+  //                   case "top":
+  //                     initialPos = `targetSprite${counter}_${idx}.setPosition(${Math.round(
+  //                       update.x
+  //                     )}, ${Math.round(update.y)} - ${slideConfig.distance});`;
+  //                     break;
+  //                   case "bottom":
+  //                     initialPos = `targetSprite${counter}_${idx}.setPosition(${Math.round(
+  //                       update.x
+  //                     )}, ${Math.round(update.y)} + ${slideConfig.distance});`;
+  //                     break;
+  //                 }
+
+  //                 code += `\n    ${initialPos}
+  //     this.tweens.add({
+  //       targets: targetSprite${counter}_${idx},
+  //       x: ${Math.round(update.x)},
+  //       y: ${Math.round(update.y)},
+  //       duration: ${slideConfig.duration},
+  //       ease: '${slideConfig.ease}'
+  //     });`;
+  //               }
+
+  //               // Add fade-in animation if enabled
+  //               if (update.animations?.fadeIn?.isEnabled) {
+  //                 const fadeConfig = update.animations.fadeIn.config;
+  //                 code += `\n    targetSprite${counter}_${idx}.setAlpha(0);
+  //     this.tweens.add({
+  //       targets: targetSprite${counter}_${idx},
+  //       alpha: 1,
+  //       duration: ${fadeConfig.duration},
+  //       ease: '${fadeConfig.ease}'
+  //     });`;
+  //               }
+
+  //               // Add position animation if enabled
+  //               if (update.animations?.position?.isEnabled) {
+  //                 const posConfig = update.animations.position.config;
+  //                 code += `\n    this.tweens.add({
+  //       targets: targetSprite${counter}_${idx},
+  //       x: ${Math.round(update.x)} + ${Math.round(posConfig.x * 100)},
+  //       y: ${Math.round(update.y)} + ${Math.round(posConfig.y * 100)},
+  //       duration: ${posConfig.duration},
+  //       repeat: ${posConfig.repeat},
+  //       yoyo: ${posConfig.yoyo},
+  //       ease: '${posConfig.ease}'
+  //     });`;
+  //               }
+
+  //               // Add scale animation if enabled
+  //               if (update.animations?.scale?.isEnabled) {
+  //                 const scaleConfig = update.animations.scale.config;
+  //                 code += `\n    this.tweens.add({
+  //       targets: targetSprite${counter}_${idx},
+  //       scaleX: ${scaleConfig.scaleX},
+  //       scaleY: ${scaleConfig.scaleY},
+  //       duration: ${scaleConfig.duration},
+  //       repeat: ${scaleConfig.repeat},
+  //       yoyo: ${scaleConfig.yoyo},
+  //       ease: '${scaleConfig.ease}'
+  //     });`;
+  //               }
+
+  //               // Add disappear animation if enabled
+  //               if (update.animations?.disappear?.isEnabled) {
+  //                 const disappearConfig = update.animations.disappear.config;
+  //                 code += `\n    this.time.delayedCall(${disappearConfig.delay}, () => {
+  //       this.tweens.add({
+  //         targets: targetSprite${counter}_${idx},
+  //         alpha: 0,
+  //         duration: ${disappearConfig.duration},
+  //         ease: '${disappearConfig.ease}',
+  //         onComplete: () => targetSprite${counter}_${idx}.destroy()
+  //       });
+  //     });`;
+  //               }
+
+  //               code += `
+  //   }`;
+  //             });
+  //             code += `\n}, this);\n\n`;
+  //           } else if (
+  //             sprite.clickAction?.type === "remove" &&
+  //             sprite.clickAction.config.framesToDelete?.length > 0
+  //           ) {
+  //             code += `\n// Click Action Setup
+  //   ${varName}.setInteractive();
+  //   ${varName}.on('pointerdown', function() {`;
+
+  //             sprite.clickAction.config.framesToDelete.forEach(
+  //               (frameConfig, idx) => {
+  //                 code += `
+  //     const targetSprite = this.children.list.find(
+  //       child => child.getData('id') === ${frameConfig.targetId}
+  //     );
+
+  //     if (targetSprite) {
+  //       this.tweens.add({
+  //         targets: targetSprite,
+  //         alpha: 0,
+  //         duration: ${frameConfig.fadeOutDuration || 500},
+  //         delay: ${frameConfig.delay || 0},
+  //         ease: '${frameConfig.ease || "Linear"}',
+  //         onComplete: () => targetSprite.destroy()
+  //       });
+  //     }`;
+  //               }
+  //             );
+
+  //             code += `
+  //   }, this);`;
+  //           }
+  //         }
+
+  //         // code += "\n";
+  //       });
+
+  //       // Calculate delay for next sequence
+  //       const maxDuration = Math.max(
+  //         ...sprites.map((sprite) => {
+  //           let duration = 0;
+  //           if (sprite.animations.slideIn.isEnabled) {
+  //             duration = Math.max(
+  //               duration,
+  //               sprite.animations.slideIn.config.duration
+  //             );
+  //           }
+  //           if (sprite.animations.fadeIn.isEnabled) {
+  //             duration = Math.max(
+  //               duration,
+  //               sprite.animations.fadeIn.config.duration
+  //             );
+  //           }
+  //           if (sprite.animations.disappear.isEnabled) {
+  //             duration = Math.max(
+  //               duration,
+  //               sprite.animations.disappear.config.delay +
+  //                 sprite.animations.disappear.config.duration
+  //             );
+  //           }
+  //           return duration;
+  //         })
+  //       );
+
+  //       totalDelay += maxDuration + 1000; // Add 1 second gap between sequences
+  //       code += "\n";
+  //     });
+
+  //     return code;
+  //   };
 
   // Add this new function near handleCopyCode
   const handleCopyAllCode = () => {
@@ -1307,210 +1808,298 @@ this.time.delayedCall(${totalDelay}, () => {
     });
   };
 
+  // const handlePreviewClick = (clickedSprite) => {
+  //   const scene = game.playground;
+  //   if (!scene || !clickedSprite.clickAction?.enabled) return;
+
+  //   const { type, config } = clickedSprite.clickAction;
+
+  //   switch (type) {
+  //     case "update":
+  //       if (!config.frameToUpdate) return;
+
+  //       config.frameToUpdate.forEach((update) => {
+  //         const targetSprite = scene.children.list.find(
+  //           (child) => child.getData("id") === Number(update.targetId)
+  //         );
+
+  //         if (!targetSprite) return;
+
+  //         // Update frame texture first if needed
+  //         if (update.newFrameName) {
+  //           targetSprite.setTexture("charactersprite", update.newFrameName);
+  //         }
+
+  //         // Handle custom animations first
+  //         if (update.animations?.slideIn?.isEnabled) {
+  //           const getInitialPosition = () => {
+  //             const { direction, distance } = update.animations.slideIn.config;
+  //             switch (direction) {
+  //               case "left":
+  //                 return { x: update.x - distance, y: update.y };
+  //               case "right":
+  //                 return { x: update.x + distance, y: update.y };
+  //               case "top":
+  //                 return { x: update.x, y: update.y - distance };
+  //               case "bottom":
+  //                 return { x: update.x, y: update.y + distance };
+  //               default:
+  //                 return { x: update.x, y: update.y };
+  //             }
+  //           };
+
+  //           const initialPos = getInitialPosition();
+  //           targetSprite.setPosition(initialPos.x, initialPos.y);
+
+  //           scene.tweens.add({
+  //             targets: targetSprite,
+  //             x: update.x,
+  //             y: update.y,
+  //             duration: update.animations.slideIn.config.duration,
+  //             ease: update.animations.slideIn.config.ease,
+  //             onComplete: () =>
+  //               handleCommonAnimations(
+  //                 {
+  //                   ...update,
+  //                   baseX: update.x,
+  //                   baseY: update.y,
+  //                   animations: update.animations || {},
+  //                 },
+  //                 targetSprite,
+  //                 scene
+  //               ),
+  //           });
+  //         } else if (update.animations?.fadeIn?.isEnabled) {
+  //           targetSprite.setAlpha(0);
+  //           scene.tweens.add({
+  //             targets: targetSprite,
+  //             alpha: 1,
+  //             duration: update.animations.fadeIn.config.duration,
+  //             ease: update.animations.fadeIn.config.ease,
+  //             onComplete: () =>
+  //               handleCommonAnimations(
+  //                 {
+  //                   ...update,
+  //                   baseX: update.x,
+  //                   baseY: update.y,
+  //                   animations: update.animations || {},
+  //                 },
+  //                 targetSprite,
+  //                 scene
+  //               ),
+  //           });
+  //         } else {
+  //           // Set initial position and properties
+  //           targetSprite.setPosition(update.x, update.y);
+  //           targetSprite.setScale(update.scale);
+  //           targetSprite.setRotation((update.rotation * Math.PI) / 180);
+  //           targetSprite.setAlpha(update.alpha);
+
+  //           // Handle common animations directly if no custom animations
+  //           handleCommonAnimations(
+  //             {
+  //               ...update,
+  //               baseX: update.x,
+  //               baseY: update.y,
+  //               animations: update.animations || {},
+  //             },
+  //             targetSprite,
+  //             scene
+  //           );
+  //         }
+
+  //         // Handle disappear animation separately
+  //         if (update.animations?.disappear?.isEnabled) {
+  //           scene.time.delayedCall(
+  //             update.animations.disappear.config.delay,
+  //             () => {
+  //               scene.tweens.add({
+  //                 targets: targetSprite,
+  //                 alpha: 0,
+  //                 duration: update.animations.disappear.config.duration,
+  //                 ease: update.animations.disappear.config.ease,
+  //                 onComplete: () => {
+  //                   targetSprite.destroy();
+  //                 },
+  //               });
+  //             }
+  //           );
+  //         }
+  //       });
+  //       break;
+
+  //     case "add":
+  //       // Keep existing add case
+  //       if (
+  //         Array.isArray(config.framesToAdd) &&
+  //         config.framesToAdd.length > 0
+  //       ) {
+  //         config.framesToAdd.forEach((frameConfig) => {
+  //           // Create the sprite at the original configured position
+  //           const newSprite = scene.add
+  //             .sprite(
+  //               frameConfig.x,
+  //               frameConfig.y,
+  //               "charactersprite",
+  //               frameConfig.frameName
+  //             )
+  //             .setOrigin(0, 0)
+  //             .setScale(frameConfig.scale)
+  //             .setRotation(frameConfig.rotation)
+  //             .setAlpha(frameConfig.alpha)
+  //             .setData("id", Date.now());
+
+  //           // Handle animations without adding to placedSprites
+  //           if (frameConfig.animations?.slideIn?.isEnabled) {
+  //             const { direction, distance } =
+  //               frameConfig.animations.slideIn.config;
+  //             let initialPos = { x: frameConfig.x, y: frameConfig.y };
+
+  //             switch (direction) {
+  //               case "left":
+  //                 initialPos.x = frameConfig.x - distance;
+  //                 break;
+  //               case "right":
+  //                 initialPos.x = frameConfig.x + distance;
+  //                 break;
+  //               case "top":
+  //                 initialPos.y = frameConfig.y - distance;
+  //                 break;
+  //               case "bottom":
+  //                 initialPos.y = frameConfig.y + distance;
+  //                 break;
+  //             }
+
+  //             newSprite.setPosition(initialPos.x, initialPos.y);
+  //             scene.tweens.add({
+  //               targets: newSprite,
+  //               x: frameConfig.x,
+  //               y: frameConfig.y,
+  //               duration: frameConfig.animations.slideIn.config.duration,
+  //               ease: frameConfig.animations.slideIn.config.ease,
+  //               onComplete: () =>
+  //                 handleCommonAnimations({ ...frameConfig }, newSprite, scene),
+  //             });
+  //           } else {
+  //             handleCommonAnimations({ ...frameConfig }, newSprite, scene);
+  //           }
+  //         });
+  //       }
+  //       break;
+  //     case "remove":
+  //       if (
+  //         Array.isArray(config.framesToDelete) &&
+  //         config.framesToDelete.length > 0
+  //       ) {
+  //         config.framesToDelete.forEach((frameConfig) => {
+  //           const targetSprite = scene.children.list.find(
+  //             (child) => child.getData("id") === Number(frameConfig.targetId)
+  //           );
+
+  //           if (targetSprite) {
+  //             scene.tweens.add({
+  //               targets: targetSprite,
+  //               alpha: 0,
+  //               duration: frameConfig.fadeOutDuration || 500,
+  //               delay: frameConfig.delay || 0,
+  //               ease: frameConfig.ease || "Linear",
+  //               onComplete: () => {
+  //                 targetSprite.destroy();
+  //               },
+  //             });
+  //           }
+  //         });
+  //       }
+  //       break;
+  //   }
+  // };
+
   const handlePreviewClick = (clickedSprite) => {
     const scene = game.playground;
     if (!scene || !clickedSprite.clickAction?.enabled) return;
 
-    const { type, config } = clickedSprite.clickAction;
+    // Execute all enabled actions in sequence
+    clickedSprite.clickAction.actions.forEach((action) => {
+      if (!action.enabled) return;
 
-    switch (type) {
-      case "update":
-        if (!config.frameToUpdate) return;
+      switch (action.type) {
+        case "add":
+          if (
+            Array.isArray(action.config.framesToAdd) &&
+            action.config.framesToAdd.length > 0
+          ) {
+            action.config.framesToAdd.forEach((frameConfig) => {
+              const newSprite = scene.add
+                .sprite(
+                  frameConfig.x,
+                  frameConfig.y,
+                  "charactersprite",
+                  frameConfig.frameName
+                )
+                .setOrigin(0, 0)
+                .setScale(frameConfig.scale || 1)
+                .setRotation(frameConfig.rotation || 0)
+                .setAlpha(frameConfig.alpha || 1);
 
-        config.frameToUpdate.forEach((update) => {
-          const targetSprite = scene.children.list.find(
-            (child) => child.getData("id") === Number(update.targetId)
-          );
-
-          if (!targetSprite) return;
-
-          // Update frame texture first if needed
-          if (update.newFrameName) {
-            targetSprite.setTexture("charactersprite", update.newFrameName);
-          }
-
-          // Handle custom animations first
-          if (update.animations?.slideIn?.isEnabled) {
-            const getInitialPosition = () => {
-              const { direction, distance } = update.animations.slideIn.config;
-              switch (direction) {
-                case "left":
-                  return { x: update.x - distance, y: update.y };
-                case "right":
-                  return { x: update.x + distance, y: update.y };
-                case "top":
-                  return { x: update.x, y: update.y - distance };
-                case "bottom":
-                  return { x: update.x, y: update.y + distance };
-                default:
-                  return { x: update.x, y: update.y };
+              // Handle animations for the new sprite
+              if (frameConfig.animations) {
+                handleSpriteAnimations(frameConfig, newSprite, scene);
               }
-            };
-
-            const initialPos = getInitialPosition();
-            targetSprite.setPosition(initialPos.x, initialPos.y);
-
-            scene.tweens.add({
-              targets: targetSprite,
-              x: update.x,
-              y: update.y,
-              duration: update.animations.slideIn.config.duration,
-              ease: update.animations.slideIn.config.ease,
-              onComplete: () =>
-                handleCommonAnimations(
-                  {
-                    ...update,
-                    baseX: update.x,
-                    baseY: update.y,
-                    animations: update.animations || {},
-                  },
-                  targetSprite,
-                  scene
-                ),
             });
-          } else if (update.animations?.fadeIn?.isEnabled) {
-            targetSprite.setAlpha(0);
-            scene.tweens.add({
-              targets: targetSprite,
-              alpha: 1,
-              duration: update.animations.fadeIn.config.duration,
-              ease: update.animations.fadeIn.config.ease,
-              onComplete: () =>
-                handleCommonAnimations(
-                  {
-                    ...update,
-                    baseX: update.x,
-                    baseY: update.y,
-                    animations: update.animations || {},
-                  },
-                  targetSprite,
-                  scene
-                ),
+          }
+          break;
+
+        case "update":
+          if (Array.isArray(action.config.frameToUpdate)) {
+            action.config.frameToUpdate.forEach((update) => {
+              const targetSprite = scene.children.list.find(
+                (child) => child.getData("id") === Number(update.targetId)
+              );
+
+              if (targetSprite) {
+                if (update.newFrameName) {
+                  targetSprite.setTexture(
+                    "charactersprite",
+                    update.newFrameName
+                  );
+                }
+
+                // Handle animations for the updated sprite
+                if (update.animations) {
+                  handleSpriteAnimations(update, targetSprite, scene);
+                }
+              }
             });
-          } else {
-            // Set initial position and properties
-            targetSprite.setPosition(update.x, update.y);
-            targetSprite.setScale(update.scale);
-            targetSprite.setRotation((update.rotation * Math.PI) / 180);
-            targetSprite.setAlpha(update.alpha);
-
-            // Handle common animations directly if no custom animations
-            handleCommonAnimations(
-              {
-                ...update,
-                baseX: update.x,
-                baseY: update.y,
-                animations: update.animations || {},
-              },
-              targetSprite,
-              scene
-            );
           }
+          break;
 
-          // Handle disappear animation separately
-          if (update.animations?.disappear?.isEnabled) {
-            scene.time.delayedCall(
-              update.animations.disappear.config.delay,
-              () => {
-                scene.tweens.add({
-                  targets: targetSprite,
-                  alpha: 0,
-                  duration: update.animations.disappear.config.duration,
-                  ease: update.animations.disappear.config.ease,
-                  onComplete: () => {
-                    targetSprite.destroy();
-                  },
-                });
-              }
-            );
+        case "remove":
+          if (Array.isArray(action.config.framesToDelete)) {
+            action.config.framesToDelete.forEach((frameConfig) => {
+              const targetSprites = scene.children.list.filter(
+                (child) => 
+                  child.getData("id") === Number(frameConfig.targetId) ||
+                  (child.getData("frameConfig")?.frameName === frameConfig.frameName &&
+                   child.getData("parentId") === frameConfig.parentId)
+              );
+
+              targetSprites.forEach(targetSprite => {
+                if (targetSprite) {
+                  scene.tweens.add({
+                    targets: targetSprite,
+                    alpha: 0,
+                    duration: frameConfig.fadeOutDuration || 500,
+                    delay: frameConfig.delay || 0,
+                    ease: frameConfig.ease || "Linear",
+                    onComplete: () => targetSprite.destroy()
+                  });
+                }
+              });
+            });
           }
-        });
-        break;
-
-      case "add":
-        // Keep existing add case
-        if (
-          Array.isArray(config.framesToAdd) &&
-          config.framesToAdd.length > 0
-        ) {
-          config.framesToAdd.forEach((frameConfig) => {
-            // Create the sprite at the original configured position
-            const newSprite = scene.add
-              .sprite(
-                frameConfig.x,
-                frameConfig.y,
-                "charactersprite",
-                frameConfig.frameName
-              )
-              .setOrigin(0, 0)
-              .setScale(frameConfig.scale)
-              .setRotation(frameConfig.rotation)
-              .setAlpha(frameConfig.alpha)
-              .setData("id", Date.now());
-
-            // Handle animations without adding to placedSprites
-            if (frameConfig.animations?.slideIn?.isEnabled) {
-              const { direction, distance } =
-                frameConfig.animations.slideIn.config;
-              let initialPos = { x: frameConfig.x, y: frameConfig.y };
-
-              switch (direction) {
-                case "left":
-                  initialPos.x = frameConfig.x - distance;
-                  break;
-                case "right":
-                  initialPos.x = frameConfig.x + distance;
-                  break;
-                case "top":
-                  initialPos.y = frameConfig.y - distance;
-                  break;
-                case "bottom":
-                  initialPos.y = frameConfig.y + distance;
-                  break;
-              }
-
-              newSprite.setPosition(initialPos.x, initialPos.y);
-              scene.tweens.add({
-                targets: newSprite,
-                x: frameConfig.x,
-                y: frameConfig.y,
-                duration: frameConfig.animations.slideIn.config.duration,
-                ease: frameConfig.animations.slideIn.config.ease,
-                onComplete: () =>
-                  handleCommonAnimations({ ...frameConfig }, newSprite, scene),
-              });
-            } else {
-              handleCommonAnimations({ ...frameConfig }, newSprite, scene);
-            }
-          });
-        }
-        break;
-      case "remove":
-        if (
-          Array.isArray(config.framesToDelete) &&
-          config.framesToDelete.length > 0
-        ) {
-          config.framesToDelete.forEach((frameConfig) => {
-            const targetSprite = scene.children.list.find(
-              (child) => child.getData("id") === Number(frameConfig.targetId)
-            );
-
-            if (targetSprite) {
-              scene.tweens.add({
-                targets: targetSprite,
-                alpha: 0,
-                duration: frameConfig.fadeOutDuration || 500,
-                delay: frameConfig.delay || 0,
-                ease: frameConfig.ease || "Linear",
-                onComplete: () => {
-                  targetSprite.destroy();
-                },
-              });
-            }
-          });
-        }
-        break;
-    }
+          break;
+      }
+    });
   };
 
   const handleCommonAnimations = (spriteObj, target, scene) => {
