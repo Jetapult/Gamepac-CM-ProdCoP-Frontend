@@ -5,6 +5,7 @@ import PositionAnimationPanel from "../PositionAnimationPanel";
 import ScaleAnimationPanel from "../ScaleAnimationPanel";
 import SlideInAnimationPanel from "../SlideInAnimationPanel";
 import VisibilityAnimationPanel from "../VisibilityAnimationPanel";
+import NestedClickActionPanel from "./NestedClickActionPanel";
 
 const AddActionPanel = ({
   action,
@@ -16,7 +17,9 @@ const AddActionPanel = ({
   game,
   activeTweens,
   sprite,
-  startCommonAnimations
+  startCommonAnimations,
+  isNested = false,
+  updatePlacedSprites
 }) => {
   const [activePanel, setActivePanel] = useState("");
 
@@ -77,7 +80,7 @@ const AddActionPanel = ({
         <div className="mt-4">
           <h4 className="font-bold mb-2 text-white">Added Frames:</h4>
           <div className="space-y-4">
-            {action.config.framesToAdd.map((frame, index) => (
+            {action.config.framesToAdd?.reverse()?.map((frame, index) => (
               <div
                 key={index}
                 className="bg-[#333] p-3 rounded border border-[#444]"
@@ -286,6 +289,25 @@ const AddActionPanel = ({
                   >
                     <span className="text-white">⌛</span>
                   </button>
+                  {/* nested click actions */}
+                  {/* <button
+                    className={`p-2 border rounded ${
+                      activePanel === "clickActions"
+                        ? "border-purple-500 bg-purple-500/20"
+                        : "border-[#444]"
+                    } ${
+                      frame.clickAction?.enabled
+                        ? "bg-purple-500/10"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setActivePanel((prev) =>
+                        prev === "clickActions" ? "" : "clickActions"
+                      )
+                    }
+                  >
+                    <span className="text-white">🔄</span>
+                  </button> */}
                 </div>
                 {activePanel === "position" && (
                   <PositionAnimationPanel
@@ -325,7 +347,6 @@ const AddActionPanel = ({
                     }
                   />
                 )}
-                {console.log(frame?.animations, "frame?.animations")}
                 {activePanel === "visibility" && (
                   <VisibilityAnimationPanel
                     config={frame?.animations?.transparency?.config}
@@ -400,6 +421,19 @@ const AddActionPanel = ({
                         },
                       })
                     }
+                  />
+                )}
+
+                {activePanel === "clickActions" && (
+                  <NestedClickActionPanel
+                    frame={frame}
+                    spriteData={spriteData}
+                    game={game}
+                    updateFrameAnimation={updateFrameAnimation}
+                    index={index}
+                    isNested={isNested}
+                    updatePlacedSprites={updatePlacedSprites}
+                    sprite={sprite}
                   />
                 )}
               </div>

@@ -6,14 +6,14 @@ import RemoveActionPanel from "./UserClickAction/RemoveActionPanel";
 
 const ClickActionPanel = ({
   sprite,
-  setPlacedSprites,
+  updatePlacedSprites,
   placedSprites,
   spriteData,
   game,
 }) => {
   if (!spriteData) return null;
   const handleActionTypeChange = (type, enabled) => {
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((s) => {
         if (s.id === sprite.id) {
           const existingActions = s.clickAction?.actions || [];
@@ -27,7 +27,10 @@ const ClickActionPanel = ({
               {
                 type,
                 enabled: true,
-                config: getDefaultConfigForType(type),
+                config: {
+                  ...getDefaultConfigForType(type),
+                  allowNestedClickActions: true, // Enable nested click actions by default
+                },
               },
             ];
           } else if (!enabled) {
@@ -76,7 +79,7 @@ const ClickActionPanel = ({
       targetSprite.setTexture("charactersprite", newFrameName);
     }
 
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((s) => {
         if (s.id === sprite.id) {
           const existingActions = s.clickAction?.actions || [];
@@ -125,7 +128,7 @@ const ClickActionPanel = ({
   const handleAddFrame = (frameName) => {
     if (!game?.playground) return;
 
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((s) => {
         if (s.id === sprite.id) {
           const newFrame = {
@@ -138,6 +141,10 @@ const ClickActionPanel = ({
             rotation: 0,
             alpha: 1,
             animations: createDefaultAnimations(),
+            clickAction: {
+              enabled: false,
+              actions: [],
+            },
           };
 
           const existingActions = s.clickAction?.actions || [];
@@ -155,6 +162,7 @@ const ClickActionPanel = ({
                 config: {
                   isPlacingFrame: true,
                   framesToAdd: [newFrame],
+                  allowNestedClickActions: true,
                 },
               },
             ];
@@ -171,6 +179,7 @@ const ClickActionPanel = ({
                       ...(action.config.framesToAdd || []),
                       newFrame,
                     ],
+                    allowNestedClickActions: true,
                   },
                 };
               }
@@ -191,7 +200,7 @@ const ClickActionPanel = ({
     );
   };
   const handleRemoveFrame = (index) => {
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((s) => {
         if (s.id === sprite.id) {
           const updatedActions = s.clickAction.actions.map((action) => {
@@ -245,7 +254,7 @@ const ClickActionPanel = ({
       (option) => option.value
     );
 
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((s) => {
         if (s.id === sprite.id) {
           const existingActions = s.clickAction?.actions || [];
@@ -402,7 +411,7 @@ const ClickActionPanel = ({
   };
 
   const updateFrameProperties = (frameIndex, updates) => {
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((s) => {
         if (s.id === sprite.id) {
           // Find the add action in the actions array
@@ -666,7 +675,7 @@ const ClickActionPanel = ({
 
   // Update animation configuration
   const updateFrameAnimation = (frameIndex, type, updates) => {
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((s) => {
         if (s.id === sprite.id) {
           // Find and update the add action
@@ -748,7 +757,7 @@ const ClickActionPanel = ({
   };
 
   const handleUpdateFrameProperty = (targetId, property, value) => {
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((s) => {
         if (s.id === sprite.id) {
           const currentConfig = s.clickAction?.config || {};
@@ -782,7 +791,7 @@ const ClickActionPanel = ({
   const updateFrameUpdateAnimation = (frameIndex, type, updates) => {
     const scene = game.scene.scenes[0];
 
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((s) => {
         if (s.id === sprite.id) {
           const updatedActions = s.clickAction.actions.map((action) => {
@@ -985,7 +994,7 @@ const ClickActionPanel = ({
     if (!game?.playground) return;
     const scene = game.playground;
 
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((s) => {
         if (s.id === sprite.id) {
           const updatedActions = s.clickAction.actions.map((action) => {
@@ -1077,7 +1086,7 @@ const ClickActionPanel = ({
       scene.tweens.killTweensOf(targetSprite);
 
       // Update placedSprites to remove this target from frameToUpdate and targetIds
-      setPlacedSprites((prev) =>
+      updatePlacedSprites((prev) =>
         prev.map((s) => {
           if (s.id === sprite.id) {
             const updatedActions = s.clickAction.actions.map((action) => {
@@ -1113,7 +1122,7 @@ const ClickActionPanel = ({
   };
 
   const handleRemoveTarget = (targetId) => {
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((s) => {
         if (s.id === sprite.id) {
           return {
@@ -1153,7 +1162,7 @@ const ClickActionPanel = ({
       return action;
     };
   
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((s) =>
         s.id === sprite.id
           ? {
@@ -1206,6 +1215,7 @@ const ClickActionPanel = ({
                     game={game}
                     activeTweens={activeTweens}
                     startCommonAnimations={startCommonAnimations}
+                    updatePlacedSprites={updatePlacedSprites}
                   />
                 )}
                 {action.type === "update" && (

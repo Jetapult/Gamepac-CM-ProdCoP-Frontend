@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, useCallback, useContext } from "react";
 import Phaser from "phaser";
 import AnimationPanel from "./components/AnimationPanel";
-import PlayModePanel from "./components/PlayModePanel";
+import SceneManager from "./components/scenes/SceneManager";
+import SceneManagerButton from "./components/scenes/SceneManagerButton";
+import PreviewModal from "./components/PreviewModal";
 
-// Add these constants at the top of Playground.jsx
 const STORAGE_KEY = "playgroundState";
 
-// Helper functions for localStorage
 const saveToLocalStorage = (state) => {
   try {
     const serializedState = JSON.stringify(state);
@@ -26,7 +26,6 @@ const loadFromLocalStorage = () => {
   }
 };
 
-// Create default animation config outside component
 export const createDefaultAnimations = () => ({
   position: {
     isEnabled: false,
@@ -123,11 +122,152 @@ const Playground = () => {
   const [spriteData, setSpriteData] = useState(null);
   const [frameNames, setFrameNames] = useState([]);
   const [selectedFrame, setSelectedFrame] = useState("");
-  const [placedSprites, setPlacedSprites] = useState([]);
   const [orientation, setOrientation] = useState("landscape");
   const [isPlaying, setIsPlaying] = useState(false);
   const [canPlaceSprite, setCanPlaceSprite] = useState(true);
-  const [mode, setMode] = useState("edit"); // 'edit' or 'play'
+  const [scenes, setScenes] = useState([
+    {
+      id: 1,
+      name: "Scene 1",
+      placedSprites: [],
+      isActive: true,
+    },
+  ]);
+  const [activeSceneId, setActiveSceneId] = useState(1);
+  const [isSceneManagerOpen, setIsSceneManagerOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const getActiveScene = () => scenes.find((s) => s.id === activeSceneId);
+  const getActivePlacedSprites = () => getActiveScene()?.placedSprites || [];
+  const placedSprites = getActivePlacedSprites();
+
+  const updatePlacedSprites = (updaterFn) => {
+    setScenes(prevScenes => 
+      prevScenes.map(scene => 
+        scene.id === activeSceneId 
+          ? { ...scene, placedSprites: updaterFn(scene.placedSprites) }
+          : scene
+      )
+    );
+  };
+
+  const handleAddScene = () => {
+    const newId = Math.max(...scenes.map((s) => s.id)) + 1;
+    setScenes([
+      ...scenes,
+      {
+        id: newId,
+        name: `Scene ${newId}`,
+        placedSprites: [],
+        isActive: false,
+        nextSceneId: null,
+      },
+    ]);
+  };
+
+  const handleDeleteScene = (id) => {
+    if (scenes.length <= 1) return;
+    setScenes(scenes.filter((s) => s.id !== id));
+    if (activeSceneId === id) {
+      setActiveSceneId(scenes[0].id);
+    }
+  };
+
+  const handleSceneNameChange = (id, newName) => {
+    setScenes(scenes.map((s) => (s.id === id ? { ...s, name: newName } : s)));
+  };
+
+  const handleSceneSelect = (sceneId) => {
+    if (game?.playground) {
+      const scene = game.playground;
+      scene.children.list
+        .filter((child) => child.type === "Sprite")
+        .forEach((sprite) => sprite.destroy());
+        
+      const targetScene = scenes.find(s => s.id === sceneId);
+      
+      if (targetScene?.placedSprites?.length > 0) {
+        targetScene.placedSprites.forEach(savedSprite => {
+          const sprite = scene.add
+            .sprite(
+              savedSprite.x,
+              savedSprite.y,
+              "charactersprite",
+              savedSprite.frameName
+            )
+            .setOrigin(0, 0)
+            .setScale(savedSprite.scale)
+            .setRotation((savedSprite.rotation * Math.PI) / 180)
+            .setAlpha(savedSprite.alpha || 1)
+            .setInteractive();
+  
+          scene.input.setDraggable(sprite);
+          sprite.setData("id", savedSprite.id);
+  
+          sprite.on("pointerdown", () => handleSpriteClick(savedSprite));
+          sprite.on("drag", (pointer, dragX, dragY) => {
+            sprite.setPosition(dragX, dragY);
+            updateSpritePosition(savedSprite.id, dragX, dragY);
+          });
+        });
+      }
+    }
+    setActiveSceneId(sceneId);
+  };
+
+  const handleSceneTransition = (targetSceneId) => {
+    if (!game?.playground) return;
+    
+    const scene = game.playground;
+    scene.children.list
+      .filter((child) => child.type === "Sprite")
+      .forEach((sprite) => sprite.destroy());
+  
+    setActiveSceneId(targetSceneId);
+    
+    const targetScene = scenes.find(s => s.id === targetSceneId);
+    if (targetScene?.placedSprites?.length > 0) {
+      targetScene.placedSprites.forEach(savedSprite => {
+        const sprite = scene.add
+          .sprite(savedSprite.x, savedSprite.y, "charactersprite", savedSprite.frameName)
+          .setOrigin(0, 0)
+          .setScale(savedSprite.scale)
+          .setRotation((savedSprite.rotation * Math.PI) / 180)
+          .setAlpha(savedSprite.alpha || 1);
+      });
+    }
+  };
+
+  const handleUpdateTransition = (sceneId, nextSceneId, spriteId) => {
+    setScenes((prevScenes) =>
+      prevScenes.map((scene) =>
+        scene.id === sceneId
+          ? {
+              ...scene,
+              placedSprites: scene.placedSprites.map(sprite =>
+                sprite.id === Number(spriteId)
+                  ? {
+                      ...sprite,
+                      clickAction: {
+                        enabled: true,
+                        actions: [
+                          {
+                            type: "sceneTransition",
+                            enabled: true,
+                            config: {
+                              targetSceneId: Number(nextSceneId),
+                            },
+                          },
+                        ],
+                      },
+                    }
+                  : sprite
+              ),
+            }
+          : scene
+      )
+    );
+  };
 
   useEffect(() => {
     if (!gameContainerRef.current) return;
@@ -156,7 +296,6 @@ const Playground = () => {
       scene: {
         create: function () {
           this.game.playground = this;
-          // Enable input plugin
           this.input.enabled = true;
         },
       },
@@ -174,7 +313,6 @@ const Playground = () => {
     setOrientation((prev) => (prev === "landscape" ? "portrait" : "landscape"));
   };
 
-  // Handle spritesheet upload
   const handleSpriteUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -198,7 +336,6 @@ const Playground = () => {
     reader.readAsDataURL(file);
   };
 
-  // Handle JSON upload
   const handleJsonUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -235,7 +372,6 @@ const Playground = () => {
     reader.readAsText(file);
   };
 
-  // Add frame preview component
   const FramePreview = ({ frameName }) => {
     const previewRef = useRef(null);
 
@@ -269,15 +405,13 @@ const Playground = () => {
     return <canvas ref={previewRef} className="max-w-full" />;
   };
 
-  // Handle sprite placement
   const handleCanvasClick = (e) => {
-    if (mode !== "edit" || !game || !spritesheet || !selectedFrame) return;
+    if (!game || !spritesheet || !selectedFrame) return;
     const scene = game.playground;
     const rect = e.target.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (1920 / rect.width);
     const y = (e.clientY - rect.top) * (1080 / rect.height);
 
-    // Check if we're placing a frame for click action
     const clickActionSprite = placedSprites.find(
       (sprite) =>
         sprite.clickAction?.enabled &&
@@ -297,7 +431,6 @@ const Playground = () => {
       const lastFrameIndex = addAction.config.framesToAdd.length - 1;
       const frameConfig = addAction.config.framesToAdd[lastFrameIndex];
 
-      // Create the preview sprite with full opacity
       const previewSprite = scene.add
         .sprite(x, y, "charactersprite", frameConfig.frameName)
         .setOrigin(0, 0)
@@ -305,12 +438,10 @@ const Playground = () => {
         .setAlpha(1)
         .setData("id", Date.now());
 
-      // Store reference data
       previewSprite.setData("frameConfig", frameConfig);
       previewSprite.setData("parentId", clickActionSprite.id);
 
-      // Update the placedSprites state
-      setPlacedSprites((prev) =>
+      updatePlacedSprites((prev) =>
         prev.map((s) => {
           if (s.id === clickActionSprite.id) {
             const updatedActions = s.clickAction.actions.map((action) => {
@@ -345,18 +476,15 @@ const Playground = () => {
       return;
     }
 
-    // Regular sprite placement logic for selectedFrame
     if (selectedFrame && canPlaceSprite) {
-      // Create the sprite with all necessary properties
       const sprite = scene.add
         .sprite(x, y, "charactersprite", selectedFrame)
         .setOrigin(0, 0)
-        .setInteractive({ draggable: true }) // Enable both interaction and dragging
+        .setInteractive({ draggable: true })
         .setScale(1)
         .setAlpha(1)
         .setData("id", Date.now());
 
-      // Create the sprite object
       const newSprite = {
         id: Date.now(),
         frameName: selectedFrame,
@@ -376,39 +504,28 @@ const Playground = () => {
         },
       };
 
-      // Add event listeners
       sprite.on("pointerdown", () => {
-        if (mode === "edit") {
-          handleSpriteClick(newSprite);
-        } else if (mode === "play" && newSprite.clickAction?.enabled) {
-          handlePreviewClick(newSprite);
-        }
+        handleSpriteClick(newSprite);
       });
 
       sprite.on("drag", (pointer, dragX, dragY) => {
         sprite.setPosition(dragX, dragY);
         newSprite.x = dragX;
         newSprite.y = dragY;
-        // Update the placedSprites array with new position
-        setPlacedSprites((prev) =>
+        updatePlacedSprites((prev) =>
           prev.map((s) =>
             s.id === newSprite.id ? { ...s, x: dragX, y: dragY } : s
           )
         );
       });
-
-      // Add to placedSprites array
-      setPlacedSprites((prev) => [...prev, newSprite]);
+      updatePlacedSprites((prev) => [...prev, newSprite]);
       setCanPlaceSprite(false);
-
-      // Save the current state
       saveCurrentState();
     }
   };
 
-  // Add click handler function
   const handleSpriteClick = (clickedSprite) => {
-    if (!game?.playground || mode !== "play") return;
+    if (!game?.playground) return;
     const { type, config } = clickedSprite.clickAction;
     const scene = game.playground;
 
@@ -445,26 +562,23 @@ const Playground = () => {
               parentId: clickedSprite.id,
             };
 
-            setPlacedSprites((prev) => [...prev, spriteObj]);
+            updatePlacedSprites((prev) => [...prev, spriteObj]);
           });
         }
         break;
       case "update":
         const { frameToUpdate } = clickedSprite.clickAction.config;
 
-        // Apply updates to each target sprite
         frameToUpdate.forEach((update) => {
           const targetSprite = placedSprites.find(
             (s) => s.id === Number(update.targetId)
           )?.phaserSprite;
           if (!targetSprite) return;
 
-          // Update frame
           if (update.newFrameName) {
             targetSprite.setTexture("charactersprite", update.newFrameName);
           }
 
-          // Update properties
           targetSprite.setPosition(update.x, update.y);
           targetSprite.setScale(update.scale);
           targetSprite.setRotation((update.rotation * Math.PI) / 180);
@@ -490,7 +604,7 @@ const Playground = () => {
                 ease: frameConfig.ease,
                 onComplete: () => {
                   targetSprite.destroy();
-                  setPlacedSprites((prev) =>
+                  updatePlacedSprites((prev) =>
                     prev.filter((s) => s.id !== Number(frameConfig.targetId))
                   );
                 },
@@ -502,9 +616,8 @@ const Playground = () => {
     }
   };
 
-  // Update sprite position
   const updateSpritePosition = (id, newX, newY) => {
-    setPlacedSprites((prev) => {
+    updatePlacedSprites((prev) => {
       const updated = prev.map((sprite) => {
         if (sprite.id === id) {
           sprite.phaserSprite.setPosition(Number(newX), Number(newY));
@@ -521,9 +634,8 @@ const Playground = () => {
     });
   };
 
-  // Update sprite scale
   const updateSpriteScale = (id, newScale) => {
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((sprite) => {
         if (sprite.id === id) {
           sprite.phaserSprite.setScale(Number(newScale));
@@ -538,17 +650,15 @@ const Playground = () => {
     saveCurrentState();
   };
 
-  // Update sprite rotation
   const updateSpriteRotation = (id, newRotation) => {
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((sprite) => {
         if (sprite.id === id) {
-          // Convert degrees to radians for Phaser
           const rotationInRadians = (Number(newRotation) * Math.PI) / 180;
           sprite.phaserSprite.setRotation(rotationInRadians);
           return {
             ...sprite,
-            rotation: Number(newRotation), // Store rotation in degrees
+            rotation: Number(newRotation),
           };
         }
         return sprite;
@@ -558,7 +668,7 @@ const Playground = () => {
   };
 
   const updateSpriteTransparency = (id, newAlpha) => {
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((sprite) => {
         if (sprite.id === id) {
           sprite.phaserSprite.setAlpha(Number(newAlpha));
@@ -574,24 +684,34 @@ const Playground = () => {
   };
 
   const deleteSprite = useCallback((id) => {
-    setPlacedSprites((prev) => {
-      const spriteToDelete = prev.find((sprite) => sprite.id === id);
-      if (spriteToDelete?.phaserSprite && !spriteToDelete.isDestroyed) {
-        spriteToDelete.phaserSprite.destroy();
+    setScenes(prevScenes => 
+      prevScenes.map(scene => {
+        if (scene.id === activeSceneId) {
+          return {
+            ...scene,
+            placedSprites: scene.placedSprites.filter(sprite => sprite.id !== id)
+          };
+        }
+        return scene;
+      })
+    );
+  
+    if (game?.playground) {
+      const spriteToDelete = game.playground.children.list.find(
+        child => child.getData('id') === id
+      );
+      if (spriteToDelete) {
+        spriteToDelete.destroy();
       }
-      const updated = prev.filter((sprite) => sprite.id !== id);
-      saveCurrentState();
-      return updated;
-    });
-  }, []);
+    }
+    
+    saveCurrentState();
+  }, [game, activeSceneId]);
 
-  // Modify generatePhaserCode to include animations
   const generatePhaserCode = (sprite) => {
-    // Create a counter for the variable name
     const counter = placedSprites.findIndex((s) => s.id === sprite.id) + 1;
     const varName = `sprite${counter}`;
 
-    // Base sprite code with all properties including scale
     let code = `// ${sprite.frameName} sprite
 const ${varName} = this.add
   .sprite(${Math.round(sprite.x)}, ${Math.round(
@@ -601,13 +721,11 @@ const ${varName} = this.add
   .setScale(${sprite.scale})`;
     console.log(sprite.frameName, "frameName");
 
-    // Update all references to use varName instead of uniqueVarName
     if (sprite.animations) {
       if (sprite.animations.slideIn.isEnabled) {
         const slideConfig = sprite.animations.slideIn.config;
         let initialX, initialY;
 
-        // Calculate initial position based on direction
         switch (slideConfig.direction) {
           case "left":
             initialX = `${Math.round(sprite.x)} - ${slideConfig.distance}`;
@@ -634,7 +752,6 @@ const ${varName} = this.add
 // Set initial position
 ${varName}.setPosition(${initialX}, ${initialY});`;
 
-        // Create slide-in tween with callback for common animations
         code += `\n\n// Create slide-in tween with callback for common animations
 const slideInTween${counter} = this.tweens.add({
   targets: ${varName},
@@ -645,7 +762,6 @@ const slideInTween${counter} = this.tweens.add({
   delay: ${slideConfig.priority * 200}, // Delay based on priority
   onComplete: function() {`;
 
-        // Add common animations inside the onComplete callback
         if (sprite.animations.position.isEnabled) {
           const posConfig = sprite.animations.position.config;
           code += `\n    // Position animation
@@ -704,7 +820,6 @@ const fadeInTween${counter} = this.tweens.add({
   delay: ${fadeConfig.priority * 200}, // Delay based on priority
   onComplete: function() {`;
 
-        // Add common animations inside the onComplete callback
         if (sprite.animations.position.isEnabled) {
           const posConfig = sprite.animations.position.config;
           code += `\n    // Position animation
@@ -749,7 +864,6 @@ const fadeInTween${counter} = this.tweens.add({
         code += `\n  }
 });`;
       } else {
-        // If no custom animations (slide-in or fade-in), add common animations directly
         if (sprite.animations.position.isEnabled) {
           const posConfig = sprite.animations.position.config;
           code += `\n\n// Position animation
@@ -792,7 +906,6 @@ this.tweens.add({
         }
       }
 
-      // Add this inside generatePhaserCode after the other animations
       if (sprite.animations.disappear.isEnabled) {
         const disappearConfig = sprite.animations.disappear.config;
         code += `\n\n// Disappear animation
@@ -816,13 +929,11 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
   const handleCopyCode = (sprite) => {
     const code = generatePhaserCode(sprite);
     navigator.clipboard.writeText(code).then(() => {
-      // Optional: Add some user feedback that code was copied
       console.log("Code copied to clipboard");
     });
   };
 
   const generateAllPhaserCode = (sprites) => {
-    // Group sprites by priority
     const groupedSprites = sprites.reduce((acc, sprite) => {
       const priority =
         sprite.animations.slideIn?.config?.priority ||
@@ -847,7 +958,6 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
         const counter = index + 1;
         const varName = `sprite${counter}_seq${priority}`;
 
-        // Create sprite
         code += `const ${varName} = this.add
     .sprite(${Math.round(sprite.x)}, ${Math.round(
           sprite.y
@@ -858,7 +968,6 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     .setAlpha(${sprite.alpha || 1})
     .setData('id', ${sprite.id});\n\n`;
 
-        // Add initial animations (slide-in and fade-in)
         if (sprite.animations.slideIn.isEnabled) {
           const slideConfig = sprite.animations.slideIn.config;
           let initialPos;
@@ -909,7 +1018,6 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
   });\n\n`;
         }
 
-        // Add common animations
         if (sprite.animations.position.isEnabled) {
           const posConfig = sprite.animations.position.config;
           code += `// Position animation
@@ -970,7 +1078,6 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     });`;
         }
 
-        // Add click actions
         if (sprite.clickAction?.enabled) {
           code += `// Click Action Setup
   ${varName}.setInteractive();
@@ -1262,7 +1369,6 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
         }
       });
 
-      // Calculate delay for next sequence
       const maxDuration = Math.max(
         ...sprites.map((sprite) => {
           let duration = 0;
@@ -1289,438 +1395,6 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     return code;
   };
 
-  // Add this new function near generatePhaserCode
-  //   const generateAllPhaserCode = (sprites) => {
-  //     // Group sprites by priority
-  //     const groupedSprites = sprites.reduce((acc, sprite) => {
-  //       const priority =
-  //         sprite.animations.slideIn?.config?.priority ||
-  //         sprite.animations.fadeIn?.config?.priority ||
-  //         0;
-  //       if (!acc[priority]) acc[priority] = [];
-  //       acc[priority].push(sprite);
-  //       return acc;
-  //     }, {});
-
-  //     // Sort priorities
-  //     const priorities = Object.keys(groupedSprites).sort(
-  //       (a, b) => Number(a) - Number(b)
-  //     );
-
-  //     let code = "// All Sprites and Animations\n\n";
-  //     let totalDelay = 0;
-
-  //     priorities.forEach((priority) => {
-  //       const sprites = groupedSprites[priority];
-  //       code += `// Sequence ${priority}\n`;
-
-  //       sprites.forEach((sprite) => {
-  //         const counter = sprites.indexOf(sprite) + 1;
-  //         const varName = `sprite${counter}_seq${priority}`;
-
-  //         code += `const ${varName} = this.add
-  //   .sprite(${Math.round(sprite.x)}, ${Math.round(
-  //           sprite.y
-  //         )}, 'spritesheetname', '${sprite.frameName}')
-  //   .setOrigin(0, 0)
-  //   .setScale(${sprite.scale})
-  //   .setData('id', ${sprite.id});\n\n`;
-
-  //         if (sprite.animations.slideIn.isEnabled) {
-  //           const slideConfig = sprite.animations.slideIn.config;
-  //           let initialPos;
-  //           switch (slideConfig.direction) {
-  //             case "left":
-  //               initialPos = `${varName}.setPosition(${Math.round(sprite.x)} - ${
-  //                 slideConfig.distance
-  //               }, ${Math.round(sprite.y)});`;
-  //               break;
-  //             case "right":
-  //               initialPos = `${varName}.setPosition(${Math.round(sprite.x)} + ${
-  //                 slideConfig.distance
-  //               }, ${Math.round(sprite.y)});`;
-  //               break;
-  //             case "top":
-  //               initialPos = `${varName}.setPosition(${Math.round(
-  //                 sprite.x
-  //               )}, ${Math.round(sprite.y)} - ${slideConfig.distance});`;
-  //               break;
-  //             case "bottom":
-  //               initialPos = `${varName}.setPosition(${Math.round(
-  //                 sprite.x
-  //               )}, ${Math.round(sprite.y)} + ${slideConfig.distance});`;
-  //               break;
-  //           }
-
-  //           code += `${initialPos}\n
-  // this.time.delayedCall(${totalDelay}, () => {
-  //   this.tweens.add({
-  //     targets: ${varName},
-  //     x: ${Math.round(sprite.x)},
-  //     y: ${Math.round(sprite.y)},
-  //     duration: ${slideConfig.duration},
-  //     ease: '${slideConfig.ease}'
-  //   });
-  // });\n`;
-  //         }
-
-  //         if (sprite.animations.fadeIn.isEnabled) {
-  //           const fadeConfig = sprite.animations.fadeIn.config;
-  //           code += `${varName}.setAlpha(0);\n
-  // this.time.delayedCall(${totalDelay}, () => {
-  //   this.tweens.add({
-  //     targets: ${varName},
-  //     alpha: 1,
-  //     duration: ${fadeConfig.duration},
-  //     ease: '${fadeConfig.ease}'
-  //   });
-  // });\n`;
-  //         }
-
-  //         // Add common animations
-  //         if (
-  //           sprite.animations?.position?.isEnabled ||
-  //           sprite.animations?.scale?.isEnabled ||
-  //           sprite.animations?.transparency?.isEnabled
-  //         ) {
-  //           code += `\nthis.time.delayedCall(${totalDelay + 500}, () => {\n`;
-
-  //           if (sprite.animations.position.isEnabled) {
-  //             const posConfig = sprite.animations.position.config;
-  //             code += `  this.tweens.add({
-  //     targets: ${varName},
-  //     x: ${Math.round(sprite.x)} + ${Math.round(posConfig.x * 100)},
-  //     y: ${Math.round(sprite.y)} + ${Math.round(posConfig.y * 100)},
-  //     duration: ${posConfig.duration},
-  //     repeat: ${posConfig.repeat},
-  //     yoyo: ${posConfig.yoyo},
-  //     ease: '${posConfig.ease}'
-  //   });\n`;
-  //           }
-
-  //           // Add scale and transparency animations similarly...
-
-  //           code += `});\n`;
-  //         }
-
-  //         if (sprite.animations.disappear.isEnabled) {
-  //           const disappearConfig = sprite.animations.disappear.config;
-  //           code += `\nthis.time.delayedCall(${
-  //             totalDelay + disappearConfig.delay
-  //           }, () => {
-  //     this.tweens.add({
-  //       targets: ${varName},
-  //       alpha: 0,
-  //       duration: ${disappearConfig.duration},
-  //       ease: '${disappearConfig.ease}',
-  //       onComplete: () => ${varName}.destroy()
-  //     });
-  //   });\n`;
-  //         }
-  //         if (sprite.clickAction?.enabled) {
-  //           if (sprite.clickAction.type === "add") {
-  //             code += `\n// Click Action Setup
-  //   ${varName}.setInteractive();
-  //   ${varName}.on('pointerdown', function() {`;
-
-  //             sprite.clickAction.config.framesToAdd.forEach(
-  //               (frameConfig, idx) => {
-  //                 const clickFrameVarName = `clickFrame${counter}_${idx}`;
-
-  //                 code += `\n  const ${clickFrameVarName} = this.add
-  //       .sprite(${Math.round(frameConfig.x)}, ${Math.round(
-  //                   frameConfig.y
-  //                 )}, 'spritesheetname', '${frameConfig.frameName}')
-  //       .setOrigin(0, 0)
-  //       .setScale(${frameConfig.scale || 1})
-  //       .setRotation(${frameConfig.rotation || 0})
-  //       .setAlpha(${frameConfig.alpha || 1});`;
-
-  //                 // Add slide-in animation if enabled
-  //                 if (frameConfig.animations?.slideIn?.isEnabled) {
-  //                   const slideConfig = frameConfig.animations.slideIn.config;
-  //                   let initialPos;
-  //                   switch (slideConfig.direction) {
-  //                     case "left":
-  //                       initialPos = `${clickFrameVarName}.setPosition(${Math.round(
-  //                         frameConfig.x
-  //                       )} - ${slideConfig.distance}, ${Math.round(
-  //                         frameConfig.y
-  //                       )});`;
-  //                       break;
-  //                     case "right":
-  //                       initialPos = `${clickFrameVarName}.setPosition(${Math.round(
-  //                         frameConfig.x
-  //                       )} + ${slideConfig.distance}, ${Math.round(
-  //                         frameConfig.y
-  //                       )});`;
-  //                       break;
-  //                     case "top":
-  //                       initialPos = `${clickFrameVarName}.setPosition(${Math.round(
-  //                         frameConfig.x
-  //                       )}, ${Math.round(frameConfig.y)} - ${
-  //                         slideConfig.distance
-  //                       });`;
-  //                       break;
-  //                     case "bottom":
-  //                       initialPos = `${clickFrameVarName}.setPosition(${Math.round(
-  //                         frameConfig.x
-  //                       )}, ${Math.round(frameConfig.y)} + ${
-  //                         slideConfig.distance
-  //                       });`;
-  //                       break;
-  //                   }
-
-  //                   code += `\n  ${initialPos}
-  //     this.tweens.add({
-  //       targets: ${clickFrameVarName},
-  //       x: ${Math.round(frameConfig.x)},
-  //       y: ${Math.round(frameConfig.y)},
-  //       duration: ${slideConfig.duration},
-  //       ease: '${slideConfig.ease}'
-  //     });`;
-  //                 }
-
-  //                 // Add fade-in animation if enabled
-  //                 if (frameConfig.animations?.fadeIn?.isEnabled) {
-  //                   const fadeConfig = frameConfig.animations.fadeIn.config;
-  //                   code += `\n  ${clickFrameVarName}.setAlpha(0);
-  //     this.tweens.add({
-  //       targets: ${clickFrameVarName},
-  //       alpha: 1,
-  //       duration: ${fadeConfig.duration},
-  //       ease: '${fadeConfig.ease}'
-  //     });`;
-  //                 }
-
-  //                 // Add position animation if enabled
-  //                 if (frameConfig.animations?.position?.isEnabled) {
-  //                   const posConfig = frameConfig.animations.position.config;
-  //                   code += `\n  this.tweens.add({
-  //       targets: ${clickFrameVarName},
-  //       x: ${Math.round(frameConfig.x)} + ${Math.round(posConfig.x * 100)},
-  //       y: ${Math.round(frameConfig.y)} + ${Math.round(posConfig.y * 100)},
-  //       duration: ${posConfig.duration},
-  //       repeat: ${posConfig.repeat},
-  //       yoyo: ${posConfig.yoyo},
-  //       ease: '${posConfig.ease}'
-  //     });`;
-  //                 }
-
-  //                 // Add scale animation if enabled
-  //                 if (frameConfig.animations?.scale?.isEnabled) {
-  //                   const scaleConfig = frameConfig.animations.scale.config;
-  //                   code += `\n  this.tweens.add({
-  //       targets: ${clickFrameVarName},
-  //       scaleX: ${scaleConfig.scaleX},
-  //       scaleY: ${scaleConfig.scaleY},
-  //       duration: ${scaleConfig.duration},
-  //       repeat: ${scaleConfig.repeat},
-  //       yoyo: ${scaleConfig.yoyo},
-  //       ease: '${scaleConfig.ease}'
-  //     });`;
-  //                 }
-
-  //                 // Add disappear animation if enabled
-  //                 if (frameConfig.animations?.disappear?.isEnabled) {
-  //                   const disappearConfig =
-  //                     frameConfig.animations.disappear.config;
-  //                   code += `\n  this.time.delayedCall(${disappearConfig.delay}, () => {
-  //       this.tweens.add({
-  //         targets: ${clickFrameVarName},
-  //         alpha: 0,
-  //         duration: ${disappearConfig.duration},
-  //         ease: '${disappearConfig.ease}',
-  //         onComplete: () => ${clickFrameVarName}.destroy()
-  //       });
-  //     });`;
-  //                 }
-  //               }
-  //             );
-
-  //             code += `\n}, this);\n\n`;
-  //           } else if (sprite.clickAction.type === "update") {
-  //             code += `\n// Click Action Setup
-  //   ${varName}.setInteractive();
-  //   ${varName}.on('pointerdown', function() {`;
-  //             sprite.clickAction.config.frameToUpdate?.forEach((update, idx) => {
-  //               code += `\n  const targetSprite${counter}_${idx} = this.children.list.find(
-  //     child => child.getData('id') === ${update.targetId}
-  //   );
-
-  //   if (targetSprite${counter}_${idx}) {
-  //     ${
-  //       update.newFrameName
-  //         ? `targetSprite${counter}_${idx}.setTexture('spritesheetname', '${update.newFrameName}');`
-  //         : ""
-  //     }`;
-
-  //               // Add slide-in animation if enabled
-  //               if (update.animations?.slideIn?.isEnabled) {
-  //                 const slideConfig = update.animations.slideIn.config;
-  //                 let initialPos;
-  //                 switch (slideConfig.direction) {
-  //                   case "left":
-  //                     initialPos = `targetSprite${counter}_${idx}.setPosition(${Math.round(
-  //                       update.x
-  //                     )} - ${slideConfig.distance}, ${Math.round(update.y)});`;
-  //                     break;
-  //                   case "right":
-  //                     initialPos = `targetSprite${counter}_${idx}.setPosition(${Math.round(
-  //                       update.x
-  //                     )} + ${slideConfig.distance}, ${Math.round(update.y)});`;
-  //                     break;
-  //                   case "top":
-  //                     initialPos = `targetSprite${counter}_${idx}.setPosition(${Math.round(
-  //                       update.x
-  //                     )}, ${Math.round(update.y)} - ${slideConfig.distance});`;
-  //                     break;
-  //                   case "bottom":
-  //                     initialPos = `targetSprite${counter}_${idx}.setPosition(${Math.round(
-  //                       update.x
-  //                     )}, ${Math.round(update.y)} + ${slideConfig.distance});`;
-  //                     break;
-  //                 }
-
-  //                 code += `\n    ${initialPos}
-  //     this.tweens.add({
-  //       targets: targetSprite${counter}_${idx},
-  //       x: ${Math.round(update.x)},
-  //       y: ${Math.round(update.y)},
-  //       duration: ${slideConfig.duration},
-  //       ease: '${slideConfig.ease}'
-  //     });`;
-  //               }
-
-  //               // Add fade-in animation if enabled
-  //               if (update.animations?.fadeIn?.isEnabled) {
-  //                 const fadeConfig = update.animations.fadeIn.config;
-  //                 code += `\n    targetSprite${counter}_${idx}.setAlpha(0);
-  //     this.tweens.add({
-  //       targets: targetSprite${counter}_${idx},
-  //       alpha: 1,
-  //       duration: ${fadeConfig.duration},
-  //       ease: '${fadeConfig.ease}'
-  //     });`;
-  //               }
-
-  //               // Add position animation if enabled
-  //               if (update.animations?.position?.isEnabled) {
-  //                 const posConfig = update.animations.position.config;
-  //                 code += `\n    this.tweens.add({
-  //       targets: targetSprite${counter}_${idx},
-  //       x: ${Math.round(update.x)} + ${Math.round(posConfig.x * 100)},
-  //       y: ${Math.round(update.y)} + ${Math.round(posConfig.y * 100)},
-  //       duration: ${posConfig.duration},
-  //       repeat: ${posConfig.repeat},
-  //       yoyo: ${posConfig.yoyo},
-  //       ease: '${posConfig.ease}'
-  //     });`;
-  //               }
-
-  //               // Add scale animation if enabled
-  //               if (update.animations?.scale?.isEnabled) {
-  //                 const scaleConfig = update.animations.scale.config;
-  //                 code += `\n    this.tweens.add({
-  //       targets: targetSprite${counter}_${idx},
-  //       scaleX: ${scaleConfig.scaleX},
-  //       scaleY: ${scaleConfig.scaleY},
-  //       duration: ${scaleConfig.duration},
-  //       repeat: ${scaleConfig.repeat},
-  //       yoyo: ${scaleConfig.yoyo},
-  //       ease: '${scaleConfig.ease}'
-  //     });`;
-  //               }
-
-  //               // Add disappear animation if enabled
-  //               if (update.animations?.disappear?.isEnabled) {
-  //                 const disappearConfig = update.animations.disappear.config;
-  //                 code += `\n    this.time.delayedCall(${disappearConfig.delay}, () => {
-  //       this.tweens.add({
-  //         targets: targetSprite${counter}_${idx},
-  //         alpha: 0,
-  //         duration: ${disappearConfig.duration},
-  //         ease: '${disappearConfig.ease}',
-  //         onComplete: () => targetSprite${counter}_${idx}.destroy()
-  //       });
-  //     });`;
-  //               }
-
-  //               code += `
-  //   }`;
-  //             });
-  //             code += `\n}, this);\n\n`;
-  //           } else if (
-  //             sprite.clickAction?.type === "remove" &&
-  //             sprite.clickAction.config.framesToDelete?.length > 0
-  //           ) {
-  //             code += `\n// Click Action Setup
-  //   ${varName}.setInteractive();
-  //   ${varName}.on('pointerdown', function() {`;
-
-  //             sprite.clickAction.config.framesToDelete.forEach(
-  //               (frameConfig, idx) => {
-  //                 code += `
-  //     const targetSprite = this.children.list.find(
-  //       child => child.getData('id') === ${frameConfig.targetId}
-  //     );
-
-  //     if (targetSprite) {
-  //       this.tweens.add({
-  //         targets: targetSprite,
-  //         alpha: 0,
-  //         duration: ${frameConfig.fadeOutDuration || 500},
-  //         delay: ${frameConfig.delay || 0},
-  //         ease: '${frameConfig.ease || "Linear"}',
-  //         onComplete: () => targetSprite.destroy()
-  //       });
-  //     }`;
-  //               }
-  //             );
-
-  //             code += `
-  //   }, this);`;
-  //           }
-  //         }
-
-  //         // code += "\n";
-  //       });
-
-  //       // Calculate delay for next sequence
-  //       const maxDuration = Math.max(
-  //         ...sprites.map((sprite) => {
-  //           let duration = 0;
-  //           if (sprite.animations.slideIn.isEnabled) {
-  //             duration = Math.max(
-  //               duration,
-  //               sprite.animations.slideIn.config.duration
-  //             );
-  //           }
-  //           if (sprite.animations.fadeIn.isEnabled) {
-  //             duration = Math.max(
-  //               duration,
-  //               sprite.animations.fadeIn.config.duration
-  //             );
-  //           }
-  //           if (sprite.animations.disappear.isEnabled) {
-  //             duration = Math.max(
-  //               duration,
-  //               sprite.animations.disappear.config.delay +
-  //                 sprite.animations.disappear.config.duration
-  //             );
-  //           }
-  //           return duration;
-  //         })
-  //       );
-
-  //       totalDelay += maxDuration + 1000; // Add 1 second gap between sequences
-  //       code += "\n";
-  //     });
-
-  //     return code;
-  //   };
-
-  // Add this new function near handleCopyCode
   const handleCopyAllCode = () => {
     const code = generateAllPhaserCode(placedSprites);
     navigator.clipboard.writeText(code).then(() => {
@@ -1728,382 +1402,7 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     });
   };
 
-  // Add this new function to handle playback
-  const handlePlay = () => {
-    if (!game?.playground) return;
-
-    setMode("play");
-    setIsPlaying(true);
-    const scene = game.playground;
-    const spriteRefs = new Map();
-
-    // Clear existing sprites
-    scene.children.list
-      .filter((child) => child.type === "Sprite")
-      .forEach((sprite) => sprite.destroy());
-
-    // Only create initial sprites (not click-action results)
-    const initialSprites = placedSprites.filter((sprite) => {
-      // Don't show sprites that were created from click actions
-      if (sprite.isClickActionResult) return false;
-
-      // Don't show sprites that are meant to be added on click
-      const isClickActionTarget = placedSprites.some(
-        (s) =>
-          s.clickAction?.enabled &&
-          s.clickAction.type === "add" &&
-          s.clickAction.config.frameToAdd === sprite.frameName
-      );
-
-      return !isClickActionTarget;
-    });
-
-    // Group sprites by sequence
-    const groupedSprites = initialSprites.reduce((acc, sprite) => {
-      const sequence =
-        sprite.animations.slideIn?.config?.priority ||
-        sprite.animations.fadeIn?.config?.priority ||
-        0;
-      if (!acc[sequence]) acc[sequence] = [];
-      acc[sequence].push(sprite);
-      return acc;
-    }, {});
-
-    const sequences = Object.keys(groupedSprites).sort(
-      (a, b) => Number(a) - Number(b)
-    );
-    let totalDelay = 0;
-
-    sequences.forEach((sequence) => {
-      const sprites = groupedSprites[sequence];
-
-      scene.time.delayedCall(totalDelay, () => {
-        sprites.forEach((sprite) => {
-          if (!sprite.isClickActionResult) {
-            const newSprite = scene.add
-              .sprite(sprite.x, sprite.y, "charactersprite", sprite.frameName)
-              .setOrigin(0, 0)
-              .setScale(sprite.scale)
-              .setRotation(sprite.rotation || 0)
-              .setAlpha(sprite.alpha || 1)
-              .setInteractive();
-
-            spriteRefs.set(sprite.id, {
-              sprite: newSprite,
-              data: sprite,
-            });
-
-            if (sprite.clickAction?.enabled) {
-              newSprite.on("pointerdown", function () {
-                handlePreviewClick(sprite, spriteRefs, scene);
-              });
-            }
-
-            handleSpriteAnimations(sprite, newSprite, scene);
-          }
-        });
-      });
-
-      totalDelay += calculateSequenceDuration(sprites);
-    });
-  };
-
-  // const handlePreviewClick = (clickedSprite) => {
-  //   const scene = game.playground;
-  //   if (!scene || !clickedSprite.clickAction?.enabled) return;
-
-  //   const { type, config } = clickedSprite.clickAction;
-
-  //   switch (type) {
-  //     case "update":
-  //       if (!config.frameToUpdate) return;
-
-  //       config.frameToUpdate.forEach((update) => {
-  //         const targetSprite = scene.children.list.find(
-  //           (child) => child.getData("id") === Number(update.targetId)
-  //         );
-
-  //         if (!targetSprite) return;
-
-  //         // Update frame texture first if needed
-  //         if (update.newFrameName) {
-  //           targetSprite.setTexture("charactersprite", update.newFrameName);
-  //         }
-
-  //         // Handle custom animations first
-  //         if (update.animations?.slideIn?.isEnabled) {
-  //           const getInitialPosition = () => {
-  //             const { direction, distance } = update.animations.slideIn.config;
-  //             switch (direction) {
-  //               case "left":
-  //                 return { x: update.x - distance, y: update.y };
-  //               case "right":
-  //                 return { x: update.x + distance, y: update.y };
-  //               case "top":
-  //                 return { x: update.x, y: update.y - distance };
-  //               case "bottom":
-  //                 return { x: update.x, y: update.y + distance };
-  //               default:
-  //                 return { x: update.x, y: update.y };
-  //             }
-  //           };
-
-  //           const initialPos = getInitialPosition();
-  //           targetSprite.setPosition(initialPos.x, initialPos.y);
-
-  //           scene.tweens.add({
-  //             targets: targetSprite,
-  //             x: update.x,
-  //             y: update.y,
-  //             duration: update.animations.slideIn.config.duration,
-  //             ease: update.animations.slideIn.config.ease,
-  //             onComplete: () =>
-  //               handleCommonAnimations(
-  //                 {
-  //                   ...update,
-  //                   baseX: update.x,
-  //                   baseY: update.y,
-  //                   animations: update.animations || {},
-  //                 },
-  //                 targetSprite,
-  //                 scene
-  //               ),
-  //           });
-  //         } else if (update.animations?.fadeIn?.isEnabled) {
-  //           targetSprite.setAlpha(0);
-  //           scene.tweens.add({
-  //             targets: targetSprite,
-  //             alpha: 1,
-  //             duration: update.animations.fadeIn.config.duration,
-  //             ease: update.animations.fadeIn.config.ease,
-  //             onComplete: () =>
-  //               handleCommonAnimations(
-  //                 {
-  //                   ...update,
-  //                   baseX: update.x,
-  //                   baseY: update.y,
-  //                   animations: update.animations || {},
-  //                 },
-  //                 targetSprite,
-  //                 scene
-  //               ),
-  //           });
-  //         } else {
-  //           // Set initial position and properties
-  //           targetSprite.setPosition(update.x, update.y);
-  //           targetSprite.setScale(update.scale);
-  //           targetSprite.setRotation((update.rotation * Math.PI) / 180);
-  //           targetSprite.setAlpha(update.alpha);
-
-  //           // Handle common animations directly if no custom animations
-  //           handleCommonAnimations(
-  //             {
-  //               ...update,
-  //               baseX: update.x,
-  //               baseY: update.y,
-  //               animations: update.animations || {},
-  //             },
-  //             targetSprite,
-  //             scene
-  //           );
-  //         }
-
-  //         // Handle disappear animation separately
-  //         if (update.animations?.disappear?.isEnabled) {
-  //           scene.time.delayedCall(
-  //             update.animations.disappear.config.delay,
-  //             () => {
-  //               scene.tweens.add({
-  //                 targets: targetSprite,
-  //                 alpha: 0,
-  //                 duration: update.animations.disappear.config.duration,
-  //                 ease: update.animations.disappear.config.ease,
-  //                 onComplete: () => {
-  //                   targetSprite.destroy();
-  //                 },
-  //               });
-  //             }
-  //           );
-  //         }
-  //       });
-  //       break;
-
-  //     case "add":
-  //       // Keep existing add case
-  //       if (
-  //         Array.isArray(config.framesToAdd) &&
-  //         config.framesToAdd.length > 0
-  //       ) {
-  //         config.framesToAdd.forEach((frameConfig) => {
-  //           // Create the sprite at the original configured position
-  //           const newSprite = scene.add
-  //             .sprite(
-  //               frameConfig.x,
-  //               frameConfig.y,
-  //               "charactersprite",
-  //               frameConfig.frameName
-  //             )
-  //             .setOrigin(0, 0)
-  //             .setScale(frameConfig.scale)
-  //             .setRotation(frameConfig.rotation)
-  //             .setAlpha(frameConfig.alpha)
-  //             .setData("id", Date.now());
-
-  //           // Handle animations without adding to placedSprites
-  //           if (frameConfig.animations?.slideIn?.isEnabled) {
-  //             const { direction, distance } =
-  //               frameConfig.animations.slideIn.config;
-  //             let initialPos = { x: frameConfig.x, y: frameConfig.y };
-
-  //             switch (direction) {
-  //               case "left":
-  //                 initialPos.x = frameConfig.x - distance;
-  //                 break;
-  //               case "right":
-  //                 initialPos.x = frameConfig.x + distance;
-  //                 break;
-  //               case "top":
-  //                 initialPos.y = frameConfig.y - distance;
-  //                 break;
-  //               case "bottom":
-  //                 initialPos.y = frameConfig.y + distance;
-  //                 break;
-  //             }
-
-  //             newSprite.setPosition(initialPos.x, initialPos.y);
-  //             scene.tweens.add({
-  //               targets: newSprite,
-  //               x: frameConfig.x,
-  //               y: frameConfig.y,
-  //               duration: frameConfig.animations.slideIn.config.duration,
-  //               ease: frameConfig.animations.slideIn.config.ease,
-  //               onComplete: () =>
-  //                 handleCommonAnimations({ ...frameConfig }, newSprite, scene),
-  //             });
-  //           } else {
-  //             handleCommonAnimations({ ...frameConfig }, newSprite, scene);
-  //           }
-  //         });
-  //       }
-  //       break;
-  //     case "remove":
-  //       if (
-  //         Array.isArray(config.framesToDelete) &&
-  //         config.framesToDelete.length > 0
-  //       ) {
-  //         config.framesToDelete.forEach((frameConfig) => {
-  //           const targetSprite = scene.children.list.find(
-  //             (child) => child.getData("id") === Number(frameConfig.targetId)
-  //           );
-
-  //           if (targetSprite) {
-  //             scene.tweens.add({
-  //               targets: targetSprite,
-  //               alpha: 0,
-  //               duration: frameConfig.fadeOutDuration || 500,
-  //               delay: frameConfig.delay || 0,
-  //               ease: frameConfig.ease || "Linear",
-  //               onComplete: () => {
-  //                 targetSprite.destroy();
-  //               },
-  //             });
-  //           }
-  //         });
-  //       }
-  //       break;
-  //   }
-  // };
-
-  const handlePreviewClick = (clickedSprite) => {
-    const scene = game.playground;
-    if (!scene || !clickedSprite.clickAction?.enabled) return;
-
-    // Execute all enabled actions in sequence
-    clickedSprite.clickAction.actions.forEach((action) => {
-      if (!action.enabled) return;
-
-      switch (action.type) {
-        case "add":
-          if (
-            Array.isArray(action.config.framesToAdd) &&
-            action.config.framesToAdd.length > 0
-          ) {
-            action.config.framesToAdd.forEach((frameConfig) => {
-              const newSprite = scene.add
-                .sprite(
-                  frameConfig.x,
-                  frameConfig.y,
-                  "charactersprite",
-                  frameConfig.frameName
-                )
-                .setOrigin(0, 0)
-                .setScale(frameConfig.scale || 1)
-                .setRotation(frameConfig.rotation || 0)
-                .setAlpha(frameConfig.alpha || 1);
-
-              // Handle animations for the new sprite
-              if (frameConfig.animations) {
-                handleSpriteAnimations(frameConfig, newSprite, scene);
-              }
-            });
-          }
-          break;
-
-        case "update":
-          if (Array.isArray(action.config.frameToUpdate)) {
-            action.config.frameToUpdate.forEach((update) => {
-              const targetSprite = scene.children.list.find(
-                (child) => child.getData("id") === Number(update.targetId)
-              );
-
-              if (targetSprite) {
-                if (update.newFrameName) {
-                  targetSprite.setTexture(
-                    "charactersprite",
-                    update.newFrameName
-                  );
-                }
-
-                // Handle animations for the updated sprite
-                if (update.animations) {
-                  handleSpriteAnimations(update, targetSprite, scene);
-                }
-              }
-            });
-          }
-          break;
-
-        case "remove":
-          if (Array.isArray(action.config.framesToDelete)) {
-            action.config.framesToDelete.forEach((frameConfig) => {
-              const targetSprites = scene.children.list.filter(
-                (child) => 
-                  child.getData("id") === Number(frameConfig.targetId) ||
-                  (child.getData("frameConfig")?.frameName === frameConfig.frameName &&
-                   child.getData("parentId") === frameConfig.parentId)
-              );
-
-              targetSprites.forEach(targetSprite => {
-                if (targetSprite) {
-                  scene.tweens.add({
-                    targets: targetSprite,
-                    alpha: 0,
-                    duration: frameConfig.fadeOutDuration || 500,
-                    delay: frameConfig.delay || 0,
-                    ease: frameConfig.ease || "Linear",
-                    onComplete: () => targetSprite.destroy()
-                  });
-                }
-              });
-            });
-          }
-          break;
-      }
-    });
-  };
-
   const handleCommonAnimations = (spriteObj, target, scene) => {
-    // Position Animation
     if (spriteObj.animations?.position?.isEnabled) {
       scene.tweens.add({
         targets: target,
@@ -2116,7 +1415,6 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
       });
     }
 
-    // Scale Animation
     if (spriteObj.animations?.scale?.isEnabled) {
       scene.tweens.add({
         targets: target,
@@ -2129,7 +1427,6 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
       });
     }
 
-    // Alpha Animation
     if (spriteObj.animations?.alpha?.isEnabled) {
       scene.tweens.add({
         targets: target,
@@ -2142,12 +1439,11 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     }
   };
 
-  // Add duplicate function
   const handleDuplicate = (originalSprite) => {
     if (!game?.playground) return;
 
     const scene = game.playground;
-    const offsetX = 20; // Offset for duplicate
+    const offsetX = 20;
     const offsetY = 20;
 
     const duplicateSprite = scene.add
@@ -2168,7 +1464,7 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
       phaserSprite: duplicateSprite,
       clickAction: {
         ...originalSprite.clickAction,
-        targetIds: [], // Reset target IDs for duplicate
+        targetIds: [],
       },
     };
 
@@ -2178,15 +1474,13 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
       }
     });
 
-    setPlacedSprites((prev) => [...prev, newSprite]);
+    updatePlacedSprites((prev) => [...prev, newSprite]);
   };
 
-  // Add this useEffect to handle frame selection changes
   useEffect(() => {
-    setCanPlaceSprite(true); // Enable sprite placement when frame changes
+    setCanPlaceSprite(true);
   }, [selectedFrame]);
 
-  // Update the frame selection handler
   const handleFrameSelect = (e) => {
     setSelectedFrame(e.target.value);
     setCanPlaceSprite(true);
@@ -2287,7 +1581,6 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     );
   };
 
-  // Modify handleStopPreview to handle click action sprites
   const handleStopPreview = (scene) => {
     // Clear all sprites
     scene.children.list
@@ -2296,26 +1589,28 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
 
     // Only restore the original sprites
     const initialSprites = placedSprites;
-    setPlacedSprites(initialSprites);
-
-    setMode("edit");
+    updatePlacedSprites(initialSprites);
     setIsPlaying(false);
     setCanPlaceSprite(true);
   };
 
   const saveCurrentState = () => {
     const state = {
-      placedSprites: placedSprites.map((sprite) => ({
-        id: sprite.id,
-        frameName: sprite.frameName,
-        x: sprite.x,
-        y: sprite.y,
-        scale: sprite.scale,
-        rotation: sprite.rotation,
-        alpha: sprite.alpha,
-        animations: sprite.animations,
-        clickAction: sprite.clickAction,
+      scenes: scenes.map((scene) => ({
+        ...scene,
+        placedSprites: scene.placedSprites.map((sprite) => ({
+          id: sprite.id,
+          frameName: sprite.frameName,
+          x: sprite.x,
+          y: sprite.y,
+          scale: sprite.scale,
+          rotation: sprite.rotation,
+          alpha: sprite.alpha,
+          animations: sprite.animations,
+          clickAction: sprite.clickAction,
+        })),
       })),
+      activeSceneId,
       selectedFrame,
       orientation,
       spritesheet: spritesheet?.src,
@@ -2325,20 +1620,28 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     saveToLocalStorage(state);
   };
 
-  // Add this useEffect after the game initialization useEffect
   useEffect(() => {
     const savedState = loadFromLocalStorage();
     if (!savedState || !game?.playground) return;
 
     const scene = game.playground;
 
-    // First restore basic state
-    setOrientation(savedState.orientation);
+    setScenes(
+      savedState.scenes || [
+        {
+          id: 1,
+          name: "Scene 1",
+          placedSprites: [],
+          isActive: true,
+        },
+      ]
+    );
+    setActiveSceneId(savedState.activeSceneId || 1);
+    setOrientation(savedState.orientation || "landscape");
     setSelectedFrame(savedState.selectedFrame);
     setFrameNames(savedState.frameNames || []);
     setSpriteData(savedState.spriteData);
 
-    // Then restore spritesheet
     if (savedState.spritesheet) {
       const img = new Image();
       img.onload = () => {
@@ -2349,7 +1652,6 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
         }
         scene.textures.addImage("charactersprite", img);
 
-        // Add frame data to Phaser texture
         if (savedState.spriteData) {
           Object.entries(savedState.spriteData.frames).forEach(
             ([key, frame]) => {
@@ -2366,14 +1668,15 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
             }
           );
 
-          // Clear existing sprites
           scene.children.list
             .filter((child) => child.type === "Sprite")
             .forEach((sprite) => sprite.destroy());
 
-          // Now restore placed sprites
-          if (savedState.placedSprites?.length > 0) {
-            const restoredSprites = savedState.placedSprites.map(
+          const activeScene = savedState.scenes.find(
+            (s) => s.id === savedState.activeSceneId
+          );
+          if (activeScene?.placedSprites?.length > 0) {
+            const restoredSprites = activeScene.placedSprites.map(
               (savedSprite) => {
                 const sprite = scene.add
                   .sprite(
@@ -2398,16 +1701,8 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
                     savedSprite.animations || createDefaultAnimations(),
                 };
 
-                // Set up event listeners
                 sprite.on("pointerdown", () => {
-                  if (mode === "edit") {
-                    handleSpriteClick(newSprite);
-                  } else if (
-                    mode === "play" &&
-                    newSprite.clickAction?.enabled
-                  ) {
-                    handlePreviewClick(newSprite);
-                  }
+                  handleSpriteClick(newSprite);
                 });
 
                 sprite.on("drag", (pointer, dragX, dragY) => {
@@ -2421,17 +1716,31 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
               }
             );
 
-            setPlacedSprites(restoredSprites);
+            setScenes((prevScenes) =>
+              prevScenes.map((s) =>
+                s.id === savedState.activeSceneId
+                  ? { ...s, placedSprites: restoredSprites }
+                  : s
+              )
+            );
           }
         }
       };
       img.src = savedState.spritesheet;
     }
-  }, [game, mode]); // Add mode as dependency
+  }, [game]);
 
   const clearPlaygroundState = () => {
     localStorage.removeItem(STORAGE_KEY);
-    setPlacedSprites([]);
+    setScenes([
+      {
+        id: 1,
+        name: "Scene 1",
+        placedSprites: [],
+        isActive: true,
+      },
+    ]);
+    setActiveSceneId(1);
     setSelectedFrame("");
     if (game?.playground) {
       const scene = game.playground;
@@ -2441,7 +1750,6 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     }
   };
 
-  // Add this new useEffect to handle state saving
   useEffect(() => {
     if (placedSprites.length > 0) {
       saveCurrentState();
@@ -2450,6 +1758,21 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
 
   return (
     <div className="flex w-full h-[calc(100vh-55px)] bg-[#1e1e1e] relative">
+      <SceneManagerButton
+        onToggle={() => setIsSceneManagerOpen(!isSceneManagerOpen)}
+        isOpen={isSceneManagerOpen}
+      />
+      <SceneManager
+        scenes={scenes}
+        activeSceneId={activeSceneId}
+        onSceneSelect={handleSceneSelect}
+        onAddScene={handleAddScene}
+        onDeleteScene={handleDeleteScene}
+        onSceneNameChange={handleSceneNameChange}
+        isOpen={isSceneManagerOpen}
+        onClose={() => setIsSceneManagerOpen(false)}
+        handleUpdateTransition={handleUpdateTransition}
+      />
       <div
         ref={gameContainerRef}
         className="w-[calc(100%-300px)] bg-[#2d2d2d] flex justify-center"
@@ -2457,11 +1780,7 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
       />
 
       <div className="w-[300px] bg-[#252525] p-5 border-l border-[#333] h-full overflow-y-auto">
-        {mode === "play" ? (
-          <PlayModePanel onStopPreview={handleStopPreview} game={game} />
-        ) : (
-          <>
-            {/* Existing edit mode controls */}
+        
             {placedSprites.length > 0 && (
               <div className="flex gap-2 mb-4">
                 <button
@@ -2471,22 +1790,14 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
                   Copy All Sprites Code
                 </button>
                 <button
-                  onClick={handlePlay}
-                  disabled={isPlaying}
-                  className={`flex-1 ${
-                    isPlaying
-                      ? "bg-gray-500 cursor-not-allowed"
-                      : "bg-green-500 hover:bg-green-600"
-                  } text-white px-4 py-2 rounded transition-colors`}
-                >
-                  {isPlaying ? "Playing..." : "Play Preview"}
-                </button>
+        onClick={() => setIsPreviewOpen(true)}
+        className="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded transition-colors mb-2"
+      >
+        Preview Playable
+      </button>
               </div>
             )}
 
-            {/* Rest of your existing edit mode controls */}
-          </>
-        )}
 
         <div className="mb-6">
           <h3 className="text-white text-lg font-medium mb-4">Assets</h3>
@@ -2724,7 +2035,7 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
                   <AnimationPanel
                     sprite={sprite}
                     game={game}
-                    setPlacedSprites={setPlacedSprites}
+                    updatePlacedSprites={updatePlacedSprites}
                     placedSprites={placedSprites}
                     spriteData={spriteData}
                     onDuplicate={handleDuplicate}
@@ -2735,6 +2046,11 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
           </div>
         )}
       </div>
+      <PreviewModal 
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        scenes={scenes}
+      />
     </div>
   );
 };

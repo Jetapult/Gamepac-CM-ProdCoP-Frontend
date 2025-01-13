@@ -7,11 +7,11 @@ import FadeInAnimationPanel from "./FadeInAnimationPanel";
 import DisappearAnimationPanel from "./DisappearAnimationPanel";
 import ClickActionPanel from "./ClickActionPanel";
 
-const AnimationPanel = ({ sprite, game, setPlacedSprites, placedSprites, spriteData, onDuplicate }) => {
+const AnimationPanel = ({ sprite, game, updatePlacedSprites, placedSprites, spriteData, onDuplicate }) => {
   const [activePanel, setActivePanel] = useState("");
 
   const updateAnimation = (type, updates) => {
-    setPlacedSprites((prev) =>
+    updatePlacedSprites((prev) =>
       prev.map((s) => {
         if (s.id === sprite.id) {
           return {
@@ -197,7 +197,7 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites, placedSprites, spriteD
             onComplete: () => {
               target.destroy();
               // Remove the sprite from placedSprites
-              setPlacedSprites(prev => prev.map(s => 
+              updatePlacedSprites(prev => prev.map(s => 
                 s.id === sprite.id 
                   ? { ...s, isDestroyed: true }
                   : s
@@ -437,7 +437,7 @@ const AnimationPanel = ({ sprite, game, setPlacedSprites, placedSprites, spriteD
       {activePanel === "click" && (
         <ClickActionPanel 
           sprite={sprite} 
-          setPlacedSprites={setPlacedSprites}
+          updatePlacedSprites={updatePlacedSprites}
           placedSprites={placedSprites}
           spriteData={spriteData}
           game={game}
