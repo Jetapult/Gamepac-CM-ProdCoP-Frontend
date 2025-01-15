@@ -4,6 +4,7 @@ import AnimationPanel from "./components/AnimationPanel";
 import SceneManager from "./components/scenes/SceneManager";
 import SceneManagerButton from "./components/scenes/SceneManagerButton";
 import PreviewModal from "./components/PreviewModal";
+import TextPanel from "./components/TextPanel";
 
 const STORAGE_KEY = "playgroundState";
 
@@ -130,6 +131,7 @@ const Playground = () => {
       id: 1,
       name: "Scene 1",
       placedSprites: [],
+      texts: [],
       isActive: true,
     },
   ]);
@@ -139,6 +141,57 @@ const Playground = () => {
   const [backgroundMusic, setBackgroundMusic] = useState(null);
   const [audioElement, setAudioElement] = useState(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  // Update the addText function to include new properties
+  const addText = () => {
+    setScenes(prevScenes => prevScenes.map(scene => {
+      if (scene.id === activeSceneId) {
+        return {
+          ...scene,
+          texts: [...(scene.texts || []), {
+            id: Date.now(),
+            content: 'New Text',
+            fontFamily: 'Arial',
+            fontSize: 24,
+            fontWeight: 'normal',
+            align: 'left',
+            color: '#ffffff',
+            x: 100,
+            y: 100,
+            delay: 0,
+            persistent: true
+          }]
+        };
+      }
+      return scene;
+    }));
+  };
+  
+  const updateText = (id, updates) => {
+    setScenes(prevScenes => prevScenes.map(scene => {
+      if (scene.id === activeSceneId && scene.texts) {
+        return {
+          ...scene,
+          texts: scene.texts.map(text => 
+            text.id === id ? { ...text, ...updates } : text
+          )
+        };
+      }
+      return scene;
+    }));
+  };
+  
+  const deleteText = (id) => {
+    setScenes(prevScenes => prevScenes.map(scene => {
+      if (scene.id === activeSceneId && scene.texts) {
+        return {
+          ...scene,
+          texts: scene.texts.filter(text => text.id !== id)
+        };
+      }
+      return scene;
+    }));
+  };
 
   const toggleBackgroundMusic = () => {
     if (!audioElement) return;
@@ -1849,6 +1902,53 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     }
   }, [placedSprites]);
 
+  useEffect(() => {
+    if (!game?.playground) return;
+  
+    const scene = game.playground;
+    const activeScene = scenes.find(s => s.id === activeSceneId);
+    
+    // Clear existing text objects
+    scene.children.list
+      .filter(child => child.type === 'Text')
+      .forEach(text => text.destroy());
+  
+    // Render new text objects
+    activeScene?.texts?.forEach(text => {
+      const textObject = scene.add.text(text.x, text.y, text.content, {
+        fontFamily: text.fontFamily,
+        fontSize: text.fontSize,
+        color: text.color,
+        fontStyle: text.fontWeight === 'bold' ? 'bold' : 
+                  text.fontWeight === 'bolder' ? 'bold' : 
+                  text.fontWeight === 'lighter' ? 'lighter' : 'normal',
+        align: text.align,
+        wordWrap: { width: 800 }  // Add word wrap to make alignment visible
+      });
+      
+      // Set origin based on alignment
+      switch(text.align) {
+        case 'center':
+          textObject.setOrigin(0.5, 0);
+          break;
+        case 'right':
+          textObject.setOrigin(1, 0);
+          break;
+        default:
+          textObject.setOrigin(0, 0);
+      }
+  
+      textObject.setInteractive({ draggable: true });
+      
+      scene.input.setDraggable(textObject);
+      
+      textObject.on('drag', (pointer, dragX, dragY) => {
+        textObject.setPosition(dragX, dragY);
+        updateText(text.id, { x: dragX, y: dragY });
+      });
+    });
+  }, [game, scenes, activeSceneId]);
+
   return (
     <div className="flex w-full h-[calc(100vh-55px)] bg-[#1e1e1e] relative">
       <SceneManagerButton
@@ -1931,6 +2031,34 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
               </button>
             )}
           </div>
+        </div>
+
+        <div className="mb-6">
+          <h3 className="text-white text-lg font-medium mb-4">Text Elements</h3>
+          <button
+            onClick={addText}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition-colors mb-4"
+          >
+            Add Text
+          </button>
+          
+          {scenes.find(s => s.id === activeSceneId)?.texts?.map(text => (
+            <div key={text.id} className="bg-[#333] p-4 rounded mb-4">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-white font-medium">Text Element</h4>
+                <button
+                  onClick={() => deleteText(text.id)}
+                  className="text-red-500 hover:text-red-600"
+                >
+                  Delete
+                </button>
+              </div>
+              <TextPanel
+                text={text}
+                updateText={(updates) => updateText(text.id, updates)}
+              />
+            </div>
+          ))}
         </div>
 
         {frameNames.length > 0 && (
@@ -2163,6 +2291,7 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
         onClose={() => setIsPreviewOpen(false)}
         scenes={scenes}
         backgroundMusic={backgroundMusic}
+        texts={scenes.find(s => s.id === activeSceneId)?.texts || []}
       />
     </div>
   );

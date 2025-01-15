@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { XMarkIcon } from '@heroicons/react/20/solid';
 
-const PreviewModal = ({ isOpen, onClose, scenes }) => {
+const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
   const gameContainerRef = useRef(null);
   const gameInstanceRef = useRef(null);
 
@@ -21,6 +21,7 @@ const PreviewModal = ({ isOpen, onClose, scenes }) => {
           super({ key: 'PlayableScene' });
           this.texturesLoaded = false;
           this.sprites = new Map();
+          this.currentSceneId = 1;
         }
 
         create() {
@@ -54,6 +55,56 @@ const PreviewModal = ({ isOpen, onClose, scenes }) => {
               this.initScene(firstScene.id);
             }
           }
+
+          const currentScene = scenes.find(s => s.id === this.currentSceneId);
+          
+          // Add text elements for current scene
+          currentScene?.texts?.forEach(text => {
+            const textObject = this.add.text(text.x, text.y, text.content, {
+              fontFamily: text.fontFamily,
+              fontSize: text.fontSize,
+              color: text.color,
+              fontStyle: text.fontWeight === 'bold' ? 'bold' : 
+                        text.fontWeight === 'bolder' ? 'bold' : 
+                        text.fontWeight === 'lighter' ? 'lighter' : 'normal',
+              align: text.align,
+              wordWrap: { width: 800 }
+            }).setDepth(1000);
+            
+            // Set origin based on alignment
+            switch(text.align) {
+              case 'center':
+                textObject.setOrigin(0.5, 0);
+                break;
+              case 'right':
+                textObject.setOrigin(1, 0);
+                break;
+              default:
+                textObject.setOrigin(0, 0);
+            }
+            
+            textObject.setAlpha(0);
+            
+            this.time.delayedCall(text.delay, () => {
+              this.tweens.add({
+                targets: textObject,
+                alpha: 1,
+                duration: 500,
+                onComplete: () => {
+                  if (!text.persistent) {
+                    this.time.delayedCall(2000, () => {
+                      this.tweens.add({
+                        targets: textObject,
+                        alpha: 0,
+                        duration: 500,
+                        onComplete: () => textObject.destroy()
+                      });
+                    });
+                  }
+                }
+              });
+            });
+          });
         }
 
         applyAnimations(gameSprite, sprite) {
@@ -307,6 +358,7 @@ const PreviewModal = ({ isOpen, onClose, scenes }) => {
         }
 
         initScene(sceneId) {
+          this.currentSceneId = sceneId;
           this.sprites.forEach(sprite => sprite.destroy());
           this.sprites.clear();
 
@@ -367,6 +419,59 @@ const PreviewModal = ({ isOpen, onClose, scenes }) => {
 
             totalDelay += maxDuration + 500; // Add 500ms gap between sequences
           });
+
+          // Clear existing text objects
+          this.children.list
+            .filter(child => child.type === 'Text')
+            .forEach(text => text.destroy());
+
+          // Add text elements for current scene
+          currentScene?.texts?.forEach(text => {
+            const textObject = this.add.text(text.x, text.y, text.content, {
+              fontFamily: text.fontFamily,
+              fontSize: text.fontSize,
+              color: text.color,
+              fontStyle: text.fontWeight === 'bold' ? 'bold' : 
+                        text.fontWeight === 'bolder' ? 'bold' : 
+                        text.fontWeight === 'lighter' ? 'lighter' : 'normal',
+              align: text.align,
+              wordWrap: { width: 800 }
+            }).setDepth(1000);
+            
+            // Set origin based on alignment
+            switch(text.align) {
+              case 'center':
+                textObject.setOrigin(0.5, 0);
+                break;
+              case 'right':
+                textObject.setOrigin(1, 0);
+                break;
+              default:
+                textObject.setOrigin(0, 0);
+            }
+            
+            textObject.setAlpha(0);
+            
+            this.time.delayedCall(text.delay, () => {
+              this.tweens.add({
+                targets: textObject,
+                alpha: 1,
+                duration: 500,
+                onComplete: () => {
+                  if (!text.persistent) {
+                    this.time.delayedCall(2000, () => {
+                      this.tweens.add({
+                        targets: textObject,
+                        alpha: 0,
+                        duration: 500,
+                        onComplete: () => textObject.destroy()
+                      });
+                    });
+                  }
+                }
+              });
+            });
+          });
         }
       }
 
@@ -391,7 +496,7 @@ const PreviewModal = ({ isOpen, onClose, scenes }) => {
         gameInstanceRef.current.destroy(true);
       }
     };
-  }, [isOpen, scenes]);
+  }, [isOpen, scenes, texts]);
 
   if (!isOpen) return null;
 
