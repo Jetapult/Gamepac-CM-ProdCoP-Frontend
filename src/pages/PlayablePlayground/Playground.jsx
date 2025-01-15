@@ -136,15 +136,75 @@ const Playground = () => {
   const [activeSceneId, setActiveSceneId] = useState(1);
   const [isSceneManagerOpen, setIsSceneManagerOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [backgroundMusic, setBackgroundMusic] = useState(null);
+  const [audioElement, setAudioElement] = useState(null);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  const toggleBackgroundMusic = () => {
+    if (!audioElement) return;
+
+    if (audioElement.paused) {
+      audioElement
+        .play()
+        .then(() => setIsAudioPlaying(true))
+        .catch((error) => console.log("Audio playback failed:", error));
+    } else {
+      audioElement.pause();
+      setIsAudioPlaying(false);
+    }
+  };
+
+  const handleBackgroundMusicUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (audioElement) {
+        audioElement.pause();
+      }
+      const audio = new Audio(event.target.result);
+      audio.loop = true;
+      setBackgroundMusic(event.target.result);
+      setAudioElement(audio);
+      saveCurrentState();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      if (audioElement && audioElement.paused) {
+        audioElement.play().catch((error) => {
+          console.log("Audio playback failed:", error);
+        });
+      }
+      // Remove the event listener after first interaction
+      document.removeEventListener("click", handleUserInteraction);
+    };
+
+    if (audioElement) {
+      // Add event listener for user interaction
+      document.addEventListener("click", handleUserInteraction);
+    }
+
+    return () => {
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+        document.removeEventListener("click", handleUserInteraction);
+      }
+    };
+  }, [audioElement]);
 
   const getActiveScene = () => scenes.find((s) => s.id === activeSceneId);
   const getActivePlacedSprites = () => getActiveScene()?.placedSprites || [];
   const placedSprites = getActivePlacedSprites();
 
   const updatePlacedSprites = (updaterFn) => {
-    setScenes(prevScenes => 
-      prevScenes.map(scene => 
-        scene.id === activeSceneId 
+    setScenes((prevScenes) =>
+      prevScenes.map((scene) =>
+        scene.id === activeSceneId
           ? { ...scene, placedSprites: updaterFn(scene.placedSprites) }
           : scene
       )
@@ -183,11 +243,11 @@ const Playground = () => {
       scene.children.list
         .filter((child) => child.type === "Sprite")
         .forEach((sprite) => sprite.destroy());
-        
-      const targetScene = scenes.find(s => s.id === sceneId);
-      
+
+      const targetScene = scenes.find((s) => s.id === sceneId);
+
       if (targetScene?.placedSprites?.length > 0) {
-        targetScene.placedSprites.forEach(savedSprite => {
+        targetScene.placedSprites.forEach((savedSprite) => {
           const sprite = scene.add
             .sprite(
               savedSprite.x,
@@ -200,10 +260,10 @@ const Playground = () => {
             .setRotation((savedSprite.rotation * Math.PI) / 180)
             .setAlpha(savedSprite.alpha || 1)
             .setInteractive();
-  
+
           scene.input.setDraggable(sprite);
           sprite.setData("id", savedSprite.id);
-  
+
           sprite.on("pointerdown", () => handleSpriteClick(savedSprite));
           sprite.on("drag", (pointer, dragX, dragY) => {
             sprite.setPosition(dragX, dragY);
@@ -217,19 +277,24 @@ const Playground = () => {
 
   const handleSceneTransition = (targetSceneId) => {
     if (!game?.playground) return;
-    
+
     const scene = game.playground;
     scene.children.list
       .filter((child) => child.type === "Sprite")
       .forEach((sprite) => sprite.destroy());
-  
+
     setActiveSceneId(targetSceneId);
-    
-    const targetScene = scenes.find(s => s.id === targetSceneId);
+
+    const targetScene = scenes.find((s) => s.id === targetSceneId);
     if (targetScene?.placedSprites?.length > 0) {
-      targetScene.placedSprites.forEach(savedSprite => {
+      targetScene.placedSprites.forEach((savedSprite) => {
         const sprite = scene.add
-          .sprite(savedSprite.x, savedSprite.y, "charactersprite", savedSprite.frameName)
+          .sprite(
+            savedSprite.x,
+            savedSprite.y,
+            "charactersprite",
+            savedSprite.frameName
+          )
           .setOrigin(0, 0)
           .setScale(savedSprite.scale)
           .setRotation((savedSprite.rotation * Math.PI) / 180)
@@ -244,7 +309,7 @@ const Playground = () => {
         scene.id === sceneId
           ? {
               ...scene,
-              placedSprites: scene.placedSprites.map(sprite =>
+              placedSprites: scene.placedSprites.map((sprite) =>
                 sprite.id === Number(spriteId)
                   ? {
                       ...sprite,
@@ -297,6 +362,22 @@ const Playground = () => {
         create: function () {
           this.game.playground = this;
           this.input.enabled = true;
+
+          // Play background music if exists
+          if (backgroundMusic && audioElement) {
+            // Add user interaction check
+            this.input.on(
+              "pointerdown",
+              () => {
+                if (audioElement.paused) {
+                  audioElement.play().catch((error) => {
+                    console.log("Audio playback failed:", error);
+                  });
+                }
+              },
+              this
+            );
+          }
         },
       },
     };
@@ -683,30 +764,35 @@ const Playground = () => {
     saveCurrentState();
   };
 
-  const deleteSprite = useCallback((id) => {
-    setScenes(prevScenes => 
-      prevScenes.map(scene => {
-        if (scene.id === activeSceneId) {
-          return {
-            ...scene,
-            placedSprites: scene.placedSprites.filter(sprite => sprite.id !== id)
-          };
-        }
-        return scene;
-      })
-    );
-  
-    if (game?.playground) {
-      const spriteToDelete = game.playground.children.list.find(
-        child => child.getData('id') === id
+  const deleteSprite = useCallback(
+    (id) => {
+      setScenes((prevScenes) =>
+        prevScenes.map((scene) => {
+          if (scene.id === activeSceneId) {
+            return {
+              ...scene,
+              placedSprites: scene.placedSprites.filter(
+                (sprite) => sprite.id !== id
+              ),
+            };
+          }
+          return scene;
+        })
       );
-      if (spriteToDelete) {
-        spriteToDelete.destroy();
+
+      if (game?.playground) {
+        const spriteToDelete = game.playground.children.list.find(
+          (child) => child.getData("id") === id
+        );
+        if (spriteToDelete) {
+          spriteToDelete.destroy();
+        }
       }
-    }
-    
-    saveCurrentState();
-  }, [game, activeSceneId]);
+
+      saveCurrentState();
+    },
+    [game, activeSceneId]
+  );
 
   const generatePhaserCode = (sprite) => {
     const counter = placedSprites.findIndex((s) => s.id === sprite.id) + 1;
@@ -1616,6 +1702,7 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
       spritesheet: spritesheet?.src,
       spriteData,
       frameNames,
+      backgroundMusic,
     };
     saveToLocalStorage(state);
   };
@@ -1641,6 +1728,12 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     setSelectedFrame(savedState.selectedFrame);
     setFrameNames(savedState.frameNames || []);
     setSpriteData(savedState.spriteData);
+    if (savedState?.backgroundMusic) {
+      const audio = new Audio(savedState.backgroundMusic);
+      audio.loop = true;
+      setBackgroundMusic(savedState.backgroundMusic);
+      setAudioElement(audio);
+    }
 
     if (savedState.spritesheet) {
       const img = new Image();
@@ -1780,24 +1873,22 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
       />
 
       <div className="w-[300px] bg-[#252525] p-5 border-l border-[#333] h-full overflow-y-auto">
-        
-            {placedSprites.length > 0 && (
-              <div className="flex gap-2 mb-4">
-                <button
-                  onClick={handleCopyAllCode}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
-                >
-                  Copy All Sprites Code
-                </button>
-                <button
-        onClick={() => setIsPreviewOpen(true)}
-        className="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded transition-colors mb-2"
-      >
-        Preview Playable
-      </button>
-              </div>
-            )}
-
+        {placedSprites.length > 0 && (
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={handleCopyAllCode}
+              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
+            >
+              Copy All Sprites Code
+            </button>
+            <button
+              onClick={() => setIsPreviewOpen(true)}
+              className="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded transition-colors mb-2"
+            >
+              Preview Playable
+            </button>
+          </div>
+        )}
 
         <div className="mb-6">
           <h3 className="text-white text-lg font-medium mb-4">Assets</h3>
@@ -1818,6 +1909,27 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
               onChange={handleJsonUpload}
               className="w-full p-2 bg-[#333] border border-[#444] text-white rounded hover:border-[#555]"
             />
+          </div>
+          <div className="mb-4">
+            <label className="block text-white mb-2">Background Music:</label>
+            <input
+              type="file"
+              accept="audio/*"
+              onChange={handleBackgroundMusicUpload}
+              className="w-full p-2 bg-[#333] border border-[#444] text-white rounded hover:border-[#555]"
+            />
+            {audioElement && (
+              <button
+                onClick={toggleBackgroundMusic}
+                className={`px-4 py-2 rounded ${
+                  isAudioPlaying
+                    ? "bg-red-500 hover:bg-red-600"
+                    : "bg-green-500 hover:bg-green-600"
+                } text-white`}
+              >
+                {isAudioPlaying ? "Pause" : "Play"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -2046,10 +2158,11 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
           </div>
         )}
       </div>
-      <PreviewModal 
+      <PreviewModal
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         scenes={scenes}
+        backgroundMusic={backgroundMusic}
       />
     </div>
   );
