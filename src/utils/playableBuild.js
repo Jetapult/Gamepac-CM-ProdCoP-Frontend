@@ -352,6 +352,12 @@ export async function generatePlayableBuild(scenes, savedState) {
     });
 
     const base64Spritesheet = await base64Promise;
+    const orientation = savedState.orientation || 'landscape';
+    
+    // Define dimensions based on orientation
+    const dimensions = orientation === 'landscape' 
+      ? { width: 1920, height: 1080 }
+      : { width: 1080, height: 1920 };
 
     const html = `
 <!DOCTYPE html>
@@ -372,13 +378,14 @@ export async function generatePlayableBuild(scenes, savedState) {
 
         const config = {
             type: Phaser.AUTO,
-            width: 1920,
-            height: 1080,
+            width: ${dimensions.width},
+            height: ${dimensions.height},
             backgroundColor: "#111",
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH,
-                orientation: "${savedState.orientation || 'landscape'}"
+                width: ${dimensions.width},
+                height: ${dimensions.height},
             },
             scene: MainScene
         };

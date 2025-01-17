@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import Phaser from 'phaser';
-import { XMarkIcon } from '@heroicons/react/20/solid';
+import React, { useEffect, useRef } from "react";
+import Phaser from "phaser";
+import { XMarkIcon } from "@heroicons/react/20/solid";
+import { ORIENTATIONS } from "../Playground";
 
 const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
   const gameContainerRef = useRef(null);
@@ -8,17 +9,18 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
 
   useEffect(() => {
     if (isOpen && gameContainerRef.current) {
-      const savedState = JSON.parse(localStorage.getItem('playgroundState'));
+      const savedState = JSON.parse(localStorage.getItem("playgroundState"));
       if (!savedState?.spritesheet || !savedState?.spriteData) return;
 
-      const orientation = savedState.orientation || 'landscape';
-      const dimensions = orientation === "landscape"
-        ? { width: 1920, height: 1080 }
-        : { width: 1080, height: 1920 };
+      const orientation = savedState.orientation || "landscape";
+      const dimensions =
+        orientation === "landscape"
+          ? ORIENTATIONS.LANDSCAPE
+          : ORIENTATIONS.PORTRAIT;
 
       class PlayableScene extends Phaser.Scene {
         constructor() {
-          super({ key: 'PlayableScene' });
+          super({ key: "PlayableScene" });
           this.texturesLoaded = false;
           this.sprites = new Map();
           this.currentSceneId = 1;
@@ -28,63 +30,74 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
           if (!this.texturesLoaded) {
             const img = new Image();
             img.src = savedState.spritesheet;
-            
+
             img.onload = () => {
-              this.textures.addImage('charactersprite', img);
-              
-              Object.entries(savedState.spriteData.frames).forEach(([key, frame]) => {
-                this.textures.get('charactersprite').add(
-                  key,
-                  0,
-                  frame.frame.x,
-                  frame.frame.y,
-                  frame.frame.w,
-                  frame.frame.h
-                );
-              });
-              
+              this.textures.addImage("charactersprite", img);
+
+              Object.entries(savedState.spriteData.frames).forEach(
+                ([key, frame]) => {
+                  this.textures
+                    .get("charactersprite")
+                    .add(
+                      key,
+                      0,
+                      frame.frame.x,
+                      frame.frame.y,
+                      frame.frame.w,
+                      frame.frame.h
+                    );
+                }
+              );
+
               this.texturesLoaded = true;
-              const firstScene = scenes.find(s => s.id === 1);
+              const firstScene = scenes.find((s) => s.id === 1);
               if (firstScene) {
                 this.initScene(firstScene.id);
               }
             };
           } else {
-            const firstScene = scenes.find(s => s.id === 1);
+            const firstScene = scenes.find((s) => s.id === 1);
             if (firstScene) {
               this.initScene(firstScene.id);
             }
           }
 
-          const currentScene = scenes.find(s => s.id === this.currentSceneId);
-          
+          const currentScene = scenes.find((s) => s.id === this.currentSceneId);
+
           // Add text elements for current scene
-          currentScene?.texts?.forEach(text => {
-            const textObject = this.add.text(text.x, text.y, text.content, {
-              fontFamily: text.fontFamily,
-              fontSize: text.fontSize,
-              color: text.color,
-              fontStyle: text.fontWeight === 'bold' ? 'bold' : 
-                        text.fontWeight === 'bolder' ? 'bold' : 
-                        text.fontWeight === 'lighter' ? 'lighter' : 'normal',
-              align: text.align,
-              wordWrap: { width: 800 }
-            }).setDepth(1000);
-            
+          currentScene?.texts?.forEach((text) => {
+            const textObject = this.add
+              .text(text.x, text.y, text.content, {
+                fontFamily: text.fontFamily,
+                fontSize: text.fontSize,
+                color: text.color,
+                fontStyle:
+                  text.fontWeight === "bold"
+                    ? "bold"
+                    : text.fontWeight === "bolder"
+                    ? "bold"
+                    : text.fontWeight === "lighter"
+                    ? "lighter"
+                    : "normal",
+                align: text.align,
+                wordWrap: { width: 800 },
+              })
+              .setDepth(1000);
+
             // Set origin based on alignment
-            switch(text.align) {
-              case 'center':
+            switch (text.align) {
+              case "center":
                 textObject.setOrigin(0.5, 0);
                 break;
-              case 'right':
+              case "right":
                 textObject.setOrigin(1, 0);
                 break;
               default:
                 textObject.setOrigin(0, 0);
             }
-            
+
             textObject.setAlpha(0);
-            
+
             this.time.delayedCall(text.delay, () => {
               this.tweens.add({
                 targets: textObject,
@@ -97,11 +110,11 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
                         targets: textObject,
                         alpha: 0,
                         duration: 500,
-                        onComplete: () => textObject.destroy()
+                        onComplete: () => textObject.destroy(),
                       });
                     });
                   }
-                }
+                },
               });
             });
           });
@@ -111,21 +124,23 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
           if (sprite.animations) {
             // Position Animation
             if (sprite.animations.position?.isEnabled) {
-              const { x, y, duration, repeat, ease, yoyo } = sprite.animations.position.config;
+              const { x, y, duration, repeat, ease, yoyo } =
+                sprite.animations.position.config;
               this.tweens.add({
                 targets: gameSprite,
-                x: gameSprite.x + (x * 100),
-                y: gameSprite.y + (y * 100),
+                x: gameSprite.x + x * 100,
+                y: gameSprite.y + y * 100,
                 duration,
                 repeat,
                 ease,
-                yoyo
+                yoyo,
               });
             }
 
             // Scale Animation
             if (sprite.animations.scale?.isEnabled) {
-              const { scaleX, scaleY, duration, repeat, ease, yoyo } = sprite.animations.scale.config;
+              const { scaleX, scaleY, duration, repeat, ease, yoyo } =
+                sprite.animations.scale.config;
               this.tweens.add({
                 targets: gameSprite,
                 scaleX,
@@ -133,39 +148,51 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
                 duration,
                 repeat,
                 ease,
-                yoyo
+                yoyo,
               });
             }
 
             // Transparency Animation
             if (sprite.animations.transparency?.isEnabled) {
-              const { alpha, duration, repeat, ease, yoyo } = sprite.animations.transparency.config;
+              const { alpha, duration, repeat, ease, yoyo } =
+                sprite.animations.transparency.config;
               this.tweens.add({
                 targets: gameSprite,
                 alpha,
                 duration,
                 repeat,
                 ease,
-                yoyo
+                yoyo,
               });
             }
 
             // Slide In Animation
             if (sprite.animations.slideIn?.isEnabled) {
-              const { direction, distance, duration, ease, delay } = sprite.animations.slideIn.config;
-              const startX = direction === 'left' ? -distance : (direction === 'right' ? distance : 0);
-              const startY = direction === 'up' ? -distance : (direction === 'down' ? distance : 0);
-              
+              const { direction, distance, duration, ease, delay } =
+                sprite.animations.slideIn.config;
+              const startX =
+                direction === "left"
+                  ? -distance
+                  : direction === "right"
+                  ? distance
+                  : 0;
+              const startY =
+                direction === "up"
+                  ? -distance
+                  : direction === "down"
+                  ? distance
+                  : 0;
+
               gameSprite.x += startX;
               gameSprite.y += startY;
-              
+
               this.tweens.add({
                 targets: gameSprite,
                 x: gameSprite.x - startX,
                 y: gameSprite.y - startY,
                 duration,
                 ease,
-                delay
+                delay,
               });
             }
 
@@ -178,13 +205,14 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
                 alpha: sprite.alpha || 1,
                 duration,
                 ease,
-                delay
+                delay,
               });
             }
 
             // Disappear Animation
             if (sprite.animations.disappear?.isEnabled) {
-              const { delay, duration, ease } = sprite.animations.disappear.config;
+              const { delay, duration, ease } =
+                sprite.animations.disappear.config;
               this.tweens.add({
                 targets: gameSprite,
                 alpha: 0,
@@ -193,7 +221,7 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
                 ease,
                 onComplete: () => {
                   gameSprite.destroy();
-                }
+                },
               });
             }
           }
@@ -202,10 +230,10 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
         handleClickActions(gameSprite, sprite) {
           if (sprite.clickAction?.enabled) {
             gameSprite.setInteractive();
-            gameSprite.on('pointerdown', () => {
-              sprite.clickAction.actions?.forEach(action => {
+            gameSprite.on("pointerdown", () => {
+              sprite.clickAction.actions?.forEach((action) => {
                 if (!action.enabled) return;
-                
+
                 switch (action.type) {
                   case "sceneTransition":
                     if (action.config?.targetSceneId) {
@@ -359,48 +387,54 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
 
         initScene(sceneId) {
           this.currentSceneId = sceneId;
-          this.sprites.forEach(sprite => sprite.destroy());
+          this.sprites.forEach((sprite) => sprite.destroy());
           this.sprites.clear();
 
-          const currentScene = scenes.find(s => s.id === sceneId);
+          const currentScene = scenes.find((s) => s.id === sceneId);
           if (!currentScene) return;
 
           // Group sprites by priority
-          const groupedSprites = currentScene.placedSprites.reduce((acc, sprite) => {
-            const priority = Math.max(
-              sprite.animations?.slideIn?.config?.priority || 0,
-              sprite.animations?.fadeIn?.config?.priority || 0
-            );
-            if (!acc[priority]) acc[priority] = [];
-            acc[priority].push(sprite);
-            return acc;
-          }, {});
+          const groupedSprites = currentScene.placedSprites.reduce(
+            (acc, sprite) => {
+              const priority = Math.max(
+                sprite.animations?.slideIn?.config?.priority || 0,
+                sprite.animations?.fadeIn?.config?.priority || 0
+              );
+              if (!acc[priority]) acc[priority] = [];
+              acc[priority].push(sprite);
+              return acc;
+            },
+            {}
+          );
 
           // Sort priorities
-          const priorities = Object.keys(groupedSprites).sort((a, b) => Number(a) - Number(b));
+          const priorities = Object.keys(groupedSprites).sort(
+            (a, b) => Number(a) - Number(b)
+          );
           let totalDelay = 0;
 
           // Create and animate sprites sequence by sequence
           priorities.forEach((priority, sequenceIndex) => {
             const sprites = groupedSprites[priority];
-            
+
             // Delay the creation and animation of each sequence
             this.time.delayedCall(totalDelay, () => {
-              sprites.forEach(sprite => {
-                const gameSprite = this.add.sprite(
-                  sprite.x,
-                  sprite.y,
-                  'charactersprite',
-                  sprite.frameName
-                )
-                .setOrigin(0, 0)
-                .setScale(sprite.scale || 1)
-                .setAlpha(sprite.alpha || 1)
-                .setRotation((sprite.rotation || 0) * Math.PI / 180);
+              sprites.forEach((sprite) => {
+                const gameSprite = this.add
+                  .sprite(
+                    sprite.x,
+                    sprite.y,
+                    "charactersprite",
+                    sprite.frameName
+                  )
+                  .setOrigin(0, 0)
+                  .setScale(sprite.scale || 1)
+                  .setAlpha(sprite.alpha || 1)
+                  .setRotation(((sprite.rotation || 0) * Math.PI) / 180);
 
-                gameSprite.setData('id', sprite.id);
+                gameSprite.setData("id", sprite.id);
                 this.sprites.set(sprite.id, gameSprite);
-                
+
                 this.applyAnimations(gameSprite, sprite);
                 this.handleClickActions(gameSprite, sprite);
               });
@@ -408,11 +442,13 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
 
             // Calculate delay for next sequence
             const maxDuration = Math.max(
-              ...sprites.map(sprite => {
-                const slideDuration = sprite.animations?.slideIn?.isEnabled ? 
-                  (sprite.animations.slideIn.config.duration || 1000) : 0;
-                const fadeDuration = sprite.animations?.fadeIn?.isEnabled ? 
-                  (sprite.animations.fadeIn.config.duration || 1000) : 0;
+              ...sprites.map((sprite) => {
+                const slideDuration = sprite.animations?.slideIn?.isEnabled
+                  ? sprite.animations.slideIn.config.duration || 1000
+                  : 0;
+                const fadeDuration = sprite.animations?.fadeIn?.isEnabled
+                  ? sprite.animations.fadeIn.config.duration || 1000
+                  : 0;
                 return Math.max(slideDuration, fadeDuration);
               })
             );
@@ -422,36 +458,43 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
 
           // Clear existing text objects
           this.children.list
-            .filter(child => child.type === 'Text')
-            .forEach(text => text.destroy());
+            .filter((child) => child.type === "Text")
+            .forEach((text) => text.destroy());
 
           // Add text elements for current scene
-          currentScene?.texts?.forEach(text => {
-            const textObject = this.add.text(text.x, text.y, text.content, {
-              fontFamily: text.fontFamily,
-              fontSize: text.fontSize,
-              color: text.color,
-              fontStyle: text.fontWeight === 'bold' ? 'bold' : 
-                        text.fontWeight === 'bolder' ? 'bold' : 
-                        text.fontWeight === 'lighter' ? 'lighter' : 'normal',
-              align: text.align,
-              wordWrap: { width: 800 }
-            }).setDepth(1000);
-            
+          currentScene?.texts?.forEach((text) => {
+            const textObject = this.add
+              .text(text.x, text.y, text.content, {
+                fontFamily: text.fontFamily,
+                fontSize: text.fontSize,
+                color: text.color,
+                fontStyle:
+                  text.fontWeight === "bold"
+                    ? "bold"
+                    : text.fontWeight === "bolder"
+                    ? "bold"
+                    : text.fontWeight === "lighter"
+                    ? "lighter"
+                    : "normal",
+                align: text.align,
+                wordWrap: { width: 800 },
+              })
+              .setDepth(1000);
+
             // Set origin based on alignment
-            switch(text.align) {
-              case 'center':
+            switch (text.align) {
+              case "center":
                 textObject.setOrigin(0.5, 0);
                 break;
-              case 'right':
+              case "right":
                 textObject.setOrigin(1, 0);
                 break;
               default:
                 textObject.setOrigin(0, 0);
             }
-            
+
             textObject.setAlpha(0);
-            
+
             this.time.delayedCall(text.delay, () => {
               this.tweens.add({
                 targets: textObject,
@@ -464,11 +507,11 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
                         targets: textObject,
                         alpha: 0,
                         duration: 500,
-                        onComplete: () => textObject.destroy()
+                        onComplete: () => textObject.destroy(),
                       });
                     });
                   }
-                }
+                },
               });
             });
           });
@@ -480,12 +523,22 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
         parent: gameContainerRef.current,
         width: dimensions.width,
         height: dimensions.height,
-        backgroundColor: "#000",
+        backgroundColor: "#000000",
         scale: {
           mode: Phaser.Scale.FIT,
           autoCenter: Phaser.Scale.CENTER_BOTH,
+          width: dimensions.width,
+          height: dimensions.height,
+          min: {
+            width: dimensions.width / 4,
+            height: dimensions.height / 4,
+          },
+          max: {
+            width: dimensions.width,
+            height: dimensions.height,
+          },
         },
-        scene: PlayableScene
+        scene: PlayableScene,
       };
 
       gameInstanceRef.current = new Phaser.Game(config);
@@ -502,13 +555,21 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
-      <button 
+      <button
         onClick={onClose}
         className="absolute top-4 right-4 text-white text-xl font-bold z-50 bg-purple-600 p-2 rounded-full hover:bg-purple-700"
       >
         <XMarkIcon className="w-6 h-6" />
       </button>
-      <div ref={gameContainerRef} className="w-full h-full" />
+      <div
+        ref={gameContainerRef}
+        className="w-full h-full"
+        style={{
+          maxWidth: "100vw",
+          maxHeight: "100vh",
+          margin: "auto",
+        }}
+      />
     </div>
   );
 };

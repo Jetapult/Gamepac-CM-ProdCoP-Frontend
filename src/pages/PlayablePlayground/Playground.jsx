@@ -6,6 +6,7 @@ import SceneManagerButton from "./components/scenes/SceneManagerButton";
 import PreviewModal from "./components/PreviewModal";
 import TextPanel from "./components/TextPanel";
 import BuildButton from "./components/BuildButton";
+import OrientationSelector from "./components/OrientationSelector";
 
 const STORAGE_KEY = "playgroundState";
 
@@ -114,6 +115,17 @@ export const createDefaultAnimations = () => ({
     ],
   },
 });
+
+export const ORIENTATIONS = {
+  LANDSCAPE: {
+    width: 1920,
+    height: 1080,
+  },
+  PORTRAIT: {
+    width: 1080,
+    height: 1920,
+  },
+};
 
 const Playground = () => {
   const gameContainerRef = useRef(null);
@@ -398,10 +410,9 @@ const Playground = () => {
   useEffect(() => {
     if (!gameContainerRef.current) return;
 
-    const dimensions =
-      orientation === "landscape"
-        ? { width: 1920, height: 1080 }
-        : { width: 1080, height: 1920 };
+    const dimensions = orientation === "landscape" 
+    ? ORIENTATIONS.LANDSCAPE 
+    : ORIENTATIONS.PORTRAIT;
 
     const config = {
       type: Phaser.AUTO,
@@ -449,7 +460,7 @@ const Playground = () => {
     return () => {
       newGame.destroy(true);
     };
-  }, [orientation]);
+  }, [orientation, backgroundMusic, audioElement]);
 
   const toggleOrientation = () => {
     setOrientation((prev) => (prev === "landscape" ? "portrait" : "landscape"));
@@ -551,8 +562,16 @@ const Playground = () => {
     if (!game || !spritesheet || !selectedFrame) return;
     const scene = game.playground;
     const rect = e.target.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (1920 / rect.width);
-    const y = (e.clientY - rect.top) * (1080 / rect.height);
+
+    // Get dimensions based on orientation
+    const dimensions =
+      orientation === "landscape"
+        ? ORIENTATIONS.LANDSCAPE
+        : ORIENTATIONS.PORTRAIT;
+
+    // Calculate coordinates based on orientation
+    const x = (e.clientX - rect.left) * (dimensions.width / rect.width);
+    const y = (e.clientY - rect.top) * (dimensions.height / rect.height); 
 
     const clickActionSprite = placedSprites.find(
       (sprite) =>
@@ -831,7 +850,7 @@ const Playground = () => {
         if (sprite.id === spriteId) {
           return {
             ...sprite,
-            priority: parseInt(priority)
+            priority: parseInt(priority),
           };
         }
         return sprite;
@@ -1977,7 +1996,6 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     });
   }, [game, scenes, activeSceneId]);
 
-
   return (
     <div className="flex w-full h-[calc(100vh-55px)] bg-[#1e1e1e] relative">
       <SceneManagerButton
@@ -2063,6 +2081,12 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
             )}
           </div>
         </div>
+
+       {!scenes.some((scene) => scene.placedSprites.length > 0) && <OrientationSelector
+          orientation={orientation}
+          onOrientationChange={setOrientation}
+          disabled={scenes.some((scene) => scene.placedSprites.length > 0)}
+        />}
 
         <div className="mb-6">
           <h3 className="text-white text-lg font-medium mb-4">Text Elements</h3>
