@@ -35,7 +35,7 @@ const SlideInAnimationPanel = ({ config, isEnabled, onToggle, onChange }) => {
           </select>
         </div>
 
-        <div>
+        {/* <div>
           <label className="text-white text-sm mb-2">Priority</label>
           <input
             type="number"
@@ -45,7 +45,7 @@ const SlideInAnimationPanel = ({ config, isEnabled, onToggle, onChange }) => {
             min="0"
             step="1"
           />
-        </div>
+        </div> */}
 
         <div>
           <label className="text-white text-sm mb-2">Distance (px)</label>

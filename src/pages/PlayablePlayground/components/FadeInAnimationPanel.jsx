@@ -22,7 +22,7 @@ const FadeInAnimationPanel = ({ config, isEnabled, onToggle, onChange }) => {
       </div>
 
       <div className="space-y-4">
-        <div>
+        {/* <div>
           <label className="text-white text-sm mb-2">Priority</label>
           <input
             type="number"
@@ -32,7 +32,7 @@ const FadeInAnimationPanel = ({ config, isEnabled, onToggle, onChange }) => {
             min="0"
             step="1"
           />
-        </div>
+        </div> */}
 
         <div>
           <label className="text-white text-sm">Duration (ms)</label>
