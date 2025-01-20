@@ -105,16 +105,6 @@ const TextPanel = ({ text, updateText }) => {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-white mb-2">Delay (ms):</label>
-            <input
-              type="number"
-              value={text.delay}
-              onChange={(e) => updateText({ delay: parseInt(e.target.value) })}
-              className="w-full p-2 bg-[#333] border border-[#444] text-white rounded"
-              min="0"
-            />
-          </div>
 
           <div className="flex items-end">
             <label className="flex items-center gap-2">
@@ -126,6 +116,30 @@ const TextPanel = ({ text, updateText }) => {
               />
               <span className="text-white">Keep Visible</span>
             </label>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-white mb-2">Sequence Number:</label>
+            <input
+              type="number"
+              value={text.sequence || 0}
+              onChange={(e) => updateText({ sequence: parseInt(e.target.value) })}
+              className="w-full p-2 bg-[#333] border border-[#444] text-white rounded"
+              min="0"
+            />
+          </div>
+          <div>
+            <label className="block text-white mb-2">Display Duration (ms):</label>
+            <input
+              type="number"
+              value={text.displayDuration || 2000}
+              onChange={(e) => updateText({ displayDuration: parseInt(e.target.value) })}
+              className="w-full p-2 bg-[#333] border border-[#444] text-white rounded"
+              min="0"
+              step="100"
+            />
           </div>
         </div>
       </div>

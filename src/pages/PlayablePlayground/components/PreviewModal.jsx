@@ -61,63 +61,6 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
               this.initScene(firstScene.id);
             }
           }
-
-          const currentScene = scenes.find((s) => s.id === this.currentSceneId);
-
-          // Add text elements for current scene
-          currentScene?.texts?.forEach((text) => {
-            const textObject = this.add
-              .text(text.x, text.y, text.content, {
-                fontFamily: text.fontFamily,
-                fontSize: text.fontSize,
-                color: text.color,
-                fontStyle:
-                  text.fontWeight === "bold"
-                    ? "bold"
-                    : text.fontWeight === "bolder"
-                    ? "bold"
-                    : text.fontWeight === "lighter"
-                    ? "lighter"
-                    : "normal",
-                align: text.align,
-                wordWrap: { width: 800 },
-              })
-              .setDepth(1000);
-
-            // Set origin based on alignment
-            switch (text.align) {
-              case "center":
-                textObject.setOrigin(0.5, 0);
-                break;
-              case "right":
-                textObject.setOrigin(1, 0);
-                break;
-              default:
-                textObject.setOrigin(0, 0);
-            }
-
-            textObject.setAlpha(0);
-
-            this.time.delayedCall(text.delay, () => {
-              this.tweens.add({
-                targets: textObject,
-                alpha: 1,
-                duration: 500,
-                onComplete: () => {
-                  if (!text.persistent) {
-                    this.time.delayedCall(2000, () => {
-                      this.tweens.add({
-                        targets: textObject,
-                        alpha: 0,
-                        duration: 500,
-                        onComplete: () => textObject.destroy(),
-                      });
-                    });
-                  }
-                },
-              });
-            });
-          });
         }
 
         applyAnimations(gameSprite, sprite) {
@@ -461,8 +404,12 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
             .filter((child) => child.type === "Text")
             .forEach((text) => text.destroy());
 
-          // Add text elements for current scene
-          currentScene?.texts?.forEach((text) => {
+          // Sort texts by sequence number (add this property in TextPanel)
+          const sortedTexts = [...(currentScene?.texts || [])].sort(
+            (a, b) => (a.sequence || 0) - (b.sequence || 0)
+          );
+
+          sortedTexts.forEach((text, index) => {
             const textObject = this.add
               .text(text.x, text.y, text.content, {
                 fontFamily: text.fontFamily,
@@ -493,27 +440,28 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
                 textObject.setOrigin(0, 0);
             }
 
-            textObject.setAlpha(0);
+            // Start with full opacity if persistent, otherwise start invisible
+            textObject.setAlpha(text.persistent ? 1 : 0);
 
-            this.time.delayedCall(text.delay, () => {
+            if (!text.persistent) {
+              // Show text immediately with fade in
               this.tweens.add({
                 targets: textObject,
                 alpha: 1,
-                duration: 500,
+                duration: 200, // Reduced duration for faster appearance
                 onComplete: () => {
-                  if (!text.persistent) {
-                    this.time.delayedCall(2000, () => {
-                      this.tweens.add({
-                        targets: textObject,
-                        alpha: 0,
-                        duration: 500,
-                        onComplete: () => textObject.destroy(),
-                      });
+                  // Hide text after display duration
+                  this.time.delayedCall(text.displayDuration || 2000, () => {
+                    this.tweens.add({
+                      targets: textObject,
+                      alpha: 0,
+                      duration: 200, // Reduced duration for faster fade out
+                      onComplete: () => textObject.destroy(),
                     });
-                  }
+                  });
                 },
               });
-            });
+            }
           });
         }
       }
@@ -549,7 +497,7 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
         gameInstanceRef.current.destroy(true);
       }
     };
-  }, [isOpen, scenes, texts]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
