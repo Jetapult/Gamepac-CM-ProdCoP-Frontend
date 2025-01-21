@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 
 const SceneConnectionPanel = ({ scenes, activeSceneId, onUpdateTransition }) => {
-  const [selectedSourceSprite, setSelectedSourceSprite] = useState(null);
+  const [selectedSourceSprites, setSelectedSourceSprites] = useState([]);
   const [previewConnection, setPreviewConnection] = useState(null);
   const canvasRef = useRef(null);
   const activeScene = scenes.find(scene => scene.id === activeSceneId);
@@ -16,19 +16,24 @@ const SceneConnectionPanel = ({ scenes, activeSceneId, onUpdateTransition }) => 
 
   useEffect(() => {
     drawSceneFlow();
-  }, [scenes, activeSceneId, selectedSourceSprite, previewConnection]);
+  }, [scenes, activeSceneId, selectedSourceSprites, previewConnection]);
 
   const handleSpriteSelect = (spriteId) => {
-    setSelectedSourceSprite(spriteId);
-    setPreviewConnection({
-      sourceSceneId: activeSceneId,
-      spriteId: spriteId
+    // Toggle sprite selection
+    setSelectedSourceSprites(prev => {
+      if (prev.includes(spriteId)) {
+        return prev.filter(id => id !== spriteId);
+      }
+      return [...prev, spriteId];
     });
   };
 
   const handleTargetSceneSelect = (targetSceneId) => {
-    onUpdateTransition(activeSceneId, targetSceneId, selectedSourceSprite);
-    setSelectedSourceSprite(null);
+    // Apply transition to all selected sprites
+    selectedSourceSprites.forEach(spriteId => {
+      onUpdateTransition(activeSceneId, targetSceneId, spriteId);
+    });
+    setSelectedSourceSprites([]);
     setPreviewConnection(null);
   };
 
@@ -172,21 +177,25 @@ const SceneConnectionPanel = ({ scenes, activeSceneId, onUpdateTransition }) => 
       />
 
       <div className="mt-4">
-        <label className="text-white text-xs block mb-2">Add Transition Trigger:</label>
-        <select
-          className="w-full p-2 bg-[#333] border border-[#444] text-white rounded mb-2"
-          value={selectedSourceSprite || ""}
-          onChange={(e) => handleSpriteSelect(e.target.value)}
-        >
-          <option value="">Select element to trigger transition...</option>
+        <label className="text-white text-xs block mb-2">Add Transition Triggers:</label>
+        <div className="space-y-2 mb-4">
           {activeScene?.placedSprites?.map(sprite => (
-            <option key={sprite.id} value={sprite.id}>
-              {sprite.frameName}
-            </option>
+            <div key={sprite.id} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id={`sprite-${sprite.id}`}
+                checked={selectedSourceSprites.includes(sprite.id)}
+                onChange={() => handleSpriteSelect(sprite.id)}
+                className="rounded border-gray-300"
+              />
+              <label htmlFor={`sprite-${sprite.id}`} className="text-white text-sm">
+                {sprite.frameName}
+              </label>
+            </div>
           ))}
-        </select>
+        </div>
 
-        {selectedSourceSprite && (
+        {selectedSourceSprites.length > 0 && (
           <select
             className="w-full p-2 bg-[#333] border border-[#444] text-white rounded"
             value=""
