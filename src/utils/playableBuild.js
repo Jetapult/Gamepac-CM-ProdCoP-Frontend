@@ -9,14 +9,18 @@ class MainScene extends Phaser.Scene {
     this.sprites = new Map();
     this.currentSceneId = 1;
     this.texturesLoaded = false;
+    this.backgroundMusic = null;
   }
 
   preload() {
+    // Audio handling similar to PreloaderScene
+    if (window.BACKGROUND_AUDIO) {
+      this.sound.decodeAudio('backgroundMusic', window.BACKGROUND_AUDIO);
+    }
+
     const img = new Image();
     img.onload = () => {
       this.textures.addImage('spritesheetname', img);
-      
-      // Initialize sprite frames
       const spriteFrames = ${JSON.stringify(savedState.spriteData.frames)};
       Object.entries(spriteFrames).forEach(([key, frame]) => {
         this.textures.get('spritesheetname').add(
@@ -28,16 +32,33 @@ class MainScene extends Phaser.Scene {
           frame.frame.h
         );
       });
-      
       this.texturesLoaded = true;
       this.initScene(1);
     };
     img.src = window.SPRITE_DATA;
+
+    // Add audio decode listener
+    this.sound.on('decoded', () => {
+      if (this.sound.locked) {
+        this.sound.once('unlocked', () => {
+          this.startBackgroundMusic();
+        });
+      } else {
+        this.startBackgroundMusic();
+      }
+    }, this);
   }
 
   create() {
     if (this.texturesLoaded) {
       this.initScene(1);
+    }
+  }
+
+  startBackgroundMusic() {
+    if (!this.backgroundMusic) {
+      this.backgroundMusic = this.sound.add('backgroundMusic', { loop: true });
+      this.backgroundMusic.play();
     }
   }
 
@@ -391,6 +412,7 @@ export async function generatePlayableBuild(scenes, savedState) {
 <body>
     <script>
         window.SPRITE_DATA = "${base64Spritesheet}";
+        window.BACKGROUND_AUDIO = "${savedState.backgroundMusic || ''}";
         
         ${generateMainSceneCode(scenes, savedState)}
 
@@ -402,13 +424,23 @@ export async function generatePlayableBuild(scenes, savedState) {
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH,
-                width: ${dimensions.width},
-                height: ${dimensions.height},
             },
-            scene: MainScene
+            scene: MainScene,
+            audio: {
+                disableWebAudio: false
+            }
         };
 
-        window.onload = () => new Phaser.Game(config);
+        window.addEventListener('click', function() {
+            // This helps with audio initialization on some browsers
+            if (window.game && window.game.sound && window.game.sound.context && window.game.sound.context.state === 'suspended') {
+                window.game.sound.context.resume();
+            }
+        });
+
+        window.onload = () => {
+            window.game = new Phaser.Game(config);
+        };
     </script>
 </body>
 </html>`;

@@ -12,10 +12,33 @@ const STORAGE_KEY = "playgroundState";
 
 const saveToLocalStorage = (state) => {
   try {
+    // Split the save operation if data is too large
+    if (state.backgroundMusic) {
+      const musicLength = state.backgroundMusic.length;
+    }
+
     const serializedState = JSON.stringify(state);
     localStorage.setItem(STORAGE_KEY, serializedState);
+
+    // Verify the save
+    const savedState = localStorage.getItem(STORAGE_KEY);
+    if (!savedState) {
+      throw new Error("Failed to save state");
+    }
+
+    const parsedState = JSON.parse(savedState);
+    if (
+      state.backgroundMusic &&
+      parsedState.backgroundMusic !== state.backgroundMusic
+    ) {
+      throw new Error("Audio data mismatch after save");
+    }
   } catch (err) {
     console.error("Error saving to localStorage:", err);
+    // If it's a quota error, we need to handle it
+    if (err.name === "QuotaExceededError") {
+      alert("Storage quota exceeded. Try using a smaller audio file.");
+    }
   }
 };
 
@@ -149,9 +172,31 @@ const Playground = () => {
   const [activeSceneId, setActiveSceneId] = useState(1);
   const [isSceneManagerOpen, setIsSceneManagerOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [backgroundMusic, setBackgroundMusic] = useState(null);
-  const [audioElement, setAudioElement] = useState(null);
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [backgroundAudio, setBackgroundAudio] = useState(null);
+  const [audioUrl, setAudioUrl] = useState("");
+
+  const handleAudioUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Audio = event.target.result;
+
+      // Save to state
+      setBackgroundAudio(file);
+      setAudioUrl(base64Audio);
+
+      // Update localStorage with the new audio
+      const currentState = loadFromLocalStorage() || {};
+      const newState = {
+        ...currentState,
+        backgroundMusic: base64Audio,
+      };
+      saveToLocalStorage(newState);
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Update the addText function to include new properties
   const addText = () => {
@@ -212,63 +257,6 @@ const Playground = () => {
       })
     );
   };
-
-  const toggleBackgroundMusic = () => {
-    if (!audioElement) return;
-
-    if (audioElement.paused) {
-      audioElement
-        .play()
-        .then(() => setIsAudioPlaying(true))
-        .catch((error) => console.log("Audio playback failed:", error));
-    } else {
-      audioElement.pause();
-      setIsAudioPlaying(false);
-    }
-  };
-
-  const handleBackgroundMusicUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (audioElement) {
-        audioElement.pause();
-      }
-      const audio = new Audio(event.target.result);
-      audio.loop = true;
-      setBackgroundMusic(event.target.result);
-      setAudioElement(audio);
-      saveCurrentState();
-    };
-    reader.readAsDataURL(file);
-  };
-
-  useEffect(() => {
-    const handleUserInteraction = () => {
-      if (audioElement && audioElement.paused) {
-        audioElement.play().catch((error) => {
-          console.log("Audio playback failed:", error);
-        });
-      }
-      // Remove the event listener after first interaction
-      document.removeEventListener("click", handleUserInteraction);
-    };
-
-    if (audioElement) {
-      // Add event listener for user interaction
-      document.addEventListener("click", handleUserInteraction);
-    }
-
-    return () => {
-      if (audioElement) {
-        audioElement.pause();
-        audioElement.currentTime = 0;
-        document.removeEventListener("click", handleUserInteraction);
-      }
-    };
-  }, [audioElement]);
 
   const getActiveScene = () => scenes.find((s) => s.id === activeSceneId);
   const getActivePlacedSprites = () => getActiveScene()?.placedSprites || [];
@@ -410,9 +398,10 @@ const Playground = () => {
   useEffect(() => {
     if (!gameContainerRef.current) return;
 
-    const dimensions = orientation === "landscape" 
-    ? ORIENTATIONS.LANDSCAPE 
-    : ORIENTATIONS.PORTRAIT;
+    const dimensions =
+      orientation === "landscape"
+        ? ORIENTATIONS.LANDSCAPE
+        : ORIENTATIONS.PORTRAIT;
 
     const config = {
       type: Phaser.AUTO,
@@ -434,22 +423,6 @@ const Playground = () => {
         create: function () {
           this.game.playground = this;
           this.input.enabled = true;
-
-          // Play background music if exists
-          if (backgroundMusic && audioElement) {
-            // Add user interaction check
-            this.input.on(
-              "pointerdown",
-              () => {
-                if (audioElement.paused) {
-                  audioElement.play().catch((error) => {
-                    console.log("Audio playback failed:", error);
-                  });
-                }
-              },
-              this
-            );
-          }
         },
       },
     };
@@ -460,11 +433,7 @@ const Playground = () => {
     return () => {
       newGame.destroy(true);
     };
-  }, [orientation, backgroundMusic, audioElement]);
-
-  const toggleOrientation = () => {
-    setOrientation((prev) => (prev === "landscape" ? "portrait" : "landscape"));
-  };
+  }, [orientation]);
 
   const handleSpriteUpload = (e) => {
     const file = e.target.files[0];
@@ -571,7 +540,7 @@ const Playground = () => {
 
     // Calculate coordinates based on orientation
     const x = (e.clientX - rect.left) * (dimensions.width / rect.width);
-    const y = (e.clientY - rect.top) * (dimensions.height / rect.height); 
+    const y = (e.clientY - rect.top) * (dimensions.height / rect.height);
 
     const clickActionSprite = placedSprites.find(
       (sprite) =>
@@ -1797,7 +1766,7 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
       spritesheet: spritesheet?.src,
       spriteData,
       frameNames,
-      backgroundMusic,
+      backgroundMusic: audioUrl,
     };
     saveToLocalStorage(state);
   };
@@ -1823,11 +1792,16 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     setSelectedFrame(savedState.selectedFrame);
     setFrameNames(savedState.frameNames || []);
     setSpriteData(savedState.spriteData);
-    if (savedState?.backgroundMusic) {
-      const audio = new Audio(savedState.backgroundMusic);
-      audio.loop = true;
-      setBackgroundMusic(savedState.backgroundMusic);
-      setAudioElement(audio);
+    if (savedState.backgroundMusic) {
+      setAudioUrl(savedState.backgroundMusic);
+      fetch(savedState.backgroundMusic)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const file = new File([blob], "background.audio", {
+            type: blob.type,
+          });
+          setBackgroundAudio(file);
+        });
     }
 
     if (savedState.spritesheet) {
@@ -2022,12 +1996,12 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
       <div className="w-[300px] bg-[#252525] p-5 border-l border-[#333] h-full overflow-y-auto">
         {placedSprites.length > 0 && (
           <div className="flex gap-2 mb-4">
-            <button
+            {/* <button
               onClick={handleCopyAllCode}
               className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
             >
               Copy All Sprites Code
-            </button>
+            </button> */}
             <button
               onClick={() => setIsPreviewOpen(true)}
               className="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded transition-colors mb-2"
@@ -2060,33 +2034,31 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
             />
           </div>
           <div className="mb-4">
-            <label className="block text-white mb-2">Background Music:</label>
+            <label className="block text-white mb-2">Background Audio:</label>
             <input
               type="file"
               accept="audio/*"
-              onChange={handleBackgroundMusicUpload}
+              onChange={handleAudioUpload}
               className="w-full p-2 bg-[#333] border border-[#444] text-white rounded hover:border-[#555]"
             />
-            {audioElement && (
-              <button
-                onClick={toggleBackgroundMusic}
-                className={`px-4 py-2 rounded ${
-                  isAudioPlaying
-                    ? "bg-red-500 hover:bg-red-600"
-                    : "bg-green-500 hover:bg-green-600"
-                } text-white`}
-              >
-                {isAudioPlaying ? "Pause" : "Play"}
-              </button>
+            {audioUrl && (
+              <div className="mt-2">
+                <audio controls className="w-full">
+                  <source src={audioUrl} type={backgroundAudio?.type} />
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
             )}
           </div>
         </div>
 
-       {!scenes.some((scene) => scene.placedSprites.length > 0) && <OrientationSelector
-          orientation={orientation}
-          onOrientationChange={setOrientation}
-          disabled={scenes.some((scene) => scene.placedSprites.length > 0)}
-        />}
+        {!scenes.some((scene) => scene.placedSprites.length > 0) && (
+          <OrientationSelector
+            orientation={orientation}
+            onOrientationChange={setOrientation}
+            disabled={scenes.some((scene) => scene.placedSprites.length > 0)}
+          />
+        )}
 
         <div className="mb-6">
           <h3 className="text-white text-lg font-medium mb-4">Text Elements</h3>
@@ -2188,12 +2160,12 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
                       {sprite.isDestroyed && " (Destroyed)"}
                     </span>
                     <div className="flex gap-2">
-                      <button
+                      {/* <button
                         onClick={() => handleCopyCode(sprite)}
                         className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-sm transition-colors"
                       >
                         Copy Code
-                      </button>
+                      </button> */}
                       <button
                         onClick={() => deleteSprite(sprite.id)}
                         className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm transition-colors"
@@ -2382,7 +2354,7 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         scenes={scenes}
-        backgroundMusic={backgroundMusic}
+        backgroundMusic={loadFromLocalStorage()?.backgroundMusic || audioUrl}
         texts={scenes.find((s) => s.id === activeSceneId)?.texts || []}
       />
     </div>
