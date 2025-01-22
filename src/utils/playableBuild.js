@@ -12,6 +12,33 @@ class MainScene extends Phaser.Scene {
     this.backgroundMusic = null;
   }
 
+  getMobileOperatingSystem() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    if (/android/i.test(userAgent)) return "Android";
+    if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) return "iOS";
+    return "unknown";
+  }
+
+  trackClick() {
+    const iosLink = "${savedState.iosLink || 'https://apps.apple.com'}";
+    const androidLink = "${savedState.androidLink || 'https://play.google.com/store'}";
+    
+    const link = this.getMobileOperatingSystem() === "Android" ? androidLink : iosLink;
+    
+    if (typeof mraid !== "undefined") {
+      mraid.open(link);
+    } else {
+      window.open(link);
+    }
+  }
+
+  handleLastSceneClick() {
+    const lastScene = ${JSON.stringify(scenes)}.length;
+    if (this.currentSceneId === lastScene) {
+      this.trackClick();
+    }
+  }
+
   preload() {
     // Audio handling similar to PreloaderScene
     if (window.BACKGROUND_AUDIO) {
@@ -63,12 +90,21 @@ class MainScene extends Phaser.Scene {
   }
 
   initScene(sceneId) {
-    this.currentSceneId = sceneId;
+    // Clear existing sprites
     this.sprites.forEach(sprite => sprite.destroy());
     this.sprites.clear();
-
+    
+    this.currentSceneId = sceneId;
     const currentScene = ${JSON.stringify(scenes)}.find(s => s.id === sceneId);
     if (!currentScene) return;
+
+    // If this is the last scene, add a full-screen interactive zone first
+    if (sceneId === ${scenes.length}) {
+      const zone = this.add.zone(0, 0, this.game.config.width, this.game.config.height);
+      zone.setOrigin(0, 0);
+      zone.setInteractive();
+      zone.on('pointerdown', () => this.trackClick());
+    }
 
     // Group sprites by priority
     const groupedSprites = currentScene.placedSprites.reduce((acc, sprite) => {
@@ -285,6 +321,7 @@ class MainScene extends Phaser.Scene {
 
     gameSprite.setInteractive();
     gameSprite.on('pointerdown', () => {
+      this.handleLastSceneClick();
       sprite.clickAction.actions?.forEach(action => {
         if (!action.enabled) return;
         

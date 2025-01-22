@@ -174,6 +174,24 @@ const Playground = () => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [backgroundAudio, setBackgroundAudio] = useState(null);
   const [audioUrl, setAudioUrl] = useState("");
+  const [iosLink, setIosLink] = useState("");
+  const [androidLink, setAndroidLink] = useState("");
+
+  const handleLinkUpdate = (type, value) => {
+    const currentState = loadFromLocalStorage() || {};
+    const newState = {
+      ...currentState,
+      [type]: value,
+    };
+
+    if (type === "iosLink") {
+      setIosLink(value);
+    } else {
+      setAndroidLink(value);
+    }
+
+    saveToLocalStorage(newState);
+  };
 
   const handleAudioUpload = (e) => {
     const file = e.target.files[0];
@@ -1767,6 +1785,8 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
       spriteData,
       frameNames,
       backgroundMusic: audioUrl,
+      iosLink,
+      androidLink,
     };
     saveToLocalStorage(state);
   };
@@ -1792,6 +1812,8 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
     setSelectedFrame(savedState.selectedFrame);
     setFrameNames(savedState.frameNames || []);
     setSpriteData(savedState.spriteData);
+    setIosLink(savedState.iosLink);
+    setAndroidLink(savedState.androidLink);
     if (savedState.backgroundMusic) {
       setAudioUrl(savedState.backgroundMusic);
       fetch(savedState.backgroundMusic)
@@ -2049,6 +2071,31 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
                 </audio>
               </div>
             )}
+          </div>
+        </div>
+        <div className="mb-6">
+          <h3 className="text-white text-lg font-medium mb-4">Store Links</h3>
+          <div className="mb-4">
+            <label className="block text-white mb-2">iOS App Store URL:</label>
+            <input
+              type="url"
+              value={iosLink}
+              onChange={(e) => handleLinkUpdate("iosLink", e.target.value)}
+              className="w-full p-2 bg-[#333] border border-[#444] text-white rounded hover:border-[#555]"
+              placeholder="https://apps.apple.com/..."
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-white mb-2">
+              Android Play Store URL:
+            </label>
+            <input
+              type="url"
+              value={androidLink}
+              onChange={(e) => handleLinkUpdate("androidLink", e.target.value)}
+              className="w-full p-2 bg-[#333] border border-[#444] text-white rounded hover:border-[#555]"
+              placeholder="https://play.google.com/store/..."
+            />
           </div>
         </div>
 

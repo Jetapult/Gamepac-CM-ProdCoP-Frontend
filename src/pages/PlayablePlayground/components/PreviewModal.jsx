@@ -26,6 +26,21 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
           this.currentSceneId = 1;
         }
 
+        getMobileOperatingSystem() {
+          const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+          if (/android/i.test(userAgent)) return "Android";
+          if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) return "iOS";
+          return "unknown";
+        }
+      
+        trackClick() {
+          const savedState = JSON.parse(localStorage.getItem("playgroundState"));
+          const iosLink = savedState?.iosLink || 'https://apps.apple.com';
+          const androidLink = savedState?.androidLink || 'https://play.google.com/store';
+          const link = this.getMobileOperatingSystem() === "Android" ? androidLink : iosLink;
+          window.open(link);
+        }
+
         create() {
           if (!this.texturesLoaded) {
             const img = new Image();
@@ -335,6 +350,13 @@ const PreviewModal = ({ isOpen, onClose, scenes, backgroundMusic, texts }) => {
 
           const currentScene = scenes.find((s) => s.id === sceneId);
           if (!currentScene) return;
+
+          if (sceneId === scenes.length) {
+            const zone = this.add.zone(0, 0, this.game.config.width, this.game.config.height);
+            zone.setOrigin(0, 0);
+            zone.setInteractive();
+            zone.on('pointerdown', () => this.trackClick());
+          }
 
           // Group sprites by priority
           const groupedSprites = currentScene.placedSprites.reduce(
