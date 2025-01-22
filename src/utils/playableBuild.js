@@ -417,7 +417,7 @@ export async function generatePlayableBuild(scenes, savedState) {
   try {
     const zip = new JSZip();
     
-    // Convert spritesheet to base64
+    // Convert spritesheet to base64 with Parcel's data-url transformer
     const response = await fetch(savedState.spritesheet);
     const blob = await response.blob();
     const reader = new FileReader();
@@ -430,20 +430,34 @@ export async function generatePlayableBuild(scenes, savedState) {
     const base64Spritesheet = await base64Promise;
     const orientation = savedState.orientation || 'landscape';
     
-    // Define dimensions based on orientation
     const dimensions = orientation === 'landscape' 
       ? { width: 1920, height: 1080 }
       : { width: 1080, height: 1920 };
 
-    const html = `
-<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="ad.orientation" content="${orientation}">
+    <meta name="ad.size" content="width=${dimensions.width},height=${dimensions.height}">
+    <meta name="mraid.version" content="3.0">
     <title>Playable Ad</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin: 0; padding: 0; background: #000; }
-        canvas { width: 100vw; height: 100vh; }
+        body {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        * {
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
@@ -461,29 +475,30 @@ export async function generatePlayableBuild(scenes, savedState) {
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH,
+                orientation: Phaser.Scale.${orientation.toUpperCase()}
             },
-            scene: MainScene,
-            audio: {
-                disableWebAudio: false
-            }
+            scene: MainScene
         };
 
-        window.addEventListener('click', function() {
-            // This helps with audio initialization on some browsers
-            if (window.game && window.game.sound && window.game.sound.context && window.game.sound.context.state === 'suspended') {
-                window.game.sound.context.resume();
-            }
-        });
-
-        window.onload = () => {
+        if (window.mraid) {
+            window.mraid.addEventListener('ready', () => {
+                window.game = new Phaser.Game(config);
+            });
+        } else {
             window.game = new Phaser.Game(config);
-        };
+        }
     </script>
 </body>
 </html>`;
 
     zip.file("index.html", html);
-    const content = await zip.generateAsync({ type: "blob" });
+    const content = await zip.generateAsync({ 
+      type: "blob",
+      compression: "DEFLATE",
+      compressionOptions: {
+        level: 9
+      }
+    });
     saveAs(content, "playable-ad.zip");
   } catch (error) {
     console.error("Build generation error:", error);
