@@ -213,44 +213,6 @@ export default function VideoPlayable() {
     }
   };
 
-  const handleVideoMetadata = () => {
-    if (videoRef.current) {
-      setDuration(videoRef.current.duration * 1000);
-    }
-  };
-
-  const handleBreakAudio = (breakPoint) => {
-    if (breakAudioElement) {
-      breakAudioElement.pause();
-      breakAudioElement.remove();
-    }
-
-    if (!breakPoint?.backgroundMusic?.file) return;
-
-    const audio = new Audio(
-      URL.createObjectURL(breakPoint.backgroundMusic.file)
-    );
-    audio.volume = breakPoint.backgroundMusic.volume;
-
-    if (breakPoint.backgroundMusic.repeat === 0) {
-      audio.loop = true;
-    } else {
-      let playCount = 0;
-      audio.addEventListener("ended", () => {
-        playCount++;
-        if (playCount < breakPoint.backgroundMusic.repeat) {
-          audio.currentTime = 0;
-          audio.play();
-        }
-      });
-    }
-
-    setBreakAudioElement(audio);
-    breakAudioRef.current = audio;
-
-    audio.play();
-  };
-
   const stopBreakAudio = () => {
     if (breakAudioElement) {
       breakAudioElement.pause();
@@ -259,6 +221,30 @@ export default function VideoPlayable() {
       setBreakAudioElement(null);
     }
   };
+
+  const handleVideoMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration * 1000);
+    }
+  };
+
+  const handleBreakAudio = useCallback((currentBreak) => {
+    if (!currentBreak.backgroundMusic?.file) return;
+    
+    // Stop any existing audio
+    stopBreakAudio();
+
+    // Create and play new audio
+    const audio = new Audio(URL.createObjectURL(currentBreak.backgroundMusic.file));
+    audio.volume = currentBreak.backgroundMusic.volume;
+    audio.loop = currentBreak.backgroundMusic.repeat > 1;
+    setBreakAudioElement(audio);
+    
+    audio.play().catch(error => {
+      console.error('Error playing break audio:', error);
+    });
+  }, [stopBreakAudio]);
+
 
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
@@ -271,6 +257,7 @@ export default function VideoPlayable() {
       setIsPreviewMode(true);
       setIsPlaying(true);
       clearBreakContent();
+      stopBreakAudio();
       setActiveBreakIndex(-1);
       videoElement.currentTime = 0;
       videoElement.play().catch(error => {
@@ -280,9 +267,10 @@ export default function VideoPlayable() {
       videoElement.pause();
       setIsPlaying(false);
       setIsPreviewMode(false);
+      stopBreakAudio();
       clearBreakContent();
     }
-  }, [isPlaying, clearBreakContent]);
+  }, [isPlaying, clearBreakContent, stopBreakAudio]);
 
   const toggleOrientation = () => {
     setOrientation((prev) => ({
@@ -528,7 +516,9 @@ export default function VideoPlayable() {
         
         sprite.on('pointerdown', () => {
           clearBreakContent();
-          if (currentBreak.backgroundMusic?.file) {
+          
+          // Only stop audio if stopOnVideoResume is true
+          if (currentBreak.stopOnVideoResume && currentBreak.backgroundMusic?.file) {
             stopBreakAudio();
           }
           
@@ -874,19 +864,39 @@ export default function VideoPlayable() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!videoSpriteRef.current) return;
+
+    const videoElement = videoSpriteRef.current.texture.baseTexture.resource.source;
+    
+    const handleVideoEnd = () => {
+      setIsPlaying(false);
+      setIsPreviewMode(false);
+      stopBreakAudio();
+      clearBreakContent();
+      setActiveBreakIndex(-1);
+    };
+
+    videoElement.addEventListener('ended', handleVideoEnd);
+    
+    return () => {
+      videoElement.removeEventListener('ended', handleVideoEnd);
+    };
+  }, [stopBreakAudio, clearBreakContent]);
+
   const renderExpandableButtons = () => (
     <div
       className={`absolute top-4 left-4 z-10 ${
-        isPlaying ? "pointer-events-none opacity-50" : ""
+        isPreviewMode ? "pointer-events-none opacity-50" : ""
       }`}
     >
       <div className="relative">
         <button
-          onClick={() => !isPlaying && setIsExpanded(!isExpanded)}
+          onClick={() => !isPreviewMode && setIsExpanded(!isExpanded)}
           className={`w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white ${
-            isPlaying ? "cursor-default" : "cursor-pointer"
+            isPreviewMode ? "cursor-default" : "cursor-pointer"
           }`}
-          disabled={isPlaying}
+          disabled={isPreviewMode}
         >
           <Plus
             className={`w-6 h-6 transition-transform ${
@@ -895,7 +905,7 @@ export default function VideoPlayable() {
           />
         </button>
 
-        {isExpanded && !isPlaying && (
+        {isExpanded && !isPreviewMode && (
           <div className="absolute left-0 top-12 space-y-2">
             <button
               onClick={() => addBreak(currentTime)}
@@ -1126,7 +1136,7 @@ export default function VideoPlayable() {
       <div
         style={{ width: `${splitPosition}%` }}
         className={`h-full bg-gray-100 overflow-hidden mx-4 rounded-xl ${
-          isPlaying ? "pointer-events-none opacity-50" : ""
+          isPreviewMode ? "pointer-events-none opacity-50 bg-gray-300" : ""
         }`}
       >
         {renderTabs()}
@@ -1135,10 +1145,10 @@ export default function VideoPlayable() {
 
       <div
         className={`group absolute h-full flex items-center cursor-ew-resize ${
-          isPlaying ? "pointer-events-none opacity-50" : ""
+          isPreviewMode ? "pointer-events-none opacity-50" : ""
         }`}
         style={{ left: `${splitPosition}%`, transform: "translateX(-50%)" }}
-        onMouseDown={!isPlaying ? handleMouseDown : undefined}
+        onMouseDown={!isPreviewMode ? handleMouseDown : undefined}
       >
         <div className="absolute w-4 h-full" />
         <div className="w-[1px] bg-primary/10 h-full" />
@@ -1178,13 +1188,13 @@ export default function VideoPlayable() {
             </div>
             <div
               className={`absolute top-4 right-4 bg-gray-800 rounded-lg p-2 ${
-                isPlaying ? "pointer-events-none opacity-50" : ""
+                isPreviewMode ? "pointer-events-none opacity-50" : ""
               }`}
             >
               <button
                 onClick={toggleOrientation}
                 className="p-2 hover:bg-gray-700 rounded"
-                disabled={isPlaying}
+                disabled={isPreviewMode}
               >
                 <RotateCw className="w-5 h-5 text-white" />
               </button>
@@ -1196,7 +1206,7 @@ export default function VideoPlayable() {
               <button
                 onClick={togglePlayPause}
                 className={`w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-700 ${
-                  isPreviewMode ? 'opacity-50' : ''
+                  isPreviewMode && activeBreakIndex !== -1 ? 'opacity-50' : ''
                 }`}
                 disabled={isPreviewMode && activeBreakIndex !== -1}
               >
