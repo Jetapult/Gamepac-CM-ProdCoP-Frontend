@@ -32,9 +32,11 @@
     "jszip": "^3.10.1",
     "lamejs": "^1.2.1",
     "lodash": "^4.17.21",
+    "lucide-react": "^0.473.0",
     "moment": "^2.30.1",
     "pdfjs-dist": "^4.5.136",
     "phaser": "^3.87.0",
+    "pixi.js": "^7.4.2",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-color": "^2.19.3",
@@ -53,6 +55,8 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@parcel/optimizer-data-url": "^2.5.0",
+    "@parcel/transformer-inline-string": "^2.5.0",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.3",
@@ -61,14 +65,12 @@
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
-    "postcss": "^8.4.27",
-    "react-error-overlay": "^6.0.9",
-    "tailwindcss": "^3.3.3",
-    "vite": "^4.4.5",
-    "@parcel/optimizer-data-url": "^2.5.0",
-    "@parcel/transformer-inline-string": "^2.5.0",
     "parcel": "^2.5.0",
+    "postcss": "^8.4.27",
+    "process": "^0.11.10",
+    "react-error-overlay": "^6.0.9",
     "sharp": "^0.33.5",
-    "process": "^0.11.10"
+    "tailwindcss": "^3.3.3",
+    "vite": "^4.4.5"
   }
 }
