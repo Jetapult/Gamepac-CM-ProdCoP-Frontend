@@ -109,6 +109,39 @@ export default function VideoPlayable() {
 
   const [videoPlayable, setVideoPlayable] = useState(initialState);
 
+  // Create a ref that will hold the active audio elements keyed by modification id.
+  const audioElementsRef = useRef({});
+
+  // Helper to play background music for a modification.
+  const playModificationAudio = (modification) => {
+    if (
+      modification.backgroundMusic &&
+      modification.backgroundMusic.file
+    ) {
+      // Check if the file is a Blob (from an upload) or a URL string.
+      const fileOrUrl = modification.backgroundMusic.file;
+      const audioSrc = fileOrUrl instanceof Blob
+        ? URL.createObjectURL(fileOrUrl)
+        : fileOrUrl;
+
+      const audio = new Audio(audioSrc);
+      audio.volume = modification.backgroundMusic.volume ?? 1;
+      // If repeat is set (non‑zero), use looping.
+      audio.loop = modification.backgroundMusic.repeat !== 0;
+      audio.play().catch((err) => console.error("Audio play error:", err));
+      return audio;
+    }
+    return null;
+  };
+
+  // Helper to stop an audio element.
+  const stopModificationAudio = (audio) => {
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+  };
+
   const clearBreakContent = useCallback(() => {
     if (!pixiAppRef.current) return;
 
@@ -583,15 +616,15 @@ export default function VideoPlayable() {
 
         sprite.on("pointerdown", () => {
           clearBreakContent();
-
-          // Only stop audio if stopOnVideoResume is true
+          // Only stop audio if stopOnVideoResume is true and audio is playing.
           if (
             currentBreak.stopOnVideoResume &&
-            currentBreak.backgroundMusic?.file
+            currentBreak.backgroundMusic?.file &&
+            audioElementsRef.current[currentBreak.id]
           ) {
-            stopBreakAudio();
+            stopModificationAudio(audioElementsRef.current[currentBreak.id]);
+            delete audioElementsRef.current[currentBreak.id];
           }
-
           const videoElement =
             videoSpriteRef.current.texture.baseTexture.resource.source;
           videoElement
@@ -641,7 +674,7 @@ export default function VideoPlayable() {
       });
 
       if (breakIndex !== -1 && breakIndex !== activeBreakIndex) {
-        // A break (not an overlay) has been reached. Pause the video.
+        // A break (not an overlay) has been reached.
         videoElement.pause();
         setIsPlaying(false);
         const currentBreak = videoPlayable.modifications[breakIndex];
@@ -660,6 +693,16 @@ export default function VideoPlayable() {
           spritesRef.current.push(background);
         }
 
+        // Start playing break background music if available and not already playing.
+        if (currentBreak.backgroundMusic?.file && !audioElementsRef.current[currentBreak.id]) {
+          setTimeout(() => {
+          const audio = playModificationAudio(currentBreak);
+          if (audio) {
+              audioElementsRef.current[currentBreak.id] = audio;
+            }
+          }, 100);
+        }
+
         // Render break sprites.
         currentBreak.sprites.forEach((spriteData) => {
           if (!spriteData.file) return;
@@ -674,13 +717,19 @@ export default function VideoPlayable() {
           sprite.rotation = spriteData.rotation * (Math.PI / 180);
           sprite.alpha = spriteData.transparency;
 
-          // Make the sprite interactive.
+          // Make the sprite interactive: on pointerdown resume video.
           sprite.eventMode = "static";
           sprite.cursor = "pointer";
           sprite.on("pointerdown", () => {
             clearBreakContent();
-            if (currentBreak.backgroundMusic?.file) {
-              stopBreakAudio();
+            // Only stop audio if stopOnVideoResume is true and audio is playing.
+            if (
+              currentBreak.stopOnVideoResume &&
+              currentBreak.backgroundMusic?.file &&
+              audioElementsRef.current[currentBreak.id]
+            ) {
+              stopModificationAudio(audioElementsRef.current[currentBreak.id]);
+              delete audioElementsRef.current[currentBreak.id];
             }
             const videoElement =
               videoSpriteRef.current.texture.baseTexture.resource.source;
@@ -1098,6 +1147,15 @@ export default function VideoPlayable() {
         
         overlays.forEach(overlayMod => {
           if (!overlayMod) return;
+          
+          // Play overlay background music if available and not already playing.
+          if (overlayMod.backgroundMusic?.file && !audioElementsRef.current[overlayMod.id]) {
+            const audio = playModificationAudio(overlayMod);
+            if (audio) {
+              audioElementsRef.current[overlayMod.id] = audio;
+            }
+          }
+
           if (overlayMod.background) {
             const background = new PIXI.Graphics();
             background.beginFill(
@@ -1119,6 +1177,26 @@ export default function VideoPlayable() {
       }
     }
   }, [isPreviewMode, videoPlayable.modifications, activeTab, currentTime]);
+
+  useEffect(() => {
+    // Build a set of active modification IDs (from overlays in preview mode).
+    const activeModIds = new Set();
+    if (isPreviewMode) {
+      videoPlayable.modifications.forEach((mod) => {
+        if (mod.type === ModificationType.OVERLAY && currentTime >= mod.startTime && currentTime <= mod.endTime) {
+          activeModIds.add(mod.id);
+        }
+      });
+    }
+    // For each audio element stored, if its mod is no longer active, stop its audio.
+    Object.keys(audioElementsRef.current).forEach((modId) => {
+      // modId comes in as a string; convert it if necessary.
+      if (!activeModIds.has(Number(modId))) {
+        stopModificationAudio(audioElementsRef.current[modId]);
+        delete audioElementsRef.current[modId];
+      }
+    });
+  }, [currentTime, isPreviewMode, videoPlayable.modifications]);
 
   return (
     <div
