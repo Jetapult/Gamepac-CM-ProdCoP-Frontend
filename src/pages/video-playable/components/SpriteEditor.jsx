@@ -1,4 +1,5 @@
 import { ArrowUp, ArrowDown, Edit, Trash, Upload } from "lucide-react";
+import SpriteAnimationTabs from "./SpriteAnimationTabs";
 
 const SpriteEditor = ({ sprite, onUpdate, onDelete, onMoveUp, onMoveDown }) => {
   const handleNumberInput = (property, value, isNested = false, nestedProperty = '') => {
@@ -31,6 +32,7 @@ const SpriteEditor = ({ sprite, onUpdate, onDelete, onMoveUp, onMoveDown }) => {
   };
 
   return (
+    <>
     <div className="mt-4 border-t border-gray-700 pt-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -185,6 +187,11 @@ const SpriteEditor = ({ sprite, onUpdate, onDelete, onMoveUp, onMoveDown }) => {
         </div> */}
       </div>
     </div>
+    <SpriteAnimationTabs
+        sprite={sprite}
+        onUpdate={onUpdate}
+      />
+    </>
   );
 };
 
