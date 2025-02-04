@@ -33,6 +33,7 @@ export const baseModificationState = {
   time: 0,
   background: false,
   backgroundColor: "#000000",
+  transparency: 0.7,
   backgroundMusic: {
     file: null,
     volume: 1,
