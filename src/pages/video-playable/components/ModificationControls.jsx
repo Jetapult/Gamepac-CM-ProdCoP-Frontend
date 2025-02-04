@@ -1,8 +1,22 @@
-import { Pencil, Trash, ArrowUp, ArrowDown, Edit, Hand } from "lucide-react";
+import { Pencil, Trash, Palette } from "lucide-react";
 import { Switch } from "@headlessui/react";
 import { initialSpriteState, ModificationType } from "../state";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import SpriteEditor from "./SpriteEditor";
+import React from "react";
+import { SketchPicker } from "react-color";
+
+// Helper function to convert hex color into an RGB object
+const hexToRgb = (hex) => {
+  // Remove the hash if present
+  hex = hex.replace(/^#/, "");
+  const bigint = parseInt(hex, 16);
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255,
+  };
+};
 
 const SwitchComponent = ({ checked, onChange, label }) => (
   <Switch
@@ -68,6 +82,8 @@ const ModificationControls = ({
           file,
         },
       });
+      // Reset the input value so the same file can be selected again later.
+      e.target.value = "";
     }
   };
 
@@ -96,6 +112,8 @@ const ModificationControls = ({
       updateModification({
         sprites: [...currentModification.sprites, newSprite],
       });
+      // Reset the input value so the user can select the same image again later.
+      e.target.value = "";
     } catch (error) {
       console.error("Error adding sprite:", error);
     }
@@ -282,30 +300,10 @@ const ModificationControls = ({
       </div>
 
       {currentModification.background && (
-        <div>
-          <label className="block mb-2">Background Color</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={currentModification.backgroundColor}
-              onChange={(e) => {
-                updateModification({
-                  backgroundColor: e.target.value,
-                });
-              }}
-            />
-            <SwitchComponent
-              checked={currentModification.relativeToScreenSize}
-              onChange={(checked) => {
-                updateModification({
-                  relativeToScreenSize: checked,
-                });
-              }}
-              label="Relative to Screen Size"
-            />
-            <span>Relative to Screen Size</span>
-          </div>
-        </div>
+        <BackgroundEditor
+          currentModification={currentModification}
+          updateModification={updateModification}
+        />
       )}
 
       <div className="flex items-center justify-between mb-4">
@@ -340,4 +338,38 @@ const ModificationControls = ({
   );
 };
 
+const BackgroundEditor = ({ currentModification, updateModification }) => {
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  return (
+    <div>
+      <label className="block mb-2" onClick={() => setShowColorPicker(!showColorPicker)}>
+        Background Color <Palette />
+      </label>
+      <div className="flex items-center gap-2 relative">
+        {showColorPicker && <div className="absolute top-0 left-0 z-10"><SketchPicker
+          color={{
+            ...hexToRgb(currentModification.backgroundColor),
+            a: currentModification.transparency,
+          }}
+          onChange={(color) => {
+            updateModification({
+              backgroundColor: color.hex,
+              transparency: color.rgb.a,
+            });
+          }}
+        /></div>}
+        <SwitchComponent
+          checked={currentModification.relativeToScreenSize}
+          onChange={(checked) => {
+            updateModification({
+              relativeToScreenSize: checked,
+            });
+          }}
+          label="Relative to Screen Size"
+        />
+        <span>Relative to Screen Size</span>
+      </div>
+    </div>
+  );
+};
 export default ModificationControls;

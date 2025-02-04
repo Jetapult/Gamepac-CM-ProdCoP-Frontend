@@ -624,7 +624,7 @@ export default function VideoPlayable() {
         const background = new PIXI.Graphics();
         background.beginFill(
           parseInt(currentBreak.backgroundColor.replace("#", "0x")),
-          0.7
+          currentBreak.transparency ?? 0.7
         );
         background.drawRect(0, 0, app.screen.width, app.screen.height);
         background.endFill();
@@ -722,7 +722,7 @@ export default function VideoPlayable() {
           const background = new PIXI.Graphics();
           background.beginFill(
             parseInt(currentBreak.backgroundColor.replace("#", "0x")),
-            0.7
+            currentBreak.transparency ?? 0.7
           );
           background.drawRect(0, 0, app.screen.width, app.screen.height);
           background.endFill();
@@ -1212,7 +1212,7 @@ export default function VideoPlayable() {
             const background = new PIXI.Graphics();
             background.beginFill(
               parseInt(mod.backgroundColor.replace("#", "0x")),
-              0.7
+              mod.transparency ?? 0.7
             );
             background.drawRect(
               0,
