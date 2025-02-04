@@ -3,6 +3,7 @@ import { Switch } from "@headlessui/react";
 import { initialSpriteState } from "../state";
 import { useState, useRef } from 'react';
 import SpriteEditor from "./SpriteEditor";
+import { ModificationType } from "../state";
 
 const SwitchComponent = ({ checked, onChange, label }) => (
   <Switch
@@ -24,62 +25,59 @@ const SwitchComponent = ({ checked, onChange, label }) => (
 const BreakVideoControls = ({ activeTab, videoPlayable, setVideoPlayable }) => {
   const fileInputRef = useRef(null);
   
-  // Add null checks and default values
-  if (!activeTab || !videoPlayable || !videoPlayable.breaks) {
+  if (!activeTab || !videoPlayable || !videoPlayable.modifications) {
     return null;
   }
 
-  // Get current break using breakIndex from activeTab
-  const currentBreak = videoPlayable.breaks[activeTab.breakIndex];
+  const currentBreak = videoPlayable.modifications[activeTab.modificationIndex];
   
-  // Add a guard clause
-  if (!currentBreak) {
-    console.log('No break found for index:', activeTab.breakIndex);
+  if (!currentBreak || currentBreak.type !== ModificationType.BREAK) {
     return null;
   }
 
   const handleTimeChange = (newTime) => {
     setVideoPlayable(prev => {
-      const updatedBreaks = [...prev.breaks];
-      updatedBreaks[activeTab.breakIndex] = {
-        ...updatedBreaks[activeTab.breakIndex],
+      const updatedModifications = [...prev.modifications];
+      updatedModifications[activeTab.modificationIndex] = {
+        ...updatedModifications[activeTab.modificationIndex],
         time: parseInt(newTime)
       };
       return { 
         ...prev, 
-        breaks: updatedBreaks.sort((a, b) => a.time - b.time) // Sort breaks by time
+        modifications: updatedModifications.sort((a, b) => a.time - b.time)
       };
+    });
+  };
+
+  const updateModification = (updates) => {
+    setVideoPlayable(prev => {
+      const updatedModifications = [...prev.modifications];
+      updatedModifications[activeTab.modificationIndex] = {
+        ...updatedModifications[activeTab.modificationIndex],
+        ...updates
+      };
+      return { ...prev, modifications: updatedModifications };
     });
   };
 
   const handleAudioUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      setVideoPlayable(prev => {
-        const updatedBreaks = [...prev.breaks];
-        updatedBreaks[activeTab.breakIndex] = {
-          ...updatedBreaks[activeTab.breakIndex],
-          backgroundMusic: {
-            ...updatedBreaks[activeTab.breakIndex].backgroundMusic,
-            file
-          }
-        };
-        return { ...prev, breaks: updatedBreaks };
+      updateModification({
+        backgroundMusic: {
+          ...currentBreak.backgroundMusic,
+          file
+        }
       });
     }
   };
 
   const handleAudioDelete = () => {
-    setVideoPlayable(prev => {
-      const updatedBreaks = [...prev.breaks];
-      updatedBreaks[activeTab.breakIndex] = {
-        ...updatedBreaks[activeTab.breakIndex],
-        backgroundMusic: {
-          ...updatedBreaks[activeTab.breakIndex].backgroundMusic,
-          file: null
-        }
-      };
-      return { ...prev, breaks: updatedBreaks };
+    updateModification({
+      backgroundMusic: {
+        ...currentBreak.backgroundMusic,
+        file: null
+      }
     });
   };
 
@@ -97,13 +95,8 @@ const BreakVideoControls = ({ activeTab, videoPlayable, setVideoPlayable }) => {
         imageUrl
       };
 
-      setVideoPlayable(prev => {
-        const updatedBreaks = [...prev.breaks];
-        updatedBreaks[activeTab.breakIndex] = {
-          ...updatedBreaks[activeTab.breakIndex],
-          sprites: [...updatedBreaks[activeTab.breakIndex].sprites, newSprite]
-        };
-        return { ...prev, breaks: updatedBreaks };
+      updateModification({
+        sprites: [...currentBreak.sprites, newSprite]
       });
     } catch (error) {
       console.error('Error adding sprite:', error);
@@ -111,46 +104,38 @@ const BreakVideoControls = ({ activeTab, videoPlayable, setVideoPlayable }) => {
   };
 
   const handleSpriteUpdate = (spriteIndex, updatedSprite) => {
-    setVideoPlayable(prev => {
-      const updatedBreaks = [...prev.breaks];
-      updatedBreaks[activeTab.breakIndex] = {
-        ...updatedBreaks[activeTab.breakIndex],
-        sprites: updatedBreaks[activeTab.breakIndex].sprites.map((sprite, index) =>
-          index === spriteIndex ? updatedSprite : sprite
-        )
-      };
-      return { ...prev, breaks: updatedBreaks };
+    updateModification({
+      sprites: currentBreak.sprites.map((sprite, index) =>
+        index === spriteIndex ? updatedSprite : sprite
+      )
     });
   };
 
   const handleSpriteDelete = (spriteIndex) => {
-    setVideoPlayable(prev => {
-      const updatedBreaks = [...prev.breaks];
-      updatedBreaks[activeTab.breakIndex] = {
-        ...updatedBreaks[activeTab.breakIndex],
-        sprites: updatedBreaks[activeTab.breakIndex].sprites.filter((_, index) => index !== spriteIndex)
-      };
-      return { ...prev, breaks: updatedBreaks };
+    updateModification({
+      sprites: currentBreak.sprites.filter((_, index) => index !== spriteIndex)
     });
   };
 
   const handleSpriteMoveUp = (spriteIndex) => {
     if (spriteIndex === 0) return;
-    setVideoPlayable(prev => {
-      const updatedBreaks = [...prev.breaks];
-      const sprites = updatedBreaks[activeTab.breakIndex].sprites;
-      [sprites[spriteIndex - 1], sprites[spriteIndex]] = [sprites[spriteIndex], sprites[spriteIndex - 1]];
-      return { ...prev, breaks: updatedBreaks };
+    updateModification({
+      sprites: [
+        ...currentBreak.sprites.slice(0, spriteIndex - 1),
+        currentBreak.sprites[spriteIndex],
+        currentBreak.sprites[spriteIndex - 1]
+      ]
     });
   };
 
   const handleSpriteMoveDown = (spriteIndex) => {
-    const sprites = currentBreak.sprites;
-    if (spriteIndex === sprites.length - 1) return;
-    setVideoPlayable(prev => {
-      const updatedBreaks = [...prev.breaks];
-      [sprites[spriteIndex], sprites[spriteIndex + 1]] = [sprites[spriteIndex + 1], sprites[spriteIndex]];
-      return { ...prev, breaks: updatedBreaks };
+    if (spriteIndex === currentBreak.sprites.length - 1) return;
+    updateModification({
+      sprites: [
+        ...currentBreak.sprites.slice(0, spriteIndex),
+        currentBreak.sprites[spriteIndex + 1],
+        currentBreak.sprites[spriteIndex]
+      ]
     });
   };
 
@@ -210,16 +195,11 @@ const BreakVideoControls = ({ activeTab, videoPlayable, setVideoPlayable }) => {
                 step="0.1"
                 value={currentBreak.backgroundMusic.volume}
                 onChange={(e) => {
-                  setVideoPlayable(prev => {
-                    const updatedBreaks = [...prev.breaks];
-                    updatedBreaks[activeTab.breakIndex] = {
-                      ...updatedBreaks[activeTab.breakIndex],
-                      backgroundMusic: {
-                        ...updatedBreaks[activeTab.breakIndex].backgroundMusic,
-                        volume: parseFloat(e.target.value)
-                      }
-                    };
-                    return { ...prev, breaks: updatedBreaks };
+                  updateModification({
+                    backgroundMusic: {
+                      ...currentBreak.backgroundMusic,
+                      volume: parseFloat(e.target.value)
+                    }
                   });
                 }}
                 className="w-full accent-purple-600"
@@ -232,16 +212,11 @@ const BreakVideoControls = ({ activeTab, videoPlayable, setVideoPlayable }) => {
                 type="number"
                 value={currentBreak.backgroundMusic.repeat}
                 onChange={(e) => {
-                  setVideoPlayable(prev => {
-                    const updatedBreaks = [...prev.breaks];
-                    updatedBreaks[activeTab.breakIndex] = {
-                      ...updatedBreaks[activeTab.breakIndex],
-                      backgroundMusic: {
-                        ...updatedBreaks[activeTab.breakIndex].backgroundMusic,
-                        repeat: parseInt(e.target.value)
-                      }
-                    };
-                    return { ...prev, breaks: updatedBreaks };
+                  updateModification({
+                    backgroundMusic: {
+                      ...currentBreak.backgroundMusic,
+                      repeat: parseInt(e.target.value)
+                    }
                   });
                 }}
                 className="bg-gray-700 rounded px-3 py-2 w-full"
@@ -252,13 +227,8 @@ const BreakVideoControls = ({ activeTab, videoPlayable, setVideoPlayable }) => {
               <SwitchComponent
                 checked={currentBreak.stopOnVideoResume}
                 onChange={(checked) => {
-                  setVideoPlayable(prev => {
-                    const updatedBreaks = [...prev.breaks];
-                    updatedBreaks[activeTab.breakIndex] = {
-                      ...updatedBreaks[activeTab.breakIndex],
-                      stopOnVideoResume: checked
-                    };
-                    return { ...prev, breaks: updatedBreaks };
+                  updateModification({
+                    stopOnVideoResume: checked
                   });
                 }}
                 label="Stop on Video Resume"
@@ -273,13 +243,8 @@ const BreakVideoControls = ({ activeTab, videoPlayable, setVideoPlayable }) => {
         <SwitchComponent
           checked={currentBreak.background}
           onChange={(checked) => {
-            setVideoPlayable(prev => {
-              const updatedBreaks = [...prev.breaks];
-              updatedBreaks[activeTab.breakIndex] = {
-                ...updatedBreaks[activeTab.breakIndex],
-                background: checked
-              };
-              return { ...prev, breaks: updatedBreaks };
+            updateModification({
+              background: checked
             });
           }}
           label="Background"
@@ -293,26 +258,16 @@ const BreakVideoControls = ({ activeTab, videoPlayable, setVideoPlayable }) => {
             type="color"
             value={currentBreak.backgroundColor}
             onChange={(e) => {
-              setVideoPlayable(prev => {
-                const updatedBreaks = [...prev.breaks];
-                updatedBreaks[activeTab.breakIndex] = {
-                  ...updatedBreaks[activeTab.breakIndex],
-                  backgroundColor: e.target.value
-                };
-                return { ...prev, breaks: updatedBreaks };
+              updateModification({
+                backgroundColor: e.target.value
               });
             }}
           />
           <SwitchComponent
             checked={currentBreak.relativeToScreenSize}
             onChange={(checked) => {
-              setVideoPlayable(prev => {
-                const updatedBreaks = [...prev.breaks];
-                updatedBreaks[activeTab.breakIndex] = {
-                  ...updatedBreaks[activeTab.breakIndex],
-                  relativeToScreenSize: checked
-                };
-                return { ...prev, breaks: updatedBreaks };
+              updateModification({
+                relativeToScreenSize: checked
               });
             }}
             label="Relative to Screen Size"

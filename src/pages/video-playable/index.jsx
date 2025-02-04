@@ -288,7 +288,44 @@ export default function VideoPlayable() {
 
   const addEndScreen = () => {
     const time = Math.floor(currentTime);
-    addTab("end", time);
+    const newEndScreen = {
+      ...baseModificationState,
+      type: ModificationType.END_SCREEN,
+      id: Date.now(),
+      time: time, // This is when the end screen appears
+      background: true,
+      backgroundColor: "#000000",
+      backgroundMusic: {
+        file: null,
+        volume: 1,
+        repeat: 0,
+      },
+      sprites: [],
+      relativeToScreenSize: true,
+    };
+
+    setVideoPlayable((prev) => {
+      const newModifications = [...prev.modifications, newEndScreen];
+      const modificationIndex = newModifications.findIndex(
+        (m) => m.id === newEndScreen.id
+      );
+      setTabs((prevTabs) => [
+        ...prevTabs,
+        {
+          id: `modification-${newEndScreen.id}`,
+          type: ModificationType.END_SCREEN,
+          modificationIndex,
+          time: newEndScreen.time,
+          label: `End Screen (${newEndScreen.time}ms)`,
+        },
+      ]);
+      setActiveTab({
+        id: `modification-${newEndScreen.id}`,
+        type: ModificationType.END_SCREEN,
+        modificationIndex,
+      });
+      return { ...prev, modifications: newModifications };
+    });
   };
 
   const handlePlayStateChange = (playing) => {
@@ -845,6 +882,19 @@ export default function VideoPlayable() {
     };
   }, [stopBreakAudio, clearBreakContent]);
 
+  useEffect(() => {
+    // When preview mode is turned off, clean up any active audio.
+    if (!isPreviewMode) {
+      Object.keys(audioElementsRef.current).forEach((modId) => {
+        const audio = audioElementsRef.current[modId];
+        if (audio) {
+          stopModificationAudio(audio);
+          delete audioElementsRef.current[modId];
+        }
+      });
+    }
+  }, [isPreviewMode]);
+
   const renderExpandableButtons = () => (
     <div
       className={`absolute top-4 left-4 z-10 ${
@@ -998,11 +1048,13 @@ export default function VideoPlayable() {
             setVideoPlayable={setVideoPlayable}
           />
         );
-      case "end":
+      case "end_screen":
         return (
-          <div className="space-y-4">
-            <h3>End Screen Controls ({activeTabData.time}ms)</h3>
-          </div>
+          <ModificationControls
+            activeTab={activeTab}
+            videoPlayable={videoPlayable}
+            setVideoPlayable={setVideoPlayable}
+          />
         );
       default:
         return null;
@@ -1093,10 +1145,10 @@ export default function VideoPlayable() {
         : modification.time,
     };
     
-    setActiveTab(newTab);
-    if (modification.type === ModificationType.BREAK) {
-      setActiveBreakIndex(index);
-    }
+    // setActiveTab(newTab);
+    // if (modification.type === ModificationType.BREAK) {
+    //   setActiveBreakIndex(index);
+    // }
   };
 
   const renderSprite = (spriteData, modification) => {
@@ -1123,55 +1175,60 @@ export default function VideoPlayable() {
   };
 
   useEffect(() => {
-    // When in preview mode OR editing an overlay modification,
-    // render overlay modifications on top of the video.
-    if (isPreviewMode || activeTab?.type === ModificationType.OVERLAY) {
+    // Render overlay and end-screen modifications over the video in preview or edit mode.
+    if (
+      isPreviewMode ||
+      activeTab?.type === ModificationType.OVERLAY ||
+      activeTab?.type === ModificationType.END_SCREEN
+    ) {
       clearOverlayContent();
       if (pixiAppRef.current) {
-        let overlays = [];
+        let modificationsToRender = [];
         if (isPreviewMode) {
-          // In preview mode, pick up all overlay modifications that are active.
-          overlays = videoPlayable.modifications.filter(
-            mod =>
-              mod.type === ModificationType.OVERLAY &&
-              currentTime >= mod.startTime &&
-              currentTime <= mod.endTime
-          );
+          modificationsToRender = videoPlayable.modifications.filter((mod) => {
+            if (mod.type === ModificationType.OVERLAY) {
+              return currentTime >= mod.startTime && currentTime <= mod.endTime;
+            }
+            if (mod.type === ModificationType.END_SCREEN) {
+              return currentTime >= mod.time;
+            }
+            return false;
+          });
         } else {
-          // In edit mode, render the current overlay modification.
-          const overlayMod = videoPlayable.modifications[activeTab.modificationIndex];
-          if (overlayMod) {
-            overlays = [overlayMod];
-          }
+          const mod = videoPlayable.modifications[activeTab.modificationIndex];
+          if (mod) modificationsToRender = [mod];
         }
-        
-        overlays.forEach(overlayMod => {
-          if (!overlayMod) return;
-          
-          // Play overlay background music if available and not already playing.
-          if (overlayMod.backgroundMusic?.file && !audioElementsRef.current[overlayMod.id]) {
-            const audio = playModificationAudio(overlayMod);
+        modificationsToRender.forEach((mod) => {
+          if (!mod) return;
+          // Play background music if provided and not already playing.
+          if (isPreviewMode && mod.backgroundMusic?.file && !audioElementsRef.current[mod.id]) {
+            const audio = playModificationAudio(mod);
             if (audio) {
-              audioElementsRef.current[overlayMod.id] = audio;
+              audioElementsRef.current[mod.id] = audio;
             }
           }
-
-          if (overlayMod.background) {
+          // Render background if enabled.
+          if (mod.background) {
             const background = new PIXI.Graphics();
             background.beginFill(
-              parseInt(overlayMod.backgroundColor.replace("#", "0x")),
+              parseInt(mod.backgroundColor.replace("#", "0x")),
               0.7
             );
-            background.drawRect(0, 0, pixiAppRef.current.screen.width, pixiAppRef.current.screen.height);
+            background.drawRect(
+              0,
+              0,
+              pixiAppRef.current.screen.width,
+              pixiAppRef.current.screen.height
+            );
             background.endFill();
-            // Mark this object as overlay.
+            // Mark as an overlay component.
             background.__isOverlay = true;
             pixiAppRef.current.stage.addChild(background);
             spritesRef.current.push(background);
           }
-          // Render each sprite for the overlay.
-          overlayMod.sprites.forEach(spriteData => {
-            renderSprite(spriteData, overlayMod);
+          // Render each sprite for the modification.
+          mod.sprites.forEach((spriteData) => {
+            renderSprite(spriteData, mod);
           });
         });
       }
@@ -1179,6 +1236,7 @@ export default function VideoPlayable() {
   }, [isPreviewMode, videoPlayable.modifications, activeTab, currentTime]);
 
   useEffect(() => {
+    if (!isPreviewMode) return;
     // Build a set of active modification IDs (from overlays in preview mode).
     const activeModIds = new Set();
     if (isPreviewMode) {

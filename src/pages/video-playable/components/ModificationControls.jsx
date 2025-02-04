@@ -130,7 +130,7 @@ const ModificationControls = ({
                 const newTime = parseInt(e.target.value);
                 updateModification({
                   startTime: newTime,
-                  time: newTime, // Keep time in sync with startTime for overlays
+                  time: newTime, // Keep time in sync for overlays
                 });
               }}
               className="bg-gray-700 rounded px-3 py-2 w-full"
@@ -171,7 +171,6 @@ const ModificationControls = ({
 
   return (
     <div className="space-y-6 text-white p-4 overflow-y-auto h-[calc(100vh-100px)]">
-      {console.log(currentModification, "currentModification")}
       <h2 className="text-2xl font-bold">
         {currentModification.type === ModificationType.BREAK && "Break"}
         {currentModification.type === ModificationType.OVERLAY &&
@@ -269,20 +268,18 @@ const ModificationControls = ({
         )}
       </div>
 
-      {currentModification.type !== ModificationType.END_SCREEN && (
-        <div className="flex items-center justify-between">
-          <span>Background</span>
-          <SwitchComponent
-            checked={currentModification.background}
-            onChange={(checked) => {
-              updateModification({
-                background: checked,
-              });
-            }}
-            label="Background"
-          />
-        </div>
-      )}
+      <div className="flex items-center justify-between">
+        <span>Background</span>
+        <SwitchComponent
+          checked={currentModification.background}
+          onChange={(checked) => {
+            updateModification({
+              background: checked,
+            });
+          }}
+          label="Background"
+        />
+      </div>
 
       {currentModification.background && (
         <div>
