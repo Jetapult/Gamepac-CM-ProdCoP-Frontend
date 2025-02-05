@@ -10,10 +10,13 @@ import {
   X,
   Star,
   Image,
+  Square,
+  Download
 } from "lucide-react";
 import * as PIXI from "pixi.js";
 import ModificationControls from "./components/ModificationControls";
 import { baseModificationState, initialState, ModificationType } from "./state";
+import { buildPlayableAd } from "./utils";
 
 const timelineContainerStyle = {
   position: "absolute",
@@ -77,12 +80,18 @@ export default function VideoPlayable() {
   const [splitPosition, setSplitPosition] = useState(20);
   const [adName, setAdName] = useState("");
   const [videoSource, setVideoSource] = useState(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState(() => localStorage.getItem("videoPreviewUrl") || null);
   const [iosUrl, setIosUrl] = useState("");
   const [playstoreUrl, setPlaystoreUrl] = useState("");
-  const [activeTab, setActiveTab] = useState({
-    id: "general",
-    type: "general",
-    modificationIndex: -1
+  const [activeTab, setActiveTab] = useState(() => {
+    const stored = localStorage.getItem("activeTab");
+    return stored
+      ? JSON.parse(stored)
+      : {
+          id: "general",
+          type: "general",
+          modificationIndex: -1
+        };
   });
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -91,14 +100,19 @@ export default function VideoPlayable() {
   const [orientation, setOrientation] = useState({ width: 375, height: 667 });
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeBreakIndex, setActiveBreakIndex] = useState(-1);
-  const [tabs, setTabs] = useState([
-    {
-      id: "general",
-      type: "general",
-      modificationIndex: -1,
-      label: "General Properties"
-    },
-  ]);
+  const [tabs, setTabs] = useState(() => {
+    const stored = localStorage.getItem("tabs");
+    return stored
+      ? JSON.parse(stored)
+      : [
+          {
+            id: "general",
+            type: "general",
+            modificationIndex: -1,
+            label: "General Properties"
+          }
+        ];
+  });
   const pixiContainerRef = useRef(null);
   const pixiAppRef = useRef(null);
   const videoSpriteRef = useRef(null);
@@ -107,10 +121,72 @@ export default function VideoPlayable() {
   const timelineRef = useRef(null);
   const [breakAudioElement, setBreakAudioElement] = useState(null);
 
-  const [videoPlayable, setVideoPlayable] = useState(initialState);
+  const [videoPlayable, setVideoPlayable] = useState(() => {
+    const stored = localStorage.getItem("videoPlayableData");
+    return stored ? JSON.parse(stored) : initialState;
+  });
 
   // Create a ref that will hold the active audio elements keyed by modification id.
   const audioElementsRef = useRef({});
+
+  // On mount, restore persisted state from localStorage
+  useEffect(() => {
+    const storedAdData = localStorage.getItem("videoPlayableData");
+    if (storedAdData) {
+      try {
+        const parsedData = JSON.parse(storedAdData);
+        setVideoPlayable(parsedData);
+      } catch (err) {
+        console.error("Error parsing stored video playable data", err);
+      }
+    }
+    const storedActiveTab = localStorage.getItem("activeTab");
+    if (storedActiveTab) {
+      try {
+        const parsedTab = JSON.parse(storedActiveTab);
+        setActiveTab(parsedTab);
+      } catch (err) {
+        console.error("Error parsing stored active tab", err);
+      }
+    }
+  }, []);
+
+  // Whenever videoPlayable state changes, save its new value to localStorage
+  useEffect(() => {
+    localStorage.setItem("videoPlayableData", JSON.stringify(videoPlayable));
+  }, [videoPlayable]);
+
+  // Similarly, persist activeTab if needed.
+  useEffect(() => {
+    localStorage.setItem("activeTab", JSON.stringify(activeTab));
+  }, [activeTab]);
+
+  // Persist tabs array to localStorage.
+  useEffect(() => {
+    localStorage.setItem("tabs", JSON.stringify(tabs));
+  }, [tabs]);
+
+  useEffect(() => {
+    if (videoPreviewUrl) {
+      localStorage.setItem("videoPreviewUrl", videoPreviewUrl);
+    }
+  }, [videoPreviewUrl]);
+
+  // On mount, initialize the PIXI app and attach its canvas to the right container
+  useEffect(() => {
+    if (pixiContainerRef.current) {
+      const width = pixiContainerRef.current.clientWidth;
+      const height = pixiContainerRef.current.clientHeight;
+      pixiAppRef.current = new PIXI.Application({
+        width,
+        height,
+        backgroundColor: 0x000000,
+        resolution: window.devicePixelRatio || 1,
+      });
+      // Append the canvas to the container
+      pixiContainerRef.current.appendChild(pixiAppRef.current.view);
+    }
+  }, []);
 
   // Helper to play background music for a modification.
   const playModificationAudio = (modification) => {
@@ -287,12 +363,13 @@ export default function VideoPlayable() {
   };
 
   const addEndScreen = () => {
-    const time = Math.floor(currentTime);
+    // For a custom trigger time, you might use the current playhead time or a user-specified value.
+    const time = Math.floor(currentTime); // Or a different value if needed.
     const newEndScreen = {
       ...baseModificationState,
       type: ModificationType.END_SCREEN,
       id: Date.now(),
-      time: time, // This is when the end screen appears
+      time: time, // Set the trigger time for the end screen.
       background: true,
       backgroundColor: "#000000",
       backgroundMusic: {
@@ -306,9 +383,7 @@ export default function VideoPlayable() {
 
     setVideoPlayable((prev) => {
       const newModifications = [...prev.modifications, newEndScreen];
-      const modificationIndex = newModifications.findIndex(
-        (m) => m.id === newEndScreen.id
-      );
+      const modificationIndex = newModifications.findIndex((m) => m.id === newEndScreen.id);
       setTabs((prevTabs) => [
         ...prevTabs,
         {
@@ -408,6 +483,15 @@ export default function VideoPlayable() {
       setVideoSource(file);
       setCurrentTime(0);
       setActiveBreakIndex(-1);
+      setVideoPlayable(prev => ({
+        ...prev,
+        general: {
+          ...prev.general,
+          videoSource: file
+        }
+      }));
+      const previewUrl = URL.createObjectURL(file);
+      setVideoPreviewUrl(previewUrl);
     }
   };
 
@@ -883,15 +967,36 @@ export default function VideoPlayable() {
   }, [stopBreakAudio, clearBreakContent]);
 
   useEffect(() => {
-    // When preview mode is turned off, clean up any active audio.
+    if (!isPreviewMode) return;
+    const activeModIds = new Set();
+    videoPlayable.modifications.forEach((mod) => {
+      if (
+        mod.type === ModificationType.OVERLAY &&
+        currentTime >= mod.startTime &&
+        currentTime <= mod.endTime
+      ) {
+        activeModIds.add(mod.id);
+      }
+      if (mod.type === ModificationType.END_SCREEN && currentTime > mod.time && mod.time <= duration) {
+        activeModIds.add(mod.id);
+      }
+    });
+    Object.keys(audioElementsRef.current).forEach((modId) => {
+      if (!activeModIds.has(Number(modId))) {
+        stopModificationAudio(audioElementsRef.current[modId]);
+        delete audioElementsRef.current[modId];
+      }
+    });
+  }, [currentTime, isPreviewMode, videoPlayable.modifications]);
+
+  useEffect(() => {
     if (!isPreviewMode) {
+      // Stop all active modification audios when preview is off.
       Object.keys(audioElementsRef.current).forEach((modId) => {
-        const audio = audioElementsRef.current[modId];
-        if (audio) {
-          stopModificationAudio(audio);
-          delete audioElementsRef.current[modId];
-        }
+        stopModificationAudio(audioElementsRef.current[modId]);
       });
+      // Clear the audio elements reference.
+      audioElementsRef.current = {};
     }
   }, [isPreviewMode]);
 
@@ -955,7 +1060,7 @@ export default function VideoPlayable() {
           }`}
           onClick={() => setActiveTab(tab)}
         >
-          {tab.type === "break" ? `Break (${tab.time}ms)` : tab.label}
+          {tab.label}
         </button>
       ))}
     </div>
@@ -968,7 +1073,7 @@ export default function VideoPlayable() {
     switch (activeTabData.type) {
       case "general":
         return (
-          <div className="space-y-4">
+          <div className="space-y-4 p-4">
             <div>
               <label className="block text-sm font-medium mb-1">
                 Playable Ad Name
@@ -1175,7 +1280,6 @@ export default function VideoPlayable() {
   };
 
   useEffect(() => {
-    // Render overlay and end-screen modifications over the video in preview or edit mode.
     if (
       isPreviewMode ||
       activeTab?.type === ModificationType.OVERLAY ||
@@ -1184,12 +1288,14 @@ export default function VideoPlayable() {
       clearOverlayContent();
       if (pixiAppRef.current) {
         let modificationsToRender = [];
+
         if (isPreviewMode) {
           modificationsToRender = videoPlayable.modifications.filter((mod) => {
             if (mod.type === ModificationType.OVERLAY) {
               return currentTime >= mod.startTime && currentTime <= mod.endTime;
             }
             if (mod.type === ModificationType.END_SCREEN) {
+              // Render the end screen as soon as the trigger time is reached.
               return currentTime >= mod.time;
             }
             return false;
@@ -1198,16 +1304,16 @@ export default function VideoPlayable() {
           const mod = videoPlayable.modifications[activeTab.modificationIndex];
           if (mod) modificationsToRender = [mod];
         }
+
         modificationsToRender.forEach((mod) => {
-          if (!mod) return;
-          // Play background music if provided and not already playing.
+          // Trigger audio if background music is provided and the audio isn't already playing.
           if (isPreviewMode && mod.backgroundMusic?.file && !audioElementsRef.current[mod.id]) {
             const audio = playModificationAudio(mod);
             if (audio) {
               audioElementsRef.current[mod.id] = audio;
             }
           }
-          // Render background if enabled.
+          // Render background graphics if enabled.
           if (mod.background) {
             const background = new PIXI.Graphics();
             background.beginFill(
@@ -1221,40 +1327,39 @@ export default function VideoPlayable() {
               pixiAppRef.current.screen.height
             );
             background.endFill();
-            // Mark as an overlay component.
             background.__isOverlay = true;
             pixiAppRef.current.stage.addChild(background);
             spritesRef.current.push(background);
           }
-          // Render each sprite for the modification.
+          // Render modification sprites.
           mod.sprites.forEach((spriteData) => {
             renderSprite(spriteData, mod);
           });
         });
       }
     }
-  }, [isPreviewMode, videoPlayable.modifications, activeTab, currentTime]);
+  }, [
+    isPreviewMode,
+    activeTab,
+    currentTime,
+    videoPlayable.modifications,
+    duration,
+    clearOverlayContent,
+  ]);
 
-  useEffect(() => {
-    if (!isPreviewMode) return;
-    // Build a set of active modification IDs (from overlays in preview mode).
-    const activeModIds = new Set();
-    if (isPreviewMode) {
-      videoPlayable.modifications.forEach((mod) => {
-        if (mod.type === ModificationType.OVERLAY && currentTime >= mod.startTime && currentTime <= mod.endTime) {
-          activeModIds.add(mod.id);
-        }
-      });
-    }
-    // For each audio element stored, if its mod is no longer active, stop its audio.
-    Object.keys(audioElementsRef.current).forEach((modId) => {
-      // modId comes in as a string; convert it if necessary.
-      if (!activeModIds.has(Number(modId))) {
-        stopModificationAudio(audioElementsRef.current[modId]);
-        delete audioElementsRef.current[modId];
-      }
-    });
-  }, [currentTime, isPreviewMode, videoPlayable.modifications]);
+  const renderBuildButton = () => (
+    <button
+      onClick={() => {
+        console.log('VideoPlayable state:', videoPlayable); // Add this debug log
+        buildPlayableAd(videoPlayable);
+      }}
+      className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center gap-2"
+      disabled={!videoSource}
+    >
+      <Download className="w-4 h-4" />
+      Build Playable Ad
+    </button>
+  );
 
   return (
     <div
@@ -1272,6 +1377,7 @@ export default function VideoPlayable() {
         }`}
       >
         {renderTabs()}
+        {renderBuildButton()}
         {renderTabContent()}
       </div>
 
@@ -1344,7 +1450,7 @@ export default function VideoPlayable() {
                 title="preview"
               >
                 {isPlaying || (isPreviewMode && activeBreakIndex !== -1) ? (
-                  <Pause className="w-4 h-4 text-white" />
+                  <Square />
                 ) : (
                   <Play className="w-4 h-4 text-white" />
                 )}
