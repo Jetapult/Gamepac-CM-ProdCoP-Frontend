@@ -14,25 +14,25 @@ const tabs = [
     id: "1",
     name: "General",
     slug: "general",
-    icon: <Wrench size={16} />,
+    icon: <Wrench size={14} />,
   },
   {
     id: "2",
     name: "Position",
     slug: "position",
-    icon: <ArrowRightLeft size={16} />,
+    icon: <ArrowRightLeft size={14} />,
   },
   {
     id: "3",
     name: "Scale",
     slug: "scale",
-    icon: <MoveHorizontal size={16} />,
+    icon: <MoveHorizontal size={14} />,
   },
   {
     id: "4",
     name: "Transparency",
     slug: "transparency",
-    icon: <Eye size={16} />,
+    icon: <Eye size={14} />,
   },
 ];
 
@@ -99,7 +99,7 @@ const SpriteEditor = ({ sprite, onUpdate, onDelete }) => {
           />
         );
       case "transparency":
-        return <div>Transparency</div>;
+        return <TransparencyAnimation sprite={sprite} handleNumberInput={handleNumberInput} onUpdate={onUpdate} />;
       default:
         return null;
     }
@@ -130,7 +130,7 @@ const SpriteEditor = ({ sprite, onUpdate, onDelete }) => {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            className={`px-3 py-2 rounded border mr-2 mt-6 ${
+            className={`px-2 py-1 rounded border mr-2 mt-6 ${
               activeTab === tab.slug
                 ? "bg-white text-purple-600 border-purple-600"
                 : "border-white"
@@ -664,6 +664,165 @@ const ScaleAnimation = ({ sprite, handleNumberInput, onUpdate }) => {
                       ...sprite.animation,
                       scale: {
                         ...sprite.animation.scale,
+                        yoyo: checked,
+                      },
+                    },
+                  });
+                }}
+                label="Background"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const TransparencyAnimation = ({ sprite, handleNumberInput, onUpdate }) => {
+  return (
+    <div className="mt-4 space-y-4">
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <label className="text-lg font-medium">Transparency Animation</label>
+          <div className="flex items-center gap-2">
+            <button
+              className={`px-2 py-1 text-xs rounded text-purple-600 border border-white ${
+                sprite.animation?.transparency?.enabled ? "bg-white text-white" : ""
+              }`}
+              onClick={() => {
+                const transparencyAnimation = {
+                  enabled: sprite.animation?.transparency?.enabled === true ? false : true,
+                  destination: 0.5,
+                  duration: 500,
+                  repeat: -1,
+                  easing: "linear",
+                  yoyo: true,
+                };
+
+                onUpdate({
+                  ...sprite,
+                  animation: {
+                    ...sprite.animation,
+                    transparency: transparencyAnimation,
+                  },
+                });
+              }}
+            >
+              {sprite.animation?.transparency?.enabled ? "ON" : "OFF"}
+            </button>
+          </div>
+        </div>
+
+        {sprite.animation?.transparency?.enabled && (
+          <div className="space-y-4">
+            <div>
+              <label className="block mb-2">Target Alpha (0-1)</label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="1"
+                value={sprite.animation.transparency.destination}
+                onChange={(e) => {
+                  onUpdate({
+                    ...sprite,
+                    animation: {
+                      ...sprite.animation,
+                      transparency: {
+                        ...sprite.animation.transparency,
+                        destination: parseFloat(e.target.value) || 0,
+                      },
+                    },
+                  });
+                }}
+                className="bg-gray-700 rounded px-3 py-2 w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-2">Duration (ms)</label>
+              <input
+                type="number"
+                value={sprite.animation.transparency.duration}
+                onChange={(e) => {
+                  onUpdate({
+                    ...sprite,
+                    animation: {
+                      ...sprite.animation,
+                      transparency: {
+                        ...sprite.animation.transparency,
+                        duration: parseInt(e.target.value) || 500,
+                      },
+                    },
+                  });
+                }}
+                className="bg-gray-700 rounded px-3 py-2 w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-2">Repeat (-1 for infinite)</label>
+              <input
+                type="number"
+                value={sprite.animation.transparency.repeat}
+                onChange={(e) => {
+                  onUpdate({
+                    ...sprite,
+                    animation: {
+                      ...sprite.animation,
+                      transparency: {
+                        ...sprite.animation.transparency,
+                        repeat: parseInt(e.target.value) || -1,
+                      },
+                    },
+                  });
+                }}
+                className="bg-gray-700 rounded px-3 py-2 w-full"
+              />
+            </div>
+
+            {/* Easing Function */}
+            <div>
+              <label className="block mb-2">Easing Function</label>
+              <select
+                value={sprite.animation.transparency.easing}
+                onChange={(e) => {
+                  onUpdate({
+                    ...sprite,
+                    animation: {
+                      ...sprite.animation,
+                      transparency: {
+                        ...sprite.animation.transparency,
+                        easing: e.target.value,
+                      },
+                    },
+                  });
+                }}
+                className="bg-gray-700 rounded px-3 py-2 w-full"
+              >
+                <option value="linear">Linear</option>
+                <option value="easeInQuad">Ease In Quad</option>
+                <option value="easeOutQuad">Ease Out Quad</option>
+                <option value="easeInOutQuad">Ease In Out Quad</option>
+                <option value="easeInCubic">Ease In Cubic</option>
+                <option value="easeOutCubic">Ease Out Cubic</option>
+                <option value="easeInOutCubic">Ease In Out Cubic</option>
+              </select>
+            </div>
+
+            {/* Yoyo Effect Toggle */}
+            <div className="flex items-center justify-between">
+              <span>Yoyo Effect</span>
+              <SwitchComponent
+                checked={sprite.animation.transparency.yoyo}
+                onChange={(checked) => {
+                  onUpdate({
+                    ...sprite,
+                    animation: {
+                      ...sprite.animation,
+                      transparency: {
+                        ...sprite.animation.transparency,
                         yoyo: checked,
                       },
                     },

@@ -23,6 +23,14 @@ export const initialSpriteState = {
       repeat: -1,
       easing: 'linear',
       yoyo: true
+    },
+    transparency: {
+      enabled: false,
+      destination: 0.5,
+      duration: 500,
+      repeat: -1,
+      easing: 'linear',
+      yoyo: true
     }
   }
 };

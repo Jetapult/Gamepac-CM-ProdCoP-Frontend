@@ -1378,6 +1378,27 @@ export default function VideoPlayable() {
           sprite.scale.x = startScale + (endScaleW - startScale) * scaleProgress;
           sprite.scale.y = startScale + (endScaleH - startScale) * scaleProgress;
         }
+
+        // Handle transparency animation
+        if (spriteData.animation?.transparency?.enabled) {
+          const transparencyAnim = spriteData.animation.transparency;
+          let transparencyProgress = (elapsedTime % transparencyAnim.duration) / transparencyAnim.duration;
+
+          if (transparencyAnim.easing !== 'linear') {
+            transparencyProgress = getEasedProgress(transparencyProgress, transparencyAnim.easing);
+          }
+
+          if (transparencyAnim.yoyo) {
+            const cycle = Math.floor((elapsedTime % (transparencyAnim.duration * 2)) / transparencyAnim.duration);
+            if (cycle === 1) transparencyProgress = 1 - transparencyProgress;
+          }
+
+          const startAlpha = spriteData.transparency;
+          const endAlpha = transparencyAnim.destination;
+
+          // Interpolate between original transparency and destination
+          sprite.alpha = startAlpha + (endAlpha - startAlpha) * transparencyProgress;
+        }
       });
     };
 
