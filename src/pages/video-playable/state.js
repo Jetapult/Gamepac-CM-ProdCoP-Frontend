@@ -14,7 +14,15 @@ export const initialSpriteState = {
       duration: 500,
       repeat: -1,
       easing: 'linear',
-      yoyo: false
+      yoyo: true
+    },
+    scale: {
+      enabled: false,
+      destination: { w: 1.2, h: 1.2 },
+      duration: 500,
+      repeat: -1,
+      easing: 'linear',
+      yoyo: true
     }
   }
 };

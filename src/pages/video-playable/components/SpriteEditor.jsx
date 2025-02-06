@@ -91,7 +91,13 @@ const SpriteEditor = ({ sprite, onUpdate, onDelete }) => {
           />
         );
       case "scale":
-        return <div>Scale</div>;
+        return (
+          <ScaleAnimation
+            sprite={sprite}
+            handleNumberInput={handleNumberInput}
+            onUpdate={onUpdate}
+          />
+        );
       case "transparency":
         return <div>Transparency</div>;
       default:
@@ -458,6 +464,206 @@ const PositionAnimation = ({ sprite, handleNumberInput, onUpdate }) => {
                       ...sprite.animation,
                       position: {
                         ...sprite.animation.position,
+                        yoyo: checked,
+                      },
+                    },
+                  });
+                }}
+                label="Background"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const ScaleAnimation = ({ sprite, handleNumberInput, onUpdate }) => {
+  return (
+    <div className="mt-4 space-y-4">
+      {/* Animation Controls */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <label className="text-lg font-medium">Scale Animation</label>
+          <div className="flex items-center gap-2">
+            <button
+              className={`px-2 py-1 text-xs rounded text-purple-600 border border-white ${
+                sprite.animation?.scale?.enabled ? "bg-white text-white" : ""
+              }`}
+              onClick={() => {
+                const scaleAnimation = {
+                  enabled: sprite.animation?.scale?.enabled === true ? false : true,
+                  destination: {
+                    w: sprite.scale * 2,
+                    h: sprite.scale * 2,
+                  },
+                  duration: 500,
+                  repeat: -1,
+                  easing: "linear",
+                  yoyo: true,
+                };
+
+                const updatedSprite = {
+                  ...sprite,
+                  animation: {
+                    ...sprite.animation,
+                    scale: scaleAnimation,
+                  },
+                };
+
+                onUpdate(updatedSprite);
+              }}
+            >
+              {sprite.animation?.scale?.enabled ? "ON" : "OFF"}
+            </button>
+          </div>
+        </div>
+
+        {sprite.animation?.scale?.enabled && (
+          <div className="space-y-4">
+            {/* Scale Factor Controls */}
+            <div>
+              <label className="block mb-2">Scale Factor</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-400">Width</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={sprite.animation.scale.destination.w}
+                    onChange={(e) => {
+                      onUpdate({
+                        ...sprite,
+                        animation: {
+                          ...sprite.animation,
+                          scale: {
+                            ...sprite.animation.scale,
+                            destination: {
+                              ...sprite.animation.scale.destination,
+                              w: parseFloat(e.target.value) || 0,
+                            },
+                          },
+                        },
+                      });
+                    }}
+                    className="bg-gray-700 rounded px-3 py-2 w-full"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400">Height</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={sprite.animation.scale.destination.h}
+                    onChange={(e) => {
+                      onUpdate({
+                        ...sprite,
+                        animation: {
+                          ...sprite.animation,
+                          scale: {
+                            ...sprite.animation.scale,
+                            destination: {
+                              ...sprite.animation.scale.destination,
+                              h: parseFloat(e.target.value) || 0,
+                            },
+                          },
+                        },
+                      });
+                    }}
+                    className="bg-gray-700 rounded px-3 py-2 w-full"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Duration Control */}
+            <div>
+              <label className="block mb-2">Duration (ms)</label>
+              <input
+                type="number"
+                min="0"
+                step="100"
+                value={sprite.animation.scale.duration}
+                onChange={(e) => {
+                  onUpdate({
+                    ...sprite,
+                    animation: {
+                      ...sprite.animation,
+                      scale: {
+                        ...sprite.animation.scale,
+                        duration: parseInt(e.target.value) || 0,
+                      },
+                    },
+                  });
+                }}
+                className="bg-gray-700 rounded px-3 py-2 w-full"
+              />
+            </div>
+
+            {/* Repeat Control */}
+            <div>
+              <label className="block mb-2">Repeat (-1 for infinite)</label>
+              <input
+                type="number"
+                value={sprite.animation.scale.repeat}
+                onChange={(e) => {
+                  onUpdate({
+                    ...sprite,
+                    animation: {
+                      ...sprite.animation,
+                      scale: {
+                        ...sprite.animation.scale,
+                        repeat: parseInt(e.target.value) || 0,
+                      },
+                    },
+                  });
+                }}
+                className="bg-gray-700 rounded px-3 py-2 w-full"
+              />
+            </div>
+
+            {/* Easing Function */}
+            <div>
+              <label className="block mb-2">Easing Function</label>
+              <select
+                value={sprite.animation.scale.easing}
+                onChange={(e) => {
+                  onUpdate({
+                    ...sprite,
+                    animation: {
+                      ...sprite.animation,
+                      scale: {
+                        ...sprite.animation.scale,
+                        easing: e.target.value,
+                      },
+                    },
+                  });
+                }}
+                className="bg-gray-700 rounded px-3 py-2 w-full"
+              >
+                <option value="linear">Linear</option>
+                <option value="easeInQuad">Ease In Quad</option>
+                <option value="easeOutQuad">Ease Out Quad</option>
+                <option value="easeInOutQuad">Ease In Out Quad</option>
+                <option value="easeInCubic">Ease In Cubic</option>
+                <option value="easeOutCubic">Ease Out Cubic</option>
+                <option value="easeInOutCubic">Ease In Out Cubic</option>
+              </select>
+            </div>
+
+            {/* Yoyo Effect Toggle */}
+            <div className="flex items-center justify-between">
+              <span>Yoyo Effect</span>
+              <SwitchComponent
+                checked={sprite.animation.scale.yoyo}
+                onChange={(checked) => {
+                  onUpdate({
+                    ...sprite,
+                    animation: {
+                      ...sprite.animation,
+                      scale: {
+                        ...sprite.animation.scale,
                         yoyo: checked,
                       },
                     },

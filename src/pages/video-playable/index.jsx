@@ -1327,38 +1327,57 @@ export default function VideoPlayable() {
       if (!currentModification) return;
 
       currentModification.sprites.forEach(spriteData => {
-        if (!spriteData.animation?.position?.enabled) return;
-
         const sprite = app.stage.children.find(child => child.__spriteId === spriteData.id);
         if (!sprite) return;
 
-        const anim = spriteData.animation.position;
         const currentTime = Date.now();
         const elapsedTime = currentTime - startTime;
-        
-        // Calculate progress
-        let progress = (elapsedTime % anim.duration) / anim.duration;
 
-        // Apply easing if not linear
-        if (anim.easing !== 'linear') {
-          progress = getEasedProgress(progress, anim.easing);
+        // Handle position animation
+        if (spriteData.animation?.position?.enabled) {
+          const anim = spriteData.animation.position;
+          let progress = (elapsedTime % anim.duration) / anim.duration;
+
+          if (anim.easing !== 'linear') {
+            progress = getEasedProgress(progress, anim.easing);
+          }
+
+          if (anim.yoyo) {
+            const cycle = Math.floor((elapsedTime % (anim.duration * 2)) / anim.duration);
+            if (cycle === 1) progress = 1 - progress;
+          }
+
+          const startX = spriteData.position.x * app.screen.width;
+          const startY = spriteData.position.y * app.screen.height;
+          const endX = (anim.destination?.x || spriteData.position.x) * app.screen.width;
+          const endY = (anim.destination?.y || spriteData.position.y) * app.screen.height;
+
+          sprite.position.x = startX + (endX - startX) * progress;
+          sprite.position.y = startY + (endY - startY) * progress;
         }
 
-        // Handle yoyo effect
-        if (anim.yoyo) {
-          const cycle = Math.floor((elapsedTime % (anim.duration * 2)) / anim.duration);
-          if (cycle === 1) progress = 1 - progress;
+        // Handle scale animation
+        if (spriteData.animation?.scale?.enabled) {
+          const scaleAnim = spriteData.animation.scale;
+          let scaleProgress = (elapsedTime % scaleAnim.duration) / scaleAnim.duration;
+
+          if (scaleAnim.easing !== 'linear') {
+            scaleProgress = getEasedProgress(scaleProgress, scaleAnim.easing);
+          }
+
+          if (scaleAnim.yoyo) {
+            const cycle = Math.floor((elapsedTime % (scaleAnim.duration * 2)) / scaleAnim.duration);
+            if (cycle === 1) scaleProgress = 1 - scaleProgress;
+          }
+
+          // Use the base scale as starting point
+          const startScale = spriteData.scale;
+          const endScaleW = scaleAnim.destination.w;
+          const endScaleH = scaleAnim.destination.h;
+
+          sprite.scale.x = startScale + (endScaleW - startScale) * scaleProgress;
+          sprite.scale.y = startScale + (endScaleH - startScale) * scaleProgress;
         }
-
-        // Calculate positions
-        const startX = spriteData.position.x * app.screen.width;
-        const startY = spriteData.position.y * app.screen.height;
-        const endX = (anim.destination?.x || spriteData.position.x) * app.screen.width;
-        const endY = (anim.destination?.y || spriteData.position.y) * app.screen.height;
-
-        // Update sprite position
-        sprite.position.x = startX + (endX - startX) * progress;
-        sprite.position.y = startY + (endY - startY) * progress;
       });
     };
 
