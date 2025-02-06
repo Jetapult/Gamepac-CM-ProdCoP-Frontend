@@ -1323,82 +1323,97 @@ export default function VideoPlayable() {
     const startTime = Date.now();
 
     const animationTicker = (delta) => {
-      const currentModification = videoPlayable.modifications[activeBreakIndex];
-      if (!currentModification) return;
-
-      currentModification.sprites.forEach(spriteData => {
-        const sprite = app.stage.children.find(child => child.__spriteId === spriteData.id);
-        if (!sprite) return;
-
-        const currentTime = Date.now();
-        const elapsedTime = currentTime - startTime;
-
-        // Handle position animation
-        if (spriteData.animation?.position?.enabled) {
-          const anim = spriteData.animation.position;
-          let progress = (elapsedTime % anim.duration) / anim.duration;
-
-          if (anim.easing !== 'linear') {
-            progress = getEasedProgress(progress, anim.easing);
-          }
-
-          if (anim.yoyo) {
-            const cycle = Math.floor((elapsedTime % (anim.duration * 2)) / anim.duration);
-            if (cycle === 1) progress = 1 - progress;
-          }
-
-          const startX = spriteData.position.x * app.screen.width;
-          const startY = spriteData.position.y * app.screen.height;
-          const endX = (anim.destination?.x || spriteData.position.x) * app.screen.width;
-          const endY = (anim.destination?.y || spriteData.position.y) * app.screen.height;
-
-          sprite.position.x = startX + (endX - startX) * progress;
-          sprite.position.y = startY + (endY - startY) * progress;
+      // Get all active modifications based on current time
+      const activeModifications = videoPlayable.modifications.filter(mod => {
+        switch (mod.type) {
+          case ModificationType.BREAK:
+            return activeBreakIndex !== -1;
+          case ModificationType.OVERLAY:
+            return currentTime >= mod.startTime && currentTime <= mod.endTime;
+          case ModificationType.END_SCREEN:
+            // Show end screen when video is near the end or finished
+            return currentTime >= mod.time;
+          default:
+            return false;
         }
+      });
 
-        // Handle scale animation
-        if (spriteData.animation?.scale?.enabled) {
-          const scaleAnim = spriteData.animation.scale;
-          let scaleProgress = (elapsedTime % scaleAnim.duration) / scaleAnim.duration;
+      // Process animations for all active modifications
+      activeModifications.forEach(modification => {
+        modification.sprites.forEach(spriteData => {
+          const sprite = app.stage.children.find(child => child.__spriteId === spriteData.id);
+          if (!sprite) return;
 
-          if (scaleAnim.easing !== 'linear') {
-            scaleProgress = getEasedProgress(scaleProgress, scaleAnim.easing);
+          const currentTime = Date.now();
+          const elapsedTime = currentTime - startTime;
+
+          // Handle position animation
+          if (spriteData.animation?.position?.enabled) {
+            const anim = spriteData.animation.position;
+            let progress = (elapsedTime % anim.duration) / anim.duration;
+
+            if (anim.easing !== 'linear') {
+              progress = getEasedProgress(progress, anim.easing);
+            }
+
+            if (anim.yoyo) {
+              const cycle = Math.floor((elapsedTime % (anim.duration * 2)) / anim.duration);
+              if (cycle === 1) progress = 1 - progress;
+            }
+
+            const startX = spriteData.position.x * app.screen.width;
+            const startY = spriteData.position.y * app.screen.height;
+            const endX = (anim.destination?.x || spriteData.position.x) * app.screen.width;
+            const endY = (anim.destination?.y || spriteData.position.y) * app.screen.height;
+
+            sprite.position.x = startX + (endX - startX) * progress;
+            sprite.position.y = startY + (endY - startY) * progress;
           }
 
-          if (scaleAnim.yoyo) {
-            const cycle = Math.floor((elapsedTime % (scaleAnim.duration * 2)) / scaleAnim.duration);
-            if (cycle === 1) scaleProgress = 1 - scaleProgress;
+          // Handle scale animation
+          if (spriteData.animation?.scale?.enabled) {
+            const scaleAnim = spriteData.animation.scale;
+            let scaleProgress = (elapsedTime % scaleAnim.duration) / scaleAnim.duration;
+
+            if (scaleAnim.easing !== 'linear') {
+              scaleProgress = getEasedProgress(scaleProgress, scaleAnim.easing);
+            }
+
+            if (scaleAnim.yoyo) {
+              const cycle = Math.floor((elapsedTime % (scaleAnim.duration * 2)) / scaleAnim.duration);
+              if (cycle === 1) scaleProgress = 1 - scaleProgress;
+            }
+
+            // Use the base scale as starting point
+            const startScale = spriteData.scale;
+            const endScaleW = scaleAnim.destination.w;
+            const endScaleH = scaleAnim.destination.h;
+
+            sprite.scale.x = startScale + (endScaleW - startScale) * scaleProgress;
+            sprite.scale.y = startScale + (endScaleH - startScale) * scaleProgress;
           }
 
-          // Use the base scale as starting point
-          const startScale = spriteData.scale;
-          const endScaleW = scaleAnim.destination.w;
-          const endScaleH = scaleAnim.destination.h;
+          // Handle transparency animation
+          if (spriteData.animation?.transparency?.enabled) {
+            const transparencyAnim = spriteData.animation.transparency;
+            let transparencyProgress = (elapsedTime % transparencyAnim.duration) / transparencyAnim.duration;
 
-          sprite.scale.x = startScale + (endScaleW - startScale) * scaleProgress;
-          sprite.scale.y = startScale + (endScaleH - startScale) * scaleProgress;
-        }
+            if (transparencyAnim.easing !== 'linear') {
+              transparencyProgress = getEasedProgress(transparencyProgress, transparencyAnim.easing);
+            }
 
-        // Handle transparency animation
-        if (spriteData.animation?.transparency?.enabled) {
-          const transparencyAnim = spriteData.animation.transparency;
-          let transparencyProgress = (elapsedTime % transparencyAnim.duration) / transparencyAnim.duration;
+            if (transparencyAnim.yoyo) {
+              const cycle = Math.floor((elapsedTime % (transparencyAnim.duration * 2)) / transparencyAnim.duration);
+              if (cycle === 1) transparencyProgress = 1 - transparencyProgress;
+            }
 
-          if (transparencyAnim.easing !== 'linear') {
-            transparencyProgress = getEasedProgress(transparencyProgress, transparencyAnim.easing);
+            const startAlpha = spriteData.transparency;
+            const endAlpha = transparencyAnim.destination;
+
+            // Interpolate between original transparency and destination
+            sprite.alpha = startAlpha + (endAlpha - startAlpha) * transparencyProgress;
           }
-
-          if (transparencyAnim.yoyo) {
-            const cycle = Math.floor((elapsedTime % (transparencyAnim.duration * 2)) / transparencyAnim.duration);
-            if (cycle === 1) transparencyProgress = 1 - transparencyProgress;
-          }
-
-          const startAlpha = spriteData.transparency;
-          const endAlpha = transparencyAnim.destination;
-
-          // Interpolate between original transparency and destination
-          sprite.alpha = startAlpha + (endAlpha - startAlpha) * transparencyProgress;
-        }
+        });
       });
     };
 
