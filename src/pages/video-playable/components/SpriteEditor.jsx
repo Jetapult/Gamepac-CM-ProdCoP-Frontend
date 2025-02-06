@@ -6,7 +6,8 @@ import {
   Trash,
   Wrench,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { SwitchComponent } from "./ModificationControls";
 
 const tabs = [
   {
@@ -271,6 +272,8 @@ const GeneralSpriteSettings = ({ sprite, handleNumberInput, onUpdate }) => {
 };
 
 const PositionAnimation = ({ sprite, handleNumberInput, onUpdate }) => {
+  const startTimeRef = useRef(Date.now());
+
   return (
     <div className="mt-4 space-y-4">
       {/* Animation Controls */}
@@ -278,42 +281,36 @@ const PositionAnimation = ({ sprite, handleNumberInput, onUpdate }) => {
         <div className="flex items-center justify-between mb-4">
           <label className="text-lg font-medium">Position Animation</label>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">Enable</span>
-            <div className="relative inline-block w-12 h-6 rounded-full bg-gray-700">
-              <input
-                type="checkbox"
-                className="sr-only"
-                checked={sprite.animation?.position?.enabled || false}
-                onChange={(e) => {
-                  onUpdate({
-                    ...sprite,
-                    animation: {
-                      ...sprite.animation,
-                      position: {
-                        ...sprite.animation?.position,
-                        enabled: e.target.checked,
-                        destination: sprite.animation?.position
-                          ?.destination || {
-                          x: sprite.position.x,
-                          y: sprite.position.y,
-                        },
-                        duration: sprite.animation?.position?.duration || 500,
-                        repeat: sprite.animation?.position?.repeat || -1,
-                        easing: sprite.animation?.position?.easing || "linear",
-                        yoyo: sprite.animation?.position?.yoyo || false,
-                      },
-                    },
-                  });
-                }}
-              />
-              <div
-                className={`absolute left-1 top-1 w-4 h-4 rounded-full transition-transform ${
-                  sprite.animation?.position?.enabled
-                    ? "translate-x-6 bg-purple-600"
-                    : "bg-white"
-                }`}
-              />
-            </div>
+            <button
+              className={`px-2 py-1 text-xs rounded text-purple-600 border border-white ${
+                sprite.animation?.position?.enabled ? "bg-white text-white" : ""
+              }`}
+              onClick={() => {
+                const positionAnimation = {
+                  enabled: sprite.animation?.position?.enabled === true ? false : true,
+                  destination: {
+                    x: 0.4,
+                    y: 0.4,
+                  },
+                  duration: 500,
+                  repeat: -1,
+                  easing: "linear",
+                  yoyo: true,
+                };
+
+                const updatedSprite = {
+                  ...sprite,
+                  animation: {
+                    ...sprite.animation,
+                    position: positionAnimation,
+                  },
+                };
+
+                onUpdate(updatedSprite);
+              }}
+            >
+              {sprite.animation?.position?.enabled ? "ON" : "OFF"}
+            </button>
           </div>
         </div>
 
@@ -452,32 +449,22 @@ const PositionAnimation = ({ sprite, handleNumberInput, onUpdate }) => {
             {/* Yoyo Effect Toggle */}
             <div className="flex items-center justify-between">
               <span>Yoyo Effect</span>
-              <div className="relative inline-block w-12 h-6 rounded-full bg-gray-700">
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={sprite.animation.position.yoyo}
-                  onChange={(e) => {
-                    onUpdate({
-                      ...sprite,
-                      animation: {
-                        ...sprite.animation,
-                        position: {
-                          ...sprite.animation.position,
-                          yoyo: e.target.checked,
-                        },
+              <SwitchComponent
+                checked={sprite.animation.position.yoyo}
+                onChange={(checked) => {
+                  onUpdate({
+                    ...sprite,
+                    animation: {
+                      ...sprite.animation,
+                      position: {
+                        ...sprite.animation.position,
+                        yoyo: checked,
                       },
-                    });
-                  }}
-                />
-                <div
-                  className={`absolute left-1 top-1 w-4 h-4 rounded-full transition-transform ${
-                    sprite.animation.position.yoyo
-                      ? "translate-x-6 bg-purple-600"
-                      : "bg-white"
-                  }`}
-                />
-              </div>
+                    },
+                  });
+                }}
+                label="Background"
+              />
             </div>
           </div>
         )}

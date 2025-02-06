@@ -18,7 +18,7 @@ const hexToRgb = (hex) => {
   };
 };
 
-const SwitchComponent = ({ checked, onChange, label }) => (
+export const SwitchComponent = ({ checked, onChange, label }) => (
   <Switch
     checked={checked}
     onChange={onChange}
@@ -377,6 +377,7 @@ const Sprites = ({
           <div
             className="bg-white rounded border border-[#800080] mr-2 cursor-pointer"
             onClick={() => setActiveSpriteId(sprite.id)}
+            key={sprite.id}
           >
             <img
               src={sprite.imageUrl}

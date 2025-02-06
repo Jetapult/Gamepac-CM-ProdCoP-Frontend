@@ -7,7 +7,16 @@ export const initialSpriteState = {
   rotation: 0,
   anchor: { x: 0.5, y: 0.5 },
   transparency: 1,
-  animations: {},
+  animation: {
+    position: {
+      enabled: false,
+      destination: { x: 0.5, y: 0.5 },
+      duration: 500,
+      repeat: -1,
+      easing: 'linear',
+      yoyo: false
+    }
+  }
 };
 
 export const initialState = {

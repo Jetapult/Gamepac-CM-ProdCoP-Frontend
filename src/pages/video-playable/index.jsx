@@ -75,6 +75,29 @@ const timelineBreakActiveStyle = {
   borderBottom: "8px solid #8b5cf6",
 };
 
+const getEasedProgress = (progress, easingType) => {
+  switch (easingType) {
+    case 'easeInQuad':
+      return progress * progress;
+    case 'easeOutQuad':
+      return 1 - (1 - progress) * (1 - progress);
+    case 'easeInOutQuad':
+      return progress < 0.5 
+        ? 2 * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+    case 'easeInCubic':
+      return progress * progress * progress;
+    case 'easeOutCubic':
+      return 1 - Math.pow(1 - progress, 3);
+    case 'easeInOutCubic':
+      return progress < 0.5 
+        ? 4 * progress * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+    default:
+      return progress; // linear
+  }
+};
+
 export default function VideoPlayable() {
   const [isDragging, setIsDragging] = useState(false);
   const [splitPosition, setSplitPosition] = useState(20);
@@ -115,6 +138,9 @@ export default function VideoPlayable() {
 
   // Create a ref that will hold the active audio elements keyed by modification id.
   const audioElementsRef = useRef({});
+
+  // Add this near the top of the VideoPlayable component
+  const startTimeRef = useRef(Date.now());
 
   // On mount, initialize the PIXI app and attach its canvas to the right container
   useEffect(() => {
@@ -661,6 +687,7 @@ export default function VideoPlayable() {
         if (!spriteData.file) return;
 
         const sprite = PIXI.Sprite.from(spriteData.imageUrl);
+        sprite.__spriteId = spriteData.id;
 
         sprite.position.set(
           spriteData.position.x * app.screen.width,
@@ -1201,6 +1228,9 @@ export default function VideoPlayable() {
     const app = pixiAppRef.current;
     const sprite = PIXI.Sprite.from(spriteData.imageUrl);
 
+    // Tag the sprite with its ID for animation lookup
+    sprite.__spriteId = spriteData.id;
+
     sprite.position.set(
       spriteData.position.x * app.screen.width,
       spriteData.position.y * app.screen.height
@@ -1210,7 +1240,6 @@ export default function VideoPlayable() {
     sprite.rotation = spriteData.rotation * (Math.PI / 180);
     sprite.alpha = spriteData.transparency;
 
-    // If this sprite is being rendered as part of an overlay modification, tag it.
     if (modification && modification.type === ModificationType.OVERLAY) {
       sprite.__isOverlay = true;
     }
@@ -1286,6 +1315,56 @@ export default function VideoPlayable() {
     duration,
     clearOverlayContent,
   ]);
+
+  // Add this new effect after your other useEffects
+  useEffect(() => {
+    if (!pixiAppRef.current) return;
+    const app = pixiAppRef.current;
+    const startTime = Date.now();
+
+    const animationTicker = (delta) => {
+      const currentModification = videoPlayable.modifications[activeBreakIndex];
+      if (!currentModification) return;
+
+      currentModification.sprites.forEach(spriteData => {
+        if (!spriteData.animation?.position?.enabled) return;
+
+        const sprite = app.stage.children.find(child => child.__spriteId === spriteData.id);
+        if (!sprite) return;
+
+        const anim = spriteData.animation.position;
+        const currentTime = Date.now();
+        const elapsedTime = currentTime - startTime;
+        
+        // Calculate progress
+        let progress = (elapsedTime % anim.duration) / anim.duration;
+
+        // Apply easing if not linear
+        if (anim.easing !== 'linear') {
+          progress = getEasedProgress(progress, anim.easing);
+        }
+
+        // Handle yoyo effect
+        if (anim.yoyo) {
+          const cycle = Math.floor((elapsedTime % (anim.duration * 2)) / anim.duration);
+          if (cycle === 1) progress = 1 - progress;
+        }
+
+        // Calculate positions
+        const startX = spriteData.position.x * app.screen.width;
+        const startY = spriteData.position.y * app.screen.height;
+        const endX = (anim.destination?.x || spriteData.position.x) * app.screen.width;
+        const endY = (anim.destination?.y || spriteData.position.y) * app.screen.height;
+
+        // Update sprite position
+        sprite.position.x = startX + (endX - startX) * progress;
+        sprite.position.y = startY + (endY - startY) * progress;
+      });
+    };
+
+    app.ticker.add(animationTicker);
+    return () => app.ticker.remove(animationTicker);
+  }, [activeBreakIndex, videoPlayable.modifications]);
 
   const renderBuildButton = () => (
     <button
