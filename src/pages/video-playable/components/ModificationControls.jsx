@@ -40,8 +40,7 @@ const ModificationControls = ({
   videoPlayable,
   setVideoPlayable,
 }) => {
-  const fileInputRef = useRef(null);
-  const audioInputRef = useRef(null);
+  const [activeSpriteId, setActiveSpriteId] = useState(null);
 
   if (
     activeTab?.modificationIndex === undefined ||
@@ -112,6 +111,7 @@ const ModificationControls = ({
       updateModification({
         sprites: [...currentModification.sprites, newSprite],
       });
+      setActiveSpriteId(newSprite.id);
       // Reset the input value so the user can select the same image again later.
       e.target.value = "";
     } catch (error) {
@@ -133,6 +133,7 @@ const ModificationControls = ({
         (_, index) => index !== spriteIndex
       ),
     });
+    setActiveSpriteId(null);
   };
 
   const renderTimeControls = () => {
@@ -188,7 +189,7 @@ const ModificationControls = ({
   };
 
   return (
-    <div className="space-y-6 text-white p-4 overflow-y-auto h-[calc(100vh-100px)]">
+    <div className="space-y-6 text-white p-4 overflow-y-auto h-[calc(100vh-200px)]">
       <h2 className="text-2xl font-bold">
         {currentModification.type === ModificationType.BREAK && "Break"}
         {currentModification.type === ModificationType.OVERLAY &&
@@ -306,34 +307,14 @@ const ModificationControls = ({
         />
       )}
 
-      <div className="flex items-center justify-between mb-4">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleSpriteImageUpload}
-          className="hidden"
-        />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-2 bg-purple-600 px-4 py-2 rounded"
-        >
-          Add Sprite
-        </button>
-      </div>
-
-      {currentModification.sprites.map((sprite, spriteIndex) => (
-        <SpriteEditor
-          key={sprite.id}
-          sprite={sprite}
-          onUpdate={(updatedSprite) =>
-            handleSpriteUpdate(spriteIndex, updatedSprite)
-          }
-          onDelete={() => handleSpriteDelete(spriteIndex)}
-          onMoveUp={() => handleSpriteMoveUp(spriteIndex)}
-          onMoveDown={() => handleSpriteMoveDown(spriteIndex)}
-        />
-      ))}
+      <Sprites
+        activeSpriteId={activeSpriteId}
+        setActiveSpriteId={setActiveSpriteId}
+        currentModification={currentModification}
+        handleSpriteImageUpload={handleSpriteImageUpload}
+        handleSpriteUpdate={handleSpriteUpdate}
+        handleSpriteDelete={handleSpriteDelete}
+      />
     </div>
   );
 };
@@ -342,22 +323,29 @@ const BackgroundEditor = ({ currentModification, updateModification }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   return (
     <div>
-      <label className="block mb-2" onClick={() => setShowColorPicker(!showColorPicker)}>
+      <label
+        className="block mb-2"
+        onClick={() => setShowColorPicker(!showColorPicker)}
+      >
         Background Color <Palette />
       </label>
       <div className="flex items-center gap-2 relative">
-        {showColorPicker && <div className="absolute top-0 left-0 z-10"><SketchPicker
-          color={{
-            ...hexToRgb(currentModification.backgroundColor),
-            a: currentModification.transparency,
-          }}
-          onChange={(color) => {
-            updateModification({
-              backgroundColor: color.hex,
-              transparency: color.rgb.a,
-            });
-          }}
-        /></div>}
+        {showColorPicker && (
+          <div className="absolute top-0 left-0 z-10">
+            <SketchPicker
+              color={{
+                ...hexToRgb(currentModification.backgroundColor),
+                a: currentModification.transparency,
+              }}
+              onChange={(color) => {
+                updateModification({
+                  backgroundColor: color.hex,
+                  transparency: color.rgb.a,
+                });
+              }}
+            />
+          </div>
+        )}
         <SwitchComponent
           checked={currentModification.relativeToScreenSize}
           onChange={(checked) => {
@@ -370,6 +358,62 @@ const BackgroundEditor = ({ currentModification, updateModification }) => {
         <span>Relative to Screen Size</span>
       </div>
     </div>
+  );
+};
+
+const Sprites = ({
+  activeSpriteId,
+  setActiveSpriteId,
+  currentModification,
+  handleSpriteImageUpload,
+  handleSpriteUpdate,
+  handleSpriteDelete,
+}) => {
+  const fileInputRef = useRef(null);
+  return (
+    <>
+      <div className="flex items-center">
+        {currentModification.sprites.map((sprite, spriteIndex) => (
+          <div
+            className="bg-white rounded border border-[#800080] mr-2 cursor-pointer"
+            onClick={() => setActiveSpriteId(sprite.id)}
+          >
+            <img
+              src={sprite.imageUrl}
+              className="w-8 h-8 object-cover rounded"
+            />
+          </div>
+        ))}
+        <div className="flex items-center justify-between">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleSpriteImageUpload}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 bg-purple-600 px-4 py-1.5 rounded"
+          >
+            Add Sprite
+          </button>
+        </div>
+      </div>
+      {currentModification.sprites.map(
+        (sprite, spriteIndex) =>
+          sprite.id === activeSpriteId && (
+            <SpriteEditor
+              key={sprite.id}
+              sprite={sprite}
+              onUpdate={(updatedSprite) =>
+                handleSpriteUpdate(spriteIndex, updatedSprite)
+              }
+              onDelete={() => handleSpriteDelete(spriteIndex)}
+            />
+          )
+      )}
+    </>
   );
 };
 export default ModificationControls;

@@ -80,18 +80,13 @@ export default function VideoPlayable() {
   const [splitPosition, setSplitPosition] = useState(20);
   const [adName, setAdName] = useState("");
   const [videoSource, setVideoSource] = useState(null);
-  const [videoPreviewUrl, setVideoPreviewUrl] = useState(() => localStorage.getItem("videoPreviewUrl") || null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState(null);
   const [iosUrl, setIosUrl] = useState("");
   const [playstoreUrl, setPlaystoreUrl] = useState("");
-  const [activeTab, setActiveTab] = useState(() => {
-    const stored = localStorage.getItem("activeTab");
-    return stored
-      ? JSON.parse(stored)
-      : {
-          id: "general",
-          type: "general",
-          modificationIndex: -1
-        };
+  const [activeTab, setActiveTab] = useState({
+    id: "general",
+    type: "general",
+    modificationIndex: -1
   });
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -100,19 +95,14 @@ export default function VideoPlayable() {
   const [orientation, setOrientation] = useState({ width: 375, height: 667 });
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeBreakIndex, setActiveBreakIndex] = useState(-1);
-  const [tabs, setTabs] = useState(() => {
-    const stored = localStorage.getItem("tabs");
-    return stored
-      ? JSON.parse(stored)
-      : [
-          {
-            id: "general",
-            type: "general",
-            modificationIndex: -1,
-            label: "General Properties"
-          }
-        ];
-  });
+  const [tabs, setTabs] = useState([
+    {
+      id: "general",
+      type: "general",
+      modificationIndex: -1,
+      label: "General Properties"
+    }
+  ]);
   const pixiContainerRef = useRef(null);
   const pixiAppRef = useRef(null);
   const videoSpriteRef = useRef(null);
@@ -121,56 +111,10 @@ export default function VideoPlayable() {
   const timelineRef = useRef(null);
   const [breakAudioElement, setBreakAudioElement] = useState(null);
 
-  const [videoPlayable, setVideoPlayable] = useState(() => {
-    const stored = localStorage.getItem("videoPlayableData");
-    return stored ? JSON.parse(stored) : initialState;
-  });
+  const [videoPlayable, setVideoPlayable] = useState(initialState);
 
   // Create a ref that will hold the active audio elements keyed by modification id.
   const audioElementsRef = useRef({});
-
-  // On mount, restore persisted state from localStorage
-  useEffect(() => {
-    const storedAdData = localStorage.getItem("videoPlayableData");
-    if (storedAdData) {
-      try {
-        const parsedData = JSON.parse(storedAdData);
-        setVideoPlayable(parsedData);
-      } catch (err) {
-        console.error("Error parsing stored video playable data", err);
-      }
-    }
-    const storedActiveTab = localStorage.getItem("activeTab");
-    if (storedActiveTab) {
-      try {
-        const parsedTab = JSON.parse(storedActiveTab);
-        setActiveTab(parsedTab);
-      } catch (err) {
-        console.error("Error parsing stored active tab", err);
-      }
-    }
-  }, []);
-
-  // Whenever videoPlayable state changes, save its new value to localStorage
-  useEffect(() => {
-    localStorage.setItem("videoPlayableData", JSON.stringify(videoPlayable));
-  }, [videoPlayable]);
-
-  // Similarly, persist activeTab if needed.
-  useEffect(() => {
-    localStorage.setItem("activeTab", JSON.stringify(activeTab));
-  }, [activeTab]);
-
-  // Persist tabs array to localStorage.
-  useEffect(() => {
-    localStorage.setItem("tabs", JSON.stringify(tabs));
-  }, [tabs]);
-
-  useEffect(() => {
-    if (videoPreviewUrl) {
-      localStorage.setItem("videoPreviewUrl", videoPreviewUrl);
-    }
-  }, [videoPreviewUrl]);
 
   // On mount, initialize the PIXI app and attach its canvas to the right container
   useEffect(() => {
@@ -299,15 +243,11 @@ export default function VideoPlayable() {
         type: ModificationType.BREAK,
         modificationIndex,
         time: newBreak.time,
+        label: `Break (${newBreak.time}ms)`,
       };
       setTabs((prevTabs) => [
         ...prevTabs,
-        {
-          id: newTabId,
-          type: ModificationType.BREAK,
-          modificationIndex,
-          time: newBreak.time,
-        },
+        newTab,
       ]);
       setActiveTab(newTab);
 
@@ -1051,12 +991,12 @@ export default function VideoPlayable() {
   );
 
   const renderTabs = () => (
-    <div className="flex space-x-4 mb-6 overflow-x-auto">
+    <div className="flex space-x-4 mb-6 overflow-x-auto bg-[#252627] py-2">
       {tabs.map((tab) => (
         <button
           key={tab.id}
-          className={`px-4 py-2 rounded whitespace-nowrap ${
-            activeTab.id === tab.id ? "bg-gray-200" : ""
+          className={`px-2 py-2 rounded bg-transparent ${
+            activeTab.id === tab.id ? "text-white" : "text-[#b5b5b5] hover:text-white"
           }`}
           onClick={() => setActiveTab(tab)}
         >
@@ -1106,7 +1046,7 @@ export default function VideoPlayable() {
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Video
                 </label>
-                {videoSource && <span className="text-sm">Video uploaded</span>}
+                {videoSource && <span className="text-sm text-white">Video uploaded</span>}
               </div>
             </div>
 
@@ -1372,7 +1312,7 @@ export default function VideoPlayable() {
     >
       <div
         style={{ width: `${splitPosition}%` }}
-        className={`h-full bg-gray-100 overflow-hidden mx-4 rounded-xl ${
+        className={`h-full bg-black overflow-hidden ${
           isPreviewMode ? "pointer-events-none opacity-50 bg-gray-300" : ""
         }`}
       >
@@ -1382,7 +1322,7 @@ export default function VideoPlayable() {
       </div>
 
       <div
-        className={`group absolute h-full flex items-center cursor-ew-resize ${
+        className={`group absolute h-full flex items-center cursor-ew-resize z-50 ${
           isPreviewMode ? "pointer-events-none opacity-50" : ""
         }`}
         style={{ left: `${splitPosition}%`, transform: "translateX(-50%)" }}
@@ -1391,12 +1331,31 @@ export default function VideoPlayable() {
         <div className="absolute w-4 h-full" />
         <div className="w-[1px] bg-primary/10 h-full" />
         <span className="absolute left-1/2 top-[45%] transform -translate-x-1/2 -translate-y-1/2 bg-primary/10 rounded-lg border border-primary/20 px-[0.5px] py-[2px]">
-          <GripVertical size={12} strokeWidth={2} />
+          <GripVertical size={12} strokeWidth={2} color="white" />
         </span>
       </div>
 
-      <div style={{ width: `${100 - splitPosition}%` }} className="h-full">
-        {videoSource && (
+      <div style={{ width: `${100 - splitPosition}%` }} className="h-full relative bg-gray-900">
+        {!videoSource ? (
+          // Show upload prompt when no video is selected
+          <div className="flex flex-col items-center justify-center h-full text-white">
+            <input
+              type="file"
+              accept="video/*"
+              onChange={handleVideoUpload}
+              className="hidden"
+              id="video-upload"
+            />
+            <label
+              htmlFor="video-upload"
+              className="flex flex-col items-center cursor-pointer p-8 border-2 border-dashed border-gray-600 rounded-lg hover:border-purple-500 transition-colors"
+            >
+              <Upload className="w-12 h-12 mb-4" />
+              <span className="text-lg">Upload Video</span>
+              <span className="text-sm text-gray-400 mt-2">Drag and drop or click to select</span>
+            </label>
+          </div>
+        ) : (
           <div className="h-full flex flex-col relative">
             <div className="flex-1 bg-gray-900">
               {renderExpandableButtons()}
