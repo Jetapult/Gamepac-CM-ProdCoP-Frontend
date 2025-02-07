@@ -138,10 +138,6 @@ export default function VideoPlayable() {
 
   // Create a ref that will hold the active audio elements keyed by modification id.
   const audioElementsRef = useRef({});
-
-  // Add this near the top of the VideoPlayable component
-  const startTimeRef = useRef(Date.now());
-
   // On mount, initialize the PIXI app and attach its canvas to the right container
   useEffect(() => {
     if (pixiContainerRef.current) {
@@ -217,28 +213,6 @@ export default function VideoPlayable() {
       }
       return true;
     });
-  };
-
-  const addTab = (type, time) => {
-    let newTab;
-    switch (type) {
-      case "break":
-        newTab = { ...initialBreakState, time };
-        setVideoPlayable((prev) => ({
-          ...prev,
-          breaks: [...prev.breaks, newTab].sort((a, b) => a.time - b.time),
-        }));
-        break;
-      case "overlay":
-        newTab = { ...initialOverlayState, startTime: time };
-        setVideoPlayable((prev) => ({
-          ...prev,
-          overlays: [...prev.overlays, newTab],
-        }));
-        break;
-      default:
-        break;
-    }
   };
 
   const addBreak = useCallback((time) => {
@@ -387,27 +361,6 @@ export default function VideoPlayable() {
     }
   };
 
-  const handleBreakAudio = useCallback(
-    (currentBreak) => {
-      if (!currentBreak.backgroundMusic?.file) return;
-
-      // Stop any existing audio
-      stopBreakAudio();
-
-      // Create and play new audio
-      const audio = new Audio(
-        URL.createObjectURL(currentBreak.backgroundMusic.file)
-      );
-      audio.volume = currentBreak.backgroundMusic.volume;
-      audio.loop = currentBreak.backgroundMusic.repeat > 1;
-      setBreakAudioElement(audio);
-
-      audio.play().catch((error) => {
-        console.error("Error playing break audio:", error);
-      });
-    },
-    [stopBreakAudio]
-  );
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   const togglePlayPause = useCallback(() => {
@@ -1020,15 +973,16 @@ export default function VideoPlayable() {
   const renderTabs = () => (
     <div className="flex space-x-4 mb-6 overflow-x-auto bg-[#252627] py-2">
       {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          className={`px-2 py-2 rounded bg-transparent ${
-            activeTab.id === tab.id ? "text-white" : "text-[#b5b5b5] hover:text-white"
-          }`}
-          onClick={() => setActiveTab(tab)}
-        >
-          {tab.label}
-        </button>
+        <div key={tab.id} className="flex items-center">
+          <button
+            className={`px-2 py-2 rounded bg-transparent ${
+              activeTab.id === tab.id ? "text-white" : "text-[#b5b5b5] hover:text-white"
+            }`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab.label}
+          </button>
+        </div>
       ))}
     </div>
   );
@@ -1110,6 +1064,7 @@ export default function VideoPlayable() {
             activeTab={activeTabData}
             videoPlayable={videoPlayable}
             setVideoPlayable={setVideoPlayable}
+            handleRemoveTab={handleRemoveTab}
           />
         );
       case "overlay":
@@ -1118,6 +1073,7 @@ export default function VideoPlayable() {
             activeTab={activeTab}
             videoPlayable={videoPlayable}
             setVideoPlayable={setVideoPlayable}
+            handleRemoveTab={handleRemoveTab}
           />
         );
       case "end_screen":
@@ -1126,6 +1082,7 @@ export default function VideoPlayable() {
             activeTab={activeTab}
             videoPlayable={videoPlayable}
             setVideoPlayable={setVideoPlayable}
+            handleRemoveTab={handleRemoveTab}
           />
         );
       default:
@@ -1426,6 +1383,38 @@ export default function VideoPlayable() {
       Build Playable Ad
     </button>
   );
+  
+  const handleRemoveTab = (tabToRemove) => {
+    setVideoPlayable(prev => {
+      const newModifications = prev.modifications.filter((_, index) => 
+        index !== tabToRemove.modificationIndex
+      );
+      
+      setTabs(prevTabs => 
+        prevTabs
+          .filter(tab => tab.id !== tabToRemove.id)
+          .map(tab => {
+            if (tab.modificationIndex > tabToRemove.modificationIndex) {
+              return {
+                ...tab,
+                modificationIndex: tab.modificationIndex - 1
+              };
+            }
+            return tab;
+          })
+      );
+
+      if (activeTab.id === tabToRemove.id) {
+        const generalTab = tabs.find(tab => tab.type === 'general');
+        setActiveTab(generalTab);
+      }
+
+      return {
+        ...prev,
+        modifications: newModifications
+      };
+    });
+  };
 
   return (
     <div

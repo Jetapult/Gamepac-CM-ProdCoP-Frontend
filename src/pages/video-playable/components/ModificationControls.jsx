@@ -1,4 +1,4 @@
-import { Pencil, Trash, Palette } from "lucide-react";
+import { Pencil, Trash, Palette, X } from "lucide-react";
 import { Switch } from "@headlessui/react";
 import { initialSpriteState, ModificationType } from "../state";
 import { useRef, useState } from "react";
@@ -39,6 +39,7 @@ const ModificationControls = ({
   activeTab,
   videoPlayable,
   setVideoPlayable,
+  handleRemoveTab,
 }) => {
   const [activeSpriteId, setActiveSpriteId] = useState(null);
 
@@ -190,13 +191,21 @@ const ModificationControls = ({
 
   return (
     <div className="space-y-6 text-white p-4 overflow-y-auto h-[calc(100vh-200px)]">
-      <h2 className="text-2xl font-bold">
-        {currentModification.type === ModificationType.BREAK && "Break"}
-        {currentModification.type === ModificationType.OVERLAY &&
-          "Permanent Overlay"}
-        {currentModification.type === ModificationType.END_SCREEN &&
-          "End Screen"}
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">
+          {currentModification.type === ModificationType.BREAK && "Break"}
+          {currentModification.type === ModificationType.OVERLAY &&
+            "Permanent Overlay"}
+          {currentModification.type === ModificationType.END_SCREEN &&
+            "End Screen"}
+        </h2>
+        <button
+          onClick={() => handleRemoveTab(activeTab)}
+          className="p-2 hover:bg-gray-700 rounded"
+        >
+          <X className="w-5 h-5 text-gray-400 hover:text-red-500" />
+        </button>
+      </div>
 
       {renderTimeControls()}
 
