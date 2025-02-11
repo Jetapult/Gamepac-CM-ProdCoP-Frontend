@@ -1243,6 +1243,12 @@ export default function VideoPlayable() {
         const modificationsToRender = [...permanentOverlayMods, ...endScreenMods];
 
         modificationsToRender.forEach((mod) => {
+          if (isPreviewMode && mod.backgroundMusic?.file && !audioElementsRef.current[mod.id]) {
+            const audio = playModificationAudio(mod);
+            if (audio) {
+              audioElementsRef.current[mod.id] = audio;
+            }
+          }
           if (mod.background) {
             const background = new PIXI.Graphics();
             background.beginFill(
