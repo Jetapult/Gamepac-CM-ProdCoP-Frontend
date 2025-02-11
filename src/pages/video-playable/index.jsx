@@ -149,6 +149,8 @@ export default function VideoPlayable() {
         backgroundColor: 0x000000,
         resolution: window.devicePixelRatio || 1,
       });
+      // Enable zIndex sorting so the children are ordered according to their zIndex values
+      pixiAppRef.current.stage.sortableChildren = true;
       // Append the canvas to the container
       pixiContainerRef.current.appendChild(pixiAppRef.current.view);
     }
@@ -521,6 +523,8 @@ export default function VideoPlayable() {
       const scaleY = app.screen.height / videoElement.videoHeight;
       const scale = Math.min(scaleX, scaleY);
       videoSprite.scale.set(scale);
+      // Set video sprite to lowest zIndex so it remains behind all overlays and breakpoints
+      videoSprite.zIndex = 0;
       app.stage.removeChildren();
       app.stage.addChild(videoSprite);
       videoSpriteRef.current = videoSprite;
@@ -617,12 +621,12 @@ export default function VideoPlayable() {
     });
     spritesRef.current = [];
 
-    // Clear stage
+    // Clear stage and add the video sprite first
     app.stage.removeChildren();
     app.stage.addChild(videoSpriteRef.current);
 
     if (currentBreak) {
-      // Add background if enabled
+      // Add breakpoint background (with a higher zIndex than end screen overlays)
       if (currentBreak.background) {
         const background = new PIXI.Graphics();
         background.beginFill(
@@ -631,11 +635,13 @@ export default function VideoPlayable() {
         );
         background.drawRect(0, 0, app.screen.width, app.screen.height);
         background.endFill();
+        // Set breakpoint background zIndex (now updated to 5)
+        background.zIndex = 5;
         app.stage.addChild(background);
         spritesRef.current.push(background);
       }
 
-      // Add sprites
+      // Add breakpoint sprites (with even higher zIndex)
       currentBreak.sprites.forEach((spriteData) => {
         if (!spriteData.file) return;
 
@@ -655,9 +661,11 @@ export default function VideoPlayable() {
         sprite.eventMode = "static";
         sprite.cursor = "pointer";
 
+        // Set breakpoint sprite zIndex (now updated to 6)
+        sprite.zIndex = 6;
+
         sprite.on("pointerdown", () => {
           clearBreakContent();
-          // Only stop audio if stopOnVideoResume is true and audio is playing.
           if (
             currentBreak.stopOnVideoResume &&
             currentBreak.backgroundMusic?.file &&
@@ -683,10 +691,13 @@ export default function VideoPlayable() {
         spritesRef.current.push(sprite);
       });
 
-      // Ensure video sprite is at the bottom
+      // Ensure the video sprite is at the bottom
+      videoSpriteRef.current.zIndex = 0;
       app.stage.removeChild(videoSpriteRef.current);
       app.stage.addChildAt(videoSpriteRef.current, 0);
     }
+    // Sort the children so that the assigned zIndex values take effect
+    app.stage.sortChildren();
 
     return () => {
       spritesRef.current.forEach((sprite) => {
@@ -1185,7 +1196,7 @@ export default function VideoPlayable() {
     const app = pixiAppRef.current;
     const sprite = PIXI.Sprite.from(spriteData.imageUrl);
 
-    // Tag the sprite with its ID for animation lookup
+    // Tag the sprite with its ID for later lookup.
     sprite.__spriteId = spriteData.id;
 
     sprite.position.set(
@@ -1197,8 +1208,12 @@ export default function VideoPlayable() {
     sprite.rotation = spriteData.rotation * (Math.PI / 180);
     sprite.alpha = spriteData.transparency;
 
-    if (modification && modification.type === ModificationType.OVERLAY) {
+    // Assign zIndex based on modification type:
+    // Permanent overlay sprite → zIndex = 2  
+    // End screen sprite → zIndex = 4
+    if (modification) {
       sprite.__isOverlay = true;
+      sprite.zIndex = modification.type === ModificationType.END_SCREEN ? 4 : 2;
     }
 
     app.stage.addChild(sprite);
@@ -1213,33 +1228,21 @@ export default function VideoPlayable() {
     ) {
       clearOverlayContent();
       if (pixiAppRef.current) {
-        let modificationsToRender = [];
-
-        if (isPreviewMode) {
-          modificationsToRender = videoPlayable.modifications.filter((mod) => {
-            if (mod.type === ModificationType.OVERLAY) {
-              return currentTime >= mod.startTime && currentTime <= mod.endTime;
-            }
-            if (mod.type === ModificationType.END_SCREEN) {
-              // Render the end screen as soon as the trigger time is reached.
-              return currentTime >= mod.time;
-            }
-            return false;
-          });
-        } else {
-          const mod = videoPlayable.modifications[activeTab.modificationIndex];
-          if (mod) modificationsToRender = [mod];
-        }
+        // Filter for permanent overlays and end screens.
+        const permanentOverlayMods = videoPlayable.modifications.filter((mod) => {
+          return (
+            mod.type === ModificationType.OVERLAY &&
+            currentTime >= mod.startTime &&
+            currentTime <= mod.endTime
+          );
+        });
+        const endScreenMods = videoPlayable.modifications.filter((mod) => {
+          return mod.type === ModificationType.END_SCREEN && currentTime >= mod.time;
+        });
+        // Merge both modification types (they will be rendered concurrently).
+        const modificationsToRender = [...permanentOverlayMods, ...endScreenMods];
 
         modificationsToRender.forEach((mod) => {
-          // Trigger audio if background music is provided and the audio isn't already playing.
-          if (isPreviewMode && mod.backgroundMusic?.file && !audioElementsRef.current[mod.id]) {
-            const audio = playModificationAudio(mod);
-            if (audio) {
-              audioElementsRef.current[mod.id] = audio;
-            }
-          }
-          // Render background graphics if enabled.
           if (mod.background) {
             const background = new PIXI.Graphics();
             background.beginFill(
@@ -1254,14 +1257,17 @@ export default function VideoPlayable() {
             );
             background.endFill();
             background.__isOverlay = true;
+            // Permanent overlay background → zIndex 1  
+            // End screen background → zIndex 3
+            background.zIndex = mod.type === ModificationType.END_SCREEN ? 3 : 1;
             pixiAppRef.current.stage.addChild(background);
             spritesRef.current.push(background);
           }
-          // Render modification sprites.
-          mod.sprites.forEach((spriteData) => {
-            renderSprite(spriteData, mod);
-          });
+          // Render sprites using the helper function.
+          mod.sprites.forEach((spriteData) => renderSprite(spriteData, mod));
         });
+        // Re-sort stage children so that zIndex preference takes effect.
+        pixiAppRef.current.stage.sortChildren();
       }
     }
   }, [
