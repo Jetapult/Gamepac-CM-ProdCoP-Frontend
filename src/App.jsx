@@ -47,6 +47,8 @@ import HdwPlayable from "./pages/HTML5Games/HdwPlayable";
 import Translate from "./pages/Translate";
 import Playground from "./pages/PlayablePlayground/Playground";
 import MhmPlayable from "./pages/HTML5Games/MhmPlayable";
+// import CreativeAnalyser from "./components/CreativeAnalyser";
+import { AssetGenerator } from "./pages/AssetGenerator";
 
 
 function App() {
@@ -310,6 +312,8 @@ function App() {
             <Route path="/ai-chat/:studio_slug" element={<PrivateRoute><RagChat /></PrivateRoute>} />
             <Route path="/translate" element={<PrivateRoute><Translate /></PrivateRoute>} />
             <Route path="/playground" element={<Playground />} />
+            {/* <Route path="/creativeAnalyser" element={<PrivateRoute><CreativeAnalyser/></PrivateRoute>} /> */}
+            <Route path ="/assetGenerator" element={<PrivateRoute><AssetGenerator/></PrivateRoute>}/>
             <Route
               path="*"
               element={<PageNotFound />}
