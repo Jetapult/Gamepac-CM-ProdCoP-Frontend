@@ -45,6 +45,29 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
       let audioElements = {};
       let videoElement;
       let videoSprite;
+      let activeOverlay = null;
+
+      // Global flag to control whether audio is allowed.
+      let audioAllowed = false;
+
+      // Listen for user interaction (e.g., click or touch)
+      document.addEventListener('click', function enableAudio() {
+        if (!audioAllowed) {
+          audioAllowed = true;
+          // Iterate over all audio elements that were created for modifications
+          // and attempt to play those that are not already playing.
+          Object.keys(audioElements).forEach(function(id) {
+            const audio = audioElements[id];
+            if (audio && audio.paused) {
+              audio.play().catch(function(err) {
+                console.error("Error playing audio on user interaction:", err);
+              });
+            }
+          });
+          // Optionally, remove the event listener if it's only needed once.
+          document.removeEventListener('click', enableAudio);
+        }
+      });
 
       function clearModifications() {
         currentModifications.forEach(sprite => {
@@ -65,26 +88,52 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
         audioElements = {};
       }
 
+      function clearBreakModifications() {
+        // Only clear modifications that are NOT overlays
+        for (let i = currentModifications.length - 1; i >= 0; i--) {
+          const modElement = currentModifications[i];
+          if (modElement.__modType && modElement.__modType !== 'overlay') {
+            if (modElement.parent) {
+              modElement.parent.removeChild(modElement);
+              modElement.destroy();
+            }
+            currentModifications.splice(i, 1);
+          }
+        }
+        
+        // Remove associated non-overlay audio elements.
+        Object.keys(audioElements).forEach(key => {
+          const mod = CONFIG.modifications.find(m => m.id === key);
+          if (mod && mod.type !== 'overlay') {
+            audioElements[key].pause();
+            audioElements[key].currentTime = 0;
+            delete audioElements[key];
+          }
+        });
+      }
+
       function renderSprite(spriteData, modification) {
         const sprite = new PIXI.Sprite(PIXI.Texture.from(ASSETS.images[spriteData.id]));
         
-        // Apply sprite properties
+        // Set basic properties
         sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
         sprite.scale.set(spriteData.scale);
         sprite.rotation = spriteData.rotation;
         sprite.alpha = spriteData.transparency;
         
-        // Position relative to screen size
-        const x = modification.relativeToScreenSize 
-          ? app.screen.width * spriteData.position.x 
+        // Calculate position taking modification.relativeToScreenSize into account
+        const x = modification.relativeToScreenSize
+          ? app.screen.width * spriteData.position.x
           : spriteData.position.x;
-        const y = modification.relativeToScreenSize 
-          ? app.screen.height * spriteData.position.y 
+        const y = modification.relativeToScreenSize
+          ? app.screen.height * spriteData.position.y
           : spriteData.position.y;
-        
         sprite.position.set(x, y);
         
-        // Handle click events for store redirects
+        // Save configuration for animations
+        sprite.__spriteData = spriteData;
+        
+        // Handle click events (e.g. for store redirects)
         sprite.eventMode = 'static';
         sprite.cursor = 'pointer';
         sprite.on('pointerdown', () => {
@@ -98,12 +147,18 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
       }
 
       function renderModification(mod) {
-        // Clear any previous modifications. (If you use this for overlays and end screens, ensure break modifications don't get cleared inadvertently.)
-        clearModifications();
-
-        // Render background.
+        // Instead of blindly clearing modifications here,
+        // you might let overlays be rendered separately.
+        // For non-overlay mods you can clear first.
+        if (mod.type !== 'overlay') {
+          clearModifications(); 
+        }
+        
+        // Render background if needed
         if (mod.background) {
           const background = new PIXI.Graphics();
+          // Tag it with mod type so we can filter later.
+          background.__modType = mod.type;
           background.beginFill(
             parseInt(mod.backgroundColor.replace('#', '0x')),
             mod.transparency ?? 0.7
@@ -115,12 +170,14 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
           app.stage.addChild(background);
           currentModifications.push(background);
         }
-
-        // Render sprites if any.
+        
+        // Render sprites for this modification
         if (mod.sprites && mod.sprites.length > 0) {
           mod.sprites.forEach(spriteData => {
             if (ASSETS.images[spriteData.id]) {
               const sprite = new PIXI.Sprite(PIXI.Texture.from(ASSETS.images[spriteData.id]));
+              // Tag this sprite with the mod's type:
+              sprite.__modType = mod.type;
               sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
               sprite.scale.set(spriteData.scale);
               sprite.rotation = spriteData.rotation;
@@ -134,23 +191,27 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
               sprite.position.set(x, y);
               sprite.eventMode = 'static';
               sprite.cursor = 'pointer';
+              // Save configuration (for later animations)
+              sprite.__spriteData = spriteData;
               app.stage.addChild(sprite);
               currentModifications.push(sprite);
             }
           });
         }
-
-        // Handle background music.
-        // For end screen modifications the goal is to auto-play without waiting for clicks.
+        
+        // Handle background music for this modification
         if (mod.backgroundMusic?.file && ASSETS.audio[mod.id] && !audioElements[mod.id]) {
           const audio = new Audio(ASSETS.audio[mod.id]);
           audio.volume = mod.backgroundMusic.volume ?? 1;
           audio.loop = mod.backgroundMusic.repeat !== 0;
           audioElements[mod.id] = audio;
-          audio.play().catch(console.error);
+          // Only start playback immediately if the user has already interacted.
+          if (audioAllowed) {
+            audio.play().catch(console.error);
+          }
         }
-
-        // For break modifications, add the click handler to resume video.
+        
+        // If this is a break mod, add click handlers to resume video.
         if (mod.type === 'break') {
           currentModifications.forEach(element => {
             element.off && element.off('pointerdown');
@@ -162,7 +223,8 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
                   delete audioElements[activeBreak.id];
                 }
                 activeBreakIndex = -1;
-                clearModifications();
+                // Only remove break (non-overlay) elements on resume.
+                clearBreakModifications();
                 videoElement.play().catch(console.error);
               }
             });
@@ -176,6 +238,7 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
           videoElement.src = ASSETS.video;
           videoElement.crossOrigin = "anonymous";
           videoElement.preload = "auto";
+          // Temporarily mute to allow autoplay
           videoElement.muted = true;
           videoElement.playsInline = true;
 
@@ -203,32 +266,27 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
       function handleVideoTimeUpdate() {
         const currentTime = videoElement.currentTime * 1000;
 
-        // If a break is currently active, do not re-trigger anything.
-        if (activeBreakIndex !== -1) {
-          return;
-        }
+        // If a break is active, do nothing here.
+        if (activeBreakIndex !== -1) return;
 
-        // Find a break modification that hasn't already been triggered.
-        const breakIndex = CONFIG.modifications.findIndex(mod => 
-          mod.type === 'break' && 
+        // Check if a break modification should be triggered.
+        const breakIndex = CONFIG.modifications.findIndex(mod =>
+          mod.type === 'break' &&
           !triggeredBreakIds.has(mod.id) &&
           currentTime >= mod.time
         );
 
         if (breakIndex !== -1) {
+          clearBreakModifications();
           videoElement.pause();
           activeBreakIndex = breakIndex;
           const currentBreak = CONFIG.modifications[breakIndex];
-          
-          // Mark this break as triggered
           triggeredBreakIds.add(currentBreak.id);
 
-          // Clear any previous modifications.
-          clearModifications();
-
-          // Render break background if available.
+          // Render break-specific modifications.
           if (currentBreak.background) {
             const background = new PIXI.Graphics();
+            background.__modType = currentBreak.type;
             background.beginFill(
               parseInt(currentBreak.backgroundColor.replace('#', '0x')),
               currentBreak.transparency ?? 0.7
@@ -241,11 +299,11 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
             currentModifications.push(background);
           }
 
-          // Render break sprites.
           if (currentBreak.sprites && currentBreak.sprites.length > 0) {
             currentBreak.sprites.forEach(spriteData => {
               if (ASSETS.images[spriteData.id]) {
                 const sprite = new PIXI.Sprite(PIXI.Texture.from(ASSETS.images[spriteData.id]));
+                sprite.__modType = currentBreak.type;
                 sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
                 sprite.scale.set(spriteData.scale);
                 sprite.rotation = spriteData.rotation;
@@ -259,30 +317,32 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
                 sprite.position.set(x, y);
                 sprite.eventMode = 'static';
                 sprite.cursor = 'pointer';
+                sprite.__spriteData = spriteData;
                 app.stage.addChild(sprite);
                 currentModifications.push(sprite);
               }
             });
           }
 
-          // Ensure the video remains behind the break visuals.
+          // Ensure the video sprite stays at the bottom.
           if (videoSprite && videoSprite.parent) {
             app.stage.removeChild(videoSprite);
             app.stage.addChildAt(videoSprite, 0);
           }
 
-          // Play background music for the break immediately (if provided).
           if (currentBreak.backgroundMusic?.file && ASSETS.audio[currentBreak.id]) {
             const audio = new Audio(ASSETS.audio[currentBreak.id]);
             audio.volume = currentBreak.backgroundMusic.volume ?? 1;
             audio.loop = currentBreak.backgroundMusic.repeat !== 0;
             audioElements[currentBreak.id] = audio;
-            audio.play().catch(console.error);
+            // Only start playback immediately if the user has already interacted.
+            if (audioAllowed) {
+              audio.play().catch(console.error);
+            }
           }
 
-          // Add a click handler on each modification element to resume playback.
+          // Add click handlers to break elements to resume the video.
           currentModifications.forEach(element => {
-            // Remove any existing pointerdown handlers first.
             element.off && element.off('pointerdown');
             element.on('pointerdown', () => {
               if (activeBreakIndex !== -1) {
@@ -292,82 +352,257 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
                   delete audioElements[activeBreak.id];
                 }
                 activeBreakIndex = -1;
-                clearModifications();
+                clearBreakModifications();
                 videoElement.play().catch(console.error);
               }
             });
           });
 
+          // Exit early so overlay handling below is not executed.
           return;
         }
 
-        // Process overlays only when no break is active.
+        // Handle overlay modifications (if any)
         const overlays = CONFIG.modifications.filter(
           mod => mod.type === 'overlay' &&
                  currentTime >= mod.startTime &&
                  currentTime <= mod.endTime
         );
-        
+
         if (overlays.length > 0) {
-          overlays.forEach(renderModification);
+          if (!activeOverlay || activeOverlay.id !== overlays[0].id) {
+            clearModifications();
+            activeOverlay = overlays[0];
+            renderModification(activeOverlay);
+          }
         } else {
-          clearModifications();
+          if (activeOverlay) {
+            clearModifications();
+            activeOverlay = null;
+          }
         }
 
-        // Handle end screen modifications.
+        // Handle end screen modifications, but DO NOT pause video or clear overlays.
         const endScreen = CONFIG.modifications.find(
           mod => mod.type === 'end_screen' && currentTime >= mod.time
         );
         
         if (endScreen) {
-          videoElement.pause();
-          renderModification(endScreen);
+          clearEndScreenModifications();
+          // Do not pause video here so playback continues.
+          renderEndScreen(endScreen);
+          return;
         }
       }
 
-      // Initialize and start playback
+      // -- Animation ticker to update sprite animations --
+      // This function uses a helper to get easing progress and then updates sprites
+      function getEasedProgress(progress, easingType) {
+        switch (easingType) {
+          case 'easeInQuad':
+            return progress * progress;
+          case 'easeOutQuad':
+            return 1 - (1 - progress) * (1 - progress);
+          case 'easeInOutQuad':
+            return progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+          case 'easeInCubic':
+            return progress * progress * progress;
+          case 'easeOutCubic':
+            return 1 - Math.pow(1 - progress, 3);
+          case 'easeInOutCubic':
+            return progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+          default:
+            return progress;
+        }
+      }
+
+      function animationTicker() {
+        const currentTime = Date.now();
+        currentModifications.forEach(sprite => {
+          if (sprite.__spriteData && sprite.__spriteData.animation) {
+            const animData = sprite.__spriteData.animation;
+
+            // Animate position
+            if (animData.position && animData.position.enabled) {
+              if (!sprite.__originalPosition) {
+                sprite.__originalPosition = { x: sprite.position.x, y: sprite.position.y };
+              }
+              let progress = (currentTime % animData.position.duration) / animData.position.duration;
+              let easedProgress = animData.position.easing !== 'linear' 
+                ? getEasedProgress(progress, animData.position.easing) 
+                : progress;
+              if (animData.position.yoyo) {
+                let cycle = Math.floor((currentTime % (animData.position.duration * 2)) / animData.position.duration);
+                if (cycle === 1) easedProgress = 1 - easedProgress;
+              }
+              const startX = sprite.__originalPosition.x;
+              const startY = sprite.__originalPosition.y;
+              const destX = animData.position.destination && animData.position.destination.x !== undefined 
+                ? animData.position.destination.x * app.screen.width 
+                : startX;
+              const destY = animData.position.destination && animData.position.destination.y !== undefined 
+                ? animData.position.destination.y * app.screen.height 
+                : startY;
+              sprite.position.x = startX + (destX - startX) * easedProgress;
+              sprite.position.y = startY + (destY - startY) * easedProgress;
+            }
+
+            // Animate scale
+            if (animData.scale && animData.scale.enabled) {
+              if (!sprite.__originalScale) {
+                sprite.__originalScale = { x: sprite.scale.x, y: sprite.scale.y };
+              }
+              let progress = (currentTime % animData.scale.duration) / animData.scale.duration;
+              let easedProgress = animData.scale.easing !== 'linear' 
+                ? getEasedProgress(progress, animData.scale.easing) 
+                : progress;
+              if (animData.scale.yoyo) {
+                let cycle = Math.floor((currentTime % (animData.scale.duration * 2)) / animData.scale.duration);
+                if (cycle === 1) easedProgress = 1 - easedProgress;
+              }
+              const startScaleX = sprite.__originalScale.x;
+              const startScaleY = sprite.__originalScale.y;
+              const destScaleX = animData.scale.destination && animData.scale.destination.w !== undefined 
+                ? animData.scale.destination.w 
+                : startScaleX;
+              const destScaleY = animData.scale.destination && animData.scale.destination.h !== undefined 
+                ? animData.scale.destination.h 
+                : startScaleY;
+              sprite.scale.x = startScaleX + (destScaleX - startScaleX) * easedProgress;
+              sprite.scale.y = startScaleY + (destScaleY - startScaleY) * easedProgress;
+            }
+
+            // Animate transparency
+            if (animData.transparency && animData.transparency.enabled) {
+              if (sprite.__originalAlpha === undefined) {
+                sprite.__originalAlpha = sprite.alpha;
+              }
+              let progress = (currentTime % animData.transparency.duration) / animData.transparency.duration;
+              let easedProgress = animData.transparency.easing !== 'linear' 
+                ? getEasedProgress(progress, animData.transparency.easing) 
+                : progress;
+              if (animData.transparency.yoyo) {
+                let cycle = Math.floor((currentTime % (animData.transparency.duration * 2)) / animData.transparency.duration);
+                if (cycle === 1) easedProgress = 1 - easedProgress;
+              }
+              const startAlpha = sprite.__originalAlpha;
+              const destAlpha = animData.transparency.destination !== undefined 
+                ? animData.transparency.destination 
+                : startAlpha;
+              sprite.alpha = startAlpha + (destAlpha - startAlpha) * easedProgress;
+            }
+          }
+        });
+      }
+
+      // Add our animation loop so that sprite animations update in the build
+      app.ticker.add(animationTicker);
+      // -- End Animation Ticker --
+
       initVideo().then(() => {
         videoElement.addEventListener('timeupdate', handleVideoTimeUpdate);
         
-        // Global click handler for breaks
-        app.view.addEventListener('click', () => {
-          if (activeBreakIndex !== -1) {
-            const currentBreak = CONFIG.modifications[activeBreakIndex];
-            if (currentBreak && audioElements[currentBreak.id]) {
-              audioElements[currentBreak.id].pause();
-              delete audioElements[currentBreak.id];
+        // Try to play the video immediately.
+        videoElement.play().then(() => {
+          console.log("Video started playing automatically (muted).");
+          
+          // After playback starts, try to unmute after a brief delay.
+          // This gives the video a chance to start so that the browser might allow unmuting.
+          setTimeout(() => {
+            try {
+              videoElement.muted = false;
+              console.log("Video unmuted programmatically.");
+            } catch (unmuteError) {
+              console.error("Failed to unmute video:", unmuteError);
             }
-            activeBreakIndex = -1;
-            clearModifications();
-            videoElement.play().catch(console.error);
+          }, 2000);
+          
+        }).catch((error) => {
+          console.error("Auto-play failed:", error);
+          // If autoplay failed even with muted=true (unlikely), you might consider attaching a fallback
+          // handler to try again on user interaction. However, to meet your requirements, you shouldn't wait
+          // for a user click.
+        });
+      }).catch(error => {
+        console.error("Error initializing video:", error);
+      });
+
+      function clearEndScreenModifications() {
+        for (let i = currentModifications.length - 1; i >= 0; i--) {
+          const modElement = currentModifications[i];
+          if (modElement.__modType && modElement.__modType === 'end_screen') {
+            if (modElement.parent) {
+              modElement.parent.removeChild(modElement);
+              modElement.destroy();
+            }
+            currentModifications.splice(i, 1);
+          }
+        }
+        Object.keys(audioElements).forEach(key => {
+          const mod = CONFIG.modifications.find(m => m.id === key);
+          if (mod && mod.type === 'end_screen') {
+            audioElements[key].pause();
+            audioElements[key].currentTime = 0;
+            delete audioElements[key];
           }
         });
+      }
 
-        // Initial click to start
-        const startPlayback = () => {
-          videoElement.play().catch(() => {
-            console.error('Failed to play video automatically');
-            // Add visible play button or instructions
-            const playButton = new PIXI.Text('Click to Play', {
-              fill: 'white',
-              fontSize: 24
-            });
-            playButton.anchor.set(0.5);
-            playButton.position.set(app.screen.width / 2, app.screen.height / 2);
-            playButton.eventMode = 'static';
-            playButton.cursor = 'pointer';
-            playButton.on('pointerdown', () => {
-              videoElement.play().catch(console.error);
-              app.stage.removeChild(playButton);
-            });
-            app.stage.addChild(playButton);
+      function renderEndScreen(mod) {
+        // Render background if provided
+        if (mod.background) {
+          const background = new PIXI.Graphics();
+          background.__modType = mod.type;
+          background.beginFill(
+            parseInt(mod.backgroundColor.replace('#', '0x')),
+            mod.transparency ?? 0.7
+          );
+          background.drawRect(0, 0, app.screen.width, app.screen.height);
+          background.endFill();
+          background.eventMode = 'static';
+          background.cursor = 'pointer';
+          app.stage.addChild(background);
+          currentModifications.push(background);
+        }
+
+        // Render modification sprites
+        if (mod.sprites && mod.sprites.length > 0) {
+          mod.sprites.forEach(spriteData => {
+            if (ASSETS.images[spriteData.id]) {
+              const sprite = new PIXI.Sprite(PIXI.Texture.from(ASSETS.images[spriteData.id]));
+              sprite.__modType = mod.type;
+              sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
+              sprite.scale.set(spriteData.scale);
+              sprite.rotation = spriteData.rotation;
+              sprite.alpha = spriteData.transparency;
+              const x = mod.relativeToScreenSize
+                ? app.screen.width * spriteData.position.x
+                : spriteData.position.x;
+              const y = mod.relativeToScreenSize
+                ? app.screen.height * spriteData.position.y
+                : spriteData.position.y;
+              sprite.position.set(x, y);
+              sprite.eventMode = 'static';
+              sprite.cursor = 'pointer';
+              sprite.__spriteData = spriteData;
+              app.stage.addChild(sprite);
+              currentModifications.push(sprite);
+            }
           });
-          document.removeEventListener('click', startPlayback);
-        };
-        document.addEventListener('click', startPlayback, { once: true });
-      }).catch(error => {
-        console.error('Error initializing video:', error);
-      });
+        }
+
+        // Handle background music (if any)
+        if (mod.backgroundMusic?.file && ASSETS.audio[mod.id] && !audioElements[mod.id]) {
+          const audio = new Audio(ASSETS.audio[mod.id]);
+          audio.volume = mod.backgroundMusic.volume ?? 1;
+          audio.loop = mod.backgroundMusic.repeat !== 0;
+          audioElements[mod.id] = audio;
+          // Only start playback immediately if the user has already interacted.
+          if (audioAllowed) {
+            audio.play().catch(console.error);
+          }
+        }
+      }
     </script>
 </body>
 </html>`;
@@ -384,7 +619,6 @@ export const buildPlayableAd = async (videoPlayable) => {
 
     // Convert video to base64
     if (videoPlayable.general?.videoSource) {
-      console.log('Video source:', videoPlayable.general.videoSource);
       try {
         const videoBase64 = await blobToBase64(videoPlayable.general.videoSource);
         assets.video = videoBase64;
@@ -393,30 +627,25 @@ export const buildPlayableAd = async (videoPlayable) => {
         throw new Error('Failed to process video source');
       }
     } else {
-      console.error('Video source object:', videoPlayable.general);
       throw new Error('No video source found in general properties');
     }
 
     // Convert all modification assets
     for (const mod of videoPlayable.modifications) {
-      // Handle sprite images
       for (const sprite of mod.sprites) {
         if (sprite.file) {
           assets.images[sprite.id] = await blobToBase64(sprite.file);
         }
       }
-      
-      // Handle background music
       if (mod.backgroundMusic?.file) {
         assets.audio[mod.id] = await blobToBase64(mod.backgroundMusic.file);
       }
     }
 
-    // Generate HTML file
+    // Generate HTML file with animations
     const html = generateHtmlTemplate(videoPlayable, assets);
     zip.file('index.html', html);
 
-    // Generate zip file
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     saveAs(zipBlob, `${videoPlayable.general?.adName || 'playable-ad'}.zip`);
   } catch (error) {
