@@ -250,7 +250,7 @@ const GeneralSpriteSettings = ({ sprite, handleNumberInput, onUpdate }) => {
       </div>
 
       {/* Position Relative to Screen Toggle */}
-      <div className="flex items-center justify-between">
+      {/* <div className="flex items-center justify-between">
         <span>Position Relative to Screen</span>
         <div className="relative inline-block w-12 h-6 rounded-full bg-gray-700">
           <input
@@ -272,7 +272,7 @@ const GeneralSpriteSettings = ({ sprite, handleNumberInput, onUpdate }) => {
             }`}
           />
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

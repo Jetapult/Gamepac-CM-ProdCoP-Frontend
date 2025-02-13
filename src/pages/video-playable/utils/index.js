@@ -416,80 +416,104 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
         }
       }
 
+      function handleAnimation(sprite, spriteData, type, anim) {
+        const currentTime = Date.now();
+        const progress = (currentTime % anim.duration) / anim.duration;
+        let easedProgress = anim.easing !== 'linear'
+          ? getEasedProgress(progress, anim.easing)
+          : progress;
+
+        if (anim.yoyo) {
+          const cycle = Math.floor((currentTime % (anim.duration * 2)) / anim.duration);
+          if (cycle === 1) easedProgress = 1 - easedProgress;
+        }
+
+        switch (type) {
+          case 'position': {
+            // If the sprite is relative to screen, then switch to doing the interpolation
+            // in the video sprite's normalized coordinate space. This ensures that both
+            // starting and destination positions use the same basis.
+            if (sprite.__spriteData.positionRelativeToScreen && typeof videoSprite !== 'undefined') {
+              // Get the video boundaries (the drawing area for the video)
+              const videoBounds = videoSprite.getBounds();
+
+              // Determine the original relative position.
+              // (If needed, cache it so that we don't try to convert the absolute rendered position.)
+              if (!sprite.__originalRelPosition) {
+                // Here we assume the sprite was originally rendered by converting the normalized
+                // spriteData.position using screen dimensions, so we recover the normalized
+                // values from spriteData directly.
+                sprite.__originalRelPosition = {
+                  x: spriteData.position.x,
+                  y: spriteData.position.y
+                };
+              }
+              const origRelPos = sprite.__originalRelPosition;
+
+              // The intended target position (normalized) comes from the animation's destination.
+              // If no destination is provided, we fall back to the original.
+              const targetRelX = (anim.destination && anim.destination.x !== undefined)
+                ? anim.destination.x
+                : origRelPos.x;
+              const targetRelY = (anim.destination && anim.destination.y !== undefined)
+                ? anim.destination.y
+                : origRelPos.y;
+
+              // Interpolate in normalized space
+              const newRelX = origRelPos.x + (targetRelX - origRelPos.x) * easedProgress;
+              const newRelY = origRelPos.y + (targetRelY - origRelPos.y) * easedProgress;
+
+              // Convert back to absolute coordinates using the video's bounds.
+              sprite.position.x = videoBounds.x + videoBounds.width * newRelX;
+              sprite.position.y = videoBounds.y + videoBounds.height * newRelY;
+            } else {
+              // Fallback: use full-screen coordinates (the same as in the editor)
+              const startX = spriteData.position.x * app.screen.width;
+              const startY = spriteData.position.y * app.screen.height;
+              const endX = (anim.destination && anim.destination.x !== undefined
+                            ? anim.destination.x
+                            : spriteData.position.x) * app.screen.width;
+              const endY = (anim.destination && anim.destination.y !== undefined
+                            ? anim.destination.y
+                            : spriteData.position.y) * app.screen.height;
+              sprite.position.x = startX + (endX - startX) * easedProgress;
+              sprite.position.y = startY + (endY - startY) * easedProgress;
+            }
+            break;
+          }
+          case 'scale': {
+            const startScale = spriteData.scale;
+            sprite.scale.x = startScale + (anim.destination.w - startScale) * easedProgress;
+            sprite.scale.y = startScale + (anim.destination.h - startScale) * easedProgress;
+            break;
+          }
+          case 'transparency': {
+            const startAlpha = spriteData.transparency;
+            sprite.alpha = startAlpha + (anim.destination - startAlpha) * easedProgress;
+            break;
+          }
+        }
+      }
+
       function animationTicker() {
         const currentTime = Date.now();
         currentModifications.forEach(sprite => {
           if (sprite.__spriteData && sprite.__spriteData.animation) {
             const animData = sprite.__spriteData.animation;
-
+            
             // Animate position
             if (animData.position && animData.position.enabled) {
-              if (!sprite.__originalPosition) {
-                sprite.__originalPosition = { x: sprite.position.x, y: sprite.position.y };
-              }
-              let progress = (currentTime % animData.position.duration) / animData.position.duration;
-              let easedProgress = animData.position.easing !== 'linear' 
-                ? getEasedProgress(progress, animData.position.easing) 
-                : progress;
-              if (animData.position.yoyo) {
-                let cycle = Math.floor((currentTime % (animData.position.duration * 2)) / animData.position.duration);
-                if (cycle === 1) easedProgress = 1 - easedProgress;
-              }
-              const startX = sprite.__originalPosition.x;
-              const startY = sprite.__originalPosition.y;
-              const destX = animData.position.destination && animData.position.destination.x !== undefined 
-                ? animData.position.destination.x * app.screen.width 
-                : startX;
-              const destY = animData.position.destination && animData.position.destination.y !== undefined 
-                ? animData.position.destination.y * app.screen.height 
-                : startY;
-              sprite.position.x = startX + (destX - startX) * easedProgress;
-              sprite.position.y = startY + (destY - startY) * easedProgress;
+              handleAnimation(sprite, sprite.__spriteData, 'position', animData.position);
             }
 
             // Animate scale
             if (animData.scale && animData.scale.enabled) {
-              if (!sprite.__originalScale) {
-                sprite.__originalScale = { x: sprite.scale.x, y: sprite.scale.y };
-              }
-              let progress = (currentTime % animData.scale.duration) / animData.scale.duration;
-              let easedProgress = animData.scale.easing !== 'linear' 
-                ? getEasedProgress(progress, animData.scale.easing) 
-                : progress;
-              if (animData.scale.yoyo) {
-                let cycle = Math.floor((currentTime % (animData.scale.duration * 2)) / animData.scale.duration);
-                if (cycle === 1) easedProgress = 1 - easedProgress;
-              }
-              const startScaleX = sprite.__originalScale.x;
-              const startScaleY = sprite.__originalScale.y;
-              const destScaleX = animData.scale.destination && animData.scale.destination.w !== undefined 
-                ? animData.scale.destination.w 
-                : startScaleX;
-              const destScaleY = animData.scale.destination && animData.scale.destination.h !== undefined 
-                ? animData.scale.destination.h 
-                : startScaleY;
-              sprite.scale.x = startScaleX + (destScaleX - startScaleX) * easedProgress;
-              sprite.scale.y = startScaleY + (destScaleY - startScaleY) * easedProgress;
+              handleAnimation(sprite, sprite.__spriteData, 'scale', animData.scale);
             }
 
             // Animate transparency
             if (animData.transparency && animData.transparency.enabled) {
-              if (sprite.__originalAlpha === undefined) {
-                sprite.__originalAlpha = sprite.alpha;
-              }
-              let progress = (currentTime % animData.transparency.duration) / animData.transparency.duration;
-              let easedProgress = animData.transparency.easing !== 'linear' 
-                ? getEasedProgress(progress, animData.transparency.easing) 
-                : progress;
-              if (animData.transparency.yoyo) {
-                let cycle = Math.floor((currentTime % (animData.transparency.duration * 2)) / animData.transparency.duration);
-                if (cycle === 1) easedProgress = 1 - easedProgress;
-              }
-              const startAlpha = sprite.__originalAlpha;
-              const destAlpha = animData.transparency.destination !== undefined 
-                ? animData.transparency.destination 
-                : startAlpha;
-              sprite.alpha = startAlpha + (destAlpha - startAlpha) * easedProgress;
+              handleAnimation(sprite, sprite.__spriteData, 'transparency', animData.transparency);
             }
           }
         });
