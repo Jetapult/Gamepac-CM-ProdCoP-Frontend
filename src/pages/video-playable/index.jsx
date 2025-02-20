@@ -989,7 +989,7 @@ export default function VideoPlayable() {
             className={`px-2 py-2 rounded bg-transparent ${
               activeTab.id === tab.id ? "text-white" : "text-[#b5b5b5] hover:text-white"
             }`}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => handleTabClick(tab)}
           >
             {tab.label}
           </button>
@@ -1184,11 +1184,37 @@ export default function VideoPlayable() {
         ? modification.startTime 
         : modification.time,
     };
+    setActiveTab(newTab);
+    if (modification.type === ModificationType.BREAK) {
+      setActiveBreakIndex(index);
+    }
+  };
+
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
     
-    // setActiveTab(newTab);
-    // if (modification.type === ModificationType.BREAK) {
-    //   setActiveBreakIndex(index);
-    // }
+    // Find the corresponding modification
+    const modification = videoPlayable.modifications[tab.modificationIndex];
+    
+    // Set the time based on modification type
+    const time = modification.type === ModificationType.OVERLAY 
+      ? modification.startTime 
+      : modification.time;
+    
+    // Update timeline position
+    setCurrentTime(time);
+    if (videoRef.current) {
+      videoRef.current.currentTime = time / 1000;
+    }
+
+    // If switching to a break modification, set its index
+    // If switching to any other type, clear the break index
+    if (modification.type === ModificationType.BREAK) {
+      setActiveBreakIndex(tab.modificationIndex);
+    } else {
+      setActiveBreakIndex(-1);
+      clearBreakContent();
+    }
   };
 
   const renderSprite = (spriteData, modification) => {
@@ -1221,63 +1247,75 @@ export default function VideoPlayable() {
   };
 
   useEffect(() => {
-    if (
-      isPreviewMode ||
-      activeTab?.type === ModificationType.OVERLAY ||
-      activeTab?.type === ModificationType.END_SCREEN
-    ) {
-      clearOverlayContent();
-      if (pixiAppRef.current) {
-        // Filter for permanent overlays and end screens.
-        const permanentOverlayMods = videoPlayable.modifications.filter((mod) => {
-          return (
-            mod.type === ModificationType.OVERLAY &&
-            currentTime >= mod.startTime &&
-            currentTime <= mod.endTime
-          );
-        });
-        const endScreenMods = videoPlayable.modifications.filter((mod) => {
-          return mod.type === ModificationType.END_SCREEN && currentTime >= mod.time;
-        });
-        // Merge both modification types (they will be rendered concurrently).
-        const modificationsToRender = [...permanentOverlayMods, ...endScreenMods];
+    clearOverlayContent();
+    if (!pixiAppRef.current) return;
 
-        modificationsToRender.forEach((mod) => {
-          if (isPreviewMode && mod.backgroundMusic?.file && !audioElementsRef.current[mod.id]) {
-            const audio = playModificationAudio(mod);
-            if (audio) {
-              audioElementsRef.current[mod.id] = audio;
-            }
-          }
-          if (mod.background) {
-            const background = new PIXI.Graphics();
-            background.beginFill(
-              parseInt(mod.backgroundColor.replace("#", "0x")),
-              mod.transparency ?? 0.7
-            );
-            background.drawRect(
-              0,
-              0,
-              pixiAppRef.current.screen.width,
-              pixiAppRef.current.screen.height
-            );
-            background.endFill();
-            background.__isOverlay = true;
-            // Permanent overlay background → zIndex 1  
-            // End screen background → zIndex 3
-            background.zIndex = mod.type === ModificationType.END_SCREEN ? 3 : 1;
-            pixiAppRef.current.stage.addChild(background);
-            spritesRef.current.push(background);
-          }
-          // Render sprites using the helper function.
-          mod.sprites.forEach((spriteData) => renderSprite(spriteData, mod));
-        });
-        // Re-sort stage children so that zIndex preference takes effect.
-        pixiAppRef.current.stage.sortChildren();
-      }
+    let modificationsToRender = [];
+
+    // If we're in edit mode but the user is dragging the timeline, override activeTab and show nothing.
+    if (!isPreviewMode && isTimelineDragging) {
+      modificationsToRender = [];
     }
+    // In preview mode, render based on timeline time.
+    else if (isPreviewMode) {
+      const permanentOverlayMods = videoPlayable.modifications.filter((mod) => {
+        return (
+          mod.type === ModificationType.OVERLAY &&
+          currentTime >= mod.startTime &&
+          currentTime <= mod.endTime
+        );
+      });
+      const endScreenMods = videoPlayable.modifications.filter((mod) => {
+        return mod.type === ModificationType.END_SCREEN && currentTime >= mod.time;
+      });
+      modificationsToRender = [...permanentOverlayMods, ...endScreenMods];
+    }
+    // In edit mode, if the user explicitly activated a module via the tab (or indicator),
+    // show that one modification.
+    else if (
+      activeTab &&
+      (activeTab.type === ModificationType.OVERLAY ||
+        activeTab.type === ModificationType.END_SCREEN)
+    ) {
+      modificationsToRender = [videoPlayable.modifications[activeTab.modificationIndex]];
+    }
+
+    // Render each modification in the list.
+    modificationsToRender.forEach((mod) => {
+      // Handle audio as before.
+      if (isPreviewMode && mod.backgroundMusic?.file && !audioElementsRef.current[mod.id]) {
+        const audio = playModificationAudio(mod);
+        if (audio) {
+          audioElementsRef.current[mod.id] = audio;
+        }
+      }
+      // Render background (keep zIndex and other settings intact).
+      if (mod.background) {
+        const background = new PIXI.Graphics();
+        background.beginFill(
+          parseInt(mod.backgroundColor.replace("#", "0x")),
+          mod.transparency ?? 0.7
+        );
+        background.drawRect(
+          0,
+          0,
+          pixiAppRef.current.screen.width,
+          pixiAppRef.current.screen.height
+        );
+        background.endFill();
+        background.__isOverlay = true;
+        // Permanent overlay background → zIndex 1, End screen → zIndex 3.
+        background.zIndex = mod.type === ModificationType.END_SCREEN ? 3 : 1;
+        pixiAppRef.current.stage.addChild(background);
+        spritesRef.current.push(background);
+      }
+      // Render sprites (preserving zIndex, animations, etc.)
+      mod.sprites.forEach((spriteData) => renderSprite(spriteData, mod));
+    });
+    pixiAppRef.current.stage.sortChildren();
   }, [
     isPreviewMode,
+    isTimelineDragging,
     activeTab,
     currentTime,
     videoPlayable.modifications,
