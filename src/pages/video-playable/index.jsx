@@ -1,18 +1,16 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  GripVertical,
   Upload,
   Play,
   Pause,
   RotateCw,
   Plus,
-  Hand,
-  X,
   Star,
   Image,
   Square,
-  Download
+  Download,
 } from "lucide-react";
+import { Tooltip as ReactTooltip } from "react-tooltip";
 import * as PIXI from "pixi.js";
 import ModificationControls from "./components/ModificationControls";
 import { baseModificationState, initialState, ModificationType } from "./state";
@@ -42,7 +40,7 @@ const timelineStyle = {
 const timelineProgressStyle = {
   position: "absolute",
   height: "100%",
-  backgroundColor: "#8b5cf6",
+  backgroundColor: "#b9ff66",
   borderRadius: "2px",
 };
 
@@ -50,7 +48,7 @@ const timelineHandleStyle = {
   position: "absolute",
   width: "12px",
   height: "12px",
-  backgroundColor: "#8b5cf6",
+  backgroundColor: "#b9ff66",
   borderRadius: "50%",
   top: "50%",
   transform: "translate(-50%, -50%)",
@@ -70,46 +68,39 @@ const timelineBreakStyle = {
   zIndex: 2,
 };
 
-const timelineBreakActiveStyle = {
-  ...timelineBreakStyle,
-  borderBottom: "8px solid #8b5cf6",
-};
-
 const getEasedProgress = (progress, easingType) => {
   switch (easingType) {
-    case 'easeInQuad':
+    case "easeInQuad":
       return progress * progress;
-    case 'easeOutQuad':
+    case "easeOutQuad":
       return 1 - (1 - progress) * (1 - progress);
-    case 'easeInOutQuad':
-      return progress < 0.5 
-        ? 2 * progress * progress 
+    case "easeInOutQuad":
+      return progress < 0.5
+        ? 2 * progress * progress
         : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-    case 'easeInCubic':
+    case "easeInCubic":
       return progress * progress * progress;
-    case 'easeOutCubic':
+    case "easeOutCubic":
       return 1 - Math.pow(1 - progress, 3);
-    case 'easeInOutCubic':
-      return progress < 0.5 
-        ? 4 * progress * progress * progress 
+    case "easeInOutCubic":
+      return progress < 0.5
+        ? 4 * progress * progress * progress
         : 1 - Math.pow(-2 * progress + 2, 3) / 2;
     default:
-      return progress; // linear
+      return progress;
   }
 };
 
 export default function VideoPlayable() {
   const [isDragging, setIsDragging] = useState(false);
-  const [splitPosition, setSplitPosition] = useState(20);
-  const [adName, setAdName] = useState("");
+  const [splitPosition, setSplitPosition] = useState(22);
   const [videoSource, setVideoSource] = useState(null);
-  const [videoPreviewUrl, setVideoPreviewUrl] = useState(null);
   const [iosUrl, setIosUrl] = useState("");
   const [playstoreUrl, setPlaystoreUrl] = useState("");
   const [activeTab, setActiveTab] = useState({
     id: "general",
     type: "general",
-    modificationIndex: -1
+    modificationIndex: -1,
   });
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -123,13 +114,14 @@ export default function VideoPlayable() {
       id: "general",
       type: "general",
       modificationIndex: -1,
-      label: "General Properties"
-    }
+      label: "General Properties",
+    },
   ]);
   const pixiContainerRef = useRef(null);
   const pixiAppRef = useRef(null);
   const videoSpriteRef = useRef(null);
   const spritesRef = useRef([]);
+  const videoInputRef = useRef(null);
   const [isTimelineDragging, setIsTimelineDragging] = useState(false);
   const timelineRef = useRef(null);
   const [breakAudioElement, setBreakAudioElement] = useState(null);
@@ -158,15 +150,11 @@ export default function VideoPlayable() {
 
   // Helper to play background music for a modification.
   const playModificationAudio = (modification) => {
-    if (
-      modification.backgroundMusic &&
-      modification.backgroundMusic.file
-    ) {
+    if (modification.backgroundMusic && modification.backgroundMusic.file) {
       // Check if the file is a Blob (from an upload) or a URL string.
       const fileOrUrl = modification.backgroundMusic.file;
-      const audioSrc = fileOrUrl instanceof Blob
-        ? URL.createObjectURL(fileOrUrl)
-        : fileOrUrl;
+      const audioSrc =
+        fileOrUrl instanceof Blob ? URL.createObjectURL(fileOrUrl) : fileOrUrl;
 
       const audio = new Audio(audioSrc);
       audio.volume = modification.backgroundMusic.volume ?? 1;
@@ -192,7 +180,7 @@ export default function VideoPlayable() {
     // Clear all sprites
     spritesRef.current.forEach((sprite) => {
       if (sprite && sprite.destroy) {
-        sprite.destroy();
+        sprite?.destroy();
       }
     });
     spritesRef.current = [];
@@ -208,7 +196,7 @@ export default function VideoPlayable() {
   const clearOverlayContent = () => {
     if (!pixiAppRef.current) return;
     // Remove any child marked as an overlay from the stage.
-    spritesRef.current = spritesRef.current.filter(child => {
+    spritesRef.current = spritesRef.current.filter((child) => {
       if (child.__isOverlay) {
         pixiAppRef.current.stage.removeChild(child);
         return false;
@@ -247,10 +235,7 @@ export default function VideoPlayable() {
         time: newBreak.time,
         label: `Break (${newBreak.time}ms)`,
       };
-      setTabs((prevTabs) => [
-        ...prevTabs,
-        newTab,
-      ]);
+      setTabs((prevTabs) => [...prevTabs, newTab]);
       setActiveTab(newTab);
 
       return {
@@ -281,25 +266,27 @@ export default function VideoPlayable() {
       relativeToScreenSize: true,
     };
 
-    setVideoPlayable(prev => {
+    setVideoPlayable((prev) => {
       const newModifications = [...prev.modifications, newOverlay];
-      const modificationIndex = newModifications.findIndex(m => m.id === newOverlay.id);
-      
+      const modificationIndex = newModifications.findIndex(
+        (m) => m.id === newOverlay.id
+      );
+
       const newTabId = `modification-${newOverlay.id}`;
       const newTab = {
         id: newTabId,
         type: ModificationType.OVERLAY,
         modificationIndex,
         time: newOverlay.startTime,
-        label: `overlay (${newOverlay.startTime}ms)`
+        label: `overlay (${newOverlay.startTime}ms)`,
       };
-      
-      setTabs(prevTabs => [...prevTabs, newTab]);
-      setActiveTab(newTab);  // Pass the full tab object
-      
+
+      setTabs((prevTabs) => [...prevTabs, newTab]);
+      setActiveTab(newTab); // Pass the full tab object
+
       return {
         ...prev,
-        modifications: newModifications
+        modifications: newModifications,
       };
     });
   };
@@ -325,7 +312,9 @@ export default function VideoPlayable() {
 
     setVideoPlayable((prev) => {
       const newModifications = [...prev.modifications, newEndScreen];
-      const modificationIndex = newModifications.findIndex((m) => m.id === newEndScreen.id);
+      const modificationIndex = newModifications.findIndex(
+        (m) => m.id === newEndScreen.id
+      );
       setTabs((prevTabs) => [
         ...prevTabs,
         {
@@ -404,15 +393,14 @@ export default function VideoPlayable() {
       setVideoSource(file);
       setCurrentTime(0);
       setActiveBreakIndex(-1);
-      setVideoPlayable(prev => ({
+      setVideoPlayable((prev) => ({
         ...prev,
         general: {
           ...prev.general,
-          videoSource: file
-        }
+          videoSource: file,
+          adName: "Playable Ad",
+        },
       }));
-      const previewUrl = URL.createObjectURL(file);
-      setVideoPreviewUrl(previewUrl);
     }
   };
 
@@ -425,7 +413,7 @@ export default function VideoPlayable() {
 
     const container = e.currentTarget;
     const newPosition = (e.clientX / container.offsetWidth) * 100;
-    setSplitPosition(Math.min(Math.max(newPosition, 20), 80));
+    setSplitPosition(Math.min(Math.max(newPosition, 22), 78));
   };
 
   const handleMouseUp = () => {
@@ -577,7 +565,9 @@ export default function VideoPlayable() {
       if (isPlaying) {
         // Handle breaks
         const breakPoint = videoPlayable.modifications.find(
-          (mod) => mod.type === ModificationType.BREAK && Math.abs(mod.time - time) < 50
+          (mod) =>
+            mod.type === ModificationType.BREAK &&
+            Math.abs(mod.time - time) < 50
         );
 
         if (breakPoint) {
@@ -589,9 +579,9 @@ export default function VideoPlayable() {
 
         // Handle overlays
         const activeOverlays = videoPlayable.modifications.filter(
-          (mod) => 
-            mod.type === ModificationType.OVERLAY && 
-            time >= mod.startTime && 
+          (mod) =>
+            mod.type === ModificationType.OVERLAY &&
+            time >= mod.startTime &&
             time <= mod.endTime
         );
 
@@ -616,7 +606,7 @@ export default function VideoPlayable() {
     // Clear previous sprites
     spritesRef.current.forEach((sprite) => {
       if (sprite && sprite.destroy) {
-        sprite.destroy();
+        sprite?.destroy();
       }
     });
     spritesRef.current = [];
@@ -702,7 +692,7 @@ export default function VideoPlayable() {
     return () => {
       spritesRef.current.forEach((sprite) => {
         if (sprite && sprite.destroy) {
-          sprite.destroy();
+          sprite?.destroy();
         }
       });
       spritesRef.current = [];
@@ -712,7 +702,8 @@ export default function VideoPlayable() {
   useEffect(() => {
     if (!videoSpriteRef.current || !isPreviewMode || !isPlaying) return;
 
-    const videoElement = videoSpriteRef.current.texture.baseTexture.resource.source;
+    const videoElement =
+      videoSpriteRef.current.texture.baseTexture.resource.source;
     let animationFrameId;
 
     const checkForBreaks = () => {
@@ -746,10 +737,13 @@ export default function VideoPlayable() {
         }
 
         // Start playing break background music if available and not already playing.
-        if (currentBreak.backgroundMusic?.file && !audioElementsRef.current[currentBreak.id]) {
+        if (
+          currentBreak.backgroundMusic?.file &&
+          !audioElementsRef.current[currentBreak.id]
+        ) {
           setTimeout(() => {
-          const audio = playModificationAudio(currentBreak);
-          if (audio) {
+            const audio = playModificationAudio(currentBreak);
+            if (audio) {
               audioElementsRef.current[currentBreak.id] = audio;
             }
           }, 100);
@@ -868,7 +862,7 @@ export default function VideoPlayable() {
       Object.values(spritesRef.current).forEach((typeContainer) => {
         Object.values(typeContainer).forEach((parentContainer) => {
           Object.values(parentContainer).forEach((sprite) => {
-            sprite.destroy();
+            sprite?.destroy();
           });
         });
       });
@@ -908,7 +902,11 @@ export default function VideoPlayable() {
       ) {
         activeModIds.add(mod.id);
       }
-      if (mod.type === ModificationType.END_SCREEN && currentTime > mod.time && mod.time <= duration) {
+      if (
+        mod.type === ModificationType.END_SCREEN &&
+        currentTime > mod.time &&
+        mod.time <= duration
+      ) {
         activeModIds.add(mod.id);
       }
     });
@@ -940,7 +938,7 @@ export default function VideoPlayable() {
       <div className="relative">
         <button
           onClick={() => !isPreviewMode && setIsExpanded(!isExpanded)}
-          className={`w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white ${
+          className={`w-10 h-10 bg-[#b9ff66] rounded-full flex items-center justify-center ${
             isPreviewMode ? "cursor-default" : "cursor-pointer"
           }`}
           disabled={isPreviewMode}
@@ -955,26 +953,40 @@ export default function VideoPlayable() {
         {isExpanded && !isPreviewMode && (
           <div className="absolute left-0 top-12 space-y-2">
             <button
+              data-tooltip-id="add-break"
               onClick={() => addBreak(currentTime)}
-              className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white"
+              className="w-10 h-10 bg-[#b9ff66] rounded-full flex items-center justify-center"
               title="Add Break"
             >
               <Pause className="w-6 h-6" />
             </button>
+            <ReactTooltip id="add-break" place="right" content="Add Break" />
             <button
+              data-tooltip-id="add-end-screen"
               onClick={addEndScreen}
-              className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white"
+              className="w-10 h-10 bg-[#b9ff66] rounded-full flex items-center justify-center"
               title="Add End Screen"
             >
               <Star className="w-6 h-6" />
             </button>
+            <ReactTooltip
+              id="add-end-screen"
+              place="right"
+              content="Add End Screen"
+            />
             <button
+              data-tooltip-id="add-overlay"
               onClick={addOverlay}
-              className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white"
+              className="w-10 h-10 bg-[#b9ff66] rounded-full flex items-center justify-center"
               title="Add Permanent Overlay"
             >
               <Image className="w-6 h-6" />
             </button>
+            <ReactTooltip
+              id="add-overlay"
+              place="right"
+              content="Add Permanent Overlay"
+            />
           </div>
         )}
       </div>
@@ -987,7 +999,9 @@ export default function VideoPlayable() {
         <div key={tab.id} className="flex items-center">
           <button
             className={`px-2 py-2 rounded bg-transparent ${
-              activeTab.id === tab.id ? "text-white" : "text-[#b5b5b5] hover:text-white"
+              activeTab.id === tab.id
+                ? "text-white"
+                : "text-[#b5b5b5] hover:text-white"
             }`}
             onClick={() => handleTabClick(tab)}
           >
@@ -1005,65 +1019,71 @@ export default function VideoPlayable() {
     switch (activeTabData.type) {
       case "general":
         return (
-          <div className="space-y-4 p-4">
+          <div className="space-y-4 py-4">
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-white text-xs mb-1">
                 Playable Ad Name
               </label>
               <input
                 type="text"
-                value={adName}
-                onChange={(e) => setAdName(e.target.value)}
-                className="w-full p-2 border rounded"
+                value={videoPlayable.general?.adName}
+                onChange={(e) => setVideoPlayable({...videoPlayable, general: {...videoPlayable.general, adName: e.target.value}})}
+                className="w-full px-2 py-1 rounded-md text-sm"
                 placeholder="Enter ad name"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-white text-xs mb-1">
                 Video Source
               </label>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center">
                 <input
+                  ref={videoInputRef}
                   type="file"
                   accept="video/*"
                   onChange={handleVideoUpload}
                   className="hidden"
                   id="video-upload"
                 />
-                <label
-                  htmlFor="video-upload"
-                  className="flex items-center px-4 py-2 bg-primary text-white rounded cursor-pointer"
+                <input
+                  type="text"
+                  value={videoSource?.name}
+                  className="px-2 w-full py-1 rounded-l-md outline-none disabled:bg-black-800 text-sm"
+                  onClick={() => videoInputRef.current.click()}
+                  disabled
+                />
+                <div
+                  className="bg-[#b9ff66] px-2 py-1.5 rounded-r-md cursor-pointer"
+                  onClick={() => videoInputRef.current.click()}
                 >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Video
-                </label>
-                {videoSource && <span className="text-sm text-white">Video uploaded</span>}
+                  <Upload className="w-4 h-4 text-black" strokeWidth={2.5} />
+                </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-white text-xs mb-1">
                 iOS App Store URL
               </label>
               <input
                 type="url"
                 value={iosUrl}
                 onChange={(e) => setIosUrl(e.target.value)}
-                className="w-full p-2 border rounded"
+                className="w-full px-2 py-1 rounded-md text-sm"
                 placeholder="Enter iOS App Store URL"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-white text-xs mb-1">
                 Google Play Store URL
               </label>
               <input
                 type="url"
                 value={playstoreUrl}
                 onChange={(e) => setPlaystoreUrl(e.target.value)}
-                className="w-full p-2 border rounded"
+                className="w-full px-2 py-1 rounded-md text-sm"
                 placeholder="Enter Play Store URL"
               />
             </div>
@@ -1107,45 +1127,51 @@ export default function VideoPlayable() {
 
       // Base triangle indicator style
       const baseIndicatorStyle = {
-        position: 'absolute',
+        position: "absolute",
         width: 0,
         height: 0,
-        borderLeft: '6px solid transparent',
-        borderRight: '6px solid transparent',
-        borderBottom: '12px solid',
-        cursor: 'pointer',
-        transform: 'translate(-50%, -50%)',
-        top: '50%',
-        zIndex: 2
+        borderLeft: "6px solid transparent",
+        borderRight: "6px solid transparent",
+        borderBottom: "12px solid",
+        cursor: "pointer",
+        transform: "translate(-50%, -50%)",
+        top: "10px",
+        zIndex: 2,
       };
 
       // Calculate position based on modification type
-      const position = modification.type === ModificationType.OVERLAY 
-        ? modification.startTime 
-        : modification.time;
+      const position =
+        modification.type === ModificationType.OVERLAY
+          ? modification.startTime
+          : modification.time;
 
       const style = {
         ...baseIndicatorStyle,
-        borderBottomColor: isActive ? '#8B5CF6' : '#4B5563',
+        borderBottomColor: isActive ? "#b9ff66" : "#4B5563",
         left: `${(position / duration) * 100}%`,
       };
 
       // Add duration bar for overlay type
       if (modification.type === ModificationType.OVERLAY) {
         const durationBar = {
-          position: 'absolute',
-          height: '2px',
-          backgroundColor: '#4B5563',
+          position: "absolute",
+          height: "2px",
+          backgroundColor: "#4B5563",
           left: `${(modification.startTime / duration) * 100}%`,
-          width: `${((modification.endTime - modification.startTime) / duration) * 100}%`,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: 1
+          width: `${
+            ((modification.endTime - modification.startTime) / duration) * 100
+          }%`,
+          top: "50%",
+          transform: "translateY(-50%)",
+          zIndex: 1,
         };
 
         return (
           <div key={modification.id}>
-            <div style={style} onClick={() => handleModificationClick(index, modification)} />
+            <div
+              style={style}
+              onClick={() => handleModificationClick(index, modification)}
+            />
             <div style={durationBar} />
           </div>
         );
@@ -1180,9 +1206,10 @@ export default function VideoPlayable() {
       id: `modification-${modification.id}`,
       type: modification.type,
       modificationIndex: index,
-      time: modification.type === ModificationType.OVERLAY 
-        ? modification.startTime 
-        : modification.time,
+      time:
+        modification.type === ModificationType.OVERLAY
+          ? modification.startTime
+          : modification.time,
     };
     setActiveTab(newTab);
     if (modification.type === ModificationType.BREAK) {
@@ -1192,15 +1219,16 @@ export default function VideoPlayable() {
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
-    
+
     // Find the corresponding modification
     const modification = videoPlayable.modifications[tab.modificationIndex];
-    
+
     // Set the time based on modification type
-    const time = modification.type === ModificationType.OVERLAY 
-      ? modification.startTime 
-      : modification.time;
-    
+    const time =
+      modification.type === ModificationType.OVERLAY
+        ? modification.startTime
+        : modification.time;
+
     // Update timeline position
     setCurrentTime(time);
     if (videoRef.current) {
@@ -1235,7 +1263,7 @@ export default function VideoPlayable() {
     sprite.alpha = spriteData.transparency;
 
     // Assign zIndex based on modification type:
-    // Permanent overlay sprite → zIndex = 2  
+    // Permanent overlay sprite → zIndex = 2
     // End screen sprite → zIndex = 4
     if (modification) {
       sprite.__isOverlay = true;
@@ -1266,7 +1294,9 @@ export default function VideoPlayable() {
         );
       });
       const endScreenMods = videoPlayable.modifications.filter((mod) => {
-        return mod.type === ModificationType.END_SCREEN && currentTime >= mod.time;
+        return (
+          mod.type === ModificationType.END_SCREEN && currentTime >= mod.time
+        );
       });
       modificationsToRender = [...permanentOverlayMods, ...endScreenMods];
     }
@@ -1277,13 +1307,19 @@ export default function VideoPlayable() {
       (activeTab.type === ModificationType.OVERLAY ||
         activeTab.type === ModificationType.END_SCREEN)
     ) {
-      modificationsToRender = [videoPlayable.modifications[activeTab.modificationIndex]];
+      modificationsToRender = [
+        videoPlayable.modifications[activeTab.modificationIndex],
+      ];
     }
 
     // Render each modification in the list.
     modificationsToRender.forEach((mod) => {
       // Handle audio as before.
-      if (isPreviewMode && mod.backgroundMusic?.file && !audioElementsRef.current[mod.id]) {
+      if (
+        isPreviewMode &&
+        mod.backgroundMusic?.file &&
+        !audioElementsRef.current[mod.id]
+      ) {
         const audio = playModificationAudio(mod);
         if (audio) {
           audioElementsRef.current[mod.id] = audio;
@@ -1323,7 +1359,6 @@ export default function VideoPlayable() {
     clearOverlayContent,
   ]);
 
-  // Add this new effect after your other useEffects
   useEffect(() => {
     if (!pixiAppRef.current) return;
     const app = pixiAppRef.current;
@@ -1331,23 +1366,25 @@ export default function VideoPlayable() {
 
     const animationTicker = (delta) => {
       // Get active modifications based on type and state
-      const activeModifications = videoPlayable.modifications.filter(mod => {
+      const activeModifications = videoPlayable.modifications.filter((mod) => {
         switch (mod.type) {
           case ModificationType.BREAK:
             return activeBreakIndex !== -1;
           case ModificationType.OVERLAY:
             // Show overlay if it has any enabled animations
-            return mod.sprites.some(sprite => 
-              sprite.animation?.position?.enabled || 
-              sprite.animation?.scale?.enabled || 
-              sprite.animation?.transparency?.enabled
+            return mod.sprites.some(
+              (sprite) =>
+                sprite.animation?.position?.enabled ||
+                sprite.animation?.scale?.enabled ||
+                sprite.animation?.transparency?.enabled
             );
           case ModificationType.END_SCREEN:
             // Show end screen if it has any enabled animations
-            return mod.sprites.some(sprite => 
-              sprite.animation?.position?.enabled || 
-              sprite.animation?.scale?.enabled || 
-              sprite.animation?.transparency?.enabled
+            return mod.sprites.some(
+              (sprite) =>
+                sprite.animation?.position?.enabled ||
+                sprite.animation?.scale?.enabled ||
+                sprite.animation?.transparency?.enabled
             );
           default:
             return false;
@@ -1355,9 +1392,11 @@ export default function VideoPlayable() {
       });
 
       // Process animations for active modifications
-      activeModifications.forEach(modification => {
-        modification.sprites.forEach(spriteData => {
-          const sprite = app.stage.children.find(child => child.__spriteId === spriteData.id);
+      activeModifications.forEach((modification) => {
+        modification.sprites.forEach((spriteData) => {
+          const sprite = app.stage.children.find(
+            (child) => child.__spriteId === spriteData.id
+          );
           if (!sprite) return;
 
           sprite.visible = true;
@@ -1365,17 +1404,17 @@ export default function VideoPlayable() {
           // Handle animations if they are enabled, regardless of time
           if (spriteData.animation?.position?.enabled) {
             const anim = spriteData.animation.position;
-            handleAnimation(sprite, spriteData, 'position', anim);
+            handleAnimation(sprite, spriteData, "position", anim);
           }
 
           if (spriteData.animation?.scale?.enabled) {
             const anim = spriteData.animation.scale;
-            handleAnimation(sprite, spriteData, 'scale', anim);
+            handleAnimation(sprite, spriteData, "scale", anim);
           }
 
           if (spriteData.animation?.transparency?.enabled) {
             const anim = spriteData.animation.transparency;
-            handleAnimation(sprite, spriteData, 'transparency', anim);
+            handleAnimation(sprite, spriteData, "transparency", anim);
           }
         });
       });
@@ -1385,69 +1424,77 @@ export default function VideoPlayable() {
     const handleAnimation = (sprite, spriteData, type, anim) => {
       const currentTime = Date.now();
       const progress = (currentTime % anim.duration) / anim.duration;
-      let easedProgress = anim.easing !== 'linear' ? 
-        getEasedProgress(progress, anim.easing) : progress;
+      let easedProgress =
+        anim.easing !== "linear"
+          ? getEasedProgress(progress, anim.easing)
+          : progress;
 
       if (anim.yoyo) {
-        const cycle = Math.floor((currentTime % (anim.duration * 2)) / anim.duration);
+        const cycle = Math.floor(
+          (currentTime % (anim.duration * 2)) / anim.duration
+        );
         if (cycle === 1) easedProgress = 1 - easedProgress;
       }
 
       switch (type) {
-        case 'position':
+        case "position":
           const startX = spriteData.position.x * app.screen.width;
           const startY = spriteData.position.y * app.screen.height;
-          const endX = (anim.destination?.x || spriteData.position.x) * app.screen.width;
-          const endY = (anim.destination?.y || spriteData.position.y) * app.screen.height;
+          const endX =
+            (anim.destination?.x || spriteData.position.x) * app.screen.width;
+          const endY =
+            (anim.destination?.y || spriteData.position.y) * app.screen.height;
           sprite.position.x = startX + (endX - startX) * easedProgress;
           sprite.position.y = startY + (endY - startY) * easedProgress;
           break;
 
-        case 'scale':
+        case "scale":
           const startScale = spriteData.scale;
-          sprite.scale.x = startScale + (anim.destination.w - startScale) * easedProgress;
-          sprite.scale.y = startScale + (anim.destination.h - startScale) * easedProgress;
+          sprite.scale.x =
+            startScale + (anim.destination.w - startScale) * easedProgress;
+          sprite.scale.y =
+            startScale + (anim.destination.h - startScale) * easedProgress;
           break;
 
-        case 'transparency':
+        case "transparency":
           const startAlpha = spriteData.transparency;
-          sprite.alpha = startAlpha + (anim.destination - startAlpha) * easedProgress;
+          sprite.alpha =
+            startAlpha + (anim.destination - startAlpha) * easedProgress;
           break;
       }
     };
 
     app.ticker.add(animationTicker);
-    return () => app.ticker.remove(animationTicker);
+    return () => app?.ticker?.remove(animationTicker);
   }, [activeBreakIndex, videoPlayable.modifications]);
 
   const renderBuildButton = () => (
     <button
       onClick={() => {
-        console.log('VideoPlayable state:', videoPlayable); // Add this debug log
         buildPlayableAd(videoPlayable);
       }}
-      className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center gap-2"
+      className="px-4 py-2 bg-[#b9ff66] text-black rounded-lg flex items-center gap-2 w-full"
       disabled={!videoSource}
     >
       <Download className="w-4 h-4" />
       Build Playable Ad
     </button>
   );
-  
+
   const handleRemoveTab = (tabToRemove) => {
-    setVideoPlayable(prev => {
-      const newModifications = prev.modifications.filter((_, index) => 
-        index !== tabToRemove.modificationIndex
+    setVideoPlayable((prev) => {
+      const newModifications = prev.modifications.filter(
+        (_, index) => index !== tabToRemove.modificationIndex
       );
-      
-      setTabs(prevTabs => 
+
+      setTabs((prevTabs) =>
         prevTabs
-          .filter(tab => tab.id !== tabToRemove.id)
-          .map(tab => {
+          .filter((tab) => tab.id !== tabToRemove.id)
+          .map((tab) => {
             if (tab.modificationIndex > tabToRemove.modificationIndex) {
               return {
                 ...tab,
-                modificationIndex: tab.modificationIndex - 1
+                modificationIndex: tab.modificationIndex - 1,
               };
             }
             return tab;
@@ -1455,13 +1502,13 @@ export default function VideoPlayable() {
       );
 
       if (activeTab.id === tabToRemove.id) {
-        const generalTab = tabs.find(tab => tab.type === 'general');
+        const generalTab = tabs.find((tab) => tab.type === "general");
         setActiveTab(generalTab);
       }
 
       return {
         ...prev,
-        modifications: newModifications
+        modifications: newModifications,
       };
     });
   };
@@ -1477,7 +1524,7 @@ export default function VideoPlayable() {
     >
       <div
         style={{ width: `${splitPosition}%` }}
-        className={`h-full bg-black overflow-hidden ${
+        className={`h-full bg-black overflow-hidden px-2 ${
           isPreviewMode ? "pointer-events-none opacity-50 bg-gray-300" : ""
         }`}
       >
@@ -1495,14 +1542,16 @@ export default function VideoPlayable() {
       >
         <div className="absolute w-4 h-full" />
         <div className="w-[1px] bg-primary/10 h-full" />
-        <span className="absolute left-1/2 top-[45%] transform -translate-x-1/2 -translate-y-1/2 bg-primary/10 rounded-lg border border-primary/20 px-[0.5px] py-[2px]">
-          <GripVertical size={12} strokeWidth={2} color="white" />
+        <span className="absolute left-1/2 top-[50%] transform -translate-x-[93%] -translate-y-1/2 bg-primary/10 px-[0.5px] py-[2px]">
+          <div className="w-[2px] h-4 bg-[#b9ff66]" />
         </span>
       </div>
 
-      <div style={{ width: `${100 - splitPosition}%` }} className="h-full relative bg-gray-900">
+      <div
+        style={{ width: `${100 - splitPosition}%` }}
+        className="h-full relative bg-gray-900"
+      >
         {!videoSource ? (
-          // Show upload prompt when no video is selected
           <div className="flex flex-col items-center justify-center h-full text-white">
             <input
               type="file"
@@ -1513,11 +1562,13 @@ export default function VideoPlayable() {
             />
             <label
               htmlFor="video-upload"
-              className="flex flex-col items-center cursor-pointer p-8 border-2 border-dashed border-gray-600 rounded-lg hover:border-purple-500 transition-colors"
+              className="flex flex-col items-center cursor-pointer p-8 border-2 border-dashed border-gray-600 rounded-lg hover:border-[#b9ff66] transition-colors"
             >
               <Upload className="w-12 h-12 mb-4" />
               <span className="text-lg">Upload Video</span>
-              <span className="text-sm text-gray-400 mt-2">Drag and drop or click to select</span>
+              <span className="text-sm text-gray-400 mt-2">
+                Drag and drop or click to select
+              </span>
             </label>
           </div>
         ) : (
@@ -1598,6 +1649,8 @@ export default function VideoPlayable() {
                   style={{
                     ...timelineHandleStyle,
                     left: `${(currentTime / duration) * 100}%`,
+                    width: "20px",
+                    height: "20px",
                   }}
                 />
               </div>

@@ -23,7 +23,7 @@ export const SwitchComponent = ({ checked, onChange, label }) => (
     checked={checked}
     onChange={onChange}
     className={`${
-      checked ? "bg-purple-600" : "bg-gray-700"
+      checked ? "bg-[#b9ff66]" : "bg-gray-700"
     } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
   >
     <span className="sr-only">{label}</span>
@@ -42,6 +42,7 @@ const ModificationControls = ({
   handleRemoveTab,
 }) => {
   const [activeSpriteId, setActiveSpriteId] = useState(null);
+  const audioUploadRef = useRef(null);
 
   if (
     activeTab?.modificationIndex === undefined ||
@@ -213,6 +214,7 @@ const ModificationControls = ({
         <h3 className="text-xl mb-4">Background music</h3>
         <div className="flex items-center gap-4">
           <input
+            ref={audioUploadRef}
             type="file"
             accept="audio/*"
             onChange={handleAudioUpload}
@@ -220,7 +222,7 @@ const ModificationControls = ({
             id="music-upload"
           />
           <div className="flex items-center gap-2">
-            <span className="text-purple-500">♪</span>
+            <span className="text-[#b9ff66]">♪</span>
             <label
               htmlFor="music-upload"
               className="cursor-pointer text-gray-300"
@@ -229,10 +231,10 @@ const ModificationControls = ({
             </label>
           </div>
           <div className="flex gap-2">
-            <button className="text-purple-500">
+            <button className="text-[#b9ff66]" onClick={() => audioUploadRef.current?.click()}>
               <Pencil className="w-4 h-4" />
             </button>
-            <button className="text-red-500" onClick={handleAudioDelete}>
+            <button className="text-[#b9ff66]" onClick={handleAudioDelete}>
               <Trash className="w-4 h-4" />
             </button>
           </div>
@@ -256,7 +258,7 @@ const ModificationControls = ({
                     },
                   });
                 }}
-                className="w-full accent-purple-600"
+                className="w-full accent-[#b9ff66]"
               />
             </div>
 
@@ -404,7 +406,7 @@ const Sprites = ({
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 bg-purple-600 px-4 py-1.5 rounded"
+            className="flex items-center gap-2 bg-[#b9ff66] px-4 py-1.5 rounded text-black"
           >
             Add Sprite
           </button>

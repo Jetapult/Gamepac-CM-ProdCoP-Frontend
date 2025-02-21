@@ -99,7 +99,13 @@ const SpriteEditor = ({ sprite, onUpdate, onDelete }) => {
           />
         );
       case "transparency":
-        return <TransparencyAnimation sprite={sprite} handleNumberInput={handleNumberInput} onUpdate={onUpdate} />;
+        return (
+          <TransparencyAnimation
+            sprite={sprite}
+            handleNumberInput={handleNumberInput}
+            onUpdate={onUpdate}
+          />
+        );
       default:
         return null;
     }
@@ -118,10 +124,10 @@ const SpriteEditor = ({ sprite, onUpdate, onDelete }) => {
             <span className="text-gray-300">{sprite.file?.name}</span>
           </div>
           <div className="flex gap-2">
-            <button className="text-red-500">
+            <button className="text-[#b9ff66]">
               <Pencil className="w-4 h-4" />
             </button>
-            <button className="text-red-500" onClick={onDelete}>
+            <button className="text-[#b9ff66]" onClick={onDelete}>
               <Trash className="w-4 h-4" />
             </button>
           </div>
@@ -132,7 +138,7 @@ const SpriteEditor = ({ sprite, onUpdate, onDelete }) => {
             key={tab.id}
             className={`px-2 py-1 rounded border mr-2 mt-6 ${
               activeTab === tab.slug
-                ? "bg-white text-purple-600 border-purple-600"
+                ? "bg-black text-[#b9ff66] border-[#b9ff66]"
                 : "border-white"
             }`}
             onClick={() => setActiveTab(tab.slug)}
@@ -288,12 +294,13 @@ const PositionAnimation = ({ sprite, handleNumberInput, onUpdate }) => {
           <label className="text-lg font-medium">Position Animation</label>
           <div className="flex items-center gap-2">
             <button
-              className={`px-2 py-1 text-xs rounded text-purple-600 border border-white ${
-                sprite.animation?.position?.enabled ? "bg-white text-white" : ""
+              className={`px-2 py-1 text-xs rounded border border-white ${
+                sprite.animation?.position?.enabled ? "bg-[#b9ff66] text-black border-[#b9ff66]" : "text-[#b9ff66]"
               }`}
               onClick={() => {
                 const positionAnimation = {
-                  enabled: sprite.animation?.position?.enabled === true ? false : true,
+                  enabled:
+                    sprite.animation?.position?.enabled === true ? false : true,
                   destination: {
                     x: 0.4,
                     y: 0.4,
@@ -488,12 +495,13 @@ const ScaleAnimation = ({ sprite, handleNumberInput, onUpdate }) => {
           <label className="text-lg font-medium">Scale Animation</label>
           <div className="flex items-center gap-2">
             <button
-              className={`px-2 py-1 text-xs rounded text-purple-600 border border-white ${
-                sprite.animation?.scale?.enabled ? "bg-white text-white" : ""
+              className={`px-2 py-1 text-xs rounded text-[#b9ff66] border border-white ${
+                sprite.animation?.scale?.enabled ? "bg-white" : ""
               }`}
               onClick={() => {
                 const scaleAnimation = {
-                  enabled: sprite.animation?.scale?.enabled === true ? false : true,
+                  enabled:
+                    sprite.animation?.scale?.enabled === true ? false : true,
                   destination: {
                     w: sprite.scale * 2,
                     h: sprite.scale * 2,
@@ -687,12 +695,15 @@ const TransparencyAnimation = ({ sprite, handleNumberInput, onUpdate }) => {
           <label className="text-lg font-medium">Transparency Animation</label>
           <div className="flex items-center gap-2">
             <button
-              className={`px-2 py-1 text-xs rounded text-purple-600 border border-white ${
-                sprite.animation?.transparency?.enabled ? "bg-white text-white" : ""
+              className={`px-2 py-1 text-xs rounded text-[#b9ff66] border border-white ${
+                sprite.animation?.transparency?.enabled ? "bg-white" : ""
               }`}
               onClick={() => {
                 const transparencyAnimation = {
-                  enabled: sprite.animation?.transparency?.enabled === true ? false : true,
+                  enabled:
+                    sprite.animation?.transparency?.enabled === true
+                      ? false
+                      : true,
                   destination: 0.5,
                   duration: 500,
                   repeat: -1,

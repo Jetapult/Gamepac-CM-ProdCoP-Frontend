@@ -3,6 +3,7 @@ export const initialSpriteState = {
   file: null,
   imageUrl: "",
   position: { x: 0.5, y: 0.5 },
+  positionRelativeToScreen: true,
   scale: 0.5,
   rotation: 0,
   anchor: { x: 0.5, y: 0.5 },
