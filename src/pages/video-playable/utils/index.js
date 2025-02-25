@@ -615,26 +615,96 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
       initVideo().then(() => {
         videoElement.addEventListener('timeupdate', handleVideoTimeUpdate);
         
-        // Try to play the video immediately.
+        // Try to play the video immediately (muted)
         videoElement.play().then(() => {
           console.log("Video started playing automatically (muted).");
           
-          // After playback starts, try to unmute after a brief delay.
-          // This gives the video a chance to start so that the browser might allow unmuting.
-          setTimeout(() => {
-            try {
-              videoElement.muted = false;
-              console.log("Video unmuted programmatically.");
-            } catch (unmuteError) {
-              console.error("Failed to unmute video:", unmuteError);
-            }
-          }, 2000);
-          
+          // Keep the video muted until user interaction
+          // Don't try to unmute programmatically as it will fail
         }).catch((error) => {
           console.error("Auto-play failed:", error);
-          // If autoplay failed even with muted=true (unlikely), you might consider attaching a fallback
-          // handler to try again on user interaction. However, to meet your requirements, you shouldn't wait
-          // for a user click.
+          
+          // Add a fallback UI element to start playback on interaction
+          const playButton = document.createElement('div');
+          playButton.style.position = 'absolute';
+          playButton.style.top = '50%';
+          playButton.style.left = '50%';
+          playButton.style.transform = 'translate(-50%, -50%)';
+          playButton.style.background = 'rgba(0,0,0,0.5)';
+          playButton.style.color = 'white';
+          playButton.style.padding = '20px';
+          playButton.style.borderRadius = '10px';
+          playButton.style.cursor = 'pointer';
+          playButton.style.zIndex = '1000';
+          playButton.innerHTML = 'Tap to Play';
+          document.body.appendChild(playButton);
+          
+          playButton.addEventListener('click', () => {
+            videoElement.play().catch(console.error);
+            document.body.removeChild(playButton);
+          });
+        });
+        
+        // Add a document-level click handler to unmute the video on first interaction
+        document.addEventListener('click', function enableAudio() {
+          if (videoElement.muted) {
+            videoElement.muted = false;
+            console.log("Video unmuted on user interaction");
+            
+            // Also ensure video is playing
+            if (videoElement.paused) {
+              videoElement.play().catch(console.error);
+            }
+            
+            // Remove this listener after first use
+            document.removeEventListener('click', enableAudio);
+          }
+          
+          // This will also enable all other audio elements
+          audioAllowed = true;
+          Object.values(audioElements).forEach(audio => {
+            if (audio && audio.paused) {
+              audio.play().catch(err => console.error("Error playing audio:", err));
+            }
+          });
+        }, { once: true }); // Use { once: true } to automatically remove after first trigger
+
+        // Add this after your initVideo() call
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            // Pause video when tab is not visible
+            if (!videoElement.paused) {
+              videoElement.pause();
+            }
+          } else {
+            // Resume video when tab becomes visible again (only if it was playing before)
+            if (videoElement.paused && !activeBreakIndex !== -1) {
+              videoElement.play().catch(console.error);
+            }
+          }
+        });
+
+        // Add this in your initVideo().then() callback
+        videoElement.addEventListener('ended', () => {
+          // When video ends, show end screen if available
+          const endScreen = CONFIG.modifications.find(mod => mod.type === 'end_screen');
+          if (endScreen) {
+            clearEndScreenModifications();
+            renderEndScreen(endScreen);
+          }
+        });
+
+        // Add this to your document click handler
+        videoElement.addEventListener('pause', (event) => {
+          // If video was paused by the browser (not by our code)
+          if (activeBreakIndex === -1 && !event.isTrusted) {
+            // Try to resume playback after a short delay
+            setTimeout(() => {
+              videoElement.play().catch(err => {
+                console.warn("Could not auto-resume video:", err);
+              });
+            }, 300);
+          }
         });
       }).catch(error => {
         console.error("Error initializing video:", error);
