@@ -158,6 +158,20 @@ const GeneralSpriteSettings = ({ sprite, handleNumberInput, onUpdate }) => {
     <div className="mt-4 space-y-4">
       {/* Position Controls */}
       <div>
+        <label className="block mb-2">Action</label>
+        <select
+          value={sprite.onClickAction}
+          onChange={(e) =>
+            onUpdate({ ...sprite, onClickAction: e.target.value })
+          }
+          className="bg-gray-700 rounded px-3 py-2"
+        >
+          <option value="nothing">Nothing</option>
+          <option value="resume-video">Resume Video</option>
+          <option value="open-store-url">Open Store URL</option>
+        </select>
+      </div>
+      <div>
         <label className="block mb-2">Position</label>
         <div className="grid grid-cols-2 gap-4">
           <div>

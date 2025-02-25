@@ -133,12 +133,42 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
         // Save configuration for animations
         sprite.__spriteData = spriteData;
         
-        // Handle click events (e.g. for store redirects)
+        // Update the click handling
         sprite.eventMode = 'static';
         sprite.cursor = 'pointer';
-        sprite.on('pointerdown', () => {
-          if (CONFIG.general.iosUrl || CONFIG.general.playstoreUrl) {
-            window.location.href = CONFIG.general.iosUrl || CONFIG.general.playstoreUrl;
+        sprite.on('pointertap', (event) => {
+          event.stopPropagation();
+          
+          if (spriteData.onClickAction === 'open-store-url') {
+            // Detect OS
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isAndroid = /android/i.test(userAgent);
+            const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+            
+            // Get appropriate store URL based on OS
+            const storeUrl = isAndroid ? CONFIG.general.playstoreUrl : CONFIG.general.iosUrl;
+            
+            if (storeUrl) {
+              // Use MRAID if available, otherwise fallback to window.open
+              if (typeof mraid !== "undefined") {
+                mraid.open(storeUrl);
+              } else {
+                window.open(storeUrl, '_blank');
+              }
+            } else {
+              console.warn('No store URL configured for ' + (isAndroid ? 'Android' : 'iOS'));
+            }
+          } else if (spriteData.onClickAction === 'resume-video') {
+            if (activeBreakIndex !== -1) {
+              const activeBreak = CONFIG.modifications[activeBreakIndex];
+              if (activeBreak && audioElements[activeBreak.id]) {
+                audioElements[activeBreak.id].pause();
+                delete audioElements[activeBreak.id];
+              }
+              activeBreakIndex = -1;
+              clearBreakModifications();
+              videoElement.play().catch(console.error);
+            }
           }
         });
 
@@ -191,6 +221,41 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
               sprite.position.set(x, y);
               sprite.eventMode = 'static';
               sprite.cursor = 'pointer';
+              sprite.on('pointertap', (event) => {
+                event.stopPropagation();
+                
+                if (spriteData.onClickAction === 'open-store-url') {
+                  // Detect OS
+                  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+                  const isAndroid = /android/i.test(userAgent);
+                  const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+                  
+                  // Get appropriate store URL based on OS
+                  const storeUrl = isAndroid ? CONFIG.general.playstoreUrl : CONFIG.general.iosUrl;
+                  
+                  if (storeUrl) {
+                    // Use MRAID if available, otherwise fallback to window.open
+                    if (typeof mraid !== "undefined") {
+                      mraid.open(storeUrl);
+                    } else {
+                      window.open(storeUrl, '_blank');
+                    }
+                  } else {
+                    console.warn('No store URL configured for ' + (isAndroid ? 'Android' : 'iOS'));
+                  }
+                } else if (spriteData.onClickAction === 'resume-video') {
+                  if (activeBreakIndex !== -1) {
+                    const activeBreak = CONFIG.modifications[activeBreakIndex];
+                    if (activeBreak && audioElements[activeBreak.id]) {
+                      audioElements[activeBreak.id].pause();
+                      delete audioElements[activeBreak.id];
+                    }
+                    activeBreakIndex = -1;
+                    clearBreakModifications();
+                    videoElement.play().catch(console.error);
+                  }
+                }
+              });
               // Save configuration (for later animations)
               sprite.__spriteData = spriteData;
               app.stage.addChild(sprite);
@@ -215,7 +280,14 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
         if (mod.type === 'break') {
           currentModifications.forEach(element => {
             element.off && element.off('pointerdown');
+            // Only add the resume video handler if the element is not a sprite
+            // or if it's a sprite with resume-video action
             element.on('pointerdown', () => {
+              // Skip if this is a sprite with a different click action
+              if (element.__spriteData && element.__spriteData.onClickAction !== 'resume-video') {
+                return;
+              }
+
               if (activeBreakIndex !== -1) {
                 const activeBreak = CONFIG.modifications[activeBreakIndex];
                 if (activeBreak && audioElements[activeBreak.id]) {
@@ -223,7 +295,6 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
                   delete audioElements[activeBreak.id];
                 }
                 activeBreakIndex = -1;
-                // Only remove break (non-overlay) elements on resume.
                 clearBreakModifications();
                 videoElement.play().catch(console.error);
               }
@@ -317,6 +388,41 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
                 sprite.position.set(x, y);
                 sprite.eventMode = 'static';
                 sprite.cursor = 'pointer';
+                sprite.on('pointertap', (event) => {
+                  event.stopPropagation();
+                  
+                  if (spriteData.onClickAction === 'open-store-url') {
+                    // Detect OS
+                    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+                    const isAndroid = /android/i.test(userAgent);
+                    const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+                    
+                    // Get appropriate store URL based on OS
+                    const storeUrl = isAndroid ? CONFIG.general.playstoreUrl : CONFIG.general.iosUrl;
+                    
+                    if (storeUrl) {
+                      // Use MRAID if available, otherwise fallback to window.open
+                      if (typeof mraid !== "undefined") {
+                        mraid.open(storeUrl);
+                      } else {
+                        window.open(storeUrl, '_blank');
+                      }
+                    } else {
+                      console.warn('No store URL configured for ' + (isAndroid ? 'Android' : 'iOS'));
+                    }
+                  } else if (spriteData.onClickAction === 'resume-video') {
+                    if (activeBreakIndex !== -1) {
+                      const activeBreak = CONFIG.modifications[activeBreakIndex];
+                      if (activeBreak && audioElements[activeBreak.id]) {
+                        audioElements[activeBreak.id].pause();
+                        delete audioElements[activeBreak.id];
+                      }
+                      activeBreakIndex = -1;
+                      clearBreakModifications();
+                      videoElement.play().catch(console.error);
+                    }
+                  }
+                });
                 sprite.__spriteData = spriteData;
                 app.stage.addChild(sprite);
                 currentModifications.push(sprite);
@@ -340,23 +446,6 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
               audio.play().catch(console.error);
             }
           }
-
-          // Add click handlers to break elements to resume the video.
-          currentModifications.forEach(element => {
-            element.off && element.off('pointerdown');
-            element.on('pointerdown', () => {
-              if (activeBreakIndex !== -1) {
-                const activeBreak = CONFIG.modifications[activeBreakIndex];
-                if (activeBreak && audioElements[activeBreak.id]) {
-                  audioElements[activeBreak.id].pause();
-                  delete audioElements[activeBreak.id];
-                }
-                activeBreakIndex = -1;
-                clearBreakModifications();
-                videoElement.play().catch(console.error);
-              }
-            });
-          });
 
           // Exit early so overlay handling below is not executed.
           return;
@@ -608,6 +697,42 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
               sprite.position.set(x, y);
               sprite.eventMode = 'static';
               sprite.cursor = 'pointer';
+              sprite.on('pointertap', (event) => {
+                event.stopPropagation();
+                
+                if (spriteData.onClickAction === 'open-store-url') {
+                  // Detect OS
+                  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+                  const isAndroid = /android/i.test(userAgent);
+                  const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+                  
+                  // Get appropriate store URL based on OS
+                  const storeUrl = isAndroid ? CONFIG.general.playstoreUrl : CONFIG.general.iosUrl;
+                  
+                  if (storeUrl) {
+                    // Use MRAID if available, otherwise fallback to window.open
+                    if (typeof mraid !== "undefined") {
+                      mraid.open(storeUrl);
+                    } else {
+                      window.open(storeUrl, '_blank');
+                    }
+                  } else {
+                    console.warn('No store URL configured for ' + (isAndroid ? 'Android' : 'iOS'));
+                  }
+                } else if (spriteData.onClickAction === 'resume-video') {
+                  // Only resume video if this is a break sprite
+                  if (activeBreakIndex !== -1) {
+                    const activeBreak = CONFIG.modifications[activeBreakIndex];
+                    if (activeBreak && audioElements[activeBreak.id]) {
+                      audioElements[activeBreak.id].pause();
+                      delete audioElements[activeBreak.id];
+                    }
+                    activeBreakIndex = -1;
+                    clearBreakModifications();
+                    videoElement.play().catch(console.error);
+                  }
+                }
+              });
               sprite.__spriteData = spriteData;
               app.stage.addChild(sprite);
               currentModifications.push(sprite);

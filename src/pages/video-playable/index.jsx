@@ -15,6 +15,7 @@ import * as PIXI from "pixi.js";
 import ModificationControls from "./components/ModificationControls";
 import { baseModificationState, initialState, ModificationType } from "./state";
 import { buildPlayableAd } from "./utils";
+import ToastMessage from "../../components/ToastMessage";
 
 const timelineContainerStyle = {
   position: "absolute",
@@ -127,6 +128,11 @@ export default function VideoPlayable() {
   const [breakAudioElement, setBreakAudioElement] = useState(null);
 
   const [videoPlayable, setVideoPlayable] = useState(initialState);
+  const [toastMessage, setToastMessage] = useState({
+    show: false,
+    message: "",
+    type: ""
+  });
 
   // Create a ref that will hold the active audio elements keyed by modification id.
   const audioElementsRef = useRef({});
@@ -655,26 +661,40 @@ export default function VideoPlayable() {
         sprite.zIndex = 6;
 
         sprite.on("pointerdown", () => {
-          clearBreakContent();
-          if (
-            currentBreak.stopOnVideoResume &&
-            currentBreak.backgroundMusic?.file &&
-            audioElementsRef.current[currentBreak.id]
-          ) {
-            stopModificationAudio(audioElementsRef.current[currentBreak.id]);
-            delete audioElementsRef.current[currentBreak.id];
-          }
-          const videoElement =
-            videoSpriteRef.current.texture.baseTexture.resource.source;
-          videoElement
-            .play()
-            .then(() => {
-              setIsPlaying(true);
-              setActiveBreakIndex(-1);
-            })
-            .catch((error) => {
-              console.error("Error resuming video:", error);
+          // Check if the sprite is configured to open store URL
+          if (spriteData.onClickAction === "open-store-url") {
+            const storeUrl = videoPlayable.general.iosUrl || videoPlayable.general.playstoreUrl;
+            if (storeUrl) {
+              window.open(storeUrl, '_blank');
+            }
+            setToastMessage({
+              show: true,
+              message: "Store URL clicked",
+              type: "info"
             });
+          } else {
+            // Default break behavior (resume video)
+            clearBreakContent();
+            if (
+              currentBreak.stopOnVideoResume &&
+              currentBreak.backgroundMusic?.file &&
+              audioElementsRef.current[currentBreak.id]
+            ) {
+              stopModificationAudio(audioElementsRef.current[currentBreak.id]);
+              delete audioElementsRef.current[currentBreak.id];
+            }
+            const videoElement =
+              videoSpriteRef.current.texture.baseTexture.resource.source;
+            videoElement
+              .play()
+              .then(() => {
+                setIsPlaying(true);
+                setActiveBreakIndex(-1);
+              })
+              .catch((error) => {
+                console.error("Error resuming video:", error);
+              });
+          }
         });
 
         app.stage.addChild(sprite);
@@ -1068,8 +1088,8 @@ export default function VideoPlayable() {
               </label>
               <input
                 type="url"
-                value={iosUrl}
-                onChange={(e) => setIosUrl(e.target.value)}
+                value={videoPlayable.general?.iosUrl}
+                onChange={(e) => setVideoPlayable({...videoPlayable, general: {...videoPlayable.general, iosUrl: e.target.value}})}
                 className="w-full px-2 py-1 rounded-md text-sm"
                 placeholder="Enter iOS App Store URL"
               />
@@ -1081,8 +1101,8 @@ export default function VideoPlayable() {
               </label>
               <input
                 type="url"
-                value={playstoreUrl}
-                onChange={(e) => setPlaystoreUrl(e.target.value)}
+                value={videoPlayable.general?.playstoreUrl}
+                onChange={(e) => setVideoPlayable({...videoPlayable, general: {...videoPlayable.general, playstoreUrl: e.target.value}})}
                 className="w-full px-2 py-1 rounded-md text-sm"
                 placeholder="Enter Play Store URL"
               />
@@ -1262,14 +1282,27 @@ export default function VideoPlayable() {
     sprite.rotation = spriteData.rotation * (Math.PI / 180);
     sprite.alpha = spriteData.transparency;
 
-    // Assign zIndex based on modification type:
-    // Permanent overlay sprite → zIndex = 2
-    // End screen sprite → zIndex = 4
+    // If part of a modification, assign proper zIndex.
     if (modification) {
       sprite.__isOverlay = true;
       sprite.zIndex = modification.type === ModificationType.END_SCREEN ? 4 : 2;
     }
-
+    
+    // Enable interaction so we can detect clicks.
+    sprite.interactive = true;
+    sprite.buttonMode = true;
+    sprite.on("pointerdown", () => {
+      // If open store url is the assigned action, show toast message.
+      if (spriteData.onClickAction === "open-store-url") {
+        setToastMessage({
+          show: true,
+          message: "Store URL clicked",
+          type: "info"
+        });
+      }
+      // (You can also add handling for other actions if needed.)
+    });
+    
     app.stage.addChild(sprite);
     spritesRef.current.push(sprite);
   };
@@ -1662,6 +1695,9 @@ export default function VideoPlayable() {
           </div>
         )}
       </div>
+      {toastMessage.show && (
+        <ToastMessage message={toastMessage} setToastMessage={setToastMessage} />
+      )}
     </div>
   );
 }

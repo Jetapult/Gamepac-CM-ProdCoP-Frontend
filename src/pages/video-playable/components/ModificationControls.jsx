@@ -108,6 +108,14 @@ const ModificationControls = ({
         id: Date.now(),
         file,
         imageUrl,
+        onClickAction:
+          currentModification.type === ModificationType.OVERLAY
+            ? "nothing"
+            : currentModification.type === ModificationType.BREAK
+            ? "resume-video"
+            : currentModification.type === ModificationType.END_SCREEN
+            ? "open-store-url"
+            : "nothing",
       };
 
       updateModification({

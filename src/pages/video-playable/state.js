@@ -33,7 +33,8 @@ export const initialSpriteState = {
       easing: 'linear',
       yoyo: true
     }
-  }
+  },
+  onClickAction: "nothing",
 };
 
 export const initialState = {
