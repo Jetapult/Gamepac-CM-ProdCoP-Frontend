@@ -484,6 +484,9 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
         }
       }
 
+      // Add animation start times tracking
+      let animationStartTimes = {};
+
       // -- Animation ticker to update sprite animations --
       // This function uses a helper to get easing progress and then updates sprites
       function getEasedProgress(progress, easingType) {
@@ -507,6 +510,53 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
 
       function handleAnimation(sprite, spriteData, type, anim) {
         const currentTime = Date.now();
+        
+        // Initialize animation tracking
+        if (!sprite.__animationStartTimes) {
+          sprite.__animationStartTimes = {};
+        }
+        
+        if (!sprite.__animationStartTimes[type]) {
+          sprite.__animationStartTimes[type] = currentTime;
+        }
+        
+        // Check if animation should stop based on repeat value
+        if (anim.repeat !== undefined && anim.repeat !== -1) {
+          // Calculate elapsed time and completed cycles
+          const elapsedTime = currentTime - sprite.__animationStartTimes[type];
+          const completedCycles = Math.floor(elapsedTime / anim.duration);
+          
+          // If we've completed all repeats, set to final state and stop
+          if (completedCycles > anim.repeat) {
+            // Set to final state based on animation type
+            switch (type) {
+              case 'position': {
+                // Use the exact destination coordinates with fallback
+                const endX = (anim.destination && anim.destination.x !== undefined)
+                  ? anim.destination.x * app.screen.width
+                  : spriteData.position.x * app.screen.width;
+                const endY = (anim.destination && anim.destination.y !== undefined)
+                  ? anim.destination.y * app.screen.height
+                  : spriteData.position.y * app.screen.height;
+                sprite.position.x = endX;
+                sprite.position.y = endY;
+                break;
+              }
+              case 'scale': {
+                sprite.scale.x = anim.destination.w;
+                sprite.scale.y = anim.destination.h;
+                break;
+              }
+              case 'transparency': {
+                sprite.alpha = anim.destination;
+                break;
+              }
+            }
+            return; // Skip further animation processing
+          }
+        }
+        
+        // Continue with the existing animation logic
         const progress = (currentTime % anim.duration) / anim.duration;
         let easedProgress = anim.easing !== 'linear'
           ? getEasedProgress(progress, anim.easing)

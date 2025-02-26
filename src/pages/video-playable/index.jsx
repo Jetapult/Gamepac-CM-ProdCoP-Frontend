@@ -220,6 +220,17 @@ export default function VideoPlayable() {
       stopOnVideoResume: true,
     };
 
+    // Ensure video is visible
+    if (videoSpriteRef.current) {
+      videoSpriteRef.current.visible = true;
+      
+      // Force a frame to be displayed if we have a video element
+      if (videoRef.current) {
+        const currentTime = time / 1000;
+        videoRef.current.currentTime = currentTime > 0 ? currentTime : 0.001;
+      }
+    }
+
     setVideoPlayable((prev) => {
       const newModifications = [...prev.modifications, newBreak].sort(
         (a, b) => a.time - b.time
@@ -252,6 +263,16 @@ export default function VideoPlayable() {
 
   const addOverlay = () => {
     const time = Math.floor(currentTime);
+    // Ensure video is visible
+    if (videoSpriteRef.current) {
+      videoSpriteRef.current.visible = true;
+      
+      // Force a frame to be displayed
+      if (videoRef.current) {
+        videoRef.current.currentTime = time / 1000 || 0.001;
+      }
+    }
+    
     const newOverlay = {
       ...baseModificationState,
       type: ModificationType.OVERLAY,
@@ -297,8 +318,17 @@ export default function VideoPlayable() {
   };
 
   const addEndScreen = () => {
-    // For a custom trigger time, you might use the current playhead time or a user-specified value.
-    const time = Math.floor(currentTime); // Or a different value if needed.
+    const time = Math.floor(currentTime);
+    // Ensure video is visible
+    if (videoSpriteRef.current) {
+      videoSpriteRef.current.visible = true;
+      
+      // Force a frame to be displayed
+      if (videoRef.current) {
+        videoRef.current.currentTime = time / 1000 || 0.001;
+      }
+    }
+    
     const newEndScreen = {
       ...baseModificationState,
       type: ModificationType.END_SCREEN,
@@ -472,6 +502,9 @@ export default function VideoPlayable() {
       autoDensity: true,
     });
 
+    // Make sure the app stage has sortableChildren enabled
+    app.stage.sortableChildren = true;
+
     const pixiCanvas = app.view;
     if (pixiCanvas instanceof HTMLCanvasElement) {
       pixiContainerRef.current.appendChild(pixiCanvas);
@@ -492,20 +525,21 @@ export default function VideoPlayable() {
     videoElement.playsInline = true;
     videoElement.currentTime = 0;
 
-    videoElement.addEventListener(
-      "loadeddata",
-      () => {
-        videoElement.pause();
-        setIsPlaying(false);
-      },
-      { once: true }
-    );
+    videoElement.addEventListener("loadeddata", () => {
+      videoElement.pause();
+      setIsPlaying(false);
+      
+      // Force a frame to be displayed
+      videoElement.currentTime = 0.001;
+    }, { once: true });
 
     videoElement.addEventListener("timeupdate", () => {
       setCurrentTime(videoElement.currentTime * 1000);
     });
 
-    videoElement.src = URL.createObjectURL(videoSource);
+    // Create object URL from the video source
+    const videoUrl = URL.createObjectURL(videoSource);
+    videoElement.src = videoUrl;
 
     videoElement.onloadedmetadata = () => {
       const texture = PIXI.Texture.from(videoElement);
@@ -516,22 +550,21 @@ export default function VideoPlayable() {
       const scaleY = app.screen.height / videoElement.videoHeight;
       const scale = Math.min(scaleX, scaleY);
       videoSprite.scale.set(scale);
-      // Set video sprite to lowest zIndex so it remains behind all overlays and breakpoints
       videoSprite.zIndex = 0;
+      
+      // Clear any existing children and add the video sprite
       app.stage.removeChildren();
       app.stage.addChild(videoSprite);
       videoSpriteRef.current = videoSprite;
-
-      // IMPORTANT: assign the video element so that videoRef is not null.
+      
+      // IMPORTANT: assign the video element so that videoRef is not null
       videoRef.current = videoElement;
-
+      
+      // Force the video to show a frame
+      videoElement.currentTime = 0.001;
+      
       setDuration(videoElement.duration * 1000);
       setCurrentTime(0);
-
-      requestAnimationFrame(() => {
-        videoElement.pause();
-        setIsPlaying(false);
-      });
     };
 
     return () => {
@@ -539,19 +572,13 @@ export default function VideoPlayable() {
         videoElement.pause();
         videoElement.removeAttribute("src");
         videoElement.load();
+        URL.revokeObjectURL(videoUrl);
       }
       if (pixiAppRef.current) {
-        if (
-          pixiContainerRef.current &&
-          pixiAppRef.current.view instanceof HTMLCanvasElement
-        ) {
+        if (pixiContainerRef.current && pixiAppRef.current.view instanceof HTMLCanvasElement) {
           pixiContainerRef.current.removeChild(pixiAppRef.current.view);
         }
-        pixiAppRef.current.destroy(true, {
-          children: true,
-          texture: true,
-          baseTexture: true,
-        });
+        pixiAppRef.current.destroy(true, { children: true, texture: true, baseTexture: true });
         pixiAppRef.current = null;
       }
       if (videoSpriteRef.current) {
@@ -1274,15 +1301,23 @@ export default function VideoPlayable() {
     const modification = videoPlayable.modifications[tab.modificationIndex];
 
     // Set the time based on modification type
-    const time =
-      modification?.type === ModificationType?.OVERLAY
-        ? modification.startTime
-        : modification.time;
+    const time = modification?.type === ModificationType.OVERLAY
+      ? modification.startTime
+      : modification?.time || 0;
 
     // Update timeline position
     setCurrentTime(time);
-    if (videoRef.current) {
-      videoRef.current.currentTime = time / 1000;
+    
+    // Ensure video is visible and showing the correct frame
+    if (videoRef.current && videoSpriteRef.current) {
+      videoSpriteRef.current.visible = true;
+      videoRef.current.currentTime = time / 1000 || 0.001;
+      
+      // Make sure video sprite is in the stage
+      if (pixiAppRef.current && !pixiAppRef.current.stage.children.includes(videoSpriteRef.current)) {
+        pixiAppRef.current.stage.addChildAt(videoSpriteRef.current, 0);
+        pixiAppRef.current.stage.sortChildren();
+      }
     }
 
     // If switching to a break modification, set its index
@@ -1486,16 +1521,51 @@ export default function VideoPlayable() {
     // Helper function to handle different types of animations
     const handleAnimation = (sprite, spriteData, type, anim) => {
       const currentTime = Date.now();
-      const progress = (currentTime % anim.duration) / anim.duration;
-      let easedProgress =
-        anim.easing !== "linear"
-          ? getEasedProgress(progress, anim.easing)
-          : progress;
+      
+      // Check if animation should stop based on repeat value
+      if (anim.repeat !== -1) { // -1 means infinite repeats
+        // Calculate how many times the animation has completed
+        const elapsedTime = currentTime - (sprite.__animationStartTime?.[type] || currentTime);
+        const completedCycles = Math.floor(elapsedTime / anim.duration);
+        
+        // If we've completed all repeats, set to final state and stop
+        if (completedCycles > anim.repeat) {
+          // Set to final state based on animation type
+          switch (type) {
+            case "position":
+              sprite.position.x = (anim.destination?.x || spriteData.position.x) * app.screen.width;
+              sprite.position.y = (anim.destination?.y || spriteData.position.y) * app.screen.height;
+              break;
+            case "scale":
+              sprite.scale.x = anim.destination.w;
+              sprite.scale.y = anim.destination.h;
+              break;
+            case "transparency":
+              sprite.alpha = anim.destination;
+              break;
+          }
+          return; // Skip further animation processing
+        }
+      }
+      
+      // Store animation start time if not already set
+      if (!sprite.__animationStartTime) {
+        sprite.__animationStartTime = {};
+      }
+      if (!sprite.__animationStartTime[type]) {
+        sprite.__animationStartTime[type] = currentTime;
+      }
+      
+      // Calculate progress within the current cycle
+      const cycleTime = currentTime % anim.duration;
+      const progress = cycleTime / anim.duration;
+      
+      let easedProgress = anim.easing !== "linear"
+        ? getEasedProgress(progress, anim.easing)
+        : progress;
 
       if (anim.yoyo) {
-        const cycle = Math.floor(
-          (currentTime % (anim.duration * 2)) / anim.duration
-        );
+        const cycle = Math.floor((currentTime % (anim.duration * 2)) / anim.duration);
         if (cycle === 1) easedProgress = 1 - easedProgress;
       }
 
@@ -1503,26 +1573,21 @@ export default function VideoPlayable() {
         case "position":
           const startX = spriteData.position.x * app.screen.width;
           const startY = spriteData.position.y * app.screen.height;
-          const endX =
-            (anim.destination?.x || spriteData.position.x) * app.screen.width;
-          const endY =
-            (anim.destination?.y || spriteData.position.y) * app.screen.height;
+          const endX = (anim.destination?.x || spriteData.position.x) * app.screen.width;
+          const endY = (anim.destination?.y || spriteData.position.y) * app.screen.height;
           sprite.position.x = startX + (endX - startX) * easedProgress;
           sprite.position.y = startY + (endY - startY) * easedProgress;
           break;
 
         case "scale":
           const startScale = spriteData.scale;
-          sprite.scale.x =
-            startScale + (anim.destination.w - startScale) * easedProgress;
-          sprite.scale.y =
-            startScale + (anim.destination.h - startScale) * easedProgress;
+          sprite.scale.x = startScale + (anim.destination.w - startScale) * easedProgress;
+          sprite.scale.y = startScale + (anim.destination.h - startScale) * easedProgress;
           break;
 
         case "transparency":
           const startAlpha = spriteData.transparency;
-          sprite.alpha =
-            startAlpha + (anim.destination - startAlpha) * easedProgress;
+          sprite.alpha = startAlpha + (anim.destination - startAlpha) * easedProgress;
           break;
       }
     };

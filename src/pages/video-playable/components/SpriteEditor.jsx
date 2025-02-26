@@ -210,6 +210,7 @@ const GeneralSpriteSettings = ({ sprite, handleNumberInput, onUpdate }) => {
           value={sprite.scale}
           onChange={(e) => handleNumberInput("scale", e.target.value)}
           className="bg-gray-700 rounded px-3 py-2 w-full"
+          min={0}
         />
       </div>
 
@@ -221,6 +222,7 @@ const GeneralSpriteSettings = ({ sprite, handleNumberInput, onUpdate }) => {
           value={sprite.rotation}
           onChange={(e) => handleNumberInput("rotation", e.target.value)}
           className="bg-gray-700 rounded px-3 py-2 w-full"
+          min={0}
         />
       </div>
 
@@ -441,6 +443,7 @@ const PositionAnimation = ({ sprite, handleNumberInput, onUpdate }) => {
                   });
                 }}
                 className="bg-gray-700 rounded px-3 py-2 w-full"
+                min={-1}
               />
             </div>
 
@@ -642,6 +645,7 @@ const ScaleAnimation = ({ sprite, handleNumberInput, onUpdate }) => {
                   });
                 }}
                 className="bg-gray-700 rounded px-3 py-2 w-full"
+                min={-1}
               />
             </div>
 
@@ -798,12 +802,13 @@ const TransparencyAnimation = ({ sprite, handleNumberInput, onUpdate }) => {
                       ...sprite.animation,
                       transparency: {
                         ...sprite.animation.transparency,
-                        repeat: parseInt(e.target.value) || -1,
+                        repeat: parseInt(e.target.value) || 0,
                       },
                     },
                   });
                 }}
                 className="bg-gray-700 rounded px-3 py-2 w-full"
+                min={-1}
               />
             </div>
 
