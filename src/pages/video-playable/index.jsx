@@ -14,8 +14,9 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 import * as PIXI from "pixi.js";
 import ModificationControls from "./components/ModificationControls";
 import { baseModificationState, initialState, ModificationType } from "./state";
-import { buildPlayableAd } from "./utils";
+import { buildPlayableAd, compressAllAssets } from "./utils";
 import ToastMessage from "../../components/ToastMessage";
+import AssetSizeDisplay from './components/AssetSizeDisplay';
 
 const timelineContainerStyle = {
   position: "absolute",
@@ -96,8 +97,6 @@ export default function VideoPlayable() {
   const [isDragging, setIsDragging] = useState(false);
   const [splitPosition, setSplitPosition] = useState(22);
   const [videoSource, setVideoSource] = useState(null);
-  const [iosUrl, setIosUrl] = useState("");
-  const [playstoreUrl, setPlaystoreUrl] = useState("");
   const [activeTab, setActiveTab] = useState({
     id: "general",
     type: "general",
@@ -879,9 +878,9 @@ export default function VideoPlayable() {
 
   useEffect(() => {
     return () => {
-      Object.values(spritesRef.current).forEach((typeContainer) => {
-        Object.values(typeContainer).forEach((parentContainer) => {
-          Object.values(parentContainer).forEach((sprite) => {
+      Object.values(spritesRef.current || {}).forEach((typeContainer) => {
+        Object.values(typeContainer || {}).forEach((parentContainer) => {
+          Object.values(parentContainer || {}).forEach((sprite) => {
             sprite?.destroy();
           });
         });
@@ -1032,6 +1031,33 @@ export default function VideoPlayable() {
     </div>
   );
 
+  const handleCompressAssets = async () => {
+    try {
+      setToastMessage({
+        show: true,
+        message: "Compressing assets...",
+        type: "info"
+      });
+      
+      const compressedPlayable = await compressAllAssets(videoPlayable);
+      
+      setVideoPlayable(compressedPlayable);
+      
+      setToastMessage({
+        show: true,
+        message: "Assets compressed successfully!",
+        type: "success"
+      });
+    } catch (error) {
+      console.error("Error compressing assets:", error);
+      setToastMessage({
+        show: true,
+        message: "Failed to compress assets. Please try again.",
+        type: "error"
+      });
+    }
+  };
+
   const renderTabContent = () => {
     const activeTabData = tabs.find((tab) => tab.id === activeTab.id);
     if (!activeTabData) return null;
@@ -1039,7 +1065,7 @@ export default function VideoPlayable() {
     switch (activeTabData.type) {
       case "general":
         return (
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto h-[calc(100vh-200px)]">
             <div>
               <label className="block text-white text-xs mb-1">
                 Playable Ad Name
@@ -1107,6 +1133,10 @@ export default function VideoPlayable() {
                 placeholder="Enter Play Store URL"
               />
             </div>
+            <AssetSizeDisplay 
+              videoPlayable={videoPlayable} 
+              onCompressAssets={handleCompressAssets} 
+            />
           </div>
         );
       case "break":
@@ -1245,7 +1275,7 @@ export default function VideoPlayable() {
 
     // Set the time based on modification type
     const time =
-      modification.type === ModificationType.OVERLAY
+      modification?.type === ModificationType?.OVERLAY
         ? modification.startTime
         : modification.time;
 
@@ -1502,16 +1532,18 @@ export default function VideoPlayable() {
   }, [activeBreakIndex, videoPlayable.modifications]);
 
   const renderBuildButton = () => (
-    <button
-      onClick={() => {
-        buildPlayableAd(videoPlayable);
-      }}
-      className="px-4 py-2 bg-[#b9ff66] text-black rounded-lg flex items-center gap-2 w-full"
-      disabled={!videoSource}
-    >
-      <Download className="w-4 h-4" />
-      Build Playable Ad
-    </button>
+    <>
+      <button
+        onClick={() => {
+          buildPlayableAd(videoPlayable);
+        }}
+        className="px-4 py-2 bg-[#b9ff66] text-black rounded-lg flex items-center gap-2 w-full"
+        disabled={!videoSource}
+      >
+        <Download className="w-4 h-4" />
+        Build Playable Ad
+      </button>
+    </>
   );
 
   const handleRemoveTab = (tabToRemove) => {

@@ -872,3 +872,227 @@ export const buildPlayableAd = async (videoPlayable) => {
     throw error;
   }
 };
+
+/**
+ * Utility functions for calculating asset sizes
+ */
+
+// Convert bytes to human-readable format
+export const formatBytes = (bytes, decimals = 2) => {
+  if (bytes === 0) return '0 B';
+  
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
+
+// Get file size from a Blob or File object
+export const getFileSize = (file) => {
+  if (!file) return 0;
+  return file.size || 0;
+};
+
+// Function to get the actual PIXI.js library size
+async function getPixiJsSize() {
+  try {
+    const response = await fetch('https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.2/pixi.min.js', { method: 'HEAD' });
+    const contentLength = response.headers.get('content-length');
+    return contentLength ? parseInt(contentLength, 10) : 512 * 1024; // fallback to 512KB
+  } catch (error) {
+    console.warn('Could not fetch PIXI.js size, using estimate', error);
+    return 512 * 1024; // fallback to 512KB
+  }
+}
+
+// Cache the library size to avoid repeated network requests
+let cachedLibrarySize = null;
+
+// Calculate total size of all assets in the playable ad
+export const calculateTotalSize = async (videoPlayable) => {
+  // Get library size (PIXI.js) - fetch once and cache
+  if (cachedLibrarySize === null) {
+    cachedLibrarySize = await getPixiJsSize();
+  }
+  const librarySize = cachedLibrarySize;
+
+  // Initialize result object
+  const result = {
+    library: librarySize,
+    video: 0,
+    images: 0,
+    audio: 0,
+    html: 15 * 1024, // Estimate for HTML template size (15KB)
+    total: librarySize,
+    assets: {
+      images: [],
+      audio: []
+    }
+  };
+
+  // Calculate video size with base64 overhead
+  if (videoPlayable.general?.videoSource) {
+    const videoSize = videoPlayable.general.videoSource.size || 0;
+    // Add ~33% for base64 encoding overhead
+    const videoSizeWithOverhead = Math.ceil(videoSize * 1.33);
+    result.video = videoSizeWithOverhead;
+    result.total += videoSizeWithOverhead;
+  }
+
+  // Process all modifications with base64 overhead
+  if (videoPlayable.modifications) {
+    videoPlayable.modifications.forEach(mod => {
+      // Process sprites (images)
+      if (mod.sprites && mod.sprites.length > 0) {
+        mod.sprites.forEach(sprite => {
+          if (sprite.file) {
+            const spriteSize = sprite.file.size || 0;
+            // Add ~33% for base64 encoding overhead
+            const spriteSizeWithOverhead = Math.ceil(spriteSize * 1.33);
+            result.images += spriteSizeWithOverhead;
+            result.total += spriteSizeWithOverhead;
+            
+            // Add to detailed assets list
+            result.assets.images.push({
+              id: sprite.id,
+              name: sprite.file.name || `image-${sprite.id.toString().slice(-5)}.${sprite.isGif ? 'gif' : 'png'}`,
+              size: spriteSizeWithOverhead
+            });
+          }
+        });
+      }
+      
+      // Process background music (audio)
+      if (mod.backgroundMusic?.file) {
+        const audioSize = mod.backgroundMusic.file.size || 0;
+        // Add ~33% for base64 encoding overhead
+        const audioSizeWithOverhead = Math.ceil(audioSize * 1.33);
+        result.audio += audioSizeWithOverhead;
+        result.total += audioSizeWithOverhead;
+        
+        // Add to detailed assets list
+        result.assets.audio.push({
+          id: mod.id,
+          name: mod.backgroundMusic.file.name || `audio-${mod.id.toString().slice(-5)}.mp3`,
+          size: audioSizeWithOverhead
+        });
+      }
+    });
+  }
+
+  // Add HTML template size to total
+  result.total += result.html;
+  
+  // Add ZIP overhead estimate (headers, structure) - approximately 2-5%
+  const zipOverhead = Math.ceil(result.total * 0.05);
+  result.zipOverhead = zipOverhead;
+  result.total += zipOverhead;
+
+  return result;
+};
+
+/**
+ * Utility functions for compressing assets
+ */
+
+// Simple image compression using canvas
+export const compressImage = async (imageFile, quality = 0.7, maxWidth = 1024) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Calculate new dimensions while maintaining aspect ratio
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+      
+      // Create canvas and draw image
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Convert to blob with compression
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Canvas to Blob conversion failed'));
+            return;
+          }
+          
+          // Create a new file from the blob
+          const compressedFile = new File([blob], imageFile.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now()
+          });
+          
+          resolve(compressedFile);
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+    
+    img.onerror = () => {
+      reject(new Error('Failed to load image for compression'));
+    };
+    
+    // Load image from file
+    img.src = URL.createObjectURL(imageFile);
+  });
+};
+
+// Compress all assets in the playable ad
+export const compressAllAssets = async (videoPlayable, options = { imageQuality: 0.7, maxWidth: 1024 }) => {
+  // Create a deep copy of the videoPlayable object
+  const compressedPlayable = JSON.parse(JSON.stringify(videoPlayable));
+  
+  // We need to manually copy the File/Blob objects since they don't stringify
+  if (videoPlayable.general?.videoSource) {
+    compressedPlayable.general.videoSource = videoPlayable.general.videoSource;
+  }
+  
+  // Process all modifications
+  for (let i = 0; i < videoPlayable.modifications.length; i++) {
+    const mod = videoPlayable.modifications[i];
+    
+    // Process sprites (images)
+    if (mod.sprites && mod.sprites.length > 0) {
+      for (let j = 0; j < mod.sprites.length; j++) {
+        const sprite = mod.sprites[j];
+        if (sprite.file) {
+          try {
+            // Compress the image
+            const compressedImage = await compressImage(
+              sprite.file,
+              options.imageQuality,
+              options.maxWidth
+            );
+            
+            // Update the sprite with the compressed image
+            compressedPlayable.modifications[i].sprites[j].file = compressedImage;
+          } catch (error) {
+            console.error(`Failed to compress image for sprite ${sprite.id}:`, error);
+            compressedPlayable.modifications[i].sprites[j].file = sprite.file;
+          }
+        }
+      }
+    }
+    
+    // Process background music (audio)
+    // Note: Audio compression is more complex and might require a server-side solution
+    // For now, we'll just copy the original audio files
+    if (mod.backgroundMusic?.file) {
+      compressedPlayable.modifications[i].backgroundMusic.file = mod.backgroundMusic.file;
+    }
+  }
+  
+  return compressedPlayable;
+};
