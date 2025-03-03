@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import api from '../../../api';
 
 const blobToBase64 = (blob) => {
   return new Promise((resolve, reject) => {
@@ -963,11 +964,13 @@ let cachedLibrarySize = null;
 
 // Calculate total size of all assets in the playable ad
 export const calculateTotalSize = async (videoPlayable) => {
-  // Get library size (PIXI.js) - fetch once and cache
-  if (cachedLibrarySize === null) {
-    cachedLibrarySize = await getPixiJsSize();
-  }
-  const librarySize = cachedLibrarySize;
+  // Hardcode library size to 512KB instead of fetching
+  // // Get library size (PIXI.js) - fetch once and cache
+  // if (cachedLibrarySize === null) {
+  //   cachedLibrarySize = await getPixiJsSize();
+  // }
+  // const librarySize = cachedLibrarySize;
+  const librarySize = 512 * 1024;
 
   // Initialize result object
   const result = {
@@ -992,7 +995,7 @@ export const calculateTotalSize = async (videoPlayable) => {
     result.total += videoSizeWithOverhead;
   }
 
-  // Process all modifications with base64 overhead
+  // Process all modifications without base64 overhead
   if (videoPlayable.modifications) {
     videoPlayable.modifications.forEach(mod => {
       // Process sprites (images)
@@ -1000,16 +1003,16 @@ export const calculateTotalSize = async (videoPlayable) => {
         mod.sprites.forEach(sprite => {
           if (sprite.file) {
             const spriteSize = sprite.file.size || 0;
-            // Add ~33% for base64 encoding overhead
-            const spriteSizeWithOverhead = Math.ceil(spriteSize * 1.33);
-            result.images += spriteSizeWithOverhead;
-            result.total += spriteSizeWithOverhead;
+            result.images += spriteSize;
+            result.total += spriteSize;
             
             // Add to detailed assets list
             result.assets.images.push({
               id: sprite.id,
               name: sprite.file.name || `image-${sprite.id.toString().slice(-5)}.${sprite.isGif ? 'gif' : 'png'}`,
-              size: spriteSizeWithOverhead
+              size: spriteSize,
+              imageUrl: sprite.imageUrl,
+              file_type: sprite.file.type
             });
           }
         });
@@ -1018,16 +1021,14 @@ export const calculateTotalSize = async (videoPlayable) => {
       // Process background music (audio)
       if (mod.backgroundMusic?.file) {
         const audioSize = mod.backgroundMusic.file.size || 0;
-        // Add ~33% for base64 encoding overhead
-        const audioSizeWithOverhead = Math.ceil(audioSize * 1.33);
-        result.audio += audioSizeWithOverhead;
-        result.total += audioSizeWithOverhead;
+        result.audio += audioSize;
+        result.total += audioSize;
         
         // Add to detailed assets list
         result.assets.audio.push({
           id: mod.id,
           name: mod.backgroundMusic.file.name || `audio-${mod.id.toString().slice(-5)}.mp3`,
-          size: audioSizeWithOverhead
+          size: audioSize
         });
       }
     });
@@ -1099,8 +1100,49 @@ export const compressImage = async (imageFile, quality = 0.7, maxWidth = 1024) =
   });
 };
 
-// Compress all assets in the playable ad
-export const compressAllAssets = async (videoPlayable, options = { imageQuality: 0.7, maxWidth: 1024 }) => {
+// Add this function to fetch and compress an image via your backend API
+export const compressImageWithTinyPNG = async (imageFile) => {
+  try {
+    // Create FormData to send the file
+    const formData = new FormData();
+    formData.append('file', imageFile);
+    
+    // Send the file to your backend compression endpoint
+    const response = await api.post('v1/assetGenerator/compress-image', formData);
+    console.log(response,'result')
+    if (response.status !== 200) {
+      throw new Error(`Image compression failed: ${response.statusText}`);
+    }
+
+    const result = response.data;
+    
+    // Convert the base64 string back to a File object
+    const binaryString = atob(result.data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    // Create a new File object with the same name as the original
+    const compressedFile = new File([bytes], imageFile.name, {
+      type: imageFile.type,
+      lastModified: Date.now()
+    });
+    
+    return {
+      file: compressedFile,
+      originalSize: result.initialSize,
+      compressedSize: result.compressedSize,
+      reductionPercentage: result.reductionPercentage
+    };
+  } catch (error) {
+    console.error('TinyPNG compression failed:', error);
+    throw error;
+  }
+};
+
+// Update the compressAllAssets function to use the TinyPNG API
+export const compressAllAssets = async (videoPlayable, selectedAssets) => {
   // Create a deep copy of the videoPlayable object
   const compressedPlayable = JSON.parse(JSON.stringify(videoPlayable));
   
@@ -1108,6 +1150,10 @@ export const compressAllAssets = async (videoPlayable, options = { imageQuality:
   if (videoPlayable.general?.videoSource) {
     compressedPlayable.general.videoSource = videoPlayable.general.videoSource;
   }
+  
+  // Get selected asset IDs for quick lookup
+  const selectedImageIds = new Set(selectedAssets.images.map(img => img.id));
+  const selectedAudioIds = new Set(selectedAssets.audio.map(audio => audio.id));
   
   // Process all modifications
   for (let i = 0; i < videoPlayable.modifications.length; i++) {
@@ -1117,29 +1163,38 @@ export const compressAllAssets = async (videoPlayable, options = { imageQuality:
     if (mod.sprites && mod.sprites.length > 0) {
       for (let j = 0; j < mod.sprites.length; j++) {
         const sprite = mod.sprites[j];
-        if (sprite.file) {
+        
+        // Check if this sprite was selected for compression
+        if (sprite.file && selectedImageIds.has(sprite.id) && sprite.file.type !== 'image/gif') {
           try {
-            // Compress the image
-            const compressedImage = await compressImage(
-              sprite.file,
-              options.imageQuality,
-              options.maxWidth
-            );
+            // Compress the image using TinyPNG
+            const compressionResult = await compressImageWithTinyPNG(sprite.file);
             
             // Update the sprite with the compressed image
-            compressedPlayable.modifications[i].sprites[j].file = compressedImage;
+            compressedPlayable.modifications[i].sprites[j].file = compressionResult.file;
+            
+            // Store compression stats
+            compressedPlayable.modifications[i].sprites[j].compressionStats = {
+              originalSize: compressionResult.originalSize,
+              compressedSize: compressionResult.compressedSize,
+              reductionPercentage: compressionResult.reductionPercentage
+            };
           } catch (error) {
             console.error(`Failed to compress image for sprite ${sprite.id}:`, error);
+            // Keep the original file on error
             compressedPlayable.modifications[i].sprites[j].file = sprite.file;
           }
+        } else {
+          // Copy the original file for non-selected sprites
+          compressedPlayable.modifications[i].sprites[j].file = sprite.file;
         }
       }
     }
     
     // Process background music (audio)
-    // Note: Audio compression is more complex and might require a server-side solution
-    // For now, we'll just copy the original audio files
     if (mod.backgroundMusic?.file) {
+      // Currently we just copy audio files as-is since audio compression is more complex
+      // If selected for compression, you could add audio compression logic here
       compressedPlayable.modifications[i].backgroundMusic.file = mod.backgroundMusic.file;
     }
   }

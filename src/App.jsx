@@ -311,7 +311,7 @@ function App() {
             <Route path="/ai-chat/:studio_slug" element={<PrivateRoute><RagChat /></PrivateRoute>} />
             <Route path="/translate" element={<PrivateRoute><Translate /></PrivateRoute>} />
             <Route path="/playground" element={<Playground />} />
-            <Route path="/video-editor" element={<VideoPlayable />} />
+            <Route path="/video-editor" element={<PrivateRoute><VideoPlayable /></PrivateRoute>} />
             <Route
               path="*"
               element={<PageNotFound />}

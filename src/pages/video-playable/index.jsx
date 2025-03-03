@@ -1162,7 +1162,8 @@ export default function VideoPlayable() {
             </div>
             <AssetSizeDisplay 
               videoPlayable={videoPlayable} 
-              onCompressAssets={handleCompressAssets} 
+              setToastMessage={setToastMessage}
+              setVideoPlayable={setVideoPlayable}
             />
           </div>
         );
