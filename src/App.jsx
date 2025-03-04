@@ -49,6 +49,7 @@ import Playground from "./pages/PlayablePlayground/Playground";
 import MhmPlayable from "./pages/HTML5Games/MhmPlayable";
 // import CreativeAnalyser from "./components/CreativeAnalyser";
 import { AssetGenerator } from "./pages/AssetGenerator";
+import DataVisualization from "./pages/DataVisualization";
 
 
 function App() {
@@ -81,11 +82,13 @@ function App() {
       console.log(err, "err");
     }
   };
+
   useEffect(() => {
     if (isAuthenticated()) {
       getStudioData();
     }
   }, []);
+
   return (
     <div className=" bg-[#f6f6f7] h-[calc(100vh-3.5rem)]">
       <>
@@ -314,6 +317,7 @@ function App() {
             <Route path="/playground" element={<Playground />} />
             {/* <Route path="/creativeAnalyser" element={<PrivateRoute><CreativeAnalyser/></PrivateRoute>} /> */}
             <Route path ="/assetGenerator" element={<PrivateRoute><AssetGenerator/></PrivateRoute>}/>
+            <Route path="/data-visualization" element={<PrivateRoute><DataVisualization /></PrivateRoute>}/>  
             <Route
               path="*"
               element={<PageNotFound />}

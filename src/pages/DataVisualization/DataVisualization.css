@@ -1,0 +1,1391 @@
+/* Modern dashboard styling */
+.viz-page {
+  background-color: #13131f;
+  color: #f8f9fa;
+  min-height: 100vh;
+  padding: 1rem;
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+/* Header */
+.viz-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.viz-page-header h1 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #4dabf7;
+  margin: 0;
+}
+
+/* Action buttons */
+.viz-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  background-color: rgba(30, 30, 46, 0.8);
+  color: #f8f9fa;
+  border: none;
+  border-radius: 4px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.action-btn:hover {
+  background-color: rgba(41, 41, 58, 0.9);
+}
+
+.action-btn svg {
+  font-size: 0.9rem;
+}
+
+/* Dashboard grid layout */
+.dashboard-container {
+  background-color: #13131f;
+  border-radius: 8px;
+  width: 100%;
+  height: calc(100vh - 100px);
+  overflow: hidden;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1rem;
+  height: 100%;
+  padding: 0.5rem;
+}
+
+/* Chart card styling */
+.chart-card {
+  background: rgba(24, 24, 37, 0.7);
+  border-radius: 8px;
+  padding: 20px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(5px);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.chart-card:first-child {
+  grid-column: span 2;
+}
+
+.chart-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* D3 Chart Styles */
+.chart-title {
+  font-size: 15px;
+  font-weight: 600;
+  fill: rgba(255, 255, 255, 0.9);
+}
+
+.chart-subtitle {
+  font-size: 11px;
+  font-weight: 400;
+  fill: rgba(255, 255, 255, 0.6);
+}
+
+.axis-text {
+  fill: #adb5bd;
+  font-size: 10px;
+}
+
+.bar {
+  fill: #4dabf7;
+  transition: stroke 0.2s, filter 0.2s;
+  stroke-linejoin: round;
+}
+
+.bar-highlight {
+  fill: #74c0fc;
+}
+
+.pie-slice {
+  transition: opacity 0.2s, stroke 0.2s;
+}
+
+.pie-label {
+  fill: #fff;
+  font-size: 10px;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+/* Tooltip */
+#tooltip {
+  position: absolute;
+  padding: 8px 12px;
+  background: rgba(33, 33, 45, 0.9);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 1000;
+  transition: opacity 0.2s;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tooltip-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4dabf7;
+}
+
+.tooltip-label {
+  font-size: 12px;
+  margin: 4px 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.tooltip-count {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Loading spinner */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - 120px);
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(77, 171, 247, 0.1);
+  border-radius: 50%;
+  border-top-color: #4dabf7;
+  animation: spin 0.8s ease-in-out infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error styling */
+.error-container {
+  background-color: rgba(255, 107, 107, 0.1);
+  border-left: 3px solid #ff6b6b;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border-radius: 0 4px 4px 0;
+}
+
+.error-message {
+  margin: 0;
+  color: #ff6b6b;
+  font-size: 0.85rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  
+  .chart-card:first-child {
+    grid-column: span 1;
+  }
+  
+  .chart-card {
+    min-height: 300px;
+  }
+}
+
+/* Professional dashboard styling */
+.viz-page {
+  background-color: #13131f;
+  color: #f8f9fa;
+  min-height: 100vh;
+  width: 100%;
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Header */
+.viz-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background-color: rgba(26, 26, 46, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.viz-page-header h1 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #f8f9fa;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+/* Action buttons */
+.viz-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.action-btn {
+  background-color: rgba(30, 30, 46, 0.8);
+  color: #f8f9fa;
+  border: none;
+  border-radius: 4px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:hover {
+  background-color: rgba(41, 41, 58, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn:active {
+  transform: translateY(0);
+}
+
+.action-btn svg {
+  font-size: 0.9rem;
+}
+
+/* Dashboard grid layout */
+.dashboard-container {
+  padding: 1rem;
+  height: calc(100vh - 80px);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 1fr 1fr;
+  gap: 1rem;
+  height: 100%;
+}
+
+.chart-card {
+  background-color: rgba(24, 24, 37, 0.7);
+  border-radius: 8px;
+  padding: 1rem;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  backdrop-filter: blur(5px);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.chart-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.primary-chart {
+  grid-column: span 2;
+}
+
+.chart-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* D3 Chart Styles */
+.chart-title {
+  font-size: 15px;
+  font-weight: 600;
+  fill: rgba(255, 255, 255, 0.9);
+}
+
+.chart-subtitle {
+  font-size: 11px;
+  font-weight: 400;
+  fill: rgba(255, 255, 255, 0.6);
+}
+
+.x-axis text, .y-axis text {
+  fill: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+}
+
+.x-axis line, .y-axis line, 
+.x-axis path, .y-axis path {
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1px;
+}
+
+.bar {
+  fill: #4dabf7;
+  transition: stroke 0.2s, filter 0.2s;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.2));
+}
+
+.bar:hover {
+  fill: #74c0fc;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}
+
+/* Pie chart */
+.pie-slice {
+  transition: all 0.3s;
+  stroke: #13131f;
+  stroke-width: 1px;
+}
+
+.pie-slice:hover {
+  opacity: 0.85;
+  transform: scale(1.03);
+}
+
+.pie-label {
+  fill: rgba(255, 255, 255, 0.9);
+  font-size: 10px;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.donut-center-text {
+  font-size: 11px;
+  fill: rgba(255, 255, 255, 0.7);
+}
+
+.donut-center-value {
+  fill: #fff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Line chart */
+.line {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: all 0.3s;
+}
+
+.area {
+  transition: opacity 0.3s;
+}
+
+.data-point {
+  transition: all 0.3s;
+  stroke: #13131f;
+  stroke-width: 1px;
+}
+
+.legend-text {
+  fill: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+/* Fancy Tooltip */
+#tooltip {
+  position: absolute;
+  padding: 8px 12px;
+  background: rgba(33, 33, 45, 0.9);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 1000;
+  transition: opacity 0.2s;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tooltip-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4dabf7;
+}
+
+.tooltip-label {
+  font-size: 12px;
+  margin: 4px 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.tooltip-count {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Loading animation */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 100px);
+}
+
+.loading-animation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.loading-animation p {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.lds-ring {
+  display: inline-block;
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.lds-ring div {
+  box-sizing: border-box;
+  display: block;
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  margin: 6px;
+  border: 3px solid #4dabf7;
+  border-radius: 50%;
+  animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  border-color: #4dabf7 transparent transparent transparent;
+}
+
+.lds-ring div:nth-child(1) {
+  animation-delay: -0.45s;
+}
+
+.lds-ring div:nth-child(2) {
+  animation-delay: -0.3s;
+}
+
+.lds-ring div:nth-child(3) {
+  animation-delay: -0.15s;
+}
+
+@keyframes lds-ring {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error styling */
+.error-container {
+  background-color: rgba(255, 107, 107, 0.1);
+  border-left: 3px solid #ff6b6b;
+  padding: 0.75rem 1rem;
+  margin: 1rem;
+  border-radius: 0 4px 4px 0;
+  backdrop-filter: blur(5px);
+}
+
+.error-message {
+  margin: 0;
+  color: #ff6b6b;
+  font-size: 0.85rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Data quality indicator */
+.data-quality {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.data-quality-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #4dabf7;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .primary-chart {
+    grid-column: 1;
+  }
+  
+  .chart-card {
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 640px) {
+  .viz-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .dashboard-container {
+    padding: 0.5rem;
+    height: auto;
+  }
+  
+  .chart-card {
+    min-height: 250px;
+  }
+  
+  .viz-actions {
+    width: 100%;
+  }
+}
+
+/* Glass effect for modern look */
+.glass-card {
+  background: linear-gradient(135deg, rgba(24, 24, 37, 0.6), rgba(30, 30, 50, 0.4));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Enhanced Refresh Button Styles */
+.refresh-btn {
+  position: relative;
+  transition: all 0.3s;
+  overflow: hidden;
+}
+
+.refresh-btn:after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0);
+  transition: background 0.2s;
+}
+
+.refresh-btn:active:not(:disabled):after {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.refresh-btn.refreshing {
+  background-color: rgba(41, 41, 58, 0.7);
+  cursor: default;
+}
+
+.refresh-icon {
+  transition: transform 0.3s ease;
+}
+
+.refresh-btn:hover:not(:disabled) .refresh-icon {
+  transform: rotate(30deg);
+}
+
+.refresh-btn:active:not(:disabled) .refresh-icon {
+  transform: rotate(180deg);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Refresh spinner */
+.refresh-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: refresh-spin 0.9s ease-in-out infinite;
+  margin-right: 0.2rem;
+  margin-left: -2px;
+}
+
+@keyframes refresh-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Chart transition animations */
+.chart-container svg {
+  transition: opacity 0.3s ease;
+}
+
+/* Enhanced Chart Title Styles */
+.chart-title-container {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 5;
+}
+
+.chart-title-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.chart-title-indicator {
+  width: 3px;
+  height: 16px;
+  background: linear-gradient(to bottom, #4dabf7, #74c0fc);
+  margin-right: 8px;
+  border-radius: 2px;
+}
+
+.chart-title {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  letter-spacing: 0.3px !important;
+  fill: rgba(255, 255, 255, 0.9) !important;
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+.chart-subtitle {
+  font-size: 11px !important;
+  opacity: 0.6;
+  margin-top: 2px;
+  font-weight: 400 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  fill: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Chart stats summary */
+.chart-stats {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+}
+
+.chart-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.chart-stat-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4dabf7;
+}
+
+.chart-stat-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: -2px;
+}
+
+/* SVG-specific title styling improvements */
+text.chart-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+text.chart-subtitle {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* Ensure chart titles are always on top */
+.title-group {
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Ensure chart SVGs have proper stacking context */
+.chart-container svg {
+  overflow: visible !important;
+}
+
+/* Make pie charts leave room for title */
+.chart-card:nth-child(2) .chart-container {
+  padding-top: 10px;
+}
+
+/* Ensure crisp rendering for SVG elements */
+.chart-container svg {
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+}
+
+/* Smooth tooltip appearance */
+#tooltip {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}
+
+/* Better pie chart rendering */
+.pie-slice {
+  vector-effect: non-scaling-stroke;
+}
+
+/* Pie chart legend styling */
+.legend-title {
+  font-size: 12px;
+  font-weight: 600;
+  fill: rgba(255, 255, 255, 0.8);
+}
+
+.legend-text {
+  font-size: 11px;
+  fill: rgba(255, 255, 255, 0.85);
+  font-weight: 400;
+}
+
+.legend-percent {
+  font-size: 10px;
+  fill: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.legend-others {
+  font-size: 10px;
+  fill: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+.legend-item {
+  transition: opacity 0.2s;
+}
+
+/* Make sure we have enough space for the legend */
+.chart-card:nth-child(2) .chart-container {
+  padding-right: 0;
+  padding-top: 10px;
+  position: relative;
+}
+
+/* Make sure the legend doesn't extend beyond the container */
+.legend-group {
+  max-width: 45%;
+  overflow: visible;
+}
+
+/* Layout tweaks to ensure legend visibility */
+@media (max-width: 1280px) {
+  .legend-group {
+    transform: translate(30%, 20px) !important;
+  }
+}
+
+/* Horizontal legend styling */
+.legend-group-horizontal {
+  pointer-events: all;
+}
+
+.legend-item {
+  transition: opacity 0.2s;
+  cursor: pointer;
+}
+
+.legend-text {
+  font-size: 10px;
+  fill: rgba(255, 255, 255, 0.85);
+  font-weight: 400;
+}
+
+.legend-percent {
+  font-size: 11px;
+  fill: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  color: #4dabf7;
+}
+
+/* Make sure pie slices appear crisp */
+.pie-slice {
+  transition: stroke 0.2s, opacity 0.2s, filter 0.2s;
+}
+
+/* Increase pie chart container bottom padding */
+.chart-card:nth-child(2) .chart-container {
+  padding-bottom: 30px;
+}
+
+/* Remove any transform effects from hover that could cause blur */
+.pie-slice:hover {
+  transform: none !important;
+}
+
+/* Override any scaling transforms */
+[transform*="scale"] {
+  transform: none !important;
+}
+
+/* Optimized SVG rendering */
+svg {
+  shape-rendering: geometricPrecision;
+  text-rendering: optimizeLegibility;
+  image-rendering: optimizeQuality;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure pixel-perfect rendering */
+.pie-slice {
+  transform: none !important;
+  transition: opacity 0.2s, stroke 0.2s;
+  will-change: opacity;
+  image-rendering: -webkit-optimize-contrast;
+  backface-visibility: hidden;
+}
+
+/* Crisp text rendering */
+text {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Higher quality tooltips */
+#tooltip {
+  -webkit-font-smoothing: antialiased;
+  filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.3));
+}
+
+/* Remove any transform effects */
+g, path, circle, rect {
+  transform: translateZ(0);
+}
+
+/* Ensure chart container doesn't introduce blur */
+.chart-container {
+  -webkit-transform: translate3d(0,0,0);
+  transform: translate3d(0,0,0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Add these specific anti-blur CSS rules */
+
+/* Improve SVG rendering */
+.chart-card:nth-child(2) svg {
+  image-rendering: -webkit-optimize-contrast; /* For Chrome */
+  image-rendering: crisp-edges; /* General setting */
+}
+
+/* Make pie slices crisp */
+.pie-slice {
+  shape-rendering: geometricPrecision;
+}
+
+/* Sharpen text */
+.percentage, .legend-text, .legend-percent {
+  text-rendering: geometricPrecision;
+}
+
+/* Data Table Styles */
+.data-table-header {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.data-table-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.data-table-subtitle {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.data-table-total {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.data-table-total strong {
+  color: #4dabf7;
+  font-weight: 600;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.data-table thead {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.data-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.data-table td {
+  padding: 10px 12px;
+  color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.even-row {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.odd-row {
+  background-color: transparent;
+}
+
+.hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.rank-cell {
+  width: 50px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+
+.category-label {
+  display: flex;
+  align-items: center;
+}
+
+.color-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.value-cell {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.percentage-cell {
+  width: 120px;
+}
+
+.percentage-bar-container {
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.percentage-bar {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  height: 8px;
+  background: linear-gradient(to right, #4dabf7, #74c0fc);
+  border-radius: 4px;
+  opacity: 0.7;
+  z-index: 1;
+}
+
+.percentage-text {
+  position: relative;
+  z-index: 2;
+  margin-left: 8px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Make sure the table container has proper overflow */
+.chart-card:nth-child(1) .chart-container {
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+/* Make scrollbar less obtrusive */
+.chart-card:nth-child(1) .chart-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.chart-card:nth-child(1) .chart-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.chart-card:nth-child(1) .chart-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+/* Bar chart is now in second position */
+.chart-card:nth-child(2) .chart-container {
+  padding-bottom: 10px;
+  padding-top: 10px;
+}
+
+/* Bar chart specific fixes */
+.bar {
+  transition: stroke 0.2s, filter 0.2s;
+  stroke-linejoin: round;
+}
+
+.bar-label {
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5); /* Add text shadow for better contrast */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  pointer-events: none; /* Prevent label from interfering with bar hover */
+}
+
+.x-axis-text {
+  font-size: 10px;
+  fill: rgba(255, 255, 255, 0.7);
+}
+
+.bar-title-group {
+  pointer-events: none; /* Prevent title from interfering with chart interactions */
+}
+
+.chart-title {
+  font-size: 15px;
+  font-weight: 600;
+  fill: rgba(255, 255, 255, 0.9);
+}
+
+.chart-subtitle {
+  font-size: 11px;
+  font-weight: 400;
+  fill: rgba(255, 255, 255, 0.6);
+}
+
+/* Trend chart legend styling */
+.trend-legend {
+  background-color: rgba(19, 19, 31, 0.6);
+  border-radius: 6px;
+  padding: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(3px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.trend-legend .legend-item {
+  transition: opacity 0.2s;
+}
+
+.trend-legend .legend-item:hover {
+  opacity: 0.8;
+}
+
+/* Make sure the trend chart has proper dimensions */
+.chart-card:nth-child(3) .chart-container {
+  overflow: visible;
+  padding-right: 10px;
+}
+
+/* Error message styling */
+.error-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  text-align: center;
+  color: #f8f9fa;
+  background-color: rgba(255, 107, 107, 0.05);
+  border-radius: 12px;
+  margin: 40px auto;
+  max-width: 800px;
+}
+
+.error-message h3 {
+  color: #ff6b6b;
+  margin-bottom: 16px;
+  font-size: 20px;
+}
+
+.error-message p {
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.api-details {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  border-radius: 8px;
+  font-family: monospace;
+  text-align: left;
+  width: 100%;
+  overflow: auto;
+  max-height: 200px;
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+
+.retry-button {
+  background-color: #4dabf7;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.retry-button:hover {
+  background-color: #339af0;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  text-align: center;
+  color: #f8f9fa;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin: 40px auto;
+  max-width: 800px;
+}
+
+/* Loading state styling */
+.loading-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100%;
+  color: white;
+  font-size: 18px;
+  background-color: #13131f;
+}
+
+.visualization-loader {
+  display: none !important; /* Force hide any existing loader */
+}
+
+/* Updated layout structure */
+.visualization-container {
+  padding: 24px;
+  background: #1e1e2d;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  color: #fff;
+  margin: 0;
+}
+
+.content {
+  background: #1e1e2d;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.metrics-table {
+  background: #1e1e2d;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.metrics-table h2 {
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+/* Ant Design Dark Theme Overrides */
+.ant-table {
+  background: #1e1e2d !important;
+}
+
+.ant-table-thead > tr > th {
+  background: #2d2d3d !important;
+  color: #fff !important;
+  border-bottom: 1px solid #3f3f4d !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid #2d2d3d !important;
+  color: #fff !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: #2d2d3d !important;
+}
+
+.error-message {
+  color: #ff4d4f;
+  padding: 24px;
+  text-align: center;
+  font-size: 16px;
+}
+
+@media print {
+  .visualization-container {
+    background: white;
+  }
+  
+  .header button {
+    display: none;
+  }
+}
+
+/* Pagination Styles */
+.ant-pagination {
+  color: #fff !important;
+}
+
+.ant-pagination-item {
+  background-color: #2d2d3d !important;
+  border-color: #3f3f4d !important;
+}
+
+.ant-pagination-item a {
+  color: #fff !important;
+}
+
+.ant-pagination-item-active {
+  background-color: #1890ff !important;
+  border-color: #1890ff !important;
+}
+
+.ant-pagination-item-active a {
+  color: #fff !important;
+}
+
+.ant-pagination-prev button,
+.ant-pagination-next button {
+  background-color: #2d2d3d !important;
+  border-color: #3f3f4d !important;
+  color: #fff !important;
+}
+
+.ant-select-selector {
+  background-color: #2d2d3d !important;
+  border-color: #3f3f4d !important;
+  color: #fff !important;
+}
+
+.ant-select-arrow {
+  color: #fff !important;
+}
+
+.ant-pagination-options-quick-jumper {
+  color: #fff !important;
+}
+
+.ant-pagination-options-quick-jumper input {
+  background-color: #2d2d3d !important;
+  border-color: #3f3f4d !important;
+  color: #fff !important;
+}
+
+.ant-select-dropdown {
+  background-color: #2d2d3d !important;
+}
+
+.ant-select-item {
+  color: #fff !important;
+}
+
+.ant-select-item-option-selected {
+  background-color: #1890ff !important;
+}
+
+.ant-select-item-option-active {
+  background-color: #40a9ff33 !important;
+}
+
+/* Fixed column styles */
+.ant-table-cell-fix-left {
+  background-color: #1e1e2d !important;
+}
+
+.ant-table-cell-fix-left-last {
+  box-shadow: 6px 0 6px -4px rgba(0, 0, 0, 0.15) !important;
+}
+
+.chart-container {
+  background: #1e1e2d;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid #3f3f4d;
+} 
