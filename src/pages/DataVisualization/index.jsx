@@ -318,10 +318,10 @@ const DataVisualization = () => {
       ]);
 
       const [tableResult, chartResult, boosterResult, gemResult] = await Promise.all([
-        tableResponse.data,
-        chartResponse.data,
-        boosterResponse.data,
-        gemResponse.data
+        tableResponse.data.data,
+        chartResponse.data.data,
+        boosterResponse.data.data,
+        gemResponse.data.data
       ]);
 
       if (tableResult.data) setTableData(tableResult.data);
