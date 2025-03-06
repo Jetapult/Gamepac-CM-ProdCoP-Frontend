@@ -68,7 +68,7 @@ const TabContent = React.memo(({ currentTab, selectedGame, toastMessage, setToas
 });
 
 const AsoAssistant = () => {
-  const [currentTab, setCurrentTab] = useState("static-ads");
+  const [currentTab, setCurrentTab] = useState("app-icon");
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedTab, setSelectedTab] = useState("android");
   const [games, setGames] = useState([]);
