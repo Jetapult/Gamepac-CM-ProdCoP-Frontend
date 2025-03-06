@@ -48,6 +48,7 @@ import Translate from "./pages/Translate";
 import Playground from "./pages/PlayablePlayground/Playground";
 import MhmPlayable from "./pages/HTML5Games/MhmPlayable";
 import VideoPlayable from "./pages/video-playable";
+import AsoAssistant from "./pages/AsoAssistant";
 
 
 function App() {
@@ -312,6 +313,8 @@ function App() {
             <Route path="/translate" element={<PrivateRoute><Translate /></PrivateRoute>} />
             <Route path="/playground" element={<Playground />} />
             <Route path="/video-editor" element={<PrivateRoute><VideoPlayable /></PrivateRoute>} />
+            <Route path="/aso-assistant" element={<PrivateRoute><AsoAssistant /></PrivateRoute>} />
+            <Route path="/aso-assistant/:studio_slug" element={<PrivateRoute><AsoAssistant /></PrivateRoute>} />
             <Route
               path="*"
               element={<PageNotFound />}

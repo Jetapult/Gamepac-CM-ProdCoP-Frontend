@@ -416,23 +416,24 @@ class MainScene extends Phaser.Scene {
 export async function generatePlayableBuild(scenes, savedState) {
   try {
     const zip = new JSZip();
-    
+
     // Convert spritesheet to base64 with Parcel's data-url transformer
     const response = await fetch(savedState.spritesheet);
     const blob = await response.blob();
     const reader = new FileReader();
-    
+
     const base64Promise = new Promise((resolve) => {
       reader.onloadend = () => resolve(reader.result);
       reader.readAsDataURL(blob);
     });
 
     const base64Spritesheet = await base64Promise;
-    const orientation = savedState.orientation || 'landscape';
-    
-    const dimensions = orientation === 'landscape' 
-      ? { width: 1920, height: 1080 }
-      : { width: 1080, height: 1920 };
+    const orientation = savedState.orientation || "landscape";
+
+    const dimensions =
+      orientation === "landscape"
+        ? { width: 1920, height: 1080 }
+        : { width: 1080, height: 1920 };
 
     const html = `<!DOCTYPE html>
 <html>
@@ -440,7 +441,9 @@ export async function generatePlayableBuild(scenes, savedState) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
     <meta name="ad.orientation" content="${orientation}">
-    <meta name="ad.size" content="width=${dimensions.width},height=${dimensions.height}">
+    <meta name="ad.size" content="width=${dimensions.width},height=${
+      dimensions.height
+    }">
     <meta name="mraid.version" content="3.0">
     <title>Playable Ad</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
@@ -463,7 +466,7 @@ export async function generatePlayableBuild(scenes, savedState) {
 <body>
     <script>
         window.SPRITE_DATA = "${base64Spritesheet}";
-        window.BACKGROUND_AUDIO = "${savedState.backgroundMusic || ''}";
+        window.BACKGROUND_AUDIO = "${savedState.backgroundMusic || ""}";
         
         ${generateMainSceneCode(scenes, savedState)}
 
@@ -492,12 +495,12 @@ export async function generatePlayableBuild(scenes, savedState) {
 </html>`;
 
     zip.file("index.html", html);
-    const content = await zip.generateAsync({ 
+    const content = await zip.generateAsync({
       type: "blob",
       compression: "DEFLATE",
       compressionOptions: {
-        level: 9
-      }
+        level: 9,
+      },
     });
     saveAs(content, "playable-ad.zip");
   } catch (error) {

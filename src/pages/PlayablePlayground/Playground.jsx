@@ -7,6 +7,7 @@ import PreviewModal from "./components/PreviewModal";
 import TextPanel from "./components/TextPanel";
 import BuildButton from "./components/BuildButton";
 import OrientationSelector from "./components/OrientationSelector";
+import CopyCodeButton from "./components/CopyCodeButton";
 
 const STORAGE_KEY = "playgroundState";
 
@@ -2017,7 +2018,8 @@ const disappearTimer${counter} = this.time.delayedCall(${disappearConfig.delay},
 
       <div className="w-[300px] bg-[#252525] p-5 border-l border-[#333] h-full overflow-y-auto">
         {placedSprites.length > 0 && (
-          <div className="flex gap-2 mb-4">
+          <div className="flex flex-col gap-2 mb-4">
+            {/* <CopyCodeButton scenes={scenes}  savedState={loadFromLocalStorage()} /> */}
             {/* <button
               onClick={handleCopyAllCode}
               className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
