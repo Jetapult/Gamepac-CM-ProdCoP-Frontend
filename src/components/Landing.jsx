@@ -18,7 +18,6 @@ import landing5 from '../assets/landing5.png'
 import landing6 from '../assets/landing6.png'
 import smiley from '../assets/smiley.png'
 import Footer from "../components/Footer";
-import styles from "../components/landing.css"
 
 function Landing() {
   const [user, setUser] = useState("");

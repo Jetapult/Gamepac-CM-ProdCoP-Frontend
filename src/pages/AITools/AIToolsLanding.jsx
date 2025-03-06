@@ -7,10 +7,10 @@ import {
 const aiTools = [
   {
     id: 1,
-    name: "HTML5 playables",
-    description: "check out our HTML5 playables",
+    name: "ASO Assistant",
+    description: "ASO Assistant.",
     icon: null,
-    link: "/html5-games",
+    link: "/aso-assistant",
   },
   {
     id: 2,

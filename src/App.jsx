@@ -47,6 +47,8 @@ import HdwPlayable from "./pages/HTML5Games/HdwPlayable";
 import Translate from "./pages/Translate";
 import Playground from "./pages/PlayablePlayground/Playground";
 import MhmPlayable from "./pages/HTML5Games/MhmPlayable";
+import VideoPlayable from "./pages/video-playable";
+import AsoAssistant from "./pages/AsoAssistant";
 // import CreativeAnalyser from "./components/CreativeAnalyser";
 import { AssetGenerator } from "./pages/AssetGenerator";
 
@@ -87,7 +89,7 @@ function App() {
     }
   }, []);
   return (
-    <div className=" bg-[#f6f6f7] h-[calc(100vh-3.5rem)]">
+    <div className=" bg-[#f6f6f7]">
       <>
         <Router>
           <Navbar />
@@ -312,6 +314,9 @@ function App() {
             <Route path="/ai-chat/:studio_slug" element={<PrivateRoute><RagChat /></PrivateRoute>} />
             <Route path="/translate" element={<PrivateRoute><Translate /></PrivateRoute>} />
             <Route path="/playground" element={<Playground />} />
+            <Route path="/video-editor" element={<PrivateRoute><VideoPlayable /></PrivateRoute>} />
+            <Route path="/aso-assistant" element={<PrivateRoute><AsoAssistant /></PrivateRoute>} />
+            <Route path="/aso-assistant/:studio_slug" element={<PrivateRoute><AsoAssistant /></PrivateRoute>} />
             {/* <Route path="/creativeAnalyser" element={<PrivateRoute><CreativeAnalyser/></PrivateRoute>} /> */}
             <Route path ="/assetGenerator" element={<PrivateRoute><AssetGenerator/></PrivateRoute>}/>
             <Route

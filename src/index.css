@@ -212,6 +212,12 @@ textarea{
 .queryPacTheme{
   color: #000 !important;
 }
+canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  margin: auto;
+}
 @keyframes toggle-on {
   /*0%{  inset: var(--_switch-padding) 45% var(--_switch-padding) var(--_switch-padding);}*/
   50% {
