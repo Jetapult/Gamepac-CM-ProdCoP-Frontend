@@ -77,7 +77,7 @@ const AppIconGenerator = ({ game }) => {
       };
       await api.post(`/v1/aso-assistant/app-icons/new-concept`, payload);
 
-      await fetchGeneratedIcons();
+      await fetchAllIcons();
     } catch (error) {
       console.error("Error generating new concept:", error);
       setIsLoading({});
@@ -93,7 +93,7 @@ const AppIconGenerator = ({ game }) => {
       };
       await api.post(`/v1/aso-assistant/app-icons/redraw`, payload);
 
-      await fetchGeneratedIcons();
+      await fetchAllIcons();
     } catch (error) {
       console.error("Error redrawing icon:", error);
       setIsLoading({});
@@ -109,7 +109,7 @@ const AppIconGenerator = ({ game }) => {
       };
       await api.post(`/v1/aso-assistant/app-icons/export`, payload);
 
-      await fetchGeneratedIcons();
+      await fetchAllIcons();
     } catch (error) {
       console.error("Error exporting icon:", error);
       setIsLoading({});
@@ -162,6 +162,7 @@ const AppIconGenerator = ({ game }) => {
         newIndices[icon.id] = 0;
       });
       setCurrentSlideIndices(newIndices);
+      setSelectedStyle(null);
     } catch (error) {
       console.error("Error generating icon:", error);
       setIsGenerating(false);
