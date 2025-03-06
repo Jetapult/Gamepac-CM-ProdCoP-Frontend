@@ -827,7 +827,7 @@ const DataVisualization = () => {
     }
   }, [boosterData]);
 
-  // Update the gem chart useEffect to use gemData
+  // Update the gem chart useEffect
   useEffect(() => {
     if (gemData.length > 0 && gemChartRef.current) {
       if (gemChartInstance.current) {
@@ -863,11 +863,16 @@ const DataVisualization = () => {
           formatter: function(params) {
             let result = `<div style="font-weight: bold; margin-bottom: 8px;">Level ${params[0].name}</div>`;
             params
-              .sort((a, b) => b.value - a.value)
+              .filter(param => param.value != null) // Filter out undefined values
+              .sort((a, b) => (b.value || 0) - (a.value || 0))
               .forEach(param => {
-                const value = param.seriesName === 'Avg Gems Sunk Per User' 
-                  ? param.value.toFixed(1)
-                  : param.value.toFixed(1) + '%';
+                // Safely handle potentially undefined values
+                const value = param.value != null ? (
+                  param.seriesName === 'Avg Gems Sunk Per User' 
+                    ? Number(param.value).toFixed(1)
+                    : Number(param.value).toFixed(1) + '%'
+                ) : 'N/A';
+                
                 result += `
                   <div style="display: flex; justify-content: space-between; align-items: center; margin: 4px 0;">
                     <span style="color: ${param.color}; font-size: 14px;">
