@@ -15,24 +15,43 @@ const useTextSelection = (containerRef) => {
 
     if (selectedText && containerRef.current) {
       const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      const containerRect = containerRef.current.getBoundingClientRect();
       
-      const top = rect.top - containerRect.top + containerRef.current.scrollTop + VERTICAL_OFFSET;
-      const left = rect.left - containerRect.left;
-      const width = rect.width;
-      const height = rect.height;
+      // Check if the selection is within the PDF container
+      let node = range.commonAncestorContainer;
+      let isWithinContainer = false;
+      
+      while (node) {
+        if (node === containerRef.current) {
+          isWithinContainer = true;
+          break;
+        }
+        node = node.parentNode;
+      }
 
-      setSelectedText(selectedText);
-      setSelectionInfo({
-        text: selectedText,
-        top,
-        left,
-        width,
-        height,
-        buttonTop: top + height,
-        buttonLeft: left + width,
-      });
+      // Only process the selection if it's within the container
+      if (isWithinContainer) {
+        const rect = range.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+        
+        const top = rect.top - containerRect.top + containerRef.current.scrollTop + VERTICAL_OFFSET;
+        const left = rect.left - containerRect.left;
+        const width = rect.width;
+        const height = rect.height;
+
+        setSelectedText(selectedText);
+        setSelectionInfo({
+          text: selectedText,
+          top,
+          left,
+          width,
+          height,
+          buttonTop: top + height,
+          buttonLeft: left + width,
+        });
+      } else {
+        setSelectedText("");
+        setSelectionInfo(null);
+      }
     } else {
       setSelectedText("");
       setSelectionInfo(null);

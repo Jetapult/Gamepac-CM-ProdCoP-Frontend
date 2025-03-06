@@ -49,6 +49,8 @@ import Playground from "./pages/PlayablePlayground/Playground";
 import MhmPlayable from "./pages/HTML5Games/MhmPlayable";
 import VideoPlayable from "./pages/video-playable";
 import AsoAssistant from "./pages/AsoAssistant";
+// import CreativeAnalyser from "./components/CreativeAnalyser";
+import { AssetGenerator } from "./pages/AssetGenerator";
 
 
 function App() {
@@ -315,6 +317,8 @@ function App() {
             <Route path="/video-editor" element={<PrivateRoute><VideoPlayable /></PrivateRoute>} />
             <Route path="/aso-assistant" element={<PrivateRoute><AsoAssistant /></PrivateRoute>} />
             <Route path="/aso-assistant/:studio_slug" element={<PrivateRoute><AsoAssistant /></PrivateRoute>} />
+            {/* <Route path="/creativeAnalyser" element={<PrivateRoute><CreativeAnalyser/></PrivateRoute>} /> */}
+            <Route path ="/assetGenerator" element={<PrivateRoute><AssetGenerator/></PrivateRoute>}/>
             <Route
               path="*"
               element={<PageNotFound />}

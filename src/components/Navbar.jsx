@@ -333,7 +333,7 @@ function Navbar() {
                           setShowUserDropdown(false);
                         }}
                       >
-                        <p className="text-sm">Version {packageInfo.version}</p>
+                        <p className="text-sm">Updates</p>
                       </div>
                     </div>
                   )}

@@ -34,6 +34,20 @@ const aiTools = [
     icon: LanguageIcon,
     link: "/translate",
   },
+  {
+    id: 5,
+    name: "Creative Analyser",
+    description: "Analyse Creatives",
+    icon: LanguageIcon,
+    link: "/creativeAnalyser",
+  },
+  {
+    id: 6,
+    name: "Asset Generator",
+    description: "Generate UI assets for your mobile game, ASO and more.",
+    icon: SparklesIcon,
+    link: "/assetGenerator",
+  },
 ];
 
 const AIToolsLanding = () => {

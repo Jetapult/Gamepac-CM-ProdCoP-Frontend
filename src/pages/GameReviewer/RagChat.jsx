@@ -370,7 +370,7 @@ const RagChat = () => {
                 showPdf ? "justify-between px-4" : "justify-center px-3"
               }`}
             >
-              {showPdf && <h1 className="text-2xl font-bold">QueryPac</h1>}
+              {/* {showPdf && <h1 className="text-2xl font-bold">QueryPac</h1>} */}
               {showPdf && (
                 <label
                   htmlFor="filter"
