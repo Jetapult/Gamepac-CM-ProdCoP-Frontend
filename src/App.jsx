@@ -51,6 +51,7 @@ import VideoPlayable from "./pages/video-playable";
 import AsoAssistant from "./pages/AsoAssistant";
 // import CreativeAnalyser from "./components/CreativeAnalyser";
 import { AssetGenerator } from "./pages/AssetGenerator";
+import DataVisualization from "./pages/DataVisualization";
 
 
 function App() {
@@ -83,11 +84,13 @@ function App() {
       console.log(err, "err");
     }
   };
+
   useEffect(() => {
     if (isAuthenticated()) {
       getStudioData();
     }
   }, []);
+
   return (
     <div className=" bg-[#f6f6f7]">
       <>
@@ -319,6 +322,7 @@ function App() {
             <Route path="/aso-assistant/:studio_slug" element={<PrivateRoute><AsoAssistant /></PrivateRoute>} />
             {/* <Route path="/creativeAnalyser" element={<PrivateRoute><CreativeAnalyser/></PrivateRoute>} /> */}
             <Route path ="/assetGenerator" element={<PrivateRoute><AssetGenerator/></PrivateRoute>}/>
+            <Route path="/data-visualization" element={<PrivateRoute><DataVisualization /></PrivateRoute>}/>  
             <Route
               path="*"
               element={<PageNotFound />}

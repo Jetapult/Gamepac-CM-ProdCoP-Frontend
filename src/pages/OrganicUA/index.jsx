@@ -51,7 +51,7 @@ const OrganicUA = () => {
           studio_slug
             ? studios.filter((x) => x.slug === studio_slug)[0].id
             : userData.studio_id
-        }`
+        }?template_type=manual`
       );
       setTemplates(templatesResponse.data.data);
     } catch (err) {

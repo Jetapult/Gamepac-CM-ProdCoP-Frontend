@@ -43,6 +43,7 @@ const CreateReplyTemplatePopup = ({
       const requestbody = {
         review_type: replyTemplate.review_type,
         review_reply: replyTemplate.review_reply,
+        template_type: 'manual',
         studio_id: studio_slug
           ? studios.filter((x) => x.slug === studio_slug)[0].id
           : userData.studio_id,
@@ -68,6 +69,7 @@ const CreateReplyTemplatePopup = ({
               if (x.id === selectedTemplate.id) {
                 x.review_type = templatesResponse.data.data.review_type;
                 x.review_reply = templatesResponse.data.data.review_reply;
+                x.template_type = templatesResponse.data.data.template_type;
               }
               return prev;
             })
