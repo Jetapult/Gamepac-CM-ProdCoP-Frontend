@@ -1388,4 +1388,316 @@ g, path, circle, rect {
   padding: 20px;
   margin-bottom: 24px;
   border: 1px solid #3f3f4d;
+}
+
+/* Level Generator Styles */
+.level-generator-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 40px;
+}
+
+.level-generator-header {
+  margin-bottom: 24px;
+}
+
+.level-generator-title {
+  color: #fff !important;
+  margin-bottom: 8px !important;
+  background: linear-gradient(45deg, #1890ff, #52c41a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.level-generator-subtitle {
+  color: rgba(255, 255, 255, 0.65) !important;
+  font-size: 16px;
+}
+
+.level-generator-content {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 24px;
+  min-height: 600px;
+}
+
+.level-generator-card {
+  background-color: rgba(30, 30, 46, 0.8) !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  height: 100%;
+}
+
+.level-generator-card .ant-card-head {
+  background-color: rgba(24, 144, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.level-generator-card .ant-card-head-title {
+  color: #fff;
+  font-weight: 600;
+}
+
+.level-generator-form-container {
+  height: 100%;
+}
+
+.level-generator-result-container {
+  height: 100%;
+}
+
+.level-generator-result-container .ant-card {
+  height: 100%;
+}
+
+.level-generator-result-container .ant-card-body {
+  height: calc(100% - 58px); /* Subtract header height */
+  overflow: auto;
+}
+
+.generate-button {
+  background: linear-gradient(45deg, #1890ff, #52c41a) !important;
+  border: none !important;
+}
+
+.level-result {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  height: 100%;
+}
+
+.level-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.level-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.level-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.word-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.word-tag {
+  background-color: rgba(24, 144, 255, 0.2);
+  color: #1890ff;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-weight: 500;
+}
+
+.json-preview {
+  margin-top: 16px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 12px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.json-header {
+  margin-bottom: 8px;
+}
+
+.json-content {
+  margin: 0;
+  color: #52c41a;
+  font-size: 12px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  flex-grow: 1;
+  max-height: 200px;
+}
+
+.grid-visualization {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.grid-title {
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 16px;
+  font-size: 16px;
+}
+
+.word-grid {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 1;
+}
+
+.grid-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+  cursor: default;
+  user-select: none;
+  aspect-ratio: 1;
+}
+
+.word-cell {
+  background-color: rgba(24, 144, 255, 0.2);
+  color: #1890ff;
+}
+
+.word-cell:hover {
+  background-color: rgba(24, 144, 255, 0.4);
+  transform: scale(1.05);
+  z-index: 1;
+}
+
+.empty-state {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.empty-icon {
+  margin-bottom: 24px;
+  opacity: 0.5;
+}
+
+.level-generator-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100%;
+  min-height: 300px;
+}
+
+/* Custom Tabs Styling */
+.custom-tabs .ant-tabs-nav {
+  margin-bottom: 24px;
+}
+
+.custom-tabs .ant-tabs-tab {
+  background-color: rgba(30, 30, 46, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.65) !important;
+  border-radius: 4px 4px 0 0 !important;
+  padding: 8px 16px !important;
+  transition: all 0.3s ease;
+}
+
+.custom-tabs .ant-tabs-tab-active {
+  background: linear-gradient(45deg, rgba(24, 144, 255, 0.2), rgba(82, 196, 26, 0.2)) !important;
+  border-bottom-color: transparent !important;
+}
+
+.custom-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #fff !important;
+  font-weight: 500;
+}
+
+.custom-tabs .ant-tabs-ink-bar {
+  background: linear-gradient(45deg, #1890ff, #52c41a) !important;
+  height: 3px !important;
+}
+
+/* Fix for chart visibility */
+.chart-container {
+  width: 100%;
+  overflow: visible;
+}
+
+/* Make sure charts are visible when tab is active */
+.ant-tabs-tabpane-active .chart-container {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Form styling for dark theme */
+.ant-form-item-label > label {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.ant-input, 
+.ant-input-number-input, 
+.ant-select-selector {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+
+.ant-input:hover, 
+.ant-input-number:hover, 
+.ant-select:hover .ant-select-selector {
+  border-color: #1890ff !important;
+}
+
+.ant-input:focus, 
+.ant-input-number-focused, 
+.ant-select-focused .ant-select-selector {
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+.ant-select-dropdown {
+  background-color: #1e1e2d !important;
+}
+
+.ant-select-item {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background-color: rgba(24, 144, 255, 0.1) !important;
+}
+
+.ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background-color: rgba(24, 144, 255, 0.2) !important;
+  color: #fff !important;
+}
+
+/* Responsive styles */
+@media (max-width: 1024px) {
+  .level-generator-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .level-result {
+    grid-template-columns: 1fr;
+  }
+  
+  .json-content {
+    max-height: 150px;
+  }
 } 

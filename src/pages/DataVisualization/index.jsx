@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Table, Button, Select, Space } from 'antd';
-import { DownloadOutlined } from '@ant-design/icons';
+import { Table, Button, Select, Space, Tabs, Upload, Input, Form, Radio, Spin, message } from 'antd';
+import { DownloadOutlined, UploadOutlined, CopyOutlined } from '@ant-design/icons';
 import * as echarts from 'echarts';
 import './DataVisualization.css';
 import api from '../../api';
+import LevelGenerator from './LevelGenerator';
+
+const { TabPane } = Tabs;
 
 const DataVisualization = () => {
   const [tableData, setTableData] = useState([]);
@@ -12,6 +15,7 @@ const DataVisualization = () => {
   const [gemData, setGemData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('1');
   const barChartRef = useRef(null);
   const lineChartRef = useRef(null);
   const barChartInstance = useRef(null);
@@ -1051,12 +1055,30 @@ const DataVisualization = () => {
     };
   }, []);
 
+  // Handle tab change
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+    
+    // Resize charts when switching to the data visualization tab
+    if (key === '1') {
+      setTimeout(() => {
+        if (barChartInstance.current) barChartInstance.current.resize();
+        if (lineChartInstance.current) lineChartInstance.current.resize();
+        if (gemChartInstance.current) gemChartInstance.current.resize();
+      }, 100);
+    }
+  };
+
   return (
-    <div style={{ padding: '24px', background: '#1e1e2d', minHeight: '100vh' }}>
+    <div className="viz-page" style={{ padding: '24px', background: '#1e1e2d', minHeight: '100vh' }}>
       <div style={{ 
         marginBottom: '32px', 
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        paddingBottom: '16px'
+        paddingBottom: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center'
       }}>
         <h1 style={{ 
           color: '#fff',
@@ -1072,17 +1094,17 @@ const DataVisualization = () => {
             background: 'linear-gradient(45deg, #1890ff, #52c41a)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
+            backgroundClip: 'text', 
           }}>
-            Level Analytics
+            Automated Levels
           </span>
-          <span style={{
+          {/* <span style={{
             fontSize: '20px',
             color: 'rgba(255, 255, 255, 0.65)',
             fontWeight: '400'
           }}>
             Dashboard
-          </span>
+          </span> */}
         </h1>
         
         <div style={{
@@ -1115,60 +1137,72 @@ const DataVisualization = () => {
         </div>
       </div>
 
-      {error && (
-        <div style={{ color: 'red', marginBottom: '16px' }}>
-          Error: {error}
-        </div>
-      )}
+      <Tabs 
+        activeKey={activeTab} 
+        onChange={handleTabChange}
+        type="card"
+        className="custom-tabs"
+      >
+        <TabPane tab="Data Visualization" key="1">
+          {error && (
+            <div style={{ color: 'red', marginBottom: '16px' }}>
+              Error: {error}
+            </div>
+          )}
 
-      {/* Charts Section */}
-      <div className="chart-container" style={{ marginBottom: '32px' }}>
-        <div 
-          ref={barChartRef} 
-          style={{ 
-            height: '500px', 
-            width: '100%',
-            marginBottom: '24px'
-          }}
-        />
-        <div 
-          ref={lineChartRef} 
-          style={{ 
-            height: '500px', 
-            width: '100%',
-            marginBottom: '24px'
-          }}
-        />
-        <div 
-          ref={gemChartRef} 
-          style={{ 
-            height: '500px', 
-            width: '100%',
-            marginBottom: '24px'
-          }}
-        />
-      </div>
+          {/* Charts Section */}
+          <div className="chart-container" style={{ marginBottom: '32px' }}>
+            <div 
+              ref={barChartRef} 
+              style={{ 
+                height: '500px', 
+                width: '100%',
+                marginBottom: '24px'
+              }}
+            />
+            <div 
+              ref={lineChartRef} 
+              style={{ 
+                height: '500px', 
+                width: '100%',
+                marginBottom: '24px'
+              }}
+            />
+            <div 
+              ref={gemChartRef} 
+              style={{ 
+                height: '500px', 
+                width: '100%',
+                marginBottom: '24px'
+              }}
+            />
+          </div>
 
-      {/* Table Section */}
-      <div style={{ marginTop: '32px' }}>
-        <Table
-          dataSource={tableData}
-          columns={columns}
-          loading={loading}
-          pagination={{
-            defaultPageSize: 10,
-            showSizeChanger: true,
-            pageSizeOptions: ['10', '20', '50', '100']
-          }}
-          scroll={{ x: 1500 }}
-          rowKey="level_number"
-          size="small"
-          style={{ 
-            background: '#1e1e2d',
-            color: '#fff'
-          }}
-        />
-      </div>
+          {/* Table Section */}
+          <div style={{ marginTop: '32px' }}>
+            <Table
+              dataSource={tableData}
+              columns={columns}
+              loading={loading}
+              pagination={{
+                defaultPageSize: 10,
+                showSizeChanger: true,
+                pageSizeOptions: ['10', '20', '50', '100']
+              }}
+              scroll={{ x: 1500 }}
+              rowKey="level_number"
+              size="small"
+              style={{ 
+                background: '#1e1e2d',
+                color: '#fff'
+              }}
+            />
+          </div>
+        </TabPane>
+        <TabPane tab="Level Generator" key="2">
+          <LevelGenerator />
+        </TabPane>
+      </Tabs>
     </div>
   );
 };

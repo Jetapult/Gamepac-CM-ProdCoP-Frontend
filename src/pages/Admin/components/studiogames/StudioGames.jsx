@@ -219,7 +219,7 @@ const StudioGames = ({
               )}
             </div>
             <p className="w-[30%]">
-              {/* <button
+              <button
                 className="bg-[#B9FF66] text-[#000] rounded-full px-4 py-1 mr-2 hover:bg-[#000] hover:text-[#B9FF66]"
                 onClick={() => {
                   setSelectedGame(game);
@@ -227,7 +227,7 @@ const StudioGames = ({
                 }}
               >
                 Auto reply
-              </button>{" "} */}
+              </button>{" "}
               <button
                 className="bg-[#B9FF66] text-[#000] rounded-full px-4 py-1 mr-2 hover:bg-[#000] hover:text-[#B9FF66]"
                 onClick={() => {
