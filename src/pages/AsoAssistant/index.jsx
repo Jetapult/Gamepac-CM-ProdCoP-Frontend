@@ -45,7 +45,7 @@ const tabConfig = [
 const TabContent = React.memo(({ currentTab, selectedGame, toastMessage, setToastMessage }) => {
   switch (currentTab) {
     case "static-ads":
-      return <StaticAdGenerator game={selectedGame} />;
+      return <StaticAdGenerator game={selectedGame} setToastMessage={setToastMessage} />;
     case "app-icon":
       return <AppIconGenerator game={selectedGame} />;
     case "aso-texts":

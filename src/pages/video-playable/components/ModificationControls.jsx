@@ -420,6 +420,10 @@ const Sprites = ({
           </button>
         </div>
       </div>
+      {/* <div className="flex items-center gap-2">
+        <button className="bg-[#b9ff66] px-4 py-1.5 rounded text-black">Choose from library</button>
+        <button className="bg-[#b9ff66] px-4 py-1.5 rounded text-black">Generate AI UGC Ad</button>
+      </div> */}
       {currentModification.sprites.map(
         (sprite, spriteIndex) =>
           sprite.id === activeSpriteId && (

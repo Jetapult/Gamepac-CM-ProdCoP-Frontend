@@ -1252,11 +1252,11 @@ g, path, circle, rect {
   margin: 0;
 }
 
-.content {
+/* .content {
   background: #1e1e2d;
   border-radius: 8px;
   padding: 24px;
-}
+} */
 
 .metrics-table {
   background: #1e1e2d;

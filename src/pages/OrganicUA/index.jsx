@@ -7,6 +7,7 @@ import Templates from "./components/Templates";
 import api from "../../api";
 import WeeklyReport from "./components/WeeklyReport/WeeklyReport";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import CompetitorAnalysis from "./components/CompetitorAnalysis/CompetitorAnalysis";
 
 const menuItems = [
   {
@@ -16,6 +17,7 @@ const menuItems = [
   },
   { id: "review-insights", label: "Review Insights" },
   { id: "weekly-report", label: "Weekly Report" },
+  { id: "competitor-analysis", label: "Competitor Analysis" },
 ];
 
 const OrganicUA = () => {
@@ -150,6 +152,9 @@ const OrganicUA = () => {
         )}
         {activeMenu === "weekly-report" && (
           <WeeklyReport games={games} studio_slug={studio_slug} setGames={setGames} />
+        )}
+        {activeMenu === "competitor-analysis" && (
+          <CompetitorAnalysis games={games} studio_slug={studio_slug} setGames={setGames} />
         )}
       </div>
     </div>
