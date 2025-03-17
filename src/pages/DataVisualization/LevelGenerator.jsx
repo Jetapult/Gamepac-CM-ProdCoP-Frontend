@@ -15,6 +15,8 @@ const LevelGenerator = () => {
   const [generatedLevel, setGeneratedLevel] = useState(null);
   const [jsonString, setJsonString] = useState('');
   const [downloadUrl, setDownloadUrl] = useState(null);
+  const [hintLoading, setHintLoading] = useState(false);
+  const [wordsLoading, setWordsLoading] = useState(false);
 
   // Sample response for demonstration
   const sampleResponse = {
@@ -55,7 +57,58 @@ const LevelGenerator = () => {
     { value: 'it', label: 'Italian' },
     { value: 'pt', label: 'Portuguese' }
   ];
-
+  const handleGenerateHint = async () => {
+    try {
+      setHintLoading(true);
+      const language = form.getFieldValue('language');
+      const response = await api.post('/v1/bigquery/generate-hint', {
+        language: language
+      });
+      
+      if (response.data && response.data.data.hint) {
+        form.setFieldsValue({ hint: response.data.data.hint });
+        message.success('Hint generated successfully!');
+      } else {
+        message.error('Failed to generate hint');
+      }
+    } catch (error) {
+      console.error('Error generating hint:', error);
+      message.error('Failed to generate hint: ' + (error.message || 'Please try again.'));
+    } finally {
+      setHintLoading(false);
+    }
+  };
+  const handleGenerateWords = async () => {
+    try {
+      setWordsLoading(true);
+      const numWords = form.getFieldValue('numWords') || 6;
+      const hint = form.getFieldValue('hint');
+      if (!hint) {
+        message.warning('Please enter a hint first or generate one');
+        setWordsLoading(false);
+        return;
+      }
+      
+      const response = await api.post('/v1/bigquery/generate-words', {
+        hint: hint,
+        count: numWords.toString()
+      });
+      
+      if (response.data && response.data.success && response.data.data && response.data.data.words) {
+        form.setFieldsValue({ 
+          englishLevel: response.data.data.words.join(', ')
+        });
+        message.success('Words generated successfully!');
+      } else {
+        message.error('Failed to generate words');
+      }
+    } catch (error) {
+      console.error('Error generating words:', error);
+      message.error('Failed to generate words: ' + (error.message || 'Please try again.'));
+    } finally {
+      setWordsLoading(false);
+    }
+  };
   const handleGenerateLevel = async (values) => {
     setLoading(true);
     try {
@@ -102,7 +155,25 @@ const LevelGenerator = () => {
       console.error('Error translating hint:', hintTranslationError);
       message.warning('Could not translate hint. Using original hint instead.');
     }
-    
+    let rows, cols;
+    switch(values.difficulty) {
+      case 'easy':
+        rows = 7;
+        cols = 8;
+        break;
+      case 'medium':
+        rows = 9;
+        cols = 10;
+        break;
+      case 'hard':
+        rows = 10;
+        cols = 11;
+        break;
+      default:
+        rows = 7;
+        cols = 8;
+    }
+
       const formattedData = {
         "1": [
           {
@@ -111,8 +182,8 @@ const LevelGenerator = () => {
             "words":translatedWords 
           },
           translatedWords.length,
-          values.rows,
-          values.cols
+          rows,
+          cols
         ]
       };
       
@@ -221,6 +292,28 @@ const LevelGenerator = () => {
                   rows={4}
                 />
               </Form.Item>
+              <Form.Item>
+                <Space>
+                  <Form.Item
+                    name="numWords"
+                    label="Number of Words"
+                    rules={[{ required: true, message: 'Please enter number of words' }]}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <InputNumber min={3} max={12}/>
+                  </Form.Item>
+                  
+                  <Button 
+                    type="default" 
+                    onClick={handleGenerateWords} 
+                    loading={wordsLoading}
+                    style={{ marginTop: '30px' }}
+                  >
+                    Generate Words
+                  </Button>
+                </Space>
+              </Form.Item>
+
 
               <Form.Item
                 name="language"
@@ -239,27 +332,31 @@ const LevelGenerator = () => {
                 label="Hint"
                 rules={[{ required: true, message: 'Please enter a hint' }]}
               >
-                <Input placeholder="Enter a hint for the level (e.g. BACKYARD ENTERTAINMENT)" />
-              </Form.Item>
-
+                <Input placeholder="Enter a hint for the level (e.g. BACKYARD ENTERTAINMENT)" 
+                  addonAfter={
+                    <Button 
+                      type="text" 
+                      onClick={handleGenerateHint} 
+                      loading={hintLoading}
+                      style={{ padding: 0, border: 'none', color: 'white'}}
+                    >
+                      Generate
+                    </Button>
+                  }
+                />
+                </Form.Item>
               <div style={{ display: 'flex', gap: '16px' }}>
                 <Form.Item
-                  name="rows"
-                  label="Rows"
-                  rules={[{ required: true, message: 'Please enter number of rows' }]}
-                  style={{ flex: 1}}
-                >
-                  <InputNumber min={5} max={15} style={{ width: '100%' }} />
-                </Form.Item>
-
-                <Form.Item
-                  name="cols"
-                  label="Columns"
-                  rules={[{ required: true, message: 'Please enter number of columns' }]}
-                  style={{ flex: 1 }}
-                >
-                  <InputNumber min={5} max={15} style={{ width: '100%' }} />
-                </Form.Item>
+                name="difficulty"
+                label="Difficulty Level"
+                rules={[{ required: true, message: 'Please select a difficulty level' }]}
+              >
+                <Select placeholder="Select difficulty">
+                  <Option value="easy">Easy (7×8)</Option>
+                  <Option value="medium">Medium (9×10)</Option>
+                  <Option value="hard">Hard (10×11)</Option>
+                </Select>
+              </Form.Item>
               </div>
 
               <Form.Item>
