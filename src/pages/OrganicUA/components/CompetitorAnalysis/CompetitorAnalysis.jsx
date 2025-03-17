@@ -121,7 +121,7 @@ const CompetitorAnalysis = () => {
     }
   }, [activeTab, selectedGame]);
 
-  // Helper function to render star ratings
+  // Helper function to render star ratings - fixed version
   const renderStars = (rating) => {
     return (
       <div className="flex">
@@ -129,9 +129,9 @@ const CompetitorAnalysis = () => {
           <Star
             key={star}
             className={`w-4 h-4 ${
-              star <= rating
-                ? "fill-primary text-primary"
-                : "fill-muted text-muted-foreground"
+              star <= Math.round(rating)
+                ? "fill-black text-black"
+                : "text-gray-300"
             }`}
           />
         ))}
@@ -238,33 +238,39 @@ const CompetitorAnalysis = () => {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            {/* Game selector dropdown */}
-            <div className="relative">
-              <button
-                className="flex items-center justify-between w-[220px] h-9 px-3 py-2 border rounded-md text-sm"
-                onClick={() => setIsGamesDropdownOpen(!isGamesDropdownOpen)}
-              >
-                <span className="truncate">{selectedGame?.competitor_name || "Select a game"}</span>
-                <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
-              </button>
-              {isGamesDropdownOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-                  <div className="py-1">
-                    {competitorGames.map((game) => (
-                      <button 
-                        key={game.id}
-                        className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 truncate" 
-                        onClick={() => {
-                          setSelectedGame(game);
-                          setIsGamesDropdownOpen(false);
-                        }}
-                      >
-                        {game.competitor_name}
-                      </button>
-                    ))}
+            {/* Game selector dropdown with label */}
+            <div className="flex flex-col">
+              <label htmlFor="game-selector" className="text-sm font-medium mb-1 text-gray-600">
+                Select a game to analyze
+              </label>
+              <div className="relative">
+                <button
+                  id="game-selector"
+                  className="flex items-center justify-between w-[220px] h-9 px-3 py-2 border rounded-md text-sm"
+                  onClick={() => setIsGamesDropdownOpen(!isGamesDropdownOpen)}
+                >
+                  <span className="truncate">{selectedGame?.competitor_name || "Select a game"}</span>
+                  <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
+                </button>
+                {isGamesDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                    <div className="py-1">
+                      {competitorGames.map((game) => (
+                        <button 
+                          key={game.id}
+                          className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 truncate" 
+                          onClick={() => {
+                            setSelectedGame(game);
+                            setIsGamesDropdownOpen(false);
+                          }}
+                        >
+                          {game.competitor_name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             
             {/* <div className="flex items-center gap-2">
@@ -476,12 +482,12 @@ const CompetitorAnalysis = () => {
               >
                 Sentiment Analysis
               </button>
-              <button 
+              {/* <button 
                 className={`px-4 py-2 text-sm ${activeTab === "keywords" ? "bg-gray-100 font-medium" : ""}`}
                 onClick={() => setActiveTab("keywords")}
               >
                 Keywords
-              </button>
+              </button> */}
             </div>
 
             {/* <div className="flex items-center gap-2">
@@ -669,13 +675,12 @@ const CompetitorAnalysis = () => {
                       </div>
                     </div>
                     
-                    <div className="border rounded-lg p-4">
+                    {/* <div className="border rounded-lg p-4">
                       <h4 className="text-base font-medium mb-4">Sentiment Distribution</h4>
                       <div className="h-64 flex items-center justify-center">
                         <div className="text-center">
                           <div className="flex justify-center">
                             <div className="relative w-40 h-40 rounded-full">
-                              {/* Visualize the sentiment scores as a pie chart */}
                               <div 
                                 className="absolute inset-0 bg-green-500 rounded-full" 
                                 style={{ 
@@ -712,16 +717,16 @@ const CompetitorAnalysis = () => {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                     
-                    <div className="border rounded-lg p-4 md:col-span-2">
+                    {/* <div className="border rounded-lg p-4 md:col-span-2">
                       <h4 className="text-base font-medium mb-4">Sentiment Over Time</h4>
                       <div className="h-64 flex items-center justify-center border rounded-md bg-muted/10">
                         <p className="text-muted-foreground">
                           Sentiment trend chart would appear here
                         </p>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
