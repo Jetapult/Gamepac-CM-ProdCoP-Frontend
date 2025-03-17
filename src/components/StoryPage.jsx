@@ -113,6 +113,7 @@ const StoryPage = () => {
   const handleGenerateJSON = async () => {
     try {
       const formattedWordLevels = formatSelectedWordLevels();
+      console.log("formattedWordLevels",formattedWordLevels);
       const response = await api.post("/generateJSON", {
         storyId: storyData.id,
         formattedWordLevels,
