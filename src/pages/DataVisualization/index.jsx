@@ -24,6 +24,7 @@ const DataVisualization = () => {
   const gemChartInstance = useRef(null);
   const [levelFilter, setLevelFilter] = useState('all');
   const [selectedRange, setSelectedRange] = useState('1-100');
+  const [selectedGame, setSelectedGame] = useState('GDM');
 
   const filterOptions = [
     { value: 'all', label: 'All Levels' },
@@ -185,7 +186,7 @@ const DataVisualization = () => {
       title: 'Avg Gems Per User',
       dataIndex: 'avg_gems_per_user',
       width: 140,
-      render: (val) => val.toFixed(2),
+      render: (val) => val?.toFixed(2),
     },
   ];
 
@@ -209,6 +210,7 @@ const DataVisualization = () => {
         gem_sinkers,
         LAG(users) OVER (ORDER BY level_number) AS prev_users
       FROM garden-design-makeover.custom_tables.Level_Generation
+      WHERE Game_name = '${selectedGame}'
     )
     SELECT 
       level_number,
@@ -244,6 +246,7 @@ const DataVisualization = () => {
           users,
           LAG(users) OVER (ORDER BY level_number) AS prev_users
       FROM \`garden-design-makeover.custom_tables.Level_Generation\`
+      WHERE Game_name = '${selectedGame}'
     )
 
     SELECT 
@@ -270,6 +273,7 @@ const DataVisualization = () => {
           ROUND((blower_sinkers / NULLIF(users, 0)) * 100, 2) AS \`Blower Sinkers %\`,
           ROUND((sprinkler_sinkers / NULLIF(users, 0)) * 100, 2) AS \`Sprinkler Sinkers %\`
       FROM \`garden-design-makeover.custom_tables.Level_Generation\`
+      WHERE Game_name = '${selectedGame}'
     )
     SELECT * FROM BoosterUsage ORDER BY level_number;
   `;
@@ -283,6 +287,7 @@ const DataVisualization = () => {
           ROUND((gem_sinkers / NULLIF(users, 0)) * 100, 2) AS \`Gem Sinkers %\`,
           ROUND(total_gems_sunk / NULLIF(gem_sinkers, 0), 2) AS \`Avg Gems Sunk Per User\`
       FROM \`garden-design-makeover.custom_tables.Level_Generation\`
+      WHERE Game_name = '${selectedGame}'
     )
     SELECT * FROM GemUsage ORDER BY level_number;
   `;
@@ -1069,6 +1074,16 @@ const DataVisualization = () => {
     }
   };
 
+  // Update fetchData to be called when selectedGame changes
+  useEffect(() => {
+    fetchData();
+  }, [selectedGame]); // Add selectedGame as dependency
+
+  // Add game selection handler
+  const handleGameChange = (value) => {
+    setSelectedGame(value === 'garden-design-makeover' ? 'GDM' : 'HDW5');
+  };
+
   return (
     <div className="viz-page" style={{ padding: '24px', background: '#1e1e2d', minHeight: '100vh' }}>
       <div style={{ 
@@ -1129,10 +1144,11 @@ const DataVisualization = () => {
               cursor: 'pointer',
               outline: 'none'
             }}
-            value="garden-design-makeover"
-            onChange={(e) => console.log(e.target.value)}
+            value={selectedGame === 'GDM' ? 'garden-design-makeover' : 'hdw5'}
+            onChange={(e) => handleGameChange(e.target.value)}
           >
             <option value="garden-design-makeover">Garden Design Makeover</option>
+            <option value="hdw5">HDW5</option>
           </select>
         </div>
       </div>
