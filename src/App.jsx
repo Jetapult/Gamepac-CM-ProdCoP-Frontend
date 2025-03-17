@@ -296,6 +296,7 @@ function App() {
             <Route path="/organic-ua/review-insights/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
             <Route path="/organic-ua/weekly-report" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
             <Route path="/organic-ua/weekly-report/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/competitor-analysis/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
 
             
             <Route path="/aistories" element={<PrivateRoute><Weaver /></PrivateRoute>} />
