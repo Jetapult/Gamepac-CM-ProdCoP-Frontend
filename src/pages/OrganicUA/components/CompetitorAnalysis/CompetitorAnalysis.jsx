@@ -1,48 +1,48 @@
 import React, { useEffect, useState } from "react";
 import api from "../../../../api";
-import { 
-  ArrowDownRight, 
-  ArrowUpRight, 
-  Star, 
-  RefreshCw, 
-  Download, 
-  BarChart, 
-  LineChart, 
-  PieChart, 
-  Filter, 
-  ChevronDown, 
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Star,
+  RefreshCw,
+  Download,
+  BarChart,
+  LineChart,
+  PieChart,
+  Filter,
+  ChevronDown,
   Search,
-  Loader
+  Loader,
 } from "lucide-react";
+import { XMarkIcon } from "@heroicons/react/20/solid";
 
-const CompetitorAnalysis = () => {
-  // State for API data
+const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [competitorGames, setCompetitorGames] = useState([]);
   const [selectedGame, setSelectedGame] = useState(null);
   const [gameData, setGameData] = useState(null);
   const [gameReviews, setGameReviews] = useState([]);
-  
-  // UI state
-  const [timeRange, setTimeRange] = useState("30");
+
   const [selectedCompetitors, setSelectedCompetitors] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
-  const [isTimeRangeOpen, setIsTimeRangeOpen] = useState(false);
-  const [isCompetitorsOpen, setIsCompetitorsOpen] = useState(false);
   const [isGamesDropdownOpen, setIsGamesDropdownOpen] = useState(false);
 
-  // Add state for sentiment analysis data
   const [sentimentData, setSentimentData] = useState(null);
   const [sentimentLoading, setSentimentLoading] = useState(false);
+  const [isAddNewGamePopupOpen, setIsAddNewGamePopupOpen] = useState(false);
+  const studioId = userData?.studio_type?.includes("studio_manager")
+    ? studios.filter((x) => x.slug === studio_slug)[0]?.id
+    : userData?.studio_id;
 
-  // Fetch all competitor games
   const fetchCompetitorGames = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/v1/competitor-games');
+      const response = await api.get("/v1/competitor-games", {
+        params: { studio_id: studioId },
+      });
       setCompetitorGames(response.data.data);
-      
+
       // Select the first game by default
       if (response.data.data.length > 0) {
         setSelectedGame(response.data.data[0]);
@@ -61,7 +61,7 @@ const CompetitorAnalysis = () => {
     try {
       const response = await api.get(`/v1/competitor-games/${gameId}/data`);
       setGameData(response.data.data);
-      
+
       // Set default competitors based on the game data
       // This is just a placeholder - you'll need to adjust this based on your actual data structure
       setSelectedCompetitors([response.data.data.competitor_name]);
@@ -91,7 +91,9 @@ const CompetitorAnalysis = () => {
   const fetchSentimentAnalysis = async (gameId) => {
     setSentimentLoading(true);
     try {
-      const response = await api.get(`/v1/competitor-games/${gameId}/sentiment-analysis`);
+      const response = await api.get(
+        `/v1/competitor-games/${gameId}/sentiment-analysis`
+      );
       setSentimentData(response.data.data);
     } catch (err) {
       console.error("Error fetching sentiment analysis:", err);
@@ -103,8 +105,10 @@ const CompetitorAnalysis = () => {
 
   // Initial load
   useEffect(() => {
-    fetchCompetitorGames();
-  }, []);
+    if (studioId) {
+      fetchCompetitorGames();
+    }
+  }, [studioId]);
 
   // Fetch game details and reviews when a game is selected
   useEffect(() => {
@@ -180,7 +184,7 @@ const CompetitorAnalysis = () => {
       if (score >= 5) return "bg-yellow-500";
       return "bg-red-500";
     };
-    
+
     return (
       <div className="mb-4">
         <div className="flex justify-between items-center mb-1">
@@ -188,8 +192,8 @@ const CompetitorAnalysis = () => {
           <span className="text-sm font-medium">{score}/10</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2.5">
-          <div 
-            className={`h-2.5 rounded-full ${getColor(score)}`} 
+          <div
+            className={`h-2.5 rounded-full ${getColor(score)}`}
             style={{ width: `${score * 10}%` }}
           ></div>
         </div>
@@ -213,7 +217,7 @@ const CompetitorAnalysis = () => {
       <div className="shadow-md bg-white w-full h-full p-4 flex items-center justify-center">
         <div className="text-red-500">
           <p>{error}</p>
-          <button 
+          <button
             onClick={fetchCompetitorGames}
             className="mt-2 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
           >
@@ -240,7 +244,10 @@ const CompetitorAnalysis = () => {
           <div className="flex items-center gap-4">
             {/* Game selector dropdown with label */}
             <div className="flex flex-col">
-              <label htmlFor="game-selector" className="text-sm font-medium mb-1 text-gray-600">
+              <label
+                htmlFor="game-selector"
+                className="text-sm font-medium mb-1 text-gray-600"
+              >
                 Select a game to analyze
               </label>
               <div className="relative">
@@ -249,16 +256,27 @@ const CompetitorAnalysis = () => {
                   className="flex items-center justify-between w-[220px] h-9 px-3 py-2 border rounded-md text-sm"
                   onClick={() => setIsGamesDropdownOpen(!isGamesDropdownOpen)}
                 >
-                  <span className="truncate">{selectedGame?.competitor_name || "Select a game"}</span>
+                  <span className="truncate">
+                    {selectedGame?.competitor_name || "Select a game"}
+                  </span>
                   <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
                 </button>
                 {isGamesDropdownOpen && (
                   <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
                     <div className="py-1">
+                      <button
+                        className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 truncate"
+                        onClick={() => {
+                          setIsAddNewGamePopupOpen(true);
+                          setIsGamesDropdownOpen(false);
+                        }}
+                      >
+                        Add New Game
+                      </button>
                       {competitorGames.map((game) => (
-                        <button 
+                        <button
                           key={game.id}
-                          className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 truncate" 
+                          className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 truncate"
                           onClick={() => {
                             setSelectedGame(game);
                             setIsGamesDropdownOpen(false);
@@ -272,7 +290,7 @@ const CompetitorAnalysis = () => {
                 )}
               </div>
             </div>
-            
+
             {/* <div className="flex items-center gap-2">
               <span className="text-sm font-medium">Time Range:</span>
               <div className="relative">
@@ -317,7 +335,7 @@ const CompetitorAnalysis = () => {
                 )}
               </div>
             </div> */}
-            
+
             {/* <button 
               className="inline-flex items-center px-3 py-2 text-sm border rounded-md hover:bg-gray-100"
               onClick={handleRefreshData}
@@ -373,7 +391,9 @@ const CompetitorAnalysis = () => {
               </div>
               <div className="p-4 pt-0">
                 <div className="text-2xl font-bold">
-                  {platformData.reviews ? platformData.reviews.toLocaleString() : "N/A"}
+                  {platformData.reviews
+                    ? platformData.reviews.toLocaleString()
+                    : "N/A"}
                 </div>
                 <div className="mt-4">
                   {selectedCompetitors.map((competitor, index) => (
@@ -383,7 +403,9 @@ const CompetitorAnalysis = () => {
                     >
                       <span className="text-sm">{competitor}</span>
                       <span className="font-medium">
-                        {platformData.reviews ? platformData.reviews.toLocaleString() : "N/A"}
+                        {platformData.reviews
+                          ? platformData.reviews.toLocaleString()
+                          : "N/A"}
                       </span>
                     </div>
                   ))}
@@ -399,7 +421,10 @@ const CompetitorAnalysis = () => {
               </div>
               <div className="p-4 pt-0">
                 <div className="text-2xl font-bold">
-                  {platformData.ratings ? platformData.ratings.toLocaleString() : "N/A"} ratings
+                  {platformData.ratings
+                    ? platformData.ratings.toLocaleString()
+                    : "N/A"}{" "}
+                  ratings
                 </div>
                 <div className="mt-4">
                   {platformData.histogram && (
@@ -408,16 +433,21 @@ const CompetitorAnalysis = () => {
                         <div key={star} className="flex items-center text-sm">
                           <div className="w-12 text-right mr-2">{star} ⭐</div>
                           <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="bg-yellow-400 h-full"
-                              style={{ 
-                                width: `${platformData.ratings ? 
-                                  (platformData.histogram[5-star] / platformData.ratings * 100) : 0}%` 
+                              style={{
+                                width: `${
+                                  platformData.ratings
+                                    ? (platformData.histogram[5 - star] /
+                                        platformData.ratings) *
+                                      100
+                                    : 0
+                                }%`,
                               }}
                             ></div>
                           </div>
                           <div className="w-16 ml-2 text-gray-500">
-                            {platformData.histogram[5-star].toLocaleString()}
+                            {platformData.histogram[5 - star].toLocaleString()}
                           </div>
                         </div>
                       ))}
@@ -441,18 +471,26 @@ const CompetitorAnalysis = () => {
                   <div className="flex justify-between mt-2">
                     <span>Last Updated</span>
                     <span className="font-medium">
-                      {platformData.last_updated ? new Date(platformData.last_updated).toLocaleDateString() : "N/A"}
+                      {platformData.last_updated
+                        ? new Date(
+                            platformData.last_updated
+                          ).toLocaleDateString()
+                        : "N/A"}
                     </span>
                   </div>
                   <div className="flex justify-between mt-2">
                     <span>Released</span>
                     <span className="font-medium">
-                      {platformData.released ? new Date(platformData.released).toLocaleDateString() : "N/A"}
+                      {platformData.released
+                        ? new Date(platformData.released).toLocaleDateString()
+                        : "N/A"}
                     </span>
                   </div>
                   <div className="flex justify-between mt-2">
                     <span>Version</span>
-                    <span className="font-medium">{platformData.version || "N/A"}</span>
+                    <span className="font-medium">
+                      {platformData.version || "N/A"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -464,20 +502,26 @@ const CompetitorAnalysis = () => {
         <div className="flex-1 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="border rounded-md inline-flex">
-              <button 
-                className={`px-4 py-2 text-sm ${activeTab === "overview" ? "bg-gray-100 font-medium" : ""}`}
+              <button
+                className={`px-4 py-2 text-sm ${
+                  activeTab === "overview" ? "bg-gray-100 font-medium" : ""
+                }`}
                 onClick={() => setActiveTab("overview")}
               >
                 Overview
               </button>
-              <button 
-                className={`px-4 py-2 text-sm ${activeTab === "reviews" ? "bg-gray-100 font-medium" : ""}`}
+              <button
+                className={`px-4 py-2 text-sm ${
+                  activeTab === "reviews" ? "bg-gray-100 font-medium" : ""
+                }`}
                 onClick={() => setActiveTab("reviews")}
               >
                 Reviews
               </button>
-              <button 
-                className={`px-4 py-2 text-sm ${activeTab === "sentiment" ? "bg-gray-100 font-medium" : ""}`}
+              <button
+                className={`px-4 py-2 text-sm ${
+                  activeTab === "sentiment" ? "bg-gray-100 font-medium" : ""
+                }`}
                 onClick={() => setActiveTab("sentiment")}
               >
                 Sentiment Analysis
@@ -514,14 +558,16 @@ const CompetitorAnalysis = () => {
                 <div>
                   <div className="flex items-start gap-4 mb-4">
                     {platformData.icon_url && (
-                      <img 
-                        src={platformData.icon_url} 
-                        alt={gameData?.competitor_name} 
+                      <img
+                        src={platformData.icon_url}
+                        alt={gameData?.competitor_name}
                         className="w-20 h-20 rounded-lg"
                       />
                     )}
                     <div>
-                      <h4 className="font-semibold">{gameData?.competitor_name}</h4>
+                      <h4 className="font-semibold">
+                        {gameData?.competitor_name}
+                      </h4>
                       <p className="text-sm text-gray-500">
                         {platformData.developer || "Unknown Developer"}
                       </p>
@@ -530,12 +576,12 @@ const CompetitorAnalysis = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="mb-4">
                     <h5 className="font-medium mb-1">Summary</h5>
                     <p className="text-sm">{platformData.summary}</p>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <h5 className="font-medium mb-1">Content Rating</h5>
@@ -543,7 +589,11 @@ const CompetitorAnalysis = () => {
                     </div>
                     <div>
                       <h5 className="font-medium mb-1">Price</h5>
-                      <p>{platformData.free ? "Free" : `${platformData.price} ${platformData.currency}`}</p>
+                      <p>
+                        {platformData.free
+                          ? "Free"
+                          : `${platformData.price} ${platformData.currency}`}
+                      </p>
                     </div>
                     {platformData.in_app_purchases && (
                       <div className="col-span-2">
@@ -553,22 +603,27 @@ const CompetitorAnalysis = () => {
                     )}
                   </div>
                 </div>
-                
+
                 <div>
                   <h5 className="font-medium mb-2">Screenshots</h5>
-                  {platformData.screenshot_urls && platformData.screenshot_urls.length > 0 ? (
+                  {platformData.screenshot_urls &&
+                  platformData.screenshot_urls.length > 0 ? (
                     <div className="grid grid-cols-2 gap-2">
-                      {platformData.screenshot_urls.slice(0, 4).map((url, index) => (
-                        <img 
-                          key={index} 
-                          src={url} 
-                          alt={`Screenshot ${index + 1}`} 
-                          className="w-full h-32 object-cover rounded"
-                        />
-                      ))}
+                      {platformData.screenshot_urls
+                        .slice(0, 4)
+                        .map((url, index) => (
+                          <img
+                            key={index}
+                            src={url}
+                            alt={`Screenshot ${index + 1}`}
+                            className="w-full h-32 object-cover rounded"
+                          />
+                        ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500">No screenshots available</p>
+                    <p className="text-sm text-gray-500">
+                      No screenshots available
+                    </p>
                   )}
                 </div>
               </div>
@@ -593,10 +648,18 @@ const CompetitorAnalysis = () => {
                     <table className="w-full caption-bottom">
                       <thead>
                         <tr className="border-b">
-                          <th className="h-10 px-2 text-left align-middle font-medium">User</th>
-                          <th className="h-10 px-2 text-left align-middle font-medium">Rating</th>
-                          <th className="h-10 px-2 text-left align-middle font-medium">Review</th>
-                          <th className="h-10 px-2 text-left align-middle font-medium">Date</th>
+                          <th className="h-10 px-2 text-left align-middle font-medium">
+                            User
+                          </th>
+                          <th className="h-10 px-2 text-left align-middle font-medium">
+                            Rating
+                          </th>
+                          <th className="h-10 px-2 text-left align-middle font-medium">
+                            Review
+                          </th>
+                          <th className="h-10 px-2 text-left align-middle font-medium">
+                            Date
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -605,13 +668,19 @@ const CompetitorAnalysis = () => {
                             <td className="p-2 align-middle font-medium">
                               <div className="flex items-center">
                                 {review.user_image ? (
-                                  <img src={review.user_image} alt="" className="w-8 h-8 rounded-full mr-2" />
+                                  <img
+                                    src={review.user_image}
+                                    alt=""
+                                    className="w-8 h-8 rounded-full mr-2"
+                                  />
                                 ) : (
                                   <div className="w-8 h-8 rounded-full bg-gray-200 mr-2 flex items-center justify-center">
                                     {review.user_name.charAt(0)}
                                   </div>
                                 )}
-                                <span className="text-sm truncate max-w-32">{review.user_name}</span>
+                                <span className="text-sm truncate max-w-32">
+                                  {review.user_name}
+                                </span>
                               </div>
                             </td>
                             <td className="p-2 align-middle">
@@ -629,7 +698,9 @@ const CompetitorAnalysis = () => {
                               </div>
                             </td>
                             <td className="p-2 align-middle max-w-md">
-                              <p className="text-sm line-clamp-2">{review.content}</p>
+                              <p className="text-sm line-clamp-2">
+                                {review.content}
+                              </p>
                             </td>
                             <td className="p-2 align-middle whitespace-nowrap">
                               {new Date(review.created_at).toLocaleDateString()}
@@ -664,17 +735,28 @@ const CompetitorAnalysis = () => {
                 ) : sentimentData ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="border rounded-lg p-4">
-                      <h4 className="text-base font-medium mb-4">Sentiment Overview</h4>
-                      
-                      {renderSentimentScore(sentimentData.gameDesign, "Game Design")}
-                      {renderSentimentScore(sentimentData.customerSupport, "Customer Support")}
-                      {renderSentimentScore(sentimentData.reliability, "Reliability")}
-                      
+                      <h4 className="text-base font-medium mb-4">
+                        Sentiment Overview
+                      </h4>
+
+                      {renderSentimentScore(
+                        sentimentData.gameDesign,
+                        "Game Design"
+                      )}
+                      {renderSentimentScore(
+                        sentimentData.customerSupport,
+                        "Customer Support"
+                      )}
+                      {renderSentimentScore(
+                        sentimentData.reliability,
+                        "Reliability"
+                      )}
+
                       <div className="mt-4 text-sm text-gray-500">
                         Based on analysis of {sentimentData.reviewCount} reviews
                       </div>
                     </div>
-                    
+
                     {/* <div className="border rounded-lg p-4">
                       <h4 className="text-base font-medium mb-4">Sentiment Distribution</h4>
                       <div className="h-64 flex items-center justify-center">
@@ -718,7 +800,7 @@ const CompetitorAnalysis = () => {
                         </div>
                       </div>
                     </div> */}
-                    
+
                     {/* <div className="border rounded-lg p-4 md:col-span-2">
                       <h4 className="text-base font-medium mb-4">Sentiment Over Time</h4>
                       <div className="h-64 flex items-center justify-center border rounded-md bg-muted/10">
@@ -742,7 +824,122 @@ const CompetitorAnalysis = () => {
               </div>
             </div>
           )}
+        </div>
+      </div>
+      {isAddNewGamePopupOpen && (
+        <AddNewGamePopup
+          onClose={() => setIsAddNewGamePopupOpen(false)}
+          studioId={studioId}
+          setCompetitorGames={setCompetitorGames}
+          setSelectedGame={setSelectedGame}
+        />
+      )}
+    </div>
+  );
+};
 
+const AddNewGamePopup = ({ onClose, studioId, setCompetitorGames, setSelectedGame }) => {
+  const [gameName, setGameName] = useState("");
+  const [packageName, setPackageName] = useState("");
+  const [appStoreId, setAppStoreId] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const onSubmit = async () => {
+    try{
+      setLoading(true);
+      const response = await api.post('/v1/competitor-games',{
+        studio_id: studioId,
+        competitor_name: gameName,
+        package_name: packageName,
+        app_store_id: appStoreId
+      });
+      setCompetitorGames(prev => [response.data.data, ...prev]);
+      setSelectedGame(response.data.data);
+      setLoading(false);
+      onClose();
+    } catch (error) {
+      console.error(error);
+      setLoading(false);
+    }
+  };
+  return (
+    <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-[#12111157]">
+      <div className="relative my-6 mx-auto max-w-3xl w-[500px]">
+        <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
+          <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
+            <h3 className="text-2xl font-semibold whitespace-pre-line">
+              Add New Game
+            </h3>
+            <button
+              className="p-1 ml-auto border-0 text-black float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
+              onClick={onClose}
+            >
+              <XMarkIcon className="w-6 h-6 text-[#d6d6d6]" />
+            </button>
+          </div>
+          <div className="p-4">
+            <div className="mb-4">
+              <label htmlFor="game-name" className="text-sm font-medium">
+                Game Name
+              </label>
+              <input
+                type="text"
+                id="game-name"
+                className="w-full p-2 border rounded-md"
+                value={gameName}
+                onChange={(e) => setGameName(e.target.value)}
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="game-name" className="text-sm font-medium">
+                Package Name
+              </label>
+              <input
+                type="text"
+                id="game-name"
+                className="w-full p-2 border rounded-md"
+                value={packageName}
+                onChange={(e) => setPackageName(e.target.value)}
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="game-name" className="text-sm font-medium">
+                App Store ID
+              </label>
+              <input
+                type="text"
+                id="game-name"
+                className="w-full p-2 border rounded-md"
+                value={appStoreId}
+                onChange={(e) => setAppStoreId(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-4 border-t border-solid border-blueGray-200 p-4">
+            <button
+              className="bg-[#f3f3f3] text-[#000] px-4 py-2 rounded-md"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            {(gameName && (packageName || appStoreId)) ? (
+              <>
+              {loading ? <Loader className="w-6 h-6 animate-spin text-gray-400" /> : <button
+                className="bg-[#B9FF66] text-[#000] px-4 py-2 rounded-md hover:bg-[#000] hover:text-[#B9FF66]"
+                onClick={onSubmit}
+              >
+                Create
+              </button>}
+              </>
+            ) : (
+              <button
+                className="bg-[#B9FF66] text-[#000] px-4 py-2 rounded-md opacity-50 cursor-not-allowed"
+                disabled
+              >
+                Create
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
