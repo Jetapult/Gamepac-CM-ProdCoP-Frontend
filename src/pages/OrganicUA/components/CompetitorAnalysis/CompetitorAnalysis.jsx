@@ -851,7 +851,7 @@ const AddNewGamePopup = ({ onClose, studioId, setCompetitorGames, setSelectedGam
         studio_id: studioId,
         competitor_name: gameName,
         package_name: packageName,
-        app_store_id: appStoreId
+        app_id: appStoreId
       });
       setCompetitorGames(prev => [response.data.data, ...prev]);
       setSelectedGame(response.data.data);

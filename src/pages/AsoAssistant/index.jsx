@@ -13,10 +13,12 @@ import { ChevronDown } from "lucide-react";
 import GamesDropdown from "../OrganicUA/components/smartFeedback/GamesDropdown";
 import { useNavigate, useParams } from "react-router-dom";
 import ToastMessage from "../../components/ToastMessage";
+import ASOCompetitorAnalysis from "./components/CompetitorAnalysis";
 
 const tabConfig = [
   // {
   //   label: "UA Static Ads",
+
   //   slug: "static-ads",
   // },
   { 
@@ -39,10 +41,14 @@ const tabConfig = [
     label: "Playables", 
     slug: "playables", 
   },
+  {
+    label: "Competitor Analysis",
+    slug: "competitor-analysis",
+  },
 ];
 
 // Create a separate component for the tab content
-const TabContent = React.memo(({ currentTab, selectedGame, toastMessage, setToastMessage }) => {
+const TabContent = React.memo(({ currentTab, selectedGame, toastMessage, setToastMessage, studioId }) => {
   switch (currentTab) {
     case "static-ads":
       return <StaticAdGenerator game={selectedGame} setToastMessage={setToastMessage} />;
@@ -62,6 +68,8 @@ const TabContent = React.memo(({ currentTab, selectedGame, toastMessage, setToas
       return <VideoGenerator game={selectedGame} />;
     case "playables":
       return <PlayableGenerator />;
+    case "competitor-analysis":
+      return <ASOCompetitorAnalysis studioId={studioId} game={selectedGame} />;
     default:
       return <StaticAdGenerator game={selectedGame} />;
   }
@@ -74,6 +82,7 @@ const AsoAssistant = () => {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const userData = useSelector((state) => state.user.user);
+  const studios = useSelector((state) => state.admin.studios);
   const [toastMessage, setToastMessage] = useState({
     show: false,
     message: "",
@@ -81,6 +90,9 @@ const AsoAssistant = () => {
     type: "success",
   });
   const studioSlug = localStorage.getItem("selectedStudio") || userData?.slug;
+  const studioId = userData?.studio_type?.includes("studio_manager")
+    ? studios.filter((x) => x.slug === studioSlug)[0]?.id
+    : userData?.studio_id;
   const params = useParams();
   const navigate = useNavigate();
 
@@ -192,6 +204,7 @@ const AsoAssistant = () => {
                     selectedGame={selectedGame}
                     toastMessage={toastMessage}
                     setToastMessage={setToastMessage}
+                    studioId={studioId}
                   />
                 </div>
               </div>
