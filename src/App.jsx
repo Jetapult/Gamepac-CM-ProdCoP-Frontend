@@ -52,6 +52,7 @@ import AsoAssistant from "./pages/AsoAssistant";
 // import CreativeAnalyser from "./components/CreativeAnalyser";
 import { AssetGenerator } from "./pages/AssetGenerator";
 import DataVisualization from "./pages/DataVisualization";
+import UGCAds from "./pages/UGCAds/UGCAds";
 
 
 function App() {
@@ -319,12 +320,14 @@ function App() {
             <Route path="/ai-chat/:studio_slug" element={<PrivateRoute><RagChat /></PrivateRoute>} />
             <Route path="/translate" element={<PrivateRoute><Translate /></PrivateRoute>} />
             <Route path="/playground" element={<Playground />} />
-            <Route path="/video-editor" element={<PrivateRoute><VideoPlayable /></PrivateRoute>} />
+            <Route path="/video-playable-editor" element={<PrivateRoute><VideoPlayable /></PrivateRoute>} />
+            <Route path="/video-editor" element={<PrivateRoute><UGCAds /></PrivateRoute>} />  
+
             <Route path="/aso-assistant" element={<PrivateRoute><AsoAssistant /></PrivateRoute>} />
             <Route path="/aso-assistant/:studio_slug" element={<PrivateRoute><AsoAssistant /></PrivateRoute>} />
             {/* <Route path="/creativeAnalyser" element={<PrivateRoute><CreativeAnalyser/></PrivateRoute>} /> */}
             <Route path ="/assetGenerator" element={<PrivateRoute><AssetGenerator/></PrivateRoute>}/>
-            <Route path="/data-visualization" element={<PrivateRoute><DataVisualization /></PrivateRoute>}/>  
+            <Route path="/data-visualization" element={<PrivateRoute><DataVisualization /></PrivateRoute>}/>
             <Route
               path="*"
               element={<PageNotFound />}
