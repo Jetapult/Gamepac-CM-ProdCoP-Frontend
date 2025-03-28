@@ -119,7 +119,8 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
         // Set basic properties
         sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
         sprite.scale.set(spriteData.scale);
-        sprite.rotation = spriteData.rotation;
+        // Convert degrees to radians for rotation
+        sprite.rotation = spriteData.rotation * (Math.PI / 180);
         sprite.alpha = spriteData.transparency;
         
         // Calculate position taking modification.relativeToScreenSize into account
@@ -211,7 +212,8 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
               sprite.__modType = mod.type;
               sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
               sprite.scale.set(spriteData.scale);
-              sprite.rotation = spriteData.rotation;
+              // Convert degrees to radians for rotation
+              sprite.rotation = spriteData.rotation * (Math.PI / 180);
               sprite.alpha = spriteData.transparency;
               const x = mod.relativeToScreenSize
                 ? app.screen.width * spriteData.position.x
@@ -378,7 +380,8 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
                 sprite.__modType = currentBreak.type;
                 sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
                 sprite.scale.set(spriteData.scale);
-                sprite.rotation = spriteData.rotation;
+                // Convert degrees to radians for rotation
+                sprite.rotation = spriteData.rotation * (Math.PI / 180);
                 sprite.alpha = spriteData.transparency;
                 const x = currentBreak.relativeToScreenSize
                   ? app.screen.width * spriteData.position.x
@@ -835,7 +838,8 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
               sprite.__modType = mod.type;
               sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
               sprite.scale.set(spriteData.scale);
-              sprite.rotation = spriteData.rotation;
+              // Convert degrees to radians for rotation
+              sprite.rotation = spriteData.rotation * (Math.PI / 180);
               sprite.alpha = spriteData.transparency;
               const x = mod.relativeToScreenSize
                 ? app.screen.width * spriteData.position.x
