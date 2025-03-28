@@ -622,9 +622,37 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
             break;
           }
           case 'scale': {
+            // Store original position before scaling
+            const originalX = sprite.position.x;
+            const originalY = sprite.position.y;
+            
+            // Apply scale
             const startScale = spriteData.scale;
-            sprite.scale.x = startScale + (anim.destination.w - startScale) * easedProgress;
-            sprite.scale.y = startScale + (anim.destination.h - startScale) * easedProgress;
+            const newScaleX = startScale + (anim.destination.w - startScale) * easedProgress;
+            const newScaleY = startScale + (anim.destination.h - startScale) * easedProgress;
+            
+            sprite.scale.x = newScaleX;
+            sprite.scale.y = newScaleY;
+            
+            // For sprites positioned relative to screen, we need to recalculate position
+            // after scaling to make sure it stays in the correct place
+            if (sprite.__spriteData?.positionRelativeToScreen && typeof videoSprite !== 'undefined') {
+              // Get the video boundaries
+              const videoBounds = videoSprite.getBounds();
+              
+              // Recover the normalized position values directly from spriteData
+              const normalizedX = spriteData.position.x;
+              const normalizedY = spriteData.position.y;
+              
+              // Apply the normalized coordinates using video bounds
+              sprite.position.x = videoBounds.x + videoBounds.width * normalizedX;
+              sprite.position.y = videoBounds.y + videoBounds.height * normalizedY;
+            } else {
+              // For sprites not relative to screen, restore the original position
+              sprite.position.x = originalX;
+              sprite.position.y = originalY;
+            }
+            
             break;
           }
           case 'transparency': {

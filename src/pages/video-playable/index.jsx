@@ -183,8 +183,8 @@ export default function VideoPlayable() {
     if (!pixiAppRef.current) return;
 
     // Clear all sprites
-    spritesRef.current.forEach((sprite) => {
-      if (sprite && sprite.destroy) {
+    spritesRef.current?.forEach((sprite) => {
+      if (sprite && sprite?.destroy) {
         sprite?.destroy();
       }
     });
@@ -216,7 +216,7 @@ export default function VideoPlayable() {
       type: ModificationType.BREAK,
       id: Date.now(),
       time: Math.round(time),
-      background: true,
+      background: false,
       stopOnVideoResume: true,
     };
 
@@ -281,7 +281,7 @@ export default function VideoPlayable() {
       time: time,
       endTime: duration,
       stopOnVideoResume: false,
-      background: true,
+      background: false,
       backgroundColor: "#000000",
       backgroundMusic: {
         file: null,
@@ -736,8 +736,8 @@ export default function VideoPlayable() {
     app.stage.sortChildren();
 
     return () => {
-      spritesRef.current.forEach((sprite) => {
-        if (sprite && sprite.destroy) {
+      spritesRef?.current?.forEach((sprite) => {
+        if (sprite && sprite?.destroy) {
           sprite?.destroy();
         }
       });
@@ -1092,7 +1092,7 @@ export default function VideoPlayable() {
     switch (activeTabData.type) {
       case "general":
         return (
-          <div className="space-y-4 py-4 overflow-y-auto h-[calc(100vh-200px)]">
+          <div className="space-y-4 py- pb-10 overflow-y-auto h-[calc(100vh-250px)]">
             <div>
               <label className="block text-white text-xs mb-1">
                 Playable Ad Name

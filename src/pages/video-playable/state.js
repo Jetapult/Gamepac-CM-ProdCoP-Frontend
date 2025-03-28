@@ -83,7 +83,7 @@ export const breakModificationState = {
   ...baseModificationState,
   type: ModificationType.BREAK,
   stopOnVideoResume: true,
-  background: true,
+  background: false,
 };
 
 export const endScreenModificationState = {
