@@ -338,16 +338,17 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
       }
 
       function handleVideoTimeUpdate() {
-        const currentTime = videoElement.currentTime * 1000;
+        const currentTime = Math.floor(videoElement.currentTime * 1000);
 
         // If a break is active, do nothing here.
         if (activeBreakIndex !== -1) return;
 
         // Check if a break modification should be triggered.
+        const TOLERANCE_MS = 50; // 50ms tolerance
         const breakIndex = CONFIG.modifications.findIndex(mod =>
           mod.type === 'break' &&
           !triggeredBreakIds.has(mod.id) &&
-          currentTime >= mod.time
+          currentTime >= (mod.time - TOLERANCE_MS)
         );
 
         if (breakIndex !== -1) {
