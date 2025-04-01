@@ -21,32 +21,32 @@ const aiTools = [
   },
   {
     id: 3,
-    name: "AI Story Weaver",
-    description:
-      "Unleash your creativity with StoryWeaver, our platform for crafting immersive narratives and generating AI assets and Game Ready word search levels.",
-    icon: SparklesIcon,
-    link: "/aistories",
-  },
-  {
-    id: 4,
     name: "Translate",
     description: "Translate your text to any language.",
     icon: LanguageIcon,
     link: "/translate",
   },
   {
-    id: 5,
-    name: "Creative Analyser",
-    description: "Analyse Creatives",
-    icon: LanguageIcon,
-    link: "/creativeAnalyser",
+    id: 4,
+    name: "Level Automation",
+    description: "Automate Levels with live Game Data",
+    icon: ChatBubbleLeftRightIcon,
+    link: "/data-visualization",
   },
   {
-    id: 6,
+    id: 5,
     name: "Asset Generator",
     description: "Generate UI assets for your mobile game, ASO and more.",
     icon: SparklesIcon,
     link: "/assetGenerator",
+  },
+  {
+    id: 6,
+    name: "AI Story Weaver",
+    description:
+      "Unleash your creativity with StoryWeaver, our platform for crafting immersive narratives and generating AI assets and Game Ready word search levels.",
+    icon: SparklesIcon,
+    link: "/aistories",
   },
 ];
 
