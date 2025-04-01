@@ -9,6 +9,7 @@ import potion from "../../assets/potion.svg";
 import api from "../../api";
 import InpaintingMode from "./InpaintingMode";
 import StyleTransferMode from "./StyleTransferMode";
+import InpaintingHistoryPage from "./InpaintingHistory";
 
 export const AssetGenerator = () => {
   const [generatedData, setGeneratedData] = useState({
@@ -16,7 +17,12 @@ export const AssetGenerator = () => {
     prompt: "",
     date: "",
   });
-  const [selectedMode, setSelectedMode] = useState("vibrant");
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const [selectedModel, setSelectedModel] = useState({
+    name: "Flux Dev",
+    endpoint: "fal-ai/flux/dev"
+  });
+  const [selectedGame, setSelectedGame] = useState({});
   const [selectedStyle, setSelectedStyle] = useState("vibrant");
   const [selectedDimension, setSelectedDimension] = useState("square_hd");
   const [selectedSize, setSelectedSize] = useState("Small");
@@ -40,6 +46,60 @@ export const AssetGenerator = () => {
     upscaledUrl: "",
     isLoading: false,
   });
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false);
+  const [projectAssets, setProjectAssets] = useState([]);
+  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [showAssetDropdown, setShowAssetDropdown] = useState(false);
+  const [mode, setMode] = useState("standard");
+
+  // Add these new functions after other toggle functions
+  const toggleProjectDropdown = () => {
+    setShowProjectDropdown(!showProjectDropdown);
+  };
+
+  const toggleAssetDropdown = () => {
+    setShowAssetDropdown(!showAssetDropdown);
+  };
+
+  // Add this function to handle project selection
+  const handleProjectSelect = async (project) => {
+    setSelectedProject(project);
+    setShowProjectDropdown(false);
+    
+    try {
+      // Determine the endpoint based on project name
+      const gameCode = project.name.includes("HDW") ? "HDW" : project.name.includes("MHM") ? "MHM" : "";
+      if (!gameCode) {
+        console.error("Unknown project type");
+        return;
+      }
+      
+      const response = await api.get(`/v1/assetGenerator/game-assets/${gameCode}`);
+      console.log(response)
+      if (response.data && response.data.data && response.data.data.assets) {
+        // Transform the array of URLs into objects with id and url properties
+        const assetObjects = response.data.data.assets.map((url, index) => {
+          // Extract filename from URL - handle spaces in filenames properly
+          const fileName = decodeURIComponent(url.split('/').pop().replace(/\.[^/.]+$/, ""));
+          return {
+            id: index + 1,
+            name: fileName,
+            url: url
+          };
+        });
+        console.log(assetObjects)
+        setProjectAssets(assetObjects);
+      } else {
+        console.error("Unexpected response structure:", response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching project assets:", error);
+    }
+  };
+  const toggleModelDropdown = () => {
+    setShowModelDropdown(!showModelDropdown);
+  };
 
   const toggleStyleDropdown = () => {
     setShowStyleDropdown(!showStyleDropdown);
@@ -93,6 +153,7 @@ export const AssetGenerator = () => {
         size: selectedSize,
         number: selectedNumber,
         safety_checker: safetyChecker,
+        model: selectedModel.endpoint  // Add this line
       });
       if (response.status === 200) {
         setGeneratedData({
@@ -188,13 +249,17 @@ export const AssetGenerator = () => {
   }, []);
 
   // Handle mode switching
-  const handleModeSwitch = (mode) => {
-    if (mode === "inpainting") {
+  const handleModeSwitch = (newMode) => {
+    setMode(newMode);
+    if (newMode === "inpainting") {
       setIsInpaintingMode(true);
       setStyleTransferMode(false);
-    } else if (mode === "styleTransfer") {
+    } else if (newMode === "styleTransfer") {
       setIsInpaintingMode(false);
       setStyleTransferMode(true);
+    } else if (newMode === "inpaintingHistory") {
+      setIsInpaintingMode(false);
+      setStyleTransferMode(false);
     } else {
       setIsInpaintingMode(false);
       setStyleTransferMode(false);
@@ -202,21 +267,142 @@ export const AssetGenerator = () => {
   };
 
   return (
-    <div className="bg-black h-screen  w-full flex">
-      <div className="fixed top-0 left-0 w-1/6 border-r border-gray-700 h-full p-4 flex flex-col bg-black">
+    <div className="bg-black h-screen w-full flex">
+      <div className="fixed top-0 left-0 w-1/6 border-r border-gray-700 h-screen p-4 flex flex-col bg-black overflow-y-auto">
         <h2 className="text-white text-xl font-bold mb-4">Asset Generator</h2>
-
-        <div className="mb-4 flex flex-row justify-between px-4 py-2 border border-slate-600 rounded-lg mt-1 ">
+        <div
+          onClick={toggleProjectDropdown}
+          className="mb-2 flex items-center justify-between px-4 py-2 bg-purple-400 border border-slate-600 rounded-lg mt-1 hover:bg-slate-900 cursor-pointer"
+        >
           <div className="flex-col">
-            <div className="text-[#c24dd4] text-sm "> Model / Preset</div>
-            <div className="text-white text-xs"> Flux Dev </div>
+            <div className="text-white text-sm">Project</div>
+            <div className="text-white text-xs">
+              {selectedProject ? selectedProject.name : "Select Project"}
+            </div>
+          </div>
+          <div className="flex items-center">
+            <img src={dropdownIcon} alt="Dropdown Icon" className="w-4 h-4" />
           </div>
         </div>
+        {showProjectDropdown && (
+          <div className="border border-slate-600 rounded-md bg-black mb-4">
+            {/* Replace this with your actual projects data */}
+            {[
+              { id: 1, name: "Project MHM" },
+              { id: 2, name: "Project HDW" },
+              // Add more projects as needed
+            ].map((project) => (
+              <div
+                key={project.id}
+                className="px-4 py-2 hover:bg-slate-900 cursor-pointer text-white text-sm"
+                onClick={() => handleProjectSelect(project)}
+              >
+                {project.name}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Fix styling for Asset Selection - Only show when a project is selected */}
+        {selectedProject && (
+          <div className="mb-4 relative">
+            <div
+              onClick={toggleAssetDropdown}
+              className="flex items-center justify-between px-4 py-2 border border-slate-600 rounded-lg hover:bg-slate-900 cursor-pointer"
+            >
+              <div className="flex items-center space-x-3 overflow-hidden">
+                {selectedAsset && (
+                  <div className="w-8 h-8 flex-shrink-0">
+                    <img 
+                      src={selectedAsset.url} 
+                      alt={selectedAsset.name} 
+                      className="w-full h-full object-cover rounded"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://via.placeholder.com/32?text=Error';
+                      }}
+                    />
+                  </div>
+                )}
+                <div className="flex-col overflow-hidden">
+                  <div className="text-purple-400 text-sm">Project Assets</div>
+                  <div className="text-white text-xs truncate">
+                    {selectedAsset ? selectedAsset.name : "Select Asset"}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center ml-2">
+                <img src={dropdownIcon} alt="Dropdown Icon" className="w-4 h-4" />
+              </div>
+            </div>
+            {showAssetDropdown && selectedProject && (
+              <div className="absolute border border-slate-600 rounded-md bg-black mb-4 max-h-80 overflow-y-auto z-50 w-full shadow-lg">
+                {projectAssets.length > 0 ? (
+                  projectAssets.map((asset) => (
+                    <div
+                      key={asset.id}
+                      className="px-4 py-2 hover:bg-slate-900 cursor-pointer flex items-center"
+                      onClick={() => {
+                        setSelectedAsset(asset);
+                        setShowAssetDropdown(false);
+                      }}
+                    >
+                      <div className="w-12 h-12 mr-3 flex-shrink-0">
+                        <img 
+                          src={asset.url} 
+                          alt={asset.name} 
+                          className="w-full h-full object-cover rounded"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://via.placeholder.com/48?text=Error';
+                          }}
+                        />
+                      </div>
+                      <span className="text-white text-sm truncate">{asset.name}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-4 py-2 text-gray-400 text-sm">No assets found</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div
+          onClick={toggleModelDropdown}
+          className="mb-2 flex items-center justify-between px-4 py-2 border border-slate-600 rounded-lg mt-1 hover:bg-slate-900 cursor-pointer"
+        >
+          <div className="flex-col">
+            <div className="text-purple-400 text-sm">Model / Preset</div>
+            <div className="text-white text-xs">{selectedModel.name}</div>
+          </div>
+          <div className="flex items-center">
+            <img src={dropdownIcon} alt="Dropdown Icon" className="w-4 h-4" />
+          </div>
+        </div>
+        {showModelDropdown && (
+          <div className="border border-slate-600 rounded-md bg-black mb-4">
+            {[
+              { name: "Flux Dev", endpoint: "fal-ai/flux/dev" },
+              { name: "Flux Pro 1.1", endpoint: "fal-ai/flux-pro/v1.1-ultra" }
+            ].map((model, index) => (
+              <div
+                key={index}
+                className="px-4 py-2 hover:bg-slate-900 cursor-pointer text-white text-sm"
+                onClick={() => {
+                  setSelectedModel(model);
+                  setShowModelDropdown(false);
+                }}
+              >
+                {model.name}
+              </div>
+            ))}
+          </div>
+        )}
         <div
           onClick={togglePromptEnhanceDropdown}
-          className={`mb-${
-            showPromptEnhanceDropdown ? "1" : "2"
-          } flex items-center justify-between px-3 py-1 border border-slate-600 rounded-lg hover:bg-slate-900 cursor-pointer`}
+          className="mb-2 flex items-center justify-between px-3 py-1 border border-slate-600 rounded-lg hover:bg-slate-900 cursor-pointer"
         >
           <div className="flex items-center">
             <img src={sparkles} className="w-5 h-5 filter invert mr-2" />
@@ -230,7 +416,7 @@ export const AssetGenerator = () => {
           </div>
         </div>
         {showPromptEnhanceDropdown && (
-          <div className="border border-slate-600 rounded-md bg-black mb-2">
+          <div className="border border-slate-600 rounded-md bg-black mb-4">
             {["On", "Off", "Auto"].map((mode, index) => (
               <div
                 key={index}
@@ -247,9 +433,7 @@ export const AssetGenerator = () => {
         )}
         <div
           onClick={toggleContrastDropdown}
-          className={`mb-${
-            showContrastDropdown ? "1" : "4"
-          } flex items-center justify-between px-3 py-1 border border-slate-600 rounded-lg hover:bg-slate-900 cursor-pointer`}
+          className="mb-2 flex items-center justify-between px-3 py-1 border border-slate-600 rounded-lg hover:bg-slate-900 cursor-pointer"
         >
           <div className="flex items-center">
             <img src={contrast} className="w-5 h-5 filter invert mr-2" />
@@ -278,39 +462,39 @@ export const AssetGenerator = () => {
             ))}
           </div>
         )}
-        <div
-          onClick={toggleStyleDropdown}
-          className={`mb-${
-            showStyleDropdown ? "1" : "4"
-          } flex items-center justify-between px-3 py-1 border border-slate-600 rounded-lg hover:bg-slate-900 cursor-pointer`}
-        >
-          <div className="flex items-center">
-            <img src={potion} className="w-5 h-5 filter invert mr-2" />
-            <div className="flex-col">
-              <div className="text-slate-400 text-xs">Style</div>
-              <div className="text-white text-sm">{selectedStyle}</div>
+        <div className="relative">
+          <div
+            onClick={toggleStyleDropdown}
+            className="mb-2 flex items-center justify-between px-3 py-1 border border-slate-600 rounded-lg hover:bg-slate-900 cursor-pointer"
+          >
+            <div className="flex items-center">
+              <img src={potion} className="w-5 h-5 filter invert mr-2" />
+              <div className="flex-col">
+                <div className="text-slate-400 text-xs">Style</div>
+                <div className="text-white text-sm">{selectedStyle}</div>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <img src={dropdownIcon} alt="Dropdown Icon" className="w-4 h-4" />
             </div>
           </div>
-          <div className="flex items-center">
-            <img src={dropdownIcon} alt="Dropdown Icon" className="w-4 h-4" />
-          </div>
+          {showStyleDropdown && (
+            <div className="absolute top-full left-0 right-0 border border-slate-600 rounded-md bg-black mb-4 max-h-40 overflow-y-auto z-50">
+              {styleOptions.map((style, index) => (
+                <div
+                  key={index}
+                  className="px-4 py-2 hover:bg-slate-900 cursor-pointer text-white text-sm"
+                  onClick={() => {
+                    setSelectedStyle(style);
+                    setShowStyleDropdown(false);
+                  }}
+                >
+                  {style}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        {showStyleDropdown && (
-          <div className="border border-slate-600 rounded-md bg-black mb-4 max-h-40 overflow-y-auto">
-            {styleOptions.map((style, index) => (
-              <div
-                key={index}
-                className="px-4 py-2 hover:bg-slate-900 cursor-pointer text-white text-sm"
-                onClick={() => {
-                  setSelectedStyle(style);
-                  setShowStyleDropdown(false);
-                }}
-              >
-                {style}
-              </div>
-            ))}
-          </div>
-        )}
 
         <div className="mb-4">
           <label className="block mb-2 text-white text-sm">Dimensions</label>
@@ -318,8 +502,8 @@ export const AssetGenerator = () => {
             <button
               className={`w-full p-2 rounded text-white text-xs border ${
                 selectedDimension === "square_hd"
-                  ? "border-[#c24dd4]"
-                  : "border-white hover:border-[#c24dd4]"
+                  ? "border-purple-400"
+                  : "border-white hover:border-purple-400"
               }`}
               onClick={() => setSelectedDimension("square_hd")}
             >
@@ -328,8 +512,8 @@ export const AssetGenerator = () => {
             <button
               className={`w-full p-2 rounded text-white text-xs border ${
                 selectedDimension === "portrait_16_9"
-                  ? "border-[#c24dd4]"
-                  : "border-white hover:border-[#c24dd4]"
+                  ? "border-purple-400"
+                  : "border-white hover:bg-purple-400"
               }`}
               onClick={() => setSelectedDimension("portrait_16_9")}
             >
@@ -338,8 +522,8 @@ export const AssetGenerator = () => {
             <button
               className={`w-full p-2 rounded text-white text-xs border ${
                 selectedDimension === "landscape_16_9"
-                  ? "border-[#c24dd4]"
-                  : "border-white hover:border-[#c24dd4]"
+                  ? "border-purple-400"
+                  : "border-white hover:border-purple-400"
               }`}
               onClick={() => setSelectedDimension("landscape_16_9")}
             >
@@ -354,8 +538,8 @@ export const AssetGenerator = () => {
             <button
               className={`w-full p-2 rounded text-white text-xs border ${
                 selectedSize === "Small"
-                  ? "border-[#c24dd4]"
-                  : "border-white hover:border-[#c24dd4]"
+                  ? "border-purple-400"
+                  : "border-white hover:bg-purple-400"
               }`}
               onClick={() => setSelectedSize("Small")}
             >
@@ -365,7 +549,7 @@ export const AssetGenerator = () => {
               className={`w-full p-2 rounded text-white text-xs border ${
                 selectedSize === "Medium"
                   ? "border-[#c24dd4]"
-                  : "border-white hover:border-[#c24dd4]"
+                  : "border-white hover:bg-purple-400"
               }`}
               onClick={() => setSelectedSize("Medium")}
             >
@@ -374,8 +558,8 @@ export const AssetGenerator = () => {
             <button
               className={`w-full p-2 rounded text-white text-xs border ${
                 selectedSize === "Large"
-                  ? "border-[#c24dd4]"
-                  : "border-white hover:border-[#c24dd4]"
+                  ? "border-purple-400"
+                  : "border-white hover:border-purple-400"
               }`}
               onClick={() => setSelectedSize("Large")}
             >
@@ -395,8 +579,8 @@ export const AssetGenerator = () => {
                 key={number}
                 className={`w-full p-2 rounded text-white text-xs border ${
                   selectedNumber === number
-                    ? "border-[#c24dd4]"
-                    : "border-white hover:border-[#c24dd4]"
+                    ? "border-purple-400"
+                    : "border-white hover:border-purple-400"
                 }`}
                 onClick={() => setSelectedNumber(number)}
               >
@@ -419,7 +603,7 @@ export const AssetGenerator = () => {
                 }
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-[#c24dd4] peer-focus:ring-2 peer-focus:ring-[#c24dd4] transition-colors duration-200"></div>
+              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-purple-400 peer-focus:ring-2 peer-focus:ring-[#c24dd4] transition-colors duration-200"></div>
               <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-200 transform peer-checked:translate-x-5"></div>
             </label>
             <span className="ml-2 text-white text-xs">
@@ -432,7 +616,7 @@ export const AssetGenerator = () => {
             <button
               className={`w-full p-2 ${
                 isInpaintingMode
-                  ? "bg-[#c24dd4] text-white"
+                  ? "bg-purple-400 text-white"
                   : "bg-black border border-gray-700 text-white"
               } rounded text-sm hover:bg-gray-600`}
               onClick={() => handleModeSwitch("inpainting")}
@@ -444,13 +628,13 @@ export const AssetGenerator = () => {
           <div>
             <button
               className={`w-full p-2 ${
-                styleTransferMode
-                  ? "bg-[#c24dd4] text-white"
+                mode === "inpaintingHistory"
+                  ? "bg-purple-400 text-white"
                   : "bg-black border border-gray-700 text-white"
               } rounded text-sm hover:bg-gray-600`}
-              onClick={() => handleModeSwitch("styleTransfer")}
+              onClick={() => handleModeSwitch("inpaintingHistory")}
             >
-              Style Transfer Mode
+              Inpainting History
             </button>
           </div>
 
@@ -469,12 +653,14 @@ export const AssetGenerator = () => {
       {/* right container */}
       <div className="ml-[16.6667%] w-[83.3333%] h-screen overflow-y-auto p-4 flex flex-col items-center">
         {isInpaintingMode ? (
-          <InpaintingMode />
+          <InpaintingMode selectedAsset={selectedAsset} />
         ) : styleTransferMode ? (
           <StyleTransferMode />
+        ) : mode === "inpaintingHistory" ? (
+          <InpaintingHistoryPage />
         ) : (
           <>
-            <div className="bg-[#101622] w-3/4 h-36 border border-[#c24dd4] rounded-lg flex flex-col justify-between p-2 mb-4">
+            <div className="bg-[#101622] w-3/4 h-36 border border-purple-400 rounded-lg flex flex-col justify-between p-2 mb-4">
               <textarea
                 placeholder="Enter text here"
                 className="w-full h-full p-2 text-slate-300 bg-[#101622] rounded-md resize-none"
@@ -569,7 +755,7 @@ export const AssetGenerator = () => {
                   {generatedData.images.map((image, index) => (
                     <div key={index} className="relative group">
                       <img
-                        src={image.url.url}
+                        src={image.url}
                         alt="Generated"
                         className="w-300 h-300 object-cover hover:opacity-70"
                       />
@@ -609,7 +795,7 @@ export const AssetGenerator = () => {
                 history.map((item) => (
                   <div
                     key={item.id}
-                    className="mt-3 w-full border border-[#c24dd4] rounded-lg p-2 mb-4"
+                    className="mt-3 w-full border border-purple-400 rounded-lg p-2 mb-4"
                   >
                     <div className="flex justify-between items-start">
                       <div
@@ -682,7 +868,7 @@ export const AssetGenerator = () => {
       {/* Upscale Modal */}
       {isUpscaleModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-          <div className="bg-[#101622] border border-[#c24dd4] rounded-lg p-4 w-4/5 max-w-5xl">
+          <div className="bg-[#101622] border border-purple-400 rounded-lg p-4 w-4/5 max-w-5xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-white text-lg font-semibold">
                 Image Upscaling
@@ -726,7 +912,7 @@ export const AssetGenerator = () => {
                   {upscaleData.isLoading ? (
                     <div className="flex flex-col items-center justify-center p-8">
                       <svg
-                        className="animate-spin h-10 w-10 text-[#c24dd4] mb-2"
+                        className="animate-spin h-10 w-10 text-purple-400 mb-2"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
