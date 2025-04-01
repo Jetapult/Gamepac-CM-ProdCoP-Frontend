@@ -260,16 +260,15 @@ const LevelGenerator = () => {
     <div className="level-generator-container">
       <div className="level-generator-header">
         <Text className="level-generator-subtitle">
-          Generate word search puzzles for your game with customizable settings in seconds. 
+          Generate word search puzzles for your game with customizable settings
+          in seconds.
         </Text>
       </div>
 
       <div className="level-generator-content">
         <div className="level-generator-form-container">
-          <Card 
-            title="Level Configuration" 
-            className="level-generator-card"
-          >
+          <Card title="Level Configuration" className="level-generator-card">
+
             <Form
               form={form}
               layout="vertical"
@@ -277,18 +276,55 @@ const LevelGenerator = () => {
               initialValues={{
                 rows: 7,
                 cols: 7,
-                language: 'es',
+                language: "es",
                 englishLevel: "KITE, BALL, TENT, VOLLEY, DART, GOLF",
-                hint: "BACKYARD ENTERTAINMENT"
+                hint: "BACKYARD ENTERTAINMENT",
               }}
             >
+                          <Form.Item
+              name="language"
+              label="Target Language"
+              rules={[{ required: true, message: "Please select a language" }]}
+            >
+              <Select placeholder="Select language">
+                {languages.map((lang) => (
+                  <Option key={lang.value} value={lang.value}>
+                    {lang.label}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item
+              name="hint"
+              label="Hint"
+              rules={[{ required: true, message: "Please enter a hint" }]}
+            >
+              <Input
+                placeholder="Enter a hint for the level (e.g. BACKYARD ENTERTAINMENT)"
+                addonAfter={
+                  <Button
+                    type="text"
+                    onClick={handleGenerateHint}
+                    loading={hintLoading}
+                    style={{ padding: 0, border: "none", color: "white" }}
+                  >
+                    Generate
+                  </Button>
+                }
+              />
+            </Form.Item>
               <Form.Item
                 name="englishLevel"
                 label="English Level"
-                rules={[{ required: true, message: 'Please enter the English level words' }]}
+                rules={[
+                  {
+                    required: true,
+                    message: "Please enter the English level words",
+                  },
+                ]}
               >
-                <TextArea 
-                  placeholder="Enter words separated by commas (e.g. KITE, BALL, TENT, VOLLEY, DART, GOLF)" 
+                <TextArea
+                  placeholder="Enter words separated by commas (e.g. KITE, BALL, TENT, VOLLEY, DART, GOLF)"
                   rows={4}
                 />
               </Form.Item>
@@ -297,73 +333,52 @@ const LevelGenerator = () => {
                   <Form.Item
                     name="numWords"
                     label="Number of Words"
-                    rules={[{ required: true, message: 'Please enter number of words' }]}
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please enter number of words",
+                      },
+                    ]}
                     style={{ marginBottom: 0 }}
                   >
-                    <InputNumber min={3} max={12}/>
+                    <InputNumber min={3} max={12} />
                   </Form.Item>
-                  
-                  <Button 
-                    type="default" 
-                    onClick={handleGenerateWords} 
+
+                  <Button
+                    type="default"
+                    onClick={handleGenerateWords}
                     loading={wordsLoading}
-                    style={{ marginTop: '30px' }}
+                    style={{ marginTop: "30px" }}
                   >
                     Generate Words
                   </Button>
                 </Space>
               </Form.Item>
 
-
-              <Form.Item
-                name="language"
-                label="Target Language"
-                rules={[{ required: true, message: 'Please select a language' }]}
-              >
-                <Select placeholder="Select language">
-                  {languages.map(lang => (
-                    <Option key={lang.value} value={lang.value}>{lang.label}</Option>
-                  ))}
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                name="hint"
-                label="Hint"
-                rules={[{ required: true, message: 'Please enter a hint' }]}
-              >
-                <Input placeholder="Enter a hint for the level (e.g. BACKYARD ENTERTAINMENT)" 
-                  addonAfter={
-                    <Button 
-                      type="text" 
-                      onClick={handleGenerateHint} 
-                      loading={hintLoading}
-                      style={{ padding: 0, border: 'none', color: 'white'}}
-                    >
-                      Generate
-                    </Button>
-                  }
-                />
-                </Form.Item>
-              <div style={{ display: 'flex', gap: '16px' }}>
+              <div style={{ display: "flex", gap: "16px" }}>
                 <Form.Item
-                name="difficulty"
-                label="Difficulty Level"
-                rules={[{ required: true, message: 'Please select a difficulty level' }]}
-              >
-                <Select placeholder="Select difficulty">
-                  <Option value="easy">Easy (7×8)</Option>
-                  <Option value="medium">Medium (9×10)</Option>
-                  <Option value="hard">Hard (10×11)</Option>
-                </Select>
-              </Form.Item>
+                  name="difficulty"
+                  label="Difficulty Level"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Please select a difficulty level",
+                    },
+                  ]}
+                >
+                  <Select placeholder="Select difficulty">
+                    <Option value="easy">Easy (7×8)</Option>
+                    <Option value="medium">Medium (9×10)</Option>
+                    <Option value="hard">Hard (10×11)</Option>
+                  </Select>
+                </Form.Item>
               </div>
 
               <Form.Item>
                 <Space>
-                  <Button 
-                    type="primary" 
-                    htmlType="submit" 
+                  <Button
+                    type="primary"
+                    htmlType="submit"
                     loading={loading}
                     className="generate-button"
                   >
@@ -385,16 +400,16 @@ const LevelGenerator = () => {
               <Text>Generating word level...</Text>
             </div>
           ) : generatedLevel ? (
-            <Card 
-              title="Generated Level" 
+            <Card
+              title="Generated Level"
               className="level-generator-card"
               extra={
                 <Space>
-                  <Button 
-                    type="text" 
-                    icon={<CopyOutlined />} 
+                  <Button
+                    type="text"
+                    icon={<CopyOutlined />}
                     onClick={handleCopyJson}
-                    className='text-white'
+                    className="text-white"
                   >
                     Copy JSON
                   </Button>
@@ -415,11 +430,15 @@ const LevelGenerator = () => {
                 <div className="level-info">
                   <div className="level-details">
                     <div className="level-detail-item">
-                      <Text strong className='text-white'>Hint:</Text>
-                      <Text className='text-white'>{generatedLevel.hint}</Text>
+                      <Text strong className="text-white">
+                        Hint:
+                      </Text>
+                      <Text className="text-white">{generatedLevel.hint}</Text>
                     </div>
                     <div className="level-detail-item">
-                      <Text strong className='text-white'>Words:</Text>
+                      <Text strong className="text-white">
+                        Words:
+                      </Text>
                       <div className="word-tags">
                         {generatedLevel.words.map((word, index) => (
                           <div key={index} className="word-tag">
@@ -429,69 +448,95 @@ const LevelGenerator = () => {
                       </div>
                     </div>
                     <div className="level-detail-item">
-                      <Text strong className='text-white'>Grid Size:</Text>
-                      <Text className='text-white'>{generatedLevel.rows} × {generatedLevel.cols}</Text>
+                      <Text strong className="text-white">
+                        Grid Size:
+                      </Text>
+                      <Text className="text-white">
+                        {generatedLevel.rows} × {generatedLevel.cols}
+                      </Text>
                     </div>
                   </div>
-                  
-                  <Divider style={{ margin: '16px 0' }} />
-                  
+
+                  <Divider style={{ margin: "16px 0" }} />
+
                   <div className="json-preview">
                     <div className="json-header">
-                      <Text strong className='text-white'>JSON Output:</Text>
+                      <Text strong className="text-white">
+                        JSON Output:
+                      </Text>
                     </div>
                     <pre className="json-content">{jsonString}</pre>
                   </div>
                 </div>
-                
+
                 <div className="grid-visualization">
                   <div className="grid-title">Word Search Grid</div>
-                  <div 
-                    className="word-grid" 
-                    style={{ 
+                  <div
+                    className="word-grid"
+                    style={{
                       gridTemplateColumns: `repeat(${generatedLevel.cols}, 1fr)`,
-                      gridTemplateRows: `repeat(${generatedLevel.rows}, 1fr)`
+                      gridTemplateRows: `repeat(${generatedLevel.rows}, 1fr)`,
                     }}
                   >
-                    {generatedLevel.boardCharacters.map((row, rowIndex) => (
+                    {generatedLevel.boardCharacters.map((row, rowIndex) =>
                       row.map((cell, colIndex) => {
                         const isPartOfWord = isCellInWord(rowIndex, colIndex);
                         const word = getWordForCell(rowIndex, colIndex);
-                        
+
                         return (
-                          <Tooltip 
-                            key={`${rowIndex}-${colIndex}`} 
+                          <Tooltip
+                            key={`${rowIndex}-${colIndex}`}
                             title={isPartOfWord ? `Part of: ${word}` : null}
                             placement="top"
                           >
-                            <div 
-                              className={`grid-cell ${isPartOfWord ? 'word-cell' : ''}`}
+                            <div
+                              className={`grid-cell ${
+                                isPartOfWord ? "word-cell" : ""
+                              }`}
                             >
                               {cell}
                             </div>
                           </Tooltip>
                         );
                       })
-                    ))}
+                    )}
                   </div>
                 </div>
               </div>
             </Card>
           ) : (
-            <Card 
-              className="level-generator-card empty-state"
-              bordered={false}
-            >
+            <Card className="level-generator-card empty-state" bordered={false}>
               <div className="empty-state-content">
                 <div className="empty-icon">
-                  <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="20" y="20" width="80" height="80" rx="4" stroke="#8C8C8C" strokeWidth="2" strokeDasharray="4 4"/>
-                    <path d="M40 40H80M40 60H80M40 80H60" stroke="#8C8C8C" strokeWidth="2" strokeLinecap="round"/>
+                  <svg
+                    width="120"
+                    height="120"
+                    viewBox="0 0 120 120"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect
+                      x="20"
+                      y="20"
+                      width="80"
+                      height="80"
+                      rx="4"
+                      stroke="#8C8C8C"
+                      strokeWidth="2"
+                      strokeDasharray="4 4"
+                    />
+                    <path
+                      d="M40 40H80M40 60H80M40 80H60"
+                      stroke="#8C8C8C"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </div>
                 <Title level={4}>No Level Generated Yet</Title>
                 <Text type="secondary">
-                  Configure your level settings and click "Generate Level" to create a word search puzzle.
+                  Configure your level settings and click "Generate Level" to
+                  create a word search puzzle.
                 </Text>
               </div>
             </Card>
