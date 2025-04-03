@@ -11,7 +11,6 @@ const ImageEditor = ({ imageUrl, onClose, onMaskGenerated }) => {
 
   useEffect(() => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
     img.src = imageUrl;
 
     img.onload = () => {
@@ -113,11 +112,15 @@ const ImageEditor = ({ imageUrl, onClose, onMaskGenerated }) => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await api.post("/v1/assetGenerator/upload-mask", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await api.post(
+        "/v1/assetGenerator/upload-mask",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       if (response.data && response.data.url) {
         return response.data.url; // Expecting the S3 URL from backend
