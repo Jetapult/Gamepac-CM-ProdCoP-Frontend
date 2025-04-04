@@ -17,7 +17,7 @@ const PlayableGenerator = () => {
 
               <div className="mt-8">
                 <a
-                  href="/video-playable-editor"
+                  href="/video-editor"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center px-6 py-3 rounded-md bg-gradient-to-r from-[#b9ff66] to-[#84cc16] hover:from-[#84cc16] hover:to-[#4d7c0f] text-black font-medium transition-colors"
