@@ -69,7 +69,7 @@ const TabContent = React.memo(({ currentTab, selectedGame, toastMessage, setToas
     case "playables":
       return <PlayableGenerator />;
     case "competitor-analysis":
-      return <ASOCompetitorAnalysis studioId={studioId} game={selectedGame} />;
+      return <ASOCompetitorAnalysis studioId={studioId} selectedGame={selectedGame} />;
     default:
       return <StaticAdGenerator game={selectedGame} />;
   }
@@ -83,6 +83,7 @@ const AsoAssistant = () => {
   const [loading, setLoading] = useState(false);
   const userData = useSelector((state) => state.user.user);
   const studios = useSelector((state) => state.admin.studios);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [toastMessage, setToastMessage] = useState({
     show: false,
     message: "",
@@ -93,6 +94,7 @@ const AsoAssistant = () => {
   const studioId = userData?.studio_type?.includes("studio_manager")
     ? studios.filter((x) => x.slug === studioSlug)[0]?.id
     : userData?.studio_id;
+  
   const params = useParams();
   const navigate = useNavigate();
 
@@ -121,15 +123,20 @@ const AsoAssistant = () => {
     }
   };
 
+  // const fetchGamesByStudio = async () => {
+
   useEffect(() => {
-    if (userData.id) {
+    if (userData.id && userData.studio_id) {
       if (userData?.studio_type?.includes("studio_manager")) {
+        setShowDropdown(true);
+
         fetchAllgames();
       } else {
         fetchGames();
       }
     }
   }, [userData]);
+
 
   const handleTabChange = (item, index) => {
     setCurrentTab(item.slug);
@@ -142,10 +149,41 @@ const AsoAssistant = () => {
     }
   }, [params.studio_slug]);
 
+  const handleStudioChange = async (e) => {
+  const selectedSlug = e.target.value;
+  localStorage.setItem("selectedStudio", selectedSlug);
+
+    const selectedStudio = studios.find((s) => s.slug === selectedSlug);
+  if (selectedStudio) {
+    try {
+      const res = await api.get(`/v1/games/platform/${selectedSlug}`);
+      setGames(res.data.data);
+      setSelectedGame(res.data.data[0]);
+    } catch (error) {
+      console.error("Error fetching games for selected studio:", error);
+    }
+  }
+};
+
   return (
     <div className="mx-auto px-4 py-8 bg-white min-h-screen">
       <div className="flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-1/6">
+        <div className="w-full md:w-1/6 space-y-4">
+          {showDropdown && (
+            <div>
+              <select className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                defaultValue={studioSlug}
+                onChange={handleStudioChange}
+              >
+                {studios.map((studio) => (
+                  <option key={studio.id} value={studio.slug}>
+                    { studio.id !== '1' ? studio.studio_name : "Choose Studio" }
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          
           <GamesDropdown
             selectedGame={selectedGame}
             setSelectedGame={setSelectedGame}
@@ -153,12 +191,12 @@ const AsoAssistant = () => {
             selectedTab={selectedTab}
             setSelectedTab={setSelectedTab}
             setGames={setGames}
-            studio_slug={studioSlug}
+            studio_slug={studioSlug} 
           />
         </div>
 
         <div className="w-full md:w-3/4">
-          {selectedGame ? (
+          {studioSlug!== "jetapult" && selectedGame ? (
             <>
               <div className="flex items-start mb-6">
                 {(selectedGame.play_store_icon ||
@@ -215,7 +253,7 @@ const AsoAssistant = () => {
                 Welcome to ASO Assistant
               </h2>
               <p className="text-gray-600 mb-6">
-                Select a game from the left panel to get started with generating
+                Select a game and studio from the left panel to get started with generating
                 marketing assets.
               </p>
               {games.length === 0 && !loading && (
