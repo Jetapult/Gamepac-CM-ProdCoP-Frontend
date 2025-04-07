@@ -41,8 +41,8 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
   // Fetch competitor games
   useEffect(() => {
     const fetchCompetitorGames = async () => {
-      setIsLoading(true);
       try {
+        setIsLoading(true);
         const response = await api.get(`/v1/competitor-games?studio_id=${studioId}`);
         setAllCompetitorGames(response.data.data || []);
         
@@ -111,32 +111,39 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
 
    // Function to fetch sentiment analysis data
   const fetchSentimentAnalysis = async (competitorId) => {
-    setSentimentLoading(true);
     try {
+      setSentimentLoading(true);
       const response = await api.get(
         `/v1/competitor-games/${competitorId}/sentiment-analysis`
       );
       setSentimentData(prev => ({ ...prev, [competitorId]: response.data.data }));
     } catch (err) {
       console.error("Error fetching sentiment analysis:", err);
-      // setError("Failed to load sentiment analysis");
     } finally {
       setSentimentLoading(false);
     }
   };
 
-  const removeSentimentData = (competitorId) => {
-  setSentimentData((prev) => {
-    const { [competitorId]: removed, ...remaining } = prev;
-    return remaining;
-  });
-  };
+const removeSentimentData = (competitorId) => {
+  try {
+    setSentimentData((prev) => {
+      const { [competitorId]: removed, ...remaining } = prev;
+      return remaining;
+    });
+  } catch (error) {
+    console.error('Failed to remove sentiment data:', error);
+  }
+};
 
-  const removeKeywordData = (competitorId) => {
-  setKeywords((prev) => {
-    const { [competitorId]: removed, ...remaining } = prev;
-    return remaining;
-  });
+const removeKeywordData = (competitorId) => {
+  try {
+    setKeywords((prev) => {
+      const { [competitorId]: removed, ...remaining } = prev;
+      return remaining;
+    });
+  } catch (error) {
+    console.error('Failed to remove keyword data:', error);
+  }
 };
 
   // Toggle competitor selection
@@ -167,9 +174,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
       }
     }
   };
-
-
- 
 
   // Helper function to render sentiment score bars
   const renderSentimentScore = (score, label) => {
@@ -379,58 +383,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
           {activeTab === "overview" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
-                  <div className="p-4 pb-2">
-                    <h3 className="text-sm font-medium flex items-center">
-                      <Award className="h-4 w-4 mr-2 text-blue-500" />
-                      App Store Rank
-                    </h3>
-                  </div>
-                  <div className="p-4">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Your App</span>
-                        <div className="flex items-center">
-                          <span className="font-bold">#142</span>
-                          <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                            +12
-                          </span>
-                        </div>
-                      </div>
-
-                      {selectedCompetitors.map((competitor) => {
-                        const details = competitorDetails[competitor.id];
-                        const platformData = details
-                          ? storeType === "appStore"
-                            ? details.ios_data
-                            : details.android_data
-                          : null;
-
-                        return (
-                          <div
-                            key={competitor.id}
-                            className="flex items-center justify-between"
-                          >
-                            <span className="text-sm">
-                              {competitor.competitor_name}
-                            </span>
-                            <div className="flex items-center">
-                              <span className="font-medium">
-                                {platformData
-                                  ? `#${Math.floor(Math.random() * 200) + 1}`
-                                  : "N/A"}
-                              </span>
-                              <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-800">
-                                -5
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div> */}
-
                 <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="p-4 pb-2">
                     <h3 className="text-sm font-medium flex items-center">
@@ -462,8 +414,8 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                         const details = competitorDetails[competitor.id];
                         const platformData = details
                           ? storeType === "appStore"
-                            ? details.ios_data
-                            : details.android_data
+                            ? details?.ios_data
+                            : details?.android_data
                           : null;
 
                         return (
@@ -514,9 +466,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                               ? selectedGame.app_store_content_rating ||"N/A"
                               : selectedGame.play_store_content_rating || "N/A"}
                           </span>
-                          {/* <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                            +5
-                          </span> */}
                         </div>
                       </div>
 
@@ -599,22 +548,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                   </div>
                 </div>
               </div>
-
-              {/* <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
-                <div className="p-4 border-b">
-                  <h3 className="text-base font-medium">
-                    Competitive Positioning
-                  </h3>
-                </div>
-                <div className="p-4">
-                  <div className="h-[300px] flex items-center justify-center border rounded-md bg-gray-50">
-                    <BarChart2 className="h-16 w-16 text-gray-400" />
-                    <p className="ml-4 text-gray-500">
-                      Competitive positioning chart would appear here
-                    </p>
-                  </div>
-                </div>
-              </div> */}
             </div>
           )}
 
@@ -625,10 +558,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                   <h3 className="text-base font-medium">
                     Keyword Overlap Analysis
                   </h3>
-                  {/* <button className="flex items-center px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                  </button> */}
                 </div>
                 <div className="p-4">
                   <div className="overflow-x-auto">
@@ -653,15 +582,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                           <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Competiting Apps
                           </th>
-                          
-                          {/* {selectedCompetitors.map((competitor) => (
-                            <th
-                              key={competitor.id}
-                              className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
-                              {competitor.competitor_name}
-                            </th>
-                          ))} */}
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -718,8 +638,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                   </div>
                   <div className="p-4">
                     <div className="space-y-6">
-                      {/* Selected Game */}
-                      
                       {selectedGame && (
                         <div>
                           <div className="text-sm font-medium mb-2">                  
@@ -796,8 +714,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                               {[5, 4, 3, 2, 1].map((rating) => {
                               
                                 // Calculate percentage for each rating
-                                {/* const ratingCount = platformData ? platformData.histogram[rating] || 0 : 0; */ }
-                                
                                 const ratingCount = storeType === "appStore" ?  platformData.histogram[rating] || 0 : platformData.histogram[rating - 1] || 0 ;
                                 const ratingPercentage = totalRatings ? (ratingCount / totalRatings) * 100 : 0;
                                 
@@ -845,74 +761,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                   </div>
                 </div>
               </div>
-
-              {/* <div className="border rounded-lg overflow-hidden bg-white shadow-sm"> */}
-                {/* <div className="p-4 border-b flex items-center justify-between">
-                  <h3 className="text-base font-medium">
-                    Review Sentiment Analysis
-                  </h3>
-
-                  <div className="relative">
-                    <button
-                      className="flex items-center justify-between px-3 py-2 border border-gray-300 rounded-md bg-white w-[180px]"
-                      onClick={() => setIsReviewFilterOpen(!isReviewFilterOpen)}
-                    >
-                      <span className="text-sm">
-                        {reviewFilter === "recent"
-                          ? "Most Recent"
-                          : reviewFilter === "positive"
-                          ? "Most Positive"
-                          : reviewFilter === "negative"
-                          ? "Most Critical"
-                          : "Most Mentioned"}
-                      </span>
-                      <ChevronDown className="h-4 w-4 ml-2" />
-                    </button>
-
-                    {isReviewFilterOpen && (
-                      <div className="absolute z-10 w-[180px] mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-                        <div
-                          className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
-                          onClick={() => {
-                            setReviewFilter("recent");
-                            setIsReviewFilterOpen(false);
-                          }}
-                        >
-                          Most Recent
-                        </div>
-                        <div
-                          className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
-                          onClick={() => {
-                            setReviewFilter("positive");
-                            setIsReviewFilterOpen(false);
-                          }}
-                        >
-                          Most Positive
-                        </div>
-                        <div
-                          className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
-                          onClick={() => {
-                            setReviewFilter("negative");
-                            setIsReviewFilterOpen(false);
-                          }}
-                        >
-                          Most Critical
-                        </div>
-                        <div
-                          className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
-                          onClick={() => {
-                            setReviewFilter("mentioned");
-                            setIsReviewFilterOpen(false);
-                          }}
-                        >
-                          Most Mentioned
-                        </div>
-                      </div>
-                    )}
-                  </div>               
-                </div> */}
-                {/* <div className="p-4">Review sentiment content</div> */}
-              {/* </div> */}
             </div>
           )}
 
@@ -1049,92 +897,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                   })}
                 </div>
               </div>
-
-              {/* <div>
-                <h3 className="text-sm font-medium mb-3">
-                  Feature Visualization
-                </h3>
-                <div className="border rounded-md p-4">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead>
-                      <tr>
-                        <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Feature
-                        </th>
-                        <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {selectedGame.game_name}
-                        </th>
-                        {selectedCompetitors.map((competitor) => (
-                          <th
-                            key={competitor.id}
-                            className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            {competitor.competitor_name}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {[
-                        "3D Room View",
-                        "AR Visualization",
-                        "Social Sharing",
-                        "Design Challenges",
-                        "In-app Purchases",
-                      ].map((feature) => (
-                        <tr key={feature} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {feature}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            {Math.random() > 0.3 ? (
-                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                                Yes
-                              </span>
-                            ) : (
-                              <span className="px-2 py-1 text-xs font-medium rounded-full border border-gray-300 text-gray-600">
-                                No
-                              </span>
-                            )}
-                          </td>
-                          {selectedCompetitors.map((competitor) => {
-                            const details = competitorDetails[competitor.id];
-                            const platformData = details
-                              ? storeType === "appStore"
-                                ? details.ios_data
-                                : details.android_data
-                              : null;
-
-                            // Check if this feature is mentioned in the description
-                            const hasFeature = platformData?.description
-                              ? platformData.description
-                                  .toLowerCase()
-                                  .includes(feature.toLowerCase())
-                              : Math.random() > 0.4;
-
-                            return (
-                              <td
-                                key={competitor.id}
-                                className="px-4 py-3 whitespace-nowrap text-sm text-gray-500"
-                              >
-                                {hasFeature ? (
-                                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                                    Yes
-                                  </span>
-                                ) : (
-                                  <span className="px-2 py-1 text-xs font-medium rounded-full border border-gray-300 text-gray-600">
-                                    No
-                                  </span>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div> */}
             </div>
           )}
 
