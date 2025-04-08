@@ -90,10 +90,11 @@ const AsoAssistant = () => {
     duration: 3000,
     type: "success",
   });
-  const studioSlug = localStorage.getItem("selectedStudio") || userData?.slug;
-  const studioId = userData?.studio_type?.includes("studio_manager")
+
+  const [studioSlug, setStudioSlug] = useState(localStorage.getItem("selectedStudio") || userData?.slug);
+  const [studioId,setStudioId] = useState(userData?.studio_type?.includes("studio_manager")
     ? studios.filter((x) => x.slug === studioSlug)[0]?.id
-    : userData?.studio_id;
+    : userData?.studio_id)
   
   const params = useParams();
   const navigate = useNavigate();
@@ -110,33 +111,52 @@ const AsoAssistant = () => {
     }
   };
 
-  const fetchGames = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get(`/v1/games/platform/${studioSlug}`);
-      setGames(response.data.data);
-      setSelectedGame(response.data.data[0]);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching games:", error);
-      setLoading(false);
+const fetchGames = async (slug) => {
+  try {
+    setLoading(true);
+
+    const response = await api.get(`/v1/games/platform/${slug}`);
+    const gameList = response.data.data;
+
+    if (gameList && gameList.length > 0) {
+      setGames(gameList);
+      setSelectedGame(gameList[0]);
+    } else {
+      setGames([]);
+      setSelectedGame(null);
     }
-  };
 
-  // const fetchGamesByStudio = async () => {
+    setLoading(false);
+  } catch (error) {
+    console.error("Error fetching games:", error);
+    setGames([]);
+    setSelectedGame(null);
+    setLoading(false);
+  }
+};
 
-  useEffect(() => {
-    if (userData.id && userData.studio_id) {
-      if (userData?.studio_type?.includes("studio_manager")) {
-        setShowDropdown(true);
+useEffect(() => {
+  if (userData.id && userData.studio_id && studios.length > 0) {
+    if (userData?.studio_type?.includes("studio_manager") || userData?.studio_type?.includes("store_manager")) {
+      setShowDropdown(true);
 
-        fetchAllgames();
-      } else {
-        fetchGames();
+      const otherStudio = studios.find((studio) => studio.slug !== userData?.slug);
+
+      if (otherStudio) {
+        setStudioSlug(otherStudio.slug);
+        setStudioId(otherStudio.id);
+
+        fetchGames(otherStudio.slug);
       }
-    }
-  }, [userData]);
+    } else {
+      const defaultSlug = userData?.slug;
 
+      setStudioSlug(defaultSlug);
+
+      fetchGames(defaultSlug);
+    }
+  }
+}, [userData, studios]);
 
   const handleTabChange = (item, index) => {
     setCurrentTab(item.slug);
@@ -148,22 +168,19 @@ const AsoAssistant = () => {
       setCurrentTab(params.studio_slug);
     }
   }, [params.studio_slug]);
-
+  
+  
   const handleStudioChange = async (e) => {
-  const selectedSlug = e.target.value;
-  localStorage.setItem("selectedStudio", selectedSlug);
-
+    const selectedSlug = e.target.value;
+    setStudioSlug(selectedSlug);
     const selectedStudio = studios.find((s) => s.slug === selectedSlug);
-  if (selectedStudio) {
-    try {
-      const res = await api.get(`/v1/games/platform/${selectedSlug}`);
-      setGames(res.data.data);
-      setSelectedGame(res.data.data[0]);
-    } catch (error) {
-      console.error("Error fetching games for selected studio:", error);
+    if (selectedStudio) {
+      setStudioId(selectedStudio.id);
+      fetchGames(selectedSlug);
+    } else {
+      console.warn("Selected studio not found in studio list.");
     }
-  }
-};
+  };
 
   return (
     <div className="mx-auto px-4 py-8 bg-white min-h-screen">
@@ -175,9 +192,9 @@ const AsoAssistant = () => {
                 defaultValue={studioSlug}
                 onChange={handleStudioChange}
               >
-                {studios.map((studio) => (
+                {studios.filter((studio) => studio.id !== "1").map((studio) => (
                   <option key={studio.id} value={studio.slug}>
-                    { studio.id !== '1' ? studio.studio_name : "Choose Studio" }
+                    {studio.studio_name}
                   </option>
                 ))}
               </select>
@@ -196,7 +213,7 @@ const AsoAssistant = () => {
         </div>
 
         <div className="w-full md:w-3/4">
-          {studioSlug!== "jetapult" && selectedGame ? (
+          {selectedGame ? (
             <>
               <div className="flex items-start mb-6">
                 {(selectedGame.play_store_icon ||

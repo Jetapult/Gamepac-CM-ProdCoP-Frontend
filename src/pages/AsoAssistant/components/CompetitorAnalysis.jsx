@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import api from "../../../api";
 import moment from 'moment';
+// import PopUpMethod from './../../../utils/PopUpMethod';
 
 export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
   // State for competitor games from API 
@@ -29,6 +30,7 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
   const [keywords, setKeywords] = useState({});
   const [sentimentData, setSentimentData] = useState({});
   const [sentimentLoading, setSentimentLoading] = useState(false);
+  const [openScreenshot, setOpenScreenshot] = useState(null);
 
   // Other existing state
   const [activeTab, setActiveTab] = useState("overview");
@@ -767,50 +769,54 @@ const removeKeywordData = (competitorId) => {
           {activeTab === "visuals" && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-medium mb-3">
+                <h3 className="font-medium mb-3">
                   App Icon Comparison
                 </h3>
-                <div className="flex flex-wrap gap-4">
-                  <div className="text-center">
-                    <div className="border rounded-xl p-2 mb-2">
+                <div className="flex flex-wrap gap-2">
+                  <div className="text-center w-24">
+                    <div className="mb-1">
                       <img
                         src={storeType === "appstore" ? selectedGame.app_store_icon : selectedGame.play_store_icon}
                         alt="Your App Icon"
-                        className="w-20 h-20 rounded-xl"
+                        className="w-20 h-20 rounded-xl object-cover cursor-pointer"
+                        onClick={() => setOpenScreenshot({
+                          list: [storeType === "appstore" ? selectedGame.app_store_icon : selectedGame.play_store_icon],
+                          index: 0,
+                        })}
                       />
                     </div>
-
-                    <span className="text-xs">
+                    <span className="text-xs block leading-tight break-words">
                       {selectedGame.game_name}
                     </span>
                   </div>
-
-                  {selectedCompetitors.map((competitor) => {
+                  
+                  {selectedCompetitors.map((competitor) => {    
                     const details = competitorDetails[competitor.id];
                     const platformData = details
                       ? storeType === "appStore"
                         ? details.ios_data
                         : details.android_data
                       : null;
-
                     return (
-                      <div key={competitor.id} className="text-center">
-                        <div className="border rounded-xl p-2 mb-2">
+                      <div key={competitor.id} className="text-center w-24">
+                        <div className="mb-1">
                           {platformData?.icon_url ? (
                             <img
                               src={platformData.icon_url}
                               alt={`${competitor.competitor_name} Icon`}
-                              className="w-20 h-20 rounded-xl"
+                              className="w-20 h-20 rounded-xl object-cover cursor-pointer"
+                              onClick={() => setOpenScreenshot({
+                                list: [platformData.icon_url],
+                                index: 0,
+                              })}
                             />
                           ) : (
-                            <div className="w-20 h-20 rounded-xl bg-gray-200 flex items-center justify-center">
-                              <span className="text-xs text-gray-500">
-                                No icon
-                              </span>
+                              <div className="w-20 h-20 rounded-xl bg-gray-200 flex items-center justify-center">
+                                <span className="text-xs text-gray-500">No icon</span>
                             </div>
                           )}
                         </div>
-                        <span className="text-xs">
+                        <span className="text-xs block leading-tight break-words">
                           {competitor.competitor_name}
                         </span>
                       </div>
@@ -820,7 +826,7 @@ const removeKeywordData = (competitorId) => {
               </div>
 
               <div>
-                <h3 className="text-sm font-medium mb-3">
+                <h3 className="font-medium mb-3">
                   Screenshot Comparison
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -831,14 +837,17 @@ const removeKeywordData = (competitorId) => {
                     <div className="flex gap-2 overflow-x-auto pb-2">
                       {selectedGame?.play_store_screenshot_urls?.length > 0 ? (
                         selectedGame.play_store_screenshot_urls.slice(0, 3).map((src, index) => (
-                          <a key={index} href={src} target="_blank" rel="noopener noreferrer">
                           <img
                             key={index}
                             src={src}
                             alt={`App Screenshot ${index + 1}`}
-                            className="w-24 h-48 object-cover rounded-md border"     
+                              className="w-24 h-48 object-cover rounded-md border cursor-pointer"
+                            onClick={() => setOpenScreenshot({
+                              list: selectedGame.play_store_screenshot_urls,
+                              index: index,
+                            })
+                            }
                             />
-                          </a>
                         ))) : ([1, 2, 3].map((i) => (
                                 <div
                                   key={i}
@@ -870,16 +879,22 @@ const removeKeywordData = (competitorId) => {
                             ? platformData.screenshot_urls
                                 .slice(0, 3)
                               .map((screenshot, i) => (
-                                  <a key={i} href={screenshot} target="_blank" rel="noopener noreferrer">
+                                  
                                   <img
                                     key={i}
                                     src={screenshot}
                                     alt={`${
                                       competitor.competitor_name
                                     } Screenshot ${i + 1}`}
-                                    className="w-24 h-48 object-cover rounded-md border"
+                                   className="w-24 h-48 object-cover rounded-md border cursor-pointer"
+                                  onClick={() =>
+                                    setOpenScreenshot({
+                                      list: platformData.screenshot_urls,
+                                      index: i,
+                                    })
+                                  }
                                   />
-                                  </a>
+                                  
                                 ))
                             : [1, 2, 3].map((i) => (
                                 <div
@@ -983,6 +998,7 @@ const removeKeywordData = (competitorId) => {
                 <div className="p-4 border-b">
                   <h3 className="text-base font-medium">
                     Description Analysis
+                    
                   </h3>
                 </div>
                 <div className="p-4">
@@ -1017,13 +1033,15 @@ const removeKeywordData = (competitorId) => {
                     </div>
 
                     <div>
+                      
                       {descriptionTab === "yourApp" && (
+                        
                         storeType === "appStore" ? selectedGame.app_store_description ||
                           <div className="p-4 border rounded-md max-h-[300px] overflow-y-auto">
                             <p className="text-sm text-gray-500">
                               No description available
                             </p>
-                          </div>
+                      </div>   
                           : selectedGame.play_store_description ||
                           <div className="p-4 border rounded-md max-h-[300px] overflow-y-auto">
                               <p className="text-sm text-gray-500">
@@ -1032,35 +1050,46 @@ const removeKeywordData = (competitorId) => {
                           </div>
                       )}
 
-                      {selectedCompetitors.map((competitor) => {
-                        const details = competitorDetails[competitor.id];
-                        const platformData = details
-                          ? storeType === "appStore"
-                            ? details.ios_data
-                            : details.android_data
-                          : null;
+                      {selectedCompetitors.map(({ id }) => {
+                        const details = competitorDetails[id];
+                        const platformData = storeType === "appStore" ? details?.ios_data : details?.android_data;
+                        const description = platformData?.description;
 
-                        return (
-                          descriptionTab === `comp-${competitor.id}` && (
-                            <div
-                              key={competitor.id}
-                              className="p-4 border rounded-md max-h-[300px] overflow-y-auto"
-                            >
-                              {platformData?.description ? (
-                                <>
-                                  <p className="text-sm whitespace-pre-line">
-                                    {platformData.description}
-                                  </p>
-                                </>
-                              ) : (
-                                <p className="text-sm text-gray-500">
-                                  No description available
-                                </p>
-                              )}
-                            </div>
-                          )
-                        );
-                      })}
+                 return (
+                   descriptionTab === `comp-${id}` && (
+                     <div
+                       key={id}
+                       className="p-4 border rounded-md max-h-[300px] overflow-y-auto text-sm space-y-2"
+                     >
+                       {description ? (
+                         description.split("\n").map((line, idx) => {
+                           const trimmed = line.trim();
+                           if (!trimmed) return null;
+               
+                           const isHeading = trimmed === trimmed.toUpperCase() && !trimmed.startsWith("●");
+                           const isBullet = trimmed.startsWith("●");
+               
+                           const html = {
+                             __html: isBullet ? trimmed.replace(/^●\s*/, "") : trimmed,
+                           };
+               
+                           return isBullet ? (
+                             <li key={idx} className="ml-4 list-disc" dangerouslySetInnerHTML={html} />
+                           ) : (
+                             <p
+                               key={idx}
+                               className={`whitespace-pre-wrap ${isHeading ? "font-semibold text-base mt-2" : ""}`}
+                               dangerouslySetInnerHTML={html}
+                             />
+                           );
+                         })
+                       ) : (
+                         <p className="text-gray-500">No description available</p>
+                       )}
+                     </div>
+                   )
+                 );
+               })}
                     </div>
                   </div>
                 </div>
@@ -1069,6 +1098,72 @@ const removeKeywordData = (competitorId) => {
           )}
         </div>
       </div>
+      {openScreenshot && (<PopUpMethod screenshots={openScreenshot.list}
+        initialIndex={openScreenshot.index}
+        onClose={() => setOpenScreenshot(null)}
+      />
+      )}
     </div>
   );
 }
+
+const PopUpMethod = ({ screenshots, initialIndex, onClose }) => {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    setCurrentIndex(initialIndex);
+  }, [initialIndex]);
+
+  if (!screenshots.length) return null;
+
+  const prev = () =>
+    setCurrentIndex((prev) => (prev === 0 ? screenshots.length - 1 : prev - 1));
+  const next = () =>
+    setCurrentIndex((prev) => (prev === screenshots.length - 1 ? 0 : prev + 1));
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="relative bg-white p-4 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button
+          className="absolute top-2 right-2 text-gray-600 hover:text-black text-xl"
+          onClick={onClose}
+        >
+          &times;
+        </button>
+
+        {/* Carousel */}
+        <div className="flex items-center justify-between">
+          <button
+            className="text-xl px-4 text-gray-700 hover:text-black"
+            onClick={prev}
+          >
+            &#8592;
+          </button>
+          <img
+            src={screenshots[currentIndex]}
+            alt={`Screenshot ${currentIndex + 1}`}
+            className="max-h-[80vh] object-contain rounded-md mx-auto"
+          />
+          <button
+            className="text-xl px-4 text-gray-700 hover:text-black"
+            onClick={next}
+          >
+            &#8594;
+          </button>
+        </div>
+
+        {/* Indicator */}
+        <div className="text-center text-xs text-gray-500 mt-2">
+          {currentIndex + 1} of {screenshots.length}
+        </div>
+      </div>
+    </div>
+  );
+};
