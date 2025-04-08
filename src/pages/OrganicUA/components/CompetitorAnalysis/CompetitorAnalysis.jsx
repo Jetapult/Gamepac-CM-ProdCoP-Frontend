@@ -620,11 +620,11 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                             alt={`Screenshot ${index + 1}`}
                             className="w-full h-32 object-cover rounded cursor-pointer"
                             onClick={() =>
-                                    setOpenScreenshot({
-                                      list: platformData.screenshot_urls,
-                                      index: index+1,
-                                    })
-                                  }
+                              setOpenScreenshot({
+                                list: platformData.screenshot_urls,
+                                index: index + 1,
+                              })
+                            }
                           />
                         ))}
                     </div>
@@ -842,11 +842,13 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
           setSelectedGame={setSelectedGame}
         />
       )}
-      {openScreenshot && (<PopUpMethod screenshots={openScreenshot.list}
-        initialIndex={openScreenshot.index}
-        onClose={() => setOpenScreenshot(null)}  
-      />
-      )} 
+      {openScreenshot && (
+        <ImagePreviewPopup
+          screenshots={openScreenshot.list}
+          initialIndex={openScreenshot.index}
+          onClose={() => setOpenScreenshot(null)}
+        />
+      )}
     </div>
   );
 };
@@ -960,7 +962,7 @@ const AddNewGamePopup = ({ onClose, studioId, setCompetitorGames, setSelectedGam
   );
 };
 
-const PopUpMethod = ({ screenshots, initialIndex, onClose }) => {
+const ImagePreviewPopup = ({ screenshots, initialIndex, onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
   useEffect(() => {
