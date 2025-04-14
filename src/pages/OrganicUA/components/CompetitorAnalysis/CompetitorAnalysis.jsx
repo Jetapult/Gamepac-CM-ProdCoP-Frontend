@@ -433,14 +433,16 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                     <div className="space-y-2">
                       {[5, 4, 3, 2, 1].map((star, index) => (
                         <div key={star} className="flex items-center text-sm">
-                          <div className="w-12 text-right mr-2">{star} ⭐</div>
+                          <div className="flex w-14 justify-end items-center gap-1">
+                            <span>{star} ⭐</span>
+                          </div>
                           <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                             <div
                               className="bg-yellow-400 h-full"
                               style={{
                                 width: `${
                                   platformData.ratings
-                                    ? (platformData.histogram[5 - star] /
+                                    ? (platformData.histogram[star - 1] /
                                         platformData.ratings) *
                                       100
                                     : 0
@@ -449,7 +451,7 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                             ></div>
                           </div>
                           <div className="w-16 ml-2 text-gray-500">
-                            {platformData.histogram[5 - star].toLocaleString()}
+                            {platformData.histogram[star - 1].toLocaleString()}
                           </div>
                         </div>
                       ))}
