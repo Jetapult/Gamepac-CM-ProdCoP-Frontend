@@ -23,6 +23,8 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [gameData, setGameData] = useState(null);
   const [gameReviews, setGameReviews] = useState([]);
+  const [openScreenshot, setOpenScreenshot] = useState(null);
+  
 
   const [selectedCompetitors, setSelectedCompetitors] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
@@ -431,14 +433,16 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                     <div className="space-y-2">
                       {[5, 4, 3, 2, 1].map((star, index) => (
                         <div key={star} className="flex items-center text-sm">
-                          <div className="w-12 text-right mr-2">{star} ⭐</div>
+                          <div className="flex w-14 justify-end items-center gap-1">
+                            <span>{star} ⭐</span>
+                          </div>
                           <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                             <div
                               className="bg-yellow-400 h-full"
                               style={{
                                 width: `${
                                   platformData.ratings
-                                    ? (platformData.histogram[5 - star] /
+                                    ? (platformData.histogram[star - 1] /
                                         platformData.ratings) *
                                       100
                                     : 0
@@ -447,7 +451,7 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                             ></div>
                           </div>
                           <div className="w-16 ml-2 text-gray-500">
-                            {platformData.histogram[5 - star].toLocaleString()}
+                            {platformData.histogram[star - 1].toLocaleString()}
                           </div>
                         </div>
                       ))}
@@ -616,7 +620,13 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                             key={index}
                             src={url}
                             alt={`Screenshot ${index + 1}`}
-                            className="w-full h-32 object-cover rounded"
+                            className="w-full h-32 object-cover rounded cursor-pointer"
+                            onClick={() =>
+                              setOpenScreenshot({
+                                list: platformData.screenshot_urls,
+                                index: index + 1,
+                              })
+                            }
                           />
                         ))}
                     </div>
@@ -834,6 +844,13 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
           setSelectedGame={setSelectedGame}
         />
       )}
+      {openScreenshot && (
+        <ImagePreviewPopup
+          screenshots={openScreenshot.list}
+          initialIndex={openScreenshot.index}
+          onClose={() => setOpenScreenshot(null)}
+        />
+      )}
     </div>
   );
 };
@@ -843,6 +860,7 @@ const AddNewGamePopup = ({ onClose, studioId, setCompetitorGames, setSelectedGam
   const [packageName, setPackageName] = useState("");
   const [appStoreId, setAppStoreId] = useState("");
   const [loading, setLoading] = useState(false);
+ 
 
   const onSubmit = async () => {
     try{
@@ -940,6 +958,67 @@ const AddNewGamePopup = ({ onClose, studioId, setCompetitorGames, setSelectedGam
               </button>
             )}
           </div>
+        </div>
+      </div>       
+    </div>
+  );
+};
+
+const ImagePreviewPopup = ({ screenshots, initialIndex, onClose }) => {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    setCurrentIndex(initialIndex);
+  }, [initialIndex]);
+
+  if (!screenshots.length) return null;
+
+  const prev = () =>
+    setCurrentIndex((prev) => (prev === 0 ? screenshots.length - 1 : prev - 1));
+  const next = () =>
+    setCurrentIndex((prev) => (prev === screenshots.length - 1 ? 0 : prev + 1));
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="relative bg-white p-4 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button
+          className="absolute top-2 right-2 text-gray-600 hover:text-black text-xl"
+          onClick={onClose}
+        >
+          &times;
+        </button>
+
+        {/* Carousel */}
+        <div className="flex items-center justify-between">
+          <button
+            className="text-xl px-4 text-gray-700 hover:text-black"
+            onClick={prev}
+          >
+            &#8592;
+          </button>
+          <img
+            src={screenshots[currentIndex]}
+            alt={`Screenshot ${currentIndex + 1}`}
+            className="max-h-[80vh] object-contain rounded-md mx-auto"
+          />
+          <button
+            className="text-xl px-4 text-gray-700 hover:text-black"
+            onClick={next}
+          >
+            &#8594;
+          </button>
+        </div>
+
+        {/* Indicator */}
+        <div className="text-center text-xs text-gray-500 mt-2">
+          {currentIndex + 1} of {screenshots.length}
         </div>
       </div>
     </div>
