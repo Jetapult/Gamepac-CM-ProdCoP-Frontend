@@ -433,10 +433,10 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                     <div className="space-y-2">
                       {[5, 4, 3, 2, 1].map((star, index) => (
                         <div key={star} className="flex items-center text-sm">
-                          <div className="flex w-14 justify-end items-center gap-1">
+                          <div className="w-12 text-right mr-2">
                             <span>{star} ⭐</span>
                           </div>
-                          <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                          <div className="w-[200px] bg-gray-200 h-2 rounded-full overflow-hidden">
                             <div
                               className="bg-yellow-400 h-full"
                               style={{

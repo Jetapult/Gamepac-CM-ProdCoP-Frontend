@@ -452,6 +452,7 @@ const RagChat = () => {
                   key={index}
                   message={message}
                   setSelectedPage={setSelectedPage}
+                  setMessages={setMessages}
                 />
               ))}
               <div ref={messagesEndRef} />
