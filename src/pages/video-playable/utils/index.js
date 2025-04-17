@@ -119,16 +119,34 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
         // Set basic properties
         sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
         sprite.scale.set(spriteData.scale);
-        sprite.rotation = spriteData.rotation;
+        sprite.rotation = spriteData.rotation * (Math.PI / 180);
         sprite.alpha = spriteData.transparency;
         
-        // Calculate position taking modification.relativeToScreenSize into account
-        const x = modification.relativeToScreenSize
-          ? app.screen.width * spriteData.position.x
-          : spriteData.position.x;
-        const y = modification.relativeToScreenSize
-          ? app.screen.height * spriteData.position.y
-          : spriteData.position.y;
+        // Tag this sprite with the mod's type
+        sprite.__modType = modification.type;
+        
+        // Calculate position based on video bounds
+        let x, y;
+        
+        // Get video dimensions and position
+        const videoWidth = videoElement.videoWidth;
+        const videoHeight = videoElement.videoHeight;
+        
+        // Calculate video scale to fit in the app screen
+        const scaleX = app.screen.width / videoWidth;
+        const scaleY = app.screen.height / videoHeight;
+        const scale = Math.min(scaleX, scaleY);
+        
+        // Calculate video bounds (same calculation as in initVideo)
+        const scaledVideoWidth = videoWidth * scale;
+        const scaledVideoHeight = videoHeight * scale;
+        const videoX = (app.screen.width - scaledVideoWidth) / 2;
+        const videoY = (app.screen.height - scaledVideoHeight) / 2;
+        
+        // Position sprite relative to video bounds
+        x = videoX + (scaledVideoWidth * spriteData.position.x);
+        y = videoY + (scaledVideoHeight * spriteData.position.y);
+        
         sprite.position.set(x, y);
         
         // Save configuration for animations
@@ -175,6 +193,7 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
 
         app.stage.addChild(sprite);
         currentModifications.push(sprite);
+        return sprite;
       }
 
       function renderModification(mod) {
@@ -206,61 +225,7 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
         if (mod.sprites && mod.sprites.length > 0) {
           mod.sprites.forEach(spriteData => {
             if (ASSETS.images[spriteData.id]) {
-              const sprite = new PIXI.Sprite(PIXI.Texture.from(ASSETS.images[spriteData.id]));
-              // Tag this sprite with the mod's type:
-              sprite.__modType = mod.type;
-              sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
-              sprite.scale.set(spriteData.scale);
-              sprite.rotation = spriteData.rotation;
-              sprite.alpha = spriteData.transparency;
-              const x = mod.relativeToScreenSize
-                ? app.screen.width * spriteData.position.x
-                : spriteData.position.x;
-              const y = mod.relativeToScreenSize
-                ? app.screen.height * spriteData.position.y
-                : spriteData.position.y;
-              sprite.position.set(x, y);
-              sprite.eventMode = 'static';
-              sprite.cursor = 'pointer';
-              sprite.on('pointertap', (event) => {
-                event.stopPropagation();
-                
-                if (spriteData.onClickAction === 'open-store-url') {
-                  // Detect OS
-                  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-                  const isAndroid = /android/i.test(userAgent);
-                  const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-                  
-                  // Get appropriate store URL based on OS
-                  const storeUrl = isAndroid ? CONFIG.general.playstoreUrl : CONFIG.general.iosUrl;
-                  
-                  if (storeUrl) {
-                    // Use MRAID if available, otherwise fallback to window.open
-                    if (typeof mraid !== "undefined") {
-                      mraid.open(storeUrl);
-                    } else {
-                      window.open(storeUrl, '_blank');
-                    }
-                  } else {
-                    console.warn('No store URL configured for ' + (isAndroid ? 'Android' : 'iOS'));
-                  }
-                } else if (spriteData.onClickAction === 'resume-video') {
-                  if (activeBreakIndex !== -1) {
-                    const activeBreak = CONFIG.modifications[activeBreakIndex];
-                    if (activeBreak && audioElements[activeBreak.id]) {
-                      audioElements[activeBreak.id].pause();
-                      delete audioElements[activeBreak.id];
-                    }
-                    activeBreakIndex = -1;
-                    clearBreakModifications();
-                    videoElement.play().catch(console.error);
-                  }
-                }
-              });
-              // Save configuration (for later animations)
-              sprite.__spriteData = spriteData;
-              app.stage.addChild(sprite);
-              currentModifications.push(sprite);
+              renderSprite(spriteData, mod);
             }
           });
         }
@@ -336,16 +301,17 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
       }
 
       function handleVideoTimeUpdate() {
-        const currentTime = videoElement.currentTime * 1000;
+        const currentTime = Math.floor(videoElement.currentTime * 1000);
 
         // If a break is active, do nothing here.
         if (activeBreakIndex !== -1) return;
 
         // Check if a break modification should be triggered.
+        const TOLERANCE_MS = 50; // 50ms tolerance
         const breakIndex = CONFIG.modifications.findIndex(mod =>
           mod.type === 'break' &&
           !triggeredBreakIds.has(mod.id) &&
-          currentTime >= mod.time
+          currentTime >= (mod.time - TOLERANCE_MS)
         );
 
         if (breakIndex !== -1) {
@@ -374,59 +340,7 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
           if (currentBreak.sprites && currentBreak.sprites.length > 0) {
             currentBreak.sprites.forEach(spriteData => {
               if (ASSETS.images[spriteData.id]) {
-                const sprite = new PIXI.Sprite(PIXI.Texture.from(ASSETS.images[spriteData.id]));
-                sprite.__modType = currentBreak.type;
-                sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
-                sprite.scale.set(spriteData.scale);
-                sprite.rotation = spriteData.rotation;
-                sprite.alpha = spriteData.transparency;
-                const x = currentBreak.relativeToScreenSize
-                  ? app.screen.width * spriteData.position.x
-                  : spriteData.position.x;
-                const y = currentBreak.relativeToScreenSize
-                  ? app.screen.height * spriteData.position.y
-                  : spriteData.position.y;
-                sprite.position.set(x, y);
-                sprite.eventMode = 'static';
-                sprite.cursor = 'pointer';
-                sprite.on('pointertap', (event) => {
-                  event.stopPropagation();
-                  
-                  if (spriteData.onClickAction === 'open-store-url') {
-                    // Detect OS
-                    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-                    const isAndroid = /android/i.test(userAgent);
-                    const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-                    
-                    // Get appropriate store URL based on OS
-                    const storeUrl = isAndroid ? CONFIG.general.playstoreUrl : CONFIG.general.iosUrl;
-                    
-                    if (storeUrl) {
-                      // Use MRAID if available, otherwise fallback to window.open
-                      if (typeof mraid !== "undefined") {
-                        mraid.open(storeUrl);
-                      } else {
-                        window.open(storeUrl, '_blank');
-                      }
-                    } else {
-                      console.warn('No store URL configured for ' + (isAndroid ? 'Android' : 'iOS'));
-                    }
-                  } else if (spriteData.onClickAction === 'resume-video') {
-                    if (activeBreakIndex !== -1) {
-                      const activeBreak = CONFIG.modifications[activeBreakIndex];
-                      if (activeBreak && audioElements[activeBreak.id]) {
-                        audioElements[activeBreak.id].pause();
-                        delete audioElements[activeBreak.id];
-                      }
-                      activeBreakIndex = -1;
-                      clearBreakModifications();
-                      videoElement.play().catch(console.error);
-                    }
-                  }
-                });
-                sprite.__spriteData = spriteData;
-                app.stage.addChild(sprite);
-                currentModifications.push(sprite);
+                renderSprite(spriteData, currentBreak);
               }
             });
           }
@@ -622,9 +536,37 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
             break;
           }
           case 'scale': {
+            // Store original position before scaling
+            const originalX = sprite.position.x;
+            const originalY = sprite.position.y;
+            
+            // Apply scale
             const startScale = spriteData.scale;
-            sprite.scale.x = startScale + (anim.destination.w - startScale) * easedProgress;
-            sprite.scale.y = startScale + (anim.destination.h - startScale) * easedProgress;
+            const newScaleX = startScale + (anim.destination.w - startScale) * easedProgress;
+            const newScaleY = startScale + (anim.destination.h - startScale) * easedProgress;
+            
+            sprite.scale.x = newScaleX;
+            sprite.scale.y = newScaleY;
+            
+            // For sprites positioned relative to screen, we need to recalculate position
+            // after scaling to make sure it stays in the correct place
+            if (sprite.__spriteData?.positionRelativeToScreen && typeof videoSprite !== 'undefined') {
+              // Get the video boundaries
+              const videoBounds = videoSprite.getBounds();
+              
+              // Recover the normalized position values directly from spriteData
+              const normalizedX = spriteData.position.x;
+              const normalizedY = spriteData.position.y;
+              
+              // Apply the normalized coordinates using video bounds
+              sprite.position.x = videoBounds.x + videoBounds.width * normalizedX;
+              sprite.position.y = videoBounds.y + videoBounds.height * normalizedY;
+            } else {
+              // For sprites not relative to screen, restore the original position
+              sprite.position.x = originalX;
+              sprite.position.y = originalY;
+            }
+            
             break;
           }
           case 'transparency': {
@@ -807,7 +749,8 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
               sprite.__modType = mod.type;
               sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
               sprite.scale.set(spriteData.scale);
-              sprite.rotation = spriteData.rotation;
+              // Convert degrees to radians for rotation
+              sprite.rotation = spriteData.rotation * (Math.PI / 180);
               sprite.alpha = spriteData.transparency;
               const x = mod.relativeToScreenSize
                 ? app.screen.width * spriteData.position.x
