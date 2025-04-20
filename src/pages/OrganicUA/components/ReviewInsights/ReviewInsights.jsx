@@ -281,31 +281,38 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
       );
       setTagDistribution(tagDistributionResponse.data.data);
       if (tagDistributionResponse.data.data.length) {
-        const labels = [];
-        const datasets = [];
-        const backgroundColor = [];
-        tagDistributionResponse.data.data.filter((x) => {
-          labels.push(x.tag);
-          datasets.push(parseFloat(x.percentage.replace("%", "")));
-          backgroundColor.push(tagDistributionlabelData[x.tag]);
-        });
-        setPieChartData({
-          labels,
-          datasets: [
-            {
-              data: datasets,
-              backgroundColor: backgroundColor,
+          const labels = [];
+          const dataValues = [];
+          const backgroundColors = [];
+
+          tagDistributionResponse.data.data.map((x) => {
+            labels.push(x.tag);
+            const percentageValue = parseFloat(x.percentage.replace("%", ""));
+            dataValues.push(percentageValue);
+            backgroundColors.push(tagDistributionlabelData[x.tag]);
+          });
+
+          const total = dataValues.reduce((sum, val) => sum + val, 0);
+          const PercentageData = dataValues.map(val => {
+              const percentage = (val / total) * 100;
+              return parseFloat(percentage.toFixed(2));
+            });
+
+          setPieChartData({
+            labels,
+            datasets: [{
+              data: PercentageData,
+              backgroundColor: backgroundColors,
               borderWidth: 0,
-            },
-          ],
-        });
-      }
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+            }],
+          });
+            }
+          } catch (err) {
+            console.log(err);
+          } finally {
+            setIsLoading(false);
+          }
+        };
 
   const fetchRatingTrends = async () => {
     try {
@@ -375,6 +382,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
     }
   }, [games.length]);
 
+  console.log("Pie Chart Data - > ", pieChartData);
   return (
     <div className="review-insights shadow-md bg-white w-full h-full p-4">
       <h1 className="text-2xl">Review Insights</h1>
@@ -458,7 +466,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
                   </h2>
                   <TagsList tagDistribution={tagDistribution} />
                   {pieChartData.labels && (
-                    <Pie
+                    <Pie className="w-full h-full"
                       data={pieChartData}
                       options={{
                         ...options,
@@ -472,7 +480,9 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
                     Rating Trend
                   </h2>
                   {lineChart.labels && (
-                    <Line options={lineOptions} data={lineChart} />
+                    <Line 
+                    options={lineOptions} 
+                    data={lineChart} />
                   )}
                 </div>
               </div>
