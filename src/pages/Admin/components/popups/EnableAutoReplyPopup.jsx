@@ -1,5 +1,5 @@
 import { CheckIcon, XMarkIcon, PencilIcon, Cog6ToothIcon  } from "@heroicons/react/20/solid";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Star } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import api from "../../../../api";
 import ReactStars from "react-rating-stars-component";
@@ -106,7 +106,7 @@ const EnableAutoReplyPopup = ({
     setCustomTemplates(customTemplates.filter((ct) => ct.id !== id));
   };
 
-  const enableAutoReplyWeeklyReports = async () => {
+  const enableAutoReply = async () => {
     try {
       const auto_reply_ratings = rating?.join(",");
       
@@ -135,62 +135,75 @@ const EnableAutoReplyPopup = ({
     }
   };
 
-const enableAutoReply = async () => {
-  try {
-    const auto_reply_ratings = rating?.join(",");
+  const templatesaved = async () => {
+    const newTemplates = [];
+  
     for (const r of rating) {
-      if (templates[r]) {
-        const templateData = {
-          studio_id: studio_id, 
-          review_type: `rating_${r}`, 
-          review_reply: templates[r], 
-          template_type: 'auto'
+      if (templates[r]?.trim()) {
+        const newTemplate = {
+          studio_id,
+          review_type: `rating_${r}`,
+          review_reply: templates[r],
+          template_type: "auto",
         };
-        await api.post(`v1/organic-ua/reply-template/create`, templateData);
+  
+        const { data } = await api.post("v1/organic-ua/reply-template/create", newTemplate);
+  
+        // push only if successfully created
+        newTemplates.push({
+          ...newTemplate,
+          id: data?.id || Date.now() + Math.random(), // fallback if API doesn’t return id
+        });
+  
+        setTemplates((prev) => ({ ...prev, [r]: "" }));
       }
     }
-    
+  
+    if (newTemplates.length) {
+      setExistingTemplates((prev) => [...prev, ...newTemplates]);
+    }
+  
     for (const ct of customTemplates) {
       if (ct.title && ct.text) {
         const templateData = {
           studio_id: studio_id,
           review_type: `${ct.title}`,
           review_reply: ct.text,
-          template_type: 'auto'
+          template_type: "auto",
         };
         await api.post(`v1/organic-ua/reply-template/create`, templateData);
+  
+        // Add to UI immediately
+        setExistingTemplates((prev) => [
+          ...prev,
+          {
+            ...templateData,
+            id: Date.now() + Math.random(), // temp id
+          },
+        ]);
       }
     }
-    
+  
     for (const template of existingTemplates) {
-      if (localTemplateChanges[template.id]) {
-        const changes = localTemplateChanges[template.id];
+      const changes = localTemplateChanges[template.id];
+      if (
+        changes &&
+        (changes.review_reply !== template.review_reply ||
+          (!template.review_type.startsWith("rating_") && changes.review_type && changes.review_type !== template.review_type))
+      ) {
         const updatedData = {
           ...template,
-          review_type: !template.review_type.startsWith('rating_') && changes.review_type 
-            ? changes.review_type 
+          review_type: !template.review_type.startsWith("rating_") && changes.review_type
+            ? changes.review_type
             : template.review_type,
           review_reply: changes.review_reply || template.review_reply,
-          template_type: 'auto'
+          template_type: "auto",
         };
         await api.put(`v1/organic-ua/reply-template/${studio_id}/${template.id}`, updatedData);
       }
     }
-    
-   setGames(prev => prev.map(game => {
-      if (game.id === selectedGame.id) {
-        return {
-          ...game,
-          auto_reply_enabled: selectedType?.value || "none",
-          auto_reply_ratings: auto_reply_ratings
-        };
-      }
-      return game;
-    }));
-   } catch (error) {
-    console.log(error);
-  }
-};
+  };
+  
   useEffect(() => {
     if (studio_id) {
       fetchExistingTemplates();
@@ -291,16 +304,14 @@ return (
                           className="ms-2 text-sm font-medium flex"
                         >
                           {rate.name}
-                          <ReactStars
-                            count={1}
-                            edit={false}
-                            size={16}
-                            value={parseInt(rate.name)}
-                            activeColor={rate.color}
-                            classNames={"pl-1"}
-                          />
+                            <Star
+                              size={16}
+                              color="black"
+                              className="ml-1"
+                            />
+
                         </label>
-                      </div>
+                      </div> 
                     ))}
                   </div>
                 </>
@@ -369,26 +380,44 @@ return (
               {selectedTab === "reply" && (
                 <>
                   {rating.map((r) => {
-                    const existingTemplate = existingTemplates.find(
-                      (t) => t.review_type === `rating_${r}`
-                    );
-                    if (existingTemplate) return null;
-                    return (
-                      <div key={r} className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Add Template for {r} Star Rating:
-                        </label>
-                        <textarea
-                          className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                          value={templates[r] || ""}
-                          onChange={(e) =>
-                            setTemplates({ ...templates, [r]: e.target.value })
-                          }
-                          placeholder={`Enter reply message for ${r} star rating`}
-                        />
-                      </div>
-                    );
-                  })}
+                      const existingTemplate = existingTemplates.find(
+                        (t) => t.review_type === `rating_${r}`
+                      );
+                      if (existingTemplate) return null;
+
+                      const hasText = templates[r] && templates[r].trim().length > 0;
+
+                      return (
+                        <div key={r} className="mb-4 border p-2 rounded-md">
+                          <div className="flex justify-between items-center mb-2">
+                            <label className="block text-sm font-medium text-[rgb(31 41 55 / var(--tw-text-opacity, 1))] bg-gray-200 rounded-xl p-2 leading-[0.55rem]">
+                              {r} Star Rating
+                            </label>
+
+                            {hasText && (
+                              <button
+                                onClick={async () => {
+                                  await templatesaved();
+                                }}
+                                className="mt-2 border border-input text-black rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5 bg-[rgb(22_163_74/_var(--tw-bg-opacity,1))] text-white"
+                              >
+                                <CheckIcon className="h-4 w-4 text-white" />
+                                Save
+                              </button>
+                            )}
+                          </div>
+                          <textarea
+                            className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm leading-5"
+                            value={templates[r] || ""}
+                            onChange={(e) =>
+                              setTemplates((prev) => ({ ...prev, [r]: e.target.value }))
+                            }
+                            placeholder={`Enter reply message for ${r} star rating`}
+                          />
+                        </div>
+                      );
+                    })}
+
 
                   <h4 className="text-lg font-semibold mb-2">Rating Templates</h4>
                   {existingTemplates
@@ -416,7 +445,7 @@ return (
                                       return t;
                                     })
                                   );
-                                  await enableAutoReply();
+                                  await templatesaved();
                                 }
                                 // Toggle edit mode
                                 setEditMode((prev) => ({
@@ -498,7 +527,7 @@ return (
                                     return t;
                                   })
                                 );
-                                await enableAutoReply();
+                                await templatesaved();
                               }
 
                               setEditMode((prev) => ({
@@ -587,7 +616,7 @@ return (
                               };
 
                               setExistingTemplates(prev => [savedTemplate, ...prev]);
-                              await enableAutoReply();
+                              await templatesaved();
 
                               const updated = [...customTemplates];
                               updated.splice(index, 1);
@@ -652,7 +681,7 @@ return (
               </button>
               <button
                 className="bg-[#000000] text-white rounded-md px-5 py-2 hover:opacity-80"
-                onClick={enableAutoReplyWeeklyReports}
+                onClick={enableAutoReply}
               >
                 Save Settings
               </button>
