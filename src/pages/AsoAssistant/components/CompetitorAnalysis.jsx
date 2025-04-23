@@ -420,13 +420,15 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                           <span className="text-xs text-gray-500 ml-1">
                             (
                             {storeType === "appStore"
-                              ? (selectedGame.app_store_ratings / 1000).toFixed(
-                                  1
-                                )
+                              ? selectedGame.app_store_ratings < 99
+                                ? (
+                                    selectedGame.app_store_ratings
+                                  ).toFixed(1) + "k"
+                                : selectedGame.app_store_ratings
                               : (
                                   selectedGame.play_store_ratings / 1000
-                                ).toFixed(1)}
-                            k)
+                                ).toFixed(1) + "k"}
+                            )
                           </span>
                         </div>
                       </div>
@@ -454,10 +456,16 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                                   : "N/A"}
                               </span>
                               <span className="text-xs text-gray-500 ml-1">
-                                {platformData?.ratings
-                                  ? `(${(platformData.ratings / 1000).toFixed(
-                                      1
-                                    )}k)`
+                                {platformData?.ratings !== undefined
+                                  ? storeType === "appStore"
+                                    ? platformData.ratings < 99
+                                      ? `(${(
+                                          platformData.ratings * 1000
+                                        ).toFixed(1)}k)`
+                                      : `(${platformData.ratings})`
+                                    : `(${(platformData.ratings / 1000).toFixed(
+                                        1
+                                      )}k)`
                                   : ""}
                               </span>
                             </div>
@@ -695,7 +703,9 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                             {[5, 4, 3, 2, 1].map((rating) => {
                               const totalRatings =
                                 storeType === "appStore"
-                                  ? selectedGame.app_store_ratings || 0
+                                  ? selectedGame.app_store_ratings < 99
+                                    ? selectedGame.app_store_ratings * 1000
+                                    : selectedGame.app_store_ratings
                                   : selectedGame.play_store_ratings || 0;
 
                               const histogram =
@@ -897,8 +907,14 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                       {selectedGame.game_name}
                     </h4>
                     <div className="flex gap-2 overflow-x-auto pb-2">
-                      {selectedGame?.play_store_screenshot_urls?.length > 0
-                        ? selectedGame.play_store_screenshot_urls
+                      {(storeType === "appStore"
+                        ? selectedGame?.app_store_screenshot_urls
+                        : selectedGame?.play_store_screenshot_urls
+                      )?.length > 0
+                        ? (storeType === "appStore"
+                            ? selectedGame.app_store_screenshot_urls
+                            : selectedGame.play_store_screenshot_urls
+                          )
                             .slice(0, 3)
                             .map((src, index) => (
                               <img
@@ -908,7 +924,10 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                                 className="w-24 h-48 object-cover rounded-md border cursor-pointer"
                                 onClick={() =>
                                   setOpenScreenshot({
-                                    list: selectedGame.play_store_screenshot_urls,
+                                    list:
+                                      storeType === "appStore"
+                                        ? selectedGame.app_store_screenshot_urls
+                                        : selectedGame.play_store_screenshot_urls,
                                     index: index,
                                   })
                                 }
@@ -1033,8 +1052,7 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
                       </div>
                       <div className="p-3 border rounded-md">
                         {storeType === "appStore"
-                          ? selectedGame.app_store_summary ||
-                            "No subtitle available"
+                          ? "No subtitle available"
                           : selectedGame.play_store_summary ||
                             "No subtitle available"}
                       </div>
@@ -1101,21 +1119,56 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame }) {
 
                     <div>
                       {descriptionTab === "yourApp" &&
-                        (storeType === "appStore"
-                          ? selectedGame.app_store_description || (
-                              <div className="p-4 border rounded-md max-h-[300px] overflow-y-auto">
-                                <p className="text-sm text-gray-500">
-                                  No description available
-                                </p>
-                              </div>
-                            )
-                          : selectedGame.play_store_description || (
-                              <div className="p-4 border rounded-md max-h-[300px] overflow-y-auto">
-                                <p className="text-sm text-gray-500">
-                                  No description available
-                                </p>
-                              </div>
-                            ))}
+                        (() => {
+                          const description =
+                            storeType === "appStore"
+                              ? selectedGame?.app_store_description
+                              : selectedGame?.play_store_description;
+
+                          return description ? (
+                            <div className="p-4 border rounded-md max-h-[300px] overflow-y-auto text-sm space-y-2">
+                              {description.split("\n").map((line, idx) => {
+                                const trimmed = line.trim();
+                                if (!trimmed) return null;
+
+                                const isHeading =
+                                  trimmed === trimmed.toUpperCase() &&
+                                  !trimmed.startsWith("●");
+                                const isBullet = trimmed.startsWith("●");
+
+                                const html = {
+                                  __html: isBullet
+                                    ? trimmed.replace(/^●\s*/, "")
+                                    : trimmed,
+                                };
+
+                                return isBullet ? (
+                                  <li
+                                    key={idx}
+                                    className="ml-4 list-disc"
+                                    dangerouslySetInnerHTML={html}
+                                  />
+                                ) : (
+                                  <p
+                                    key={idx}
+                                    className={`whitespace-pre-wrap ${
+                                      isHeading
+                                        ? "font-semibold text-base mt-2"
+                                        : ""
+                                    }`}
+                                    dangerouslySetInnerHTML={html}
+                                  />
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="p-4 border rounded-md max-h-[300px] overflow-y-auto">
+                              <p className="text-sm text-gray-500">
+                                No description available
+                              </p>
+                            </div>
+                          );
+                        })()}
 
                       {selectedCompetitors.map(({ id }) => {
                         const details = competitorDetails[id];
