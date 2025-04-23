@@ -1,8 +1,8 @@
 import { CheckIcon, XMarkIcon, PencilIcon, Cog6ToothIcon  } from "@heroicons/react/20/solid";
 import { ArrowLeft, Star } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import api from "../../../../api";
-import ReactStars from "react-rating-stars-component";
+import ToastMessage from "../../../../components/ToastMessage";
 import { ratingFilter } from "../../../../constants/organicUA";
 
 
@@ -41,8 +41,33 @@ const EnableAutoReplyPopup = ({
   const [localTemplateChanges, setLocalTemplateChanges] = useState({});
   const [selectedTab, setSelectedTab] = useState("reply");
   const [showManageTemplateSection, setShowManageTemplateSection] = useState(false);
+  const [toastMessage, setToastMessage] = useState({
+    show: false,
+    message: "",
+    duration: 3000,
+    type: "error",
+  });
+  const textareaRefs = useRef({});
 
+  useEffect(() => {
+    Object.entries(textareaRefs.current).forEach(([id, ref]) => {
+      if (ref && editMode[id]) {
+        ref.style.height = 'auto';
+        ref.style.height = `${ref.scrollHeight}px`;
+      }
+    });
+  }, [editMode]);
+  
 
+  const showErrorToast = (msg) => {
+    setToastMessage({
+      show: true,
+      message: msg,
+      duration: 3000,
+      type: "error",
+    });
+  };
+  
 
   const fetchExistingTemplates=async()=>{
     try{
@@ -85,26 +110,23 @@ const EnableAutoReplyPopup = ({
     setCustomTemplates([...customTemplates, newTemplate]);
   };
 
-  const handleCustomTemplateChange = (id, field, value) => {
-    console.log("inside handle custom template"); 
-    setCustomTemplates(
-      customTemplates.map((ct) =>
-        ct.id === id ? { ...ct, [field]: value } : ct
-      )
-    );
-  };
-  const handleUpdateTemplate = async (templateId, updatedData) => {
-    try {
-      await api.put(`v1/organic-ua/reply-template/${templateId}`, updatedData);
-      fetchExistingTemplates(); // Refresh templates after update
-      setEditMode(prev => ({ ...prev, [templateId]: false }));
-    } catch (error) {
-      console.error('Failed to update template:', error);
-    }
-  };
-  const handleRemoveCustomTemplate = (id) => {
-    setCustomTemplates(customTemplates.filter((ct) => ct.id !== id));
-  };
+  // const handleCustomTemplateChange = (id, field, value) => {
+  //   console.log("inside handle custom template"); 
+  //   setCustomTemplates(
+  //     customTemplates.map((ct) =>
+  //       ct.id === id ? { ...ct, [field]: value } : ct
+  //     )
+  //   );
+  // };
+  // const handleUpdateTemplate = async (templateId, updatedData) => {
+  //   try {
+  //     await api.put(`v1/organic-ua/reply-template/${templateId}`, updatedData);
+  //     fetchExistingTemplates(); // Refresh templates after update
+  //     setEditMode(prev => ({ ...prev, [templateId]: false }));
+  //   } catch (error) {
+  //     console.error('Failed to update template:', error);
+  //   }
+  // };
 
   const enableAutoReply = async () => {
     try {
@@ -131,13 +153,14 @@ const EnableAutoReplyPopup = ({
       }));
   
     } catch (error) {
-      console.log(error);
+      showErrorToast("Failed to enable auto reply. Please try again.");
     }
   };
 
   const templatesaved = async () => {
     const newTemplates = [];
   
+    // Save rating templates
     for (const r of rating) {
       if (templates[r]?.trim()) {
         const newTemplate = {
@@ -146,50 +169,63 @@ const EnableAutoReplyPopup = ({
           review_reply: templates[r],
           template_type: "auto",
         };
-  
-        const { data } = await api.post("v1/organic-ua/reply-template/create", newTemplate);
-  
-        // push only if successfully created
-        newTemplates.push({
-          ...newTemplate,
-          id: data?.id || Date.now() + Math.random(), // fallback if API doesn’t return id
-        });
-  
-        setTemplates((prev) => ({ ...prev, [r]: "" }));
+        try {
+          const { data } = await api.post("v1/organic-ua/reply-template/create", newTemplate);
+          newTemplates.push({
+            ...newTemplate,
+            id: data?.id,
+          });
+          setTemplates((prev) => ({ ...prev, [r]: "" }));
+        } catch (error) {
+          showErrorToast("Failed to enable auto reply. Please try again.");
+        }
       }
     }
   
+    // Save custom templates
+    const successfullySavedCustomTemplates = [];
+    for (const ct of customTemplates) {
+      if (
+        ct.title && 
+        ct.text && 
+        !successfullySavedCustomTemplates.includes(ct.id)
+      ) {
+        const templateData = {
+          studio_id,
+          review_type: ct.title,
+          review_reply: ct.text,
+          template_type: "auto",
+        };
+        try {
+          const { data } = await api.post(`v1/organic-ua/reply-template/create`, templateData);
+          newTemplates.push({
+            ...templateData,
+            id: data?.data?.id || data?.id,
+          });
+          successfullySavedCustomTemplates.push(ct.id);
+        } catch (error) {
+          showErrorToast("Failed to enable auto reply. Please try again.");
+        }
+      }
+    }    
+  
+    // Update existingTemplates once
     if (newTemplates.length) {
       setExistingTemplates((prev) => [...prev, ...newTemplates]);
     }
   
-    for (const ct of customTemplates) {
-      if (ct.title && ct.text) {
-        const templateData = {
-          studio_id: studio_id,
-          review_type: `${ct.title}`,
-          review_reply: ct.text,
-          template_type: "auto",
-        };
-        await api.post(`v1/organic-ua/reply-template/create`, templateData);
+    // Remove saved customTemplates
+    setCustomTemplates((prev) => prev.filter((ct) => !successfullySavedCustomTemplates.includes(ct.id)));
   
-        // Add to UI immediately
-        setExistingTemplates((prev) => [
-          ...prev,
-          {
-            ...templateData,
-            id: Date.now() + Math.random(), // temp id
-          },
-        ]);
-      }
-    }
-  
+    // Update changed templates
     for (const template of existingTemplates) {
       const changes = localTemplateChanges[template.id];
       if (
         changes &&
         (changes.review_reply !== template.review_reply ||
-          (!template.review_type.startsWith("rating_") && changes.review_type && changes.review_type !== template.review_type))
+          (!template.review_type.startsWith("rating_") &&
+            changes.review_type &&
+            changes.review_type !== template.review_type))
       ) {
         const updatedData = {
           ...template,
@@ -199,7 +235,11 @@ const EnableAutoReplyPopup = ({
           review_reply: changes.review_reply || template.review_reply,
           template_type: "auto",
         };
-        await api.put(`v1/organic-ua/reply-template/${studio_id}/${template.id}`, updatedData);
+        try {
+          await api.put(`v1/organic-ua/reply-template/${studio_id}/${template.id}`, updatedData);
+        } catch (error) {
+          showErrorToast("Failed to enable auto reply. Please try again.");
+        }
       }
     }
   };
@@ -236,22 +276,21 @@ return (
   <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-[#12111157]">
     <div className="relative my-6 mx-auto max-w-4xl w-[600px]">
       <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none max-h-[90vh] overflow-y-auto">
-        {!showManageTemplateSection && (
-        <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
-          <h3 className="text-2xl font-semibold">Enable Auto Reply</h3>
-          {showManageTemplateSection || !showManageTemplateSection && (
-          <button
-            className="p-1  border-0 text-black float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
-            onClick={() => setShowAutoReplyEnablePopup(false)}
-          >
-            <XMarkIcon className="w-6 h-6 text-[#d6d6d6]" />
-          </button>
-          )}
-        </div>
+      {!showManageTemplateSection && (
+          <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
+            <h3 className="text-2xl font-semibold">Enable Auto Reply</h3>
+            <button
+              className="p-1 border-0 text-black float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
+              onClick={() => setShowAutoReplyEnablePopup(false)}
+            >
+              <XMarkIcon className="w-6 h-6 text-[#d6d6d6]" />
+            </button>
+          </div>
         )}
+
         <div className="px-4 pt-4">
           {!showManageTemplateSection && (
-        <p className="text-base">
+              <p className="text-base">
                 Auto-reply allows you to automatically respond to reviews based on
                 specific star ratings. This helps maintain engagement and manage
                 your app's reputation efficiently.
@@ -307,7 +346,8 @@ return (
                             <Star
                               size={16}
                               color="black"
-                              className="ml-1"
+                              fill="yellow"
+                              className="flex item-centre ml-1"
                             />
 
                         </label>
@@ -432,7 +472,6 @@ return (
                           <button
                               onClick={async() => {
                                 if (editMode[template.id]) {
-                                  // Save logic when in edit mode
                                   setExistingTemplates((prev) =>
                                     prev.map((t) => {
                                       if (t.id === template.id) {
@@ -447,7 +486,6 @@ return (
                                   );
                                   await templatesaved();
                                 }
-                                // Toggle edit mode
                                 setEditMode((prev) => ({
                                   ...prev,
                                   [template.id]: !prev[template.id],
@@ -475,9 +513,13 @@ return (
                         {editMode[template.id] ? (
                             <>
                               <textarea
-                                className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm leading-5"
+                                ref={(ref) => (textareaRefs.current[template.id] = ref)}
+                                className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm leading-5 min-h-[60px] resize-none overflow-hidden "
+        
                                 defaultValue={template.review_reply}
                                 onChange={(e) => {
+                                  e.target.style.height = 'auto';
+                                  e.target.style.height = `${e.target.scrollHeight}px`;
                                   setLocalTemplateChanges((prev) => ({
                                     ...prev,
                                     [template.id]: {
@@ -573,7 +615,8 @@ return (
                               placeholder="Enter template title"
                             />
                             <textarea
-                              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                              ref={(ref) => (textareaRefs.current[template.id] = ref)}
+                              className="mt-1 block w-full border border-gray-300 rounded-md p-2 overflow-hidden min-h-[60px] resize-none"
                               defaultValue={template.review_reply}
                               onChange={(e) => {
                                 setLocalTemplateChanges((prev) => ({
@@ -608,19 +651,24 @@ return (
                         </div>
                         <button
                             onClick={async () => {
-                              const savedTemplate = {
-                                id: template.id,
+                              const templateData = {
+                                studio_id,
                                 review_type: template.title,
                                 review_reply: template.text,
-                                type: "custom"
+                                template_type: "auto"
                               };
-
-                              setExistingTemplates(prev => [savedTemplate, ...prev]);
-                              await templatesaved();
-
-                              const updated = [...customTemplates];
-                              updated.splice(index, 1);
-                              setCustomTemplates(updated);
+                          
+                              try {
+                                const { data } = await api.post("v1/organic-ua/reply-template/create", templateData);
+                                const savedTemplate = {
+                                  ...templateData,
+                                  id: data?.data?.id || data?.id || template.id,
+                                };
+                                setExistingTemplates(prev => [ ...prev, savedTemplate]);
+                                setCustomTemplates(prev => prev.filter((t) => t.id !== template.id));
+                              } catch (error) {
+                                showErrorToast("Failed to save custom template.");
+                              }
                             }}
                             disabled={!template.title.trim() || !template.text.trim()}
                             className={`mt-2 rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5 
@@ -652,7 +700,7 @@ return (
                             setCustomTemplates(updated);
                           }}
                           placeholder="Enter your template response here"
-                          className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                          className="mt-1 block w-full border border-gray-300 rounded-md p-2 overflow-hidden"
                         />
                       </div>
                     ))}
@@ -689,7 +737,15 @@ return (
           )}
         </div>
       </div>
-    </div>
+      {toastMessage.show && (
+        <ToastMessage
+          message={toastMessage.message}
+          duration={toastMessage.duration}
+          type={toastMessage.type}
+          onClose={() => setToastMessage({ ...toastMessage, show: false })}
+        />
+      )}
+    </div>  
   );
 };
 
