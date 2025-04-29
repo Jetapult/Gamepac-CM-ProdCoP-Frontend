@@ -2,7 +2,7 @@ import { XMarkIcon } from "@heroicons/react/20/solid";
 
 const ConfirmationPopup = ({ heading, subHeading, onCancel, onConfirm }) => {
   return (
-    <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-[#12111157]">
+    <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-transparent backdrop-blur-[0.5px]">
       <div className="relative my-6 mx-auto max-w-3xl w-[500px]">
         <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
           <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">

@@ -4,11 +4,12 @@ import {
   PencilIcon,
   Cog6ToothIcon,
 } from "@heroicons/react/20/solid";
-import { ArrowLeft, Star } from "lucide-react";
+import { ArrowLeft, Save, Star, Trash2Icon, Edit2Icon } from "lucide-react";
 import React, { useEffect, useState, useRef } from "react";
 import api from "../../../../api";
 import ToastMessage from "../../../../components/ToastMessage";
 import { ratingFilter } from "../../../../constants/organicUA";
+import ConfirmationPopup from "../../../../components/ConfirmationPopup";
 
 const data = [
   {
@@ -44,14 +45,16 @@ const EnableAutoReplyPopup = ({
   const [editMode, setEditMode] = useState({});
   const [localTemplateChanges, setLocalTemplateChanges] = useState({});
   const [selectedTab, setSelectedTab] = useState("reply");
-  const [showManageTemplateSection, setShowManageTemplateSection] =
-    useState(false);
+  const [showManageTemplateSection, setShowManageTemplateSection] = useState(false);
   const [toastMessage, setToastMessage] = useState({
     show: false,
     message: "",
     duration: 3000,
     type: "error",
   });
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
+
   const textareaRefs = useRef({});
 
   useEffect(() => {
@@ -242,6 +245,18 @@ const EnableAutoReplyPopup = ({
           showErrorToast("Failed to enable auto reply. Please try again.");
         }
       }
+    }
+  };
+
+  const deleteTemplate = async (studio_id, templateId) => {
+    try {
+      await api.delete(`v1/organic-ua/delete-custom-template/${studio_id}/${templateId}`);
+      setExistingTemplates((prev) =>
+        prev.filter((template) => template.id !== templateId)
+      );
+    } catch (error) {
+      console.error("Failed to delete template", error);
+      showErrorToast("Failed to delete template. Please try again.");
     }
   };
 
@@ -593,6 +608,7 @@ const EnableAutoReplyPopup = ({
                             <label className="block text-sm font-medium text-gray-700">
                               {template.review_type || "Custom Template"}
                             </label>
+                            <div className="flex items-center gap-2">
                             <button
                               onClick={async () => {
                                 if (editMode[template.id]) {
@@ -628,19 +644,40 @@ const EnableAutoReplyPopup = ({
                                   ? "bg-[rgb(22_163_74_/_var(--tw-bg-opacity))] text-white"
                                   : "border border-black text-black"
                               }`}
-                            >
+                            >  
                               {editMode[template.id] ? (
                                 <>
-                                  <CheckIcon className="h-4 w-4 text-white" />
-                                  Save
+                                  <Save className="h-4 w-4 text-white" />
                                 </>
                               ) : (
                                 <>
-                                  <PencilIcon className="h-4 w-4 text-black" />
-                                  Edit
+                                  <Edit2Icon className="h-4 w-4 text-black" />
                                 </>
                               )}
                             </button>
+                            {!editMode[template.id] && (
+                            <button
+                              onClick={() => {
+                                setSelectedTemplateId(template.id);
+                                setShowConfirmation(true);
+                              }}
+                              className="mt-2 border border-red-500 text-red-500 rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5"
+                            >
+                              <Trash2Icon className="h-4 w-4 text-red-500" />
+                            </button>
+                            )}
+                            {showConfirmation && (
+                              <ConfirmationPopup
+                                heading="Are you sure?"
+                                subHeading="Do you really want to delete this template?"
+                                onCancel={() => setShowConfirmation(false)}
+                                onConfirm={() => {
+                                  deleteTemplate(studio_id, selectedTemplateId);
+                                  setShowConfirmation(false);
+                                }}
+                              />
+                            )}
+                            </div>
                           </div>
                           {editMode[template.id] ? (
                             <>
