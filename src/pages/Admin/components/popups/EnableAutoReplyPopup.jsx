@@ -66,6 +66,11 @@ const EnableAutoReplyPopup = ({
     });
   }, [editMode]);
 
+  const adjustTextareaHeight = (e) => {
+    e.target.style.height = "auto";
+    e.target.style.height = `${e.target.scrollHeight}px`;
+  };
+
   const fetchExistingTemplates = async () => {
     try {
       const response = await api.get(
@@ -99,7 +104,6 @@ const EnableAutoReplyPopup = ({
     }
   };
   const handleAddCustomTemplate = () => {
-    console.log("inside handle custom template");
     const newTemplate = {
       id: Date.now().toString(),
       title: "",
@@ -167,16 +171,17 @@ const EnableAutoReplyPopup = ({
           template_type: "auto",
         };
         try {
-          const { data } = await api.post(
+          const { updateRatingTemplate } = await api.post(
             "v1/organic-ua/reply-template/create",
             newTemplate
           );
           newTemplates.push({
             ...newTemplate,
-            id: data?.id,
+            id: updateRatingTemplate?.id,
           });
           setTemplates((prev) => ({ ...prev, [r]: "" }));
         } catch (error) {
+          console.error("Failed to save rating template", error);
           showErrorToast("Failed to enable auto reply. Please try again.");
         }
       }
@@ -197,17 +202,18 @@ const EnableAutoReplyPopup = ({
           template_type: "auto",
         };
         try {
-          const { data } = await api.post(
+          const { updateCustomTemplate } = await api.post(
             `v1/organic-ua/reply-template/create`,
             templateData
           );
           newTemplates.push({
             ...templateData,
-            id: data?.data?.id,
+            id: updateCustomTemplate?.updateCustomTemplate?.id,
           });
           successfullySavedCustomTemplates.push(ct.id);
         } catch (error) {
-          showErrorToast("Failed to enable auto reply. Please try again.");
+          console.error("Failed to save custom template", error);
+          showErrorToast("Failed to save custom template. Please try again.");
         }
       }
     }
@@ -237,7 +243,7 @@ const EnableAutoReplyPopup = ({
           template_type: "auto",
         };
         try {
-          await api.put(
+          const {response} = await api.put(
             `v1/organic-ua/reply-template/${studio_id}/${template.id}`,
             updatedData
           );
@@ -250,7 +256,7 @@ const EnableAutoReplyPopup = ({
 
   const deleteTemplate = async (studio_id, templateId) => {
     try {
-      await api.delete(`v1/organic-ua/delete-custom-template/${studio_id}/${templateId}`);
+      const deleteTemplate = await api.delete(`v1/organic-ua/delete-custom-template/${studio_id}/${templateId}`);
       setExistingTemplates((prev) =>
         prev.filter((template) => template.id !== templateId)
       );
@@ -565,8 +571,7 @@ const EnableAutoReplyPopup = ({
                                 className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm leading-5 min-h-[60px] resize-none overflow-hidden "
                                 defaultValue={template.review_reply}
                                 onChange={(e) => {
-                                  e.target.style.height = "auto";
-                                  e.target.style.height = `${e.target.scrollHeight}px`;
+                                  adjustTextareaHeight(e);
                                   setLocalTemplateChanges((prev) => ({
                                     ...prev,
                                     [template.id]: {
@@ -673,7 +678,7 @@ const EnableAutoReplyPopup = ({
                                 onCancel={() => setShowConfirmation(false)}
                                 onConfirm={() => {
                                   deleteTemplate(studio_id, selectedTemplateId);
-                                  setShowConfirmation(false);
+                                  setShowConfirmation(!showConfirmation);
                                 }}
                               />
                             )}
