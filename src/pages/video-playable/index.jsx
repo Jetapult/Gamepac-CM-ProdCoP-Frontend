@@ -17,6 +17,7 @@ import { baseModificationState, initialState, ModificationType } from "./state";
 import { buildPlayableAd, compressAllAssets } from "./utils";
 import ToastMessage from "../../components/ToastMessage";
 import AssetSizeDisplay from './components/AssetSizeDisplay';
+import api from "../../api";
 
 const timelineContainerStyle = {
   position: "absolute",
@@ -93,6 +94,39 @@ const getEasedProgress = (progress, easingType) => {
   }
 };
 
+// Helper function to preload images and create PIXI textures safely
+const createTextureFromUrl = (url) => {
+  return new Promise((resolve, reject) => {
+    // Create a new image element
+    const img = new Image();
+    
+    // Handle successful load
+    img.onload = () => {
+      // Create a canvas element
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      // Draw the image to canvas
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      
+      // Create a texture from the canvas (not directly from the URL)
+      const texture = PIXI.Texture.from(canvas);
+      resolve(texture);
+    };
+    
+    // Handle error
+    img.onerror = (e) => {
+      console.error("Failed to load image:", url, e);
+      reject(new Error(`Failed to load image: ${url}`));
+    };
+    
+    // Important: Set the src AFTER setting up handlers
+    img.src = url;
+  });
+};
+
 export default function VideoPlayable() {
   const [isDragging, setIsDragging] = useState(false);
   const [splitPosition, setSplitPosition] = useState(22);
@@ -132,6 +166,7 @@ export default function VideoPlayable() {
     message: "",
     type: ""
   });
+  const [assets, setAssets] = useState([]);
 
   // Create a ref that will hold the active audio elements keyed by modification id.
   const audioElementsRef = useRef({});
@@ -975,6 +1010,19 @@ export default function VideoPlayable() {
     }
   }, [isPreviewMode]);
 
+  const getAssets = async () => {
+    try {
+      const assets = await api.get('/v1/assetGenerator/playable-assets');
+      setAssets(assets.data.data);
+    } catch (error) {
+      console.error("Error getting assets:", error);
+    }
+  };
+
+  useEffect(() => {
+    getAssets();
+  }, []);
+
   const renderExpandableButtons = () => (
     <div
       className={`absolute top-4 left-4 z-10 ${
@@ -1174,6 +1222,7 @@ export default function VideoPlayable() {
             videoPlayable={videoPlayable}
             setVideoPlayable={setVideoPlayable}
             handleRemoveTab={handleRemoveTab}
+            assets={assets}
           />
         );
       case "overlay":
@@ -1183,6 +1232,7 @@ export default function VideoPlayable() {
             videoPlayable={videoPlayable}
             setVideoPlayable={setVideoPlayable}
             handleRemoveTab={handleRemoveTab}
+            assets={assets}
           />
         );
       case "end_screen":
@@ -1192,6 +1242,7 @@ export default function VideoPlayable() {
             videoPlayable={videoPlayable}
             setVideoPlayable={setVideoPlayable}
             handleRemoveTab={handleRemoveTab}
+            assets={assets}
           />
         );
       default:
@@ -1331,46 +1382,135 @@ export default function VideoPlayable() {
     }
   };
 
-  const renderSprite = (spriteData, modification) => {
-    if (!pixiAppRef.current) return;
-    const app = pixiAppRef.current;
-    const sprite = PIXI.Sprite.from(spriteData.imageUrl);
+  const loadTexture = (url) => {
+    return new Promise((resolve, reject) => {
+      const texture = PIXI.Texture.from(url);
+      
+      // For already loaded textures
+      if (texture.valid) {
+        resolve(texture);
+        return;
+      }
+      
+      // For textures that need to load
+      texture.once('update', () => resolve(texture));
+      texture.once('error', (err) => reject(err));
+    });
+  };
 
-    // Tag the sprite with its ID for later lookup.
-    sprite.__spriteId = spriteData.id;
-
-    sprite.position.set(
-      spriteData.position.x * app.screen.width,
-      spriteData.position.y * app.screen.height
-    );
-    sprite.scale.set(spriteData.scale);
-    sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
-    sprite.rotation = spriteData.rotation * (Math.PI / 180);
-    sprite.alpha = spriteData.transparency;
-
-    // If part of a modification, assign proper zIndex.
-    if (modification) {
-      sprite.__isOverlay = true;
-      sprite.zIndex = modification.type === ModificationType.END_SCREEN ? 4 : 2;
+  const renderSprite = async (spriteData, modification) => {
+    if (!pixiAppRef.current || !spriteData) {
+      console.error("Missing required refs or sprite data");
+      return;
     }
     
-    // Enable interaction so we can detect clicks.
-    sprite.interactive = true;
-    sprite.buttonMode = true;
-    sprite.on("pointerdown", () => {
-      // If open store url is the assigned action, show toast message.
-      if (spriteData.onClickAction === "open-store-url") {
-        setToastMessage({
-          show: true,
-          message: "Store URL clicked",
-          type: "info"
-        });
-      }
-      // (You can also add handling for other actions if needed.)
-    });
+    console.log("Starting to render sprite:", spriteData.id, "for modification type:", modification.type);
+    const app = pixiAppRef.current;
     
+    // Create a temporary placeholder sprite
+    const graphics = new PIXI.Graphics();
+    graphics.beginFill(0xCCCCCC, 0.7);
+    graphics.drawRect(0, 0, 100, 100);
+    graphics.endFill();
+    
+    const tempTexture = app.renderer.generateTexture(graphics);
+    const sprite = new PIXI.Sprite(tempTexture);
+    
+    // Set sprite properties
+    sprite.__spriteId = spriteData.id;
+    sprite.position.set(
+      (spriteData.position?.x || 0.5) * app.screen.width,
+      (spriteData.position?.y || 0.5) * app.screen.height
+    );
+    sprite.scale.set(spriteData.scale || 0.5);
+    sprite.anchor.set(
+      spriteData.anchor?.x || 0.5, 
+      spriteData.anchor?.y || 0.5
+    );
+    sprite.rotation = (spriteData.rotation || 0) * (Math.PI / 180);
+    sprite.alpha = spriteData.transparency || 1;
+    
+    // Add to stage immediately with placeholder
     app.stage.addChild(sprite);
     spritesRef.current.push(sprite);
+    
+    // Set proper zIndex based on modification type
+    if (modification) {
+      sprite.__isOverlay = true;
+      
+      if (modification.type === ModificationType.END_SCREEN) {
+        sprite.zIndex = 4;
+      } else if (modification.type === ModificationType.BREAK) {
+        sprite.zIndex = 3; 
+      } else {
+        sprite.zIndex = 2;
+      }
+    }
+    
+    // IMPORTANT: Handle blob URLs and direct URLs differently
+    try {
+      let texture;
+      
+      // Check if this is a blob URL (local file) or a direct URL (S3/library asset)
+      if (spriteData.file) {
+        // For local files, use the blob URL directly WITHOUT cache busting
+        console.log("Loading texture from blob URL:", spriteData.imageUrl);
+        texture = PIXI.Texture.from(spriteData.imageUrl);
+      } else if (spriteData.directUrl) {
+        // For S3/library assets, use the direct URL WITH cache busting
+        const cacheBuster = `?t=${Date.now()}`;
+        console.log("Loading texture from direct URL:", spriteData.directUrl + cacheBuster);
+        texture = PIXI.Texture.from(spriteData.directUrl + cacheBuster);
+      } else {
+        console.error("No valid source found for sprite:", spriteData.id);
+        return sprite;
+      }
+      
+      // Handle texture loading completion
+      if (!texture.valid) {
+        console.log("Texture not immediately valid, waiting for load");
+        await new Promise((resolve, reject) => {
+          texture.once('update', () => {
+            console.log("Texture loaded successfully");
+            resolve();
+          });
+          texture.once('error', (err) => {
+            console.error("Texture loading error:", err);
+            reject(err);
+          });
+        });
+      }
+      
+      console.log("Applying texture to sprite for", modification.type);
+      sprite.texture = texture;
+    } catch (err) {
+      console.error("Failed to load texture:", err);
+    }
+    
+    // Make interactive if needed
+    sprite.eventMode = 'static';
+    sprite.cursor = 'pointer';
+    
+    // Ensure proper sorting
+    app.stage.sortChildren();
+    
+    return sprite;
+  };
+
+  const renderModifications = (modifications) => {
+    modifications.forEach(mod => {
+      // ... existing code ...
+      
+      // Add sprites
+      mod.sprites.forEach(spriteData => {
+        // Add explicit debug logging for each sprite
+        console.log("Rendering sprite for type:", mod.type, spriteData);
+        console.log("Sprite has directUrl:", spriteData.directUrl);
+        console.log("Sprite has imageUrl:", spriteData.imageUrl);
+        
+        renderSprite(spriteData, mod);
+      });
+    });
   };
 
   useEffect(() => {
@@ -1404,7 +1544,8 @@ export default function VideoPlayable() {
     else if (
       activeTab &&
       (activeTab.type === ModificationType.OVERLAY ||
-        activeTab.type === ModificationType.END_SCREEN)
+       activeTab.type === ModificationType.END_SCREEN ||
+       activeTab.type === ModificationType.BREAK) // Add BREAK here to support it
     ) {
       modificationsToRender = [
         videoPlayable.modifications[activeTab.modificationIndex],
@@ -1424,6 +1565,7 @@ export default function VideoPlayable() {
           audioElementsRef.current[mod.id] = audio;
         }
       }
+
       // Render background (keep zIndex and other settings intact).
       if (mod.background) {
         const background = new PIXI.Graphics();
@@ -1439,11 +1581,20 @@ export default function VideoPlayable() {
         );
         background.endFill();
         background.__isOverlay = true;
-        // Permanent overlay background → zIndex 1, End screen → zIndex 3.
-        background.zIndex = mod.type === ModificationType.END_SCREEN ? 3 : 1;
+        
+        // Set zIndex based on modification type - add special handling for BREAK
+        if (mod.type === ModificationType.END_SCREEN) {
+          background.zIndex = 3;
+        } else if (mod.type === ModificationType.BREAK) {
+          background.zIndex = 2; // Same as overlay or you could use a different value
+        } else {
+          background.zIndex = 1; // Default for overlays
+        }
+        
         pixiAppRef.current.stage.addChild(background);
         spritesRef.current.push(background);
       }
+      
       // Render sprites (preserving zIndex, animations, etc.)
       mod.sprites.forEach((spriteData) => renderSprite(spriteData, mod));
     });

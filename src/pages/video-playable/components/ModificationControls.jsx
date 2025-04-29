@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import SpriteEditor from "./SpriteEditor";
 import React from "react";
 import { SketchPicker } from "react-color";
+import { XMarkIcon } from "@heroicons/react/20/solid";
 
 // Helper function to convert hex color into an RGB object
 const hexToRgb = (hex) => {
@@ -40,6 +41,7 @@ const ModificationControls = ({
   videoPlayable,
   setVideoPlayable,
   handleRemoveTab,
+  assets,
 }) => {
   const [activeSpriteId, setActiveSpriteId] = useState(null);
   const audioUploadRef = useRef(null);
@@ -102,12 +104,15 @@ const ModificationControls = ({
     if (!file) return;
 
     try {
-      const imageUrl = URL.createObjectURL(file);
-      const newSprite = {
+      // Determine base sprite properties based on modification type
+      const baseSprite = {
         ...initialSpriteState,
         id: Date.now(),
-        file,
-        imageUrl,
+        position: { x: 0.5, y: 0.5 },
+        scale: 0.5,
+        anchor: { x: 0.5, y: 0.5 },
+        rotation: 0,
+        transparency: 1,
         onClickAction:
           currentModification.type === ModificationType.OVERLAY
             ? "nothing"
@@ -116,14 +121,48 @@ const ModificationControls = ({
             : currentModification.type === ModificationType.END_SCREEN
             ? "open-store-url"
             : "nothing",
+        // Add a field to track modification type
+        modificationType: currentModification.type
       };
 
+      // Create specific sprite based on source
+      let newSprite;
+      
+      // Case 1: Asset from library (S3 URL)
+      if (file.isDirectUrl) {
+        console.log("Adding sprite from library URL:", file.url);
+        newSprite = {
+          ...baseSprite,
+          directUrl: file.url,
+          imageUrl: file.url,
+          file: null, // No local file
+        };
+      } else {
+        // Case 2: Local file upload
+        console.log("Adding sprite from local file upload");
+        const imageUrl = URL.createObjectURL(file);
+        newSprite = {
+          ...baseSprite,
+          file: file,
+          imageUrl: imageUrl,
+          directUrl: null, // No direct URL
+        };
+      }
+      
+      console.log("Created sprite:", newSprite);
+      
+      // Update the modification with the new sprite
       updateModification({
         sprites: [...currentModification.sprites, newSprite],
       });
+      
+      // Set the active sprite
       setActiveSpriteId(newSprite.id);
-      // Reset the input value so the user can select the same image again later.
-      e.target.value = "";
+      
+      // Reset the input value if it's a file input
+      if (e.target.value) {
+        e.target.value = "";
+      }
     } catch (error) {
       console.error("Error adding sprite:", error);
     }
@@ -239,7 +278,10 @@ const ModificationControls = ({
             </label>
           </div>
           <div className="flex gap-2">
-            <button className="text-[#b9ff66]" onClick={() => audioUploadRef.current?.click()}>
+            <button
+              className="text-[#b9ff66]"
+              onClick={() => audioUploadRef.current?.click()}
+            >
               <Pencil className="w-4 h-4" />
             </button>
             <button className="text-[#b9ff66]" onClick={handleAudioDelete}>
@@ -333,6 +375,7 @@ const ModificationControls = ({
         handleSpriteImageUpload={handleSpriteImageUpload}
         handleSpriteUpdate={handleSpriteUpdate}
         handleSpriteDelete={handleSpriteDelete}
+        assets={assets}
       />
     </div>
   );
@@ -387,7 +430,9 @@ const Sprites = ({
   handleSpriteImageUpload,
   handleSpriteUpdate,
   handleSpriteDelete,
+  assets,
 }) => {
+  const [showAssetLibrary, setShowAssetLibrary] = useState(false);
   const fileInputRef = useRef(null);
   return (
     <>
@@ -405,15 +450,16 @@ const Sprites = ({
           </div>
         ))}
         <div className="flex items-center justify-between">
-          <input
+          {/* <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={handleSpriteImageUpload}
             className="hidden"
-          />
+          /> */}
           <button
-            onClick={() => fileInputRef.current?.click()}
+            // onClick={() => fileInputRef.current?.click()}
+            onClick={() => setShowAssetLibrary(!showAssetLibrary)}
             className="flex items-center gap-2 bg-[#b9ff66] px-4 py-1.5 rounded text-black"
           >
             Add Sprite
@@ -437,7 +483,146 @@ const Sprites = ({
             />
           )
       )}
+      {showAssetLibrary && (
+        <AssetLibrary
+          assets={assets}
+          showAssetLibrary={showAssetLibrary}
+          setShowAssetLibrary={setShowAssetLibrary}
+          fileInputRef={fileInputRef}
+          handleSpriteImageUpload={handleSpriteImageUpload}
+        />
+      )}
     </>
   );
 };
+
+const AssetLibrary = ({
+  assets,
+  showAssetLibrary,
+  setShowAssetLibrary,
+  fileInputRef,
+  handleSpriteImageUpload,
+}) => {
+  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const onCancel = () => {
+    setShowAssetLibrary(false);
+  };
+  
+  const onConfirm = async () => {
+    if (!selectedAsset) {
+      console.warn("No asset selected");
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      
+      // Create a synthetic event mimicking a file upload event
+      const syntheticEvent = {
+        target: {
+          files: [
+            {
+              isDirectUrl: true,
+              url: selectedAsset.url,
+              name: selectedAsset.name
+            }
+          ]
+        }
+      };
+      
+      // Pass to the existing handler
+      await handleSpriteImageUpload(syntheticEvent);
+      setShowAssetLibrary(false);
+    } catch (error) {
+      console.error("Error adding asset:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const images = assets.map((url) => ({
+    url,
+    name: url.split("/").pop(),
+  }));
+  
+  return (
+    <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-[#12111157]">
+      <div className="relative my-6 mx-auto max-w-5xl w-[900px]">
+        <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
+          <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
+            <h3 className="text-2xl font-semibold whitespace-pre-line text-[#000]">
+              Asset Library
+            </h3>
+            <button
+              className="p-1 ml-auto border-0 text-black float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
+              onClick={onCancel}
+            >
+              <XMarkIcon className="w-6 h-6 text-[#d6d6d6]" />
+            </button>
+          </div>
+          <div className="p-4 overflow-y-auto h-[400px]">
+            <div className="flex items-center justify-center mb-4 border border-dashed border-[#800080] rounded p-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleSpriteImageUpload}
+                className="hidden"
+              />
+              <p className="text-[#000] text-xs pr-2">
+                You can upload your own images.
+              </p>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 bg-[#b9ff66] px-4 py-1.5 rounded text-black"
+              >
+                Browse
+              </button>
+            </div>
+            <div className="grid grid-cols-7 gap-4">
+              {images.map((asset) => (
+                <div
+                  className={`w-[100px] h-[120px] flex flex-col items-center justify-center bg-white rounded-lg mr-2 cursor-pointer p-3 hover:border border-[#800080] ${
+                    selectedAsset?.url === asset.url
+                      ? "border-2 border-[#b9ff66]"
+                      : ""
+                  }`}
+                  onClick={() => setSelectedAsset(asset)}
+                  key={asset.url}
+                >
+                  <img
+                    src={asset.url}
+                    className="w-[64px] h-[64px] object-contain"
+                    alt={asset.name}
+                  />
+                  <p className="text-[#000] text-xs text-center">
+                    {asset.name}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-end gap-4 border-t border-solid border-blueGray-200 p-4">
+            <button
+              className="bg-[#f3f3f3] text-[#000] px-4 py-2 rounded-md"
+              onClick={onCancel}
+            >
+              Cancel
+            </button>
+            <button
+              className="bg-[#b9ff66] text-[#000] px-4 py-2 rounded-md disabled:opacity-50"
+              onClick={onConfirm}
+              disabled={!selectedAsset || isLoading}
+            >
+              {isLoading ? "Adding..." : "Add to Canvas"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default ModificationControls;
