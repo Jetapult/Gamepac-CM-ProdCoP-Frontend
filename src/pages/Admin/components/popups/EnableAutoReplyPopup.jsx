@@ -134,26 +134,21 @@ const EnableAutoReplyPopup = ({
   const enableAutoReply = async () => {
     try {
       const auto_reply_ratings = rating?.join(",");
-
-      await api.put(`/v1/games/${studio_id}/${selectedGame?.id}`, {
+      const autoReply = await api.put(`/v1/games/${studio_id}/${selectedGame?.id}`, {
         ...selectedGame,
         auto_reply_enabled: selectedType?.value || "none",
         auto_reply_ratings: auto_reply_ratings,
       });
 
       setGames((prev) =>
-        prev.map((game) => {
-          if (game.id === selectedGame.id) {
-            return {
-              ...game,
-              auto_reply_enabled: selectedType?.value || "none",
-              auto_reply_ratings: auto_reply_ratings,
-            };
-          }
-          return game;
-        })
-      );
+        prev.map((game) =>
+          game.id === selectedGame.id
+            ? { ...game, auto_reply_enabled: selectedType?.value || "none", auto_reply_ratings: auto_reply_ratings }
+            : game
+        )
+      );      
     } catch (error) {
+      console.error("Failed to enable auto reply", error);
       showErrorToast("Failed to enable auto reply. Please try again.");
     }
   };
@@ -248,6 +243,7 @@ const EnableAutoReplyPopup = ({
             updatedData
           );
         } catch (error) {
+          console.error("Failed to update template", error);
           showErrorToast("Failed to enable auto reply. Please try again.");
         }
       }
