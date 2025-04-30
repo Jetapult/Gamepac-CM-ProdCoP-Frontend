@@ -341,6 +341,7 @@ const StudioGames = ({
           setSelectedGame={setSelectedGame}
           setGames={setGames}
           studio_id={studio_id}
+          setToastMessage={setToastMessage}
         />
       )}
       {showConfirmationPopup && (

@@ -39,8 +39,48 @@ const EnableAutoReplyPopup = ({
 }) => {
   const [selectedType, setSelectedType] = useState({});
   const [rating, setRating] = useState(["1", "2", "3", "4", "5"]);
+  const [templates, setTemplates] = useState({});
+  const [customTemplates, setCustomTemplates] = useState([]);
+  const [existingTemplates, setExistingTemplates] = useState([]);
+  const [editMode, setEditMode] = useState({});
+  const [localTemplateChanges, setLocalTemplateChanges] = useState({});
+  const [selectedTab, setSelectedTab] = useState("reply");
   const [showManageTemplateSection, setShowManageTemplateSection] = useState(false);
+  const [toastMessage, setToastMessage] = useState({
+    show: false,
+    message: "",
+    duration: 3000,
+    type: "error",
+  });
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
 
+  const textareaRefs = useRef({});
+
+  useEffect(() => {
+    Object.entries(textareaRefs.current).forEach(([id, ref]) => {
+      if (ref && editMode[id]) {
+        ref.style.height = "auto";
+        ref.style.height = `${ref.scrollHeight}px`;
+      }
+    });
+  }, [editMode]);
+
+  const adjustTextareaHeight = (e) => {
+    e.target.style.height = "auto";
+    e.target.style.height = `${e.target.scrollHeight}px`;
+  };
+
+  const fetchExistingTemplates = async () => {
+    try {
+      const response = await api.get(
+        `v1/organic-ua/reply-templates/${studio_id}?template_type=auto`
+      );
+      setExistingTemplates(response.data.data || []);
+    } catch (error) {
+      console.error("Failed to fetch templates", error);
+    }
+  };
 
   const handleRatingChange = (event) => {
     if (rating.includes(event.target.name)) {
@@ -63,6 +103,33 @@ const EnableAutoReplyPopup = ({
       setSelectedType(item);
     }
   };
+  const handleAddCustomTemplate = () => {
+    const newTemplate = {
+      id: Date.now().toString(),
+      title: "",
+      text: "",
+      type: "custom",
+    };
+    setCustomTemplates([...customTemplates, newTemplate]);
+  };
+
+  // const handleCustomTemplateChange = (id, field, value) => {
+  //   console.log("inside handle custom template");
+  //   setCustomTemplates(
+  //     customTemplates.map((ct) =>
+  //       ct.id === id ? { ...ct, [field]: value } : ct
+  //     )
+  //   );
+  // };
+  // const handleUpdateTemplate = async (templateId, updatedData) => {
+  //   try {
+  //     await api.put(`v1/organic-ua/reply-template/${templateId}`, updatedData);
+  //     fetchExistingTemplates(); // Refresh templates after update
+  //     setEditMode(prev => ({ ...prev, [templateId]: false }));
+  //   } catch (error) {
+  //     console.error('Failed to update template:', error);
+  //   }
+  // };
 
   const enableAutoReply = async () => {
     try {
@@ -228,331 +295,19 @@ const EnableAutoReplyPopup = ({
                 </div>
               </>
             ) : (
-              <TemplateManagement
-                setShowManageTemplateSection={setShowManageTemplateSection}
-                rating={rating}
-                studio_id={studio_id}
-                selectedGame={selectedGame}
-              />
-            )}
-          </div>
-          {!showManageTemplateSection && (
-            <div className="flex justify-end gap-2 p-5 pt-6 border-t border-t-blueGray-200">
-              <button
-                className="border border-[#000000] rounded-md px-5 py-2 hover:bg-gray-200"
-                onClick={() => setShowAutoReplyEnablePopup(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="bg-[#000000] text-white rounded-md px-5 py-2 hover:opacity-80"
-                onClick={enableAutoReply}
-              >
-                Save Settings
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const TemplateManagement = ({
-  setShowManageTemplateSection,
-  rating,
-  studio_id,
-  selectedGame
-}) => {
-  const [existingTemplates, setExistingTemplates] = useState([]);
-  const [editMode, setEditMode] = useState({});
-  const [localTemplateChanges, setLocalTemplateChanges] = useState({});
-  const [selectedTab, setSelectedTab] = useState("reply");
-  const [templates, setTemplates] = useState({});
-  const [customTemplates, setCustomTemplates] = useState([]);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
-  const textareaRefs = useRef({});
-
-  useEffect(() => {
-    Object.entries(textareaRefs.current).forEach(([id, ref]) => {
-      if (ref && editMode[id]) {
-        ref.style.height = "auto";
-        ref.style.height = `${ref.scrollHeight}px`;
-      }
-    });
-  }, [editMode]);
-
-  const adjustTextareaHeight = (e) => {
-    e.target.style.height = "auto";
-    e.target.style.height = `${e.target.scrollHeight}px`;
-  };
-
-  const fetchExistingTemplates = async () => {
-    try {
-      const response = await api.get(
-        `v1/organic-ua/reply-templates/${studio_id}?template_type=auto`
-      );
-      setExistingTemplates(response.data.data || []);
-    } catch (error) {
-      console.error("Failed to fetch templates", error);
-    }
-  };
-
-  const handleAddCustomTemplate = () => {
-    const newTemplate = {
-      id: Date.now().toString(),
-      title: "",
-      text: "",
-      type: "custom",
-    };
-    setCustomTemplates([...customTemplates, newTemplate]);
-  };
-
-  const handleTemplateEditClick = (templateId) => {
-    if (editMode[templateId]) {
-      setExistingTemplates((prev) =>
-        prev.map((t) => {
-          if (t.id === templateId) {
-            const changes = localTemplateChanges[templateId] || {};
-            return {
-              ...t,
-              review_type: changes.review_type || t.review_type,
-              review_reply: changes.review_reply || t.review_reply,
-            };
-          }
-          return t;
-        })
-      );
-     templatesaved();
-    }
-  
-    setEditMode((prev) => ({
-      ...prev,
-      [templateId]: !prev[templateId],
-    }));
-  };
-
-  const createTemplateAPI = async (templateData) => {
-    try {
-      const { data } = await api.post(
-        "v1/organic-ua/reply-template/create",
-        templateData
-      );
-  
-      const id = data?.data?.id || data?.id;
-      return { success: true, id };
-    } catch (error) {
-      console.error("Create template failed:", error);
-      return {
-        success: false,
-        error,
-      };
-    }
-  };
-  
-  
-  const handleToggleEdit = (templateId) => {
-    if (editMode[templateId]) {
-      setExistingTemplates((prev) =>
-        prev.map((t) => {
-          if (t.id === templateId) {
-            const changes = localTemplateChanges[templateId] || {};
-            return {
-              ...t,
-              review_reply: changes.review_reply || t.review_reply,
-            };
-          }
-          return t;
-        })
-      );
-     templatesaved();
-    }
-  
-    setEditMode((prev) => ({
-      ...prev,
-      [templateId]: !prev[templateId],
-    }));
-  };
-
-  const handleSaveCustomTemplate = async (template) => {
-    const templateData = {
-      studio_id,
-      review_type: template.title,
-      review_reply: template.text,
-      template_type: "auto",
-    };
-  
-    const result = await createReplyTemplate(templateData);
-  
-    if (result.success) {
-      const savedTemplate = {
-        ...templateData,
-        id: result.data?.id || template.id,
-      };
-  
-      setExistingTemplates((prev) => [...prev, savedTemplate]);
-      setCustomTemplates((prev) => prev.filter((t) => t.id !== template.id));
-    } else {
-      setToastMessage({
-        show: true,
-        message: "Failed to save custom template.",
-        duration: 3000,
-        type: "error",
-      });
-    }
-  };  
-
-  const templatesaved = async () => {
-    const newTemplates = [];
-  
-    // Save rating templates
-    for (const r of rating) {
-      if (templates[r]?.trim()) {
-        const newTemplate = {
-          studio_id,
-          review_type: `rating_${r}`,
-          review_reply: templates[r],
-          template_type: "auto",
-        };
-        const res = await createTemplateAPI(newTemplate); 
-        if (res.success) {
-          newTemplates.push({ ...newTemplate, id: res.id });
-          setTemplates((prev) => ({ ...prev, [r]: "" }));
-        } else {
-          setToastMessage({
-            show: true,
-            message: "Failed to save rating template. Please try again.",
-            duration: 3000,
-            type: "error",
-          });
-        }
-      }
-    }
-  
-    // Save custom templates
-    const successfullySavedCustomTemplates = [];
-    for (const ct of customTemplates) {
-      if (ct.title && ct.text && !successfullySavedCustomTemplates.includes(ct.id)) {
-        const templateData = {
-          studio_id,
-          review_type: ct.title,
-          review_reply: ct.text,
-          template_type: "auto",
-        };
-        const res = await createTemplateAPI(templateData);
-        if (res.success) {
-          newTemplates.push({ ...templateData, id: res.id });
-          successfullySavedCustomTemplates.push(ct.id);
-        } else {
-          setToastMessage({
-            show: true,
-            message: "Failed to save custom template. Please try again.",
-            duration: 3000,
-            type: "error",
-          });
-        }
-      }
-    }
-  
-    // Update local state
-    if (newTemplates.length) {
-      setExistingTemplates((prev) => [...prev, ...newTemplates]);
-    }
-    setCustomTemplates((prev) =>
-      prev.filter((ct) => !successfullySavedCustomTemplates.includes(ct.id))
-    );
-  
-    // Update existing edited templates
-    for (const template of existingTemplates) {
-      const changes = localTemplateChanges[template.id];
-      if (
-        changes &&
-        (changes.review_reply !== template.review_reply ||
-          (!template.review_type.startsWith("rating_") &&
-            changes.review_type &&
-            changes.review_type !== template.review_type))
-      ) {
-        const updatedData = {
-          ...template,
-          review_type:
-            !template.review_type.startsWith("rating_") && changes.review_type
-              ? changes.review_type
-              : template.review_type,
-          review_reply: changes.review_reply || template.review_reply,
-          template_type: "auto",
-        };
-        try {
-          await api.put(
-            `v1/organic-ua/reply-template/${studio_id}/${template.id}`,
-            updatedData
-          );
-        } catch (error) {
-          console.error("Failed to update template", error);
-          setToastMessage({
-            show: true,
-            message: "Failed to update template. Please try again.",
-            duration: 3000,
-            type: "error",
-          });
-        }
-      }
-    }
-  };
-  
-
-  const deleteTemplate = async (studio_id, templateId) => {
-    try {
-      const deleteTemplate = await api.delete(
-        `v1/organic-ua/delete-custom-template/${studio_id}/${templateId}`
-      );
-      setExistingTemplates((prev) =>
-        prev.filter((template) => template.id !== templateId)
-      );
-    } catch (error) {
-      console.error("Failed to delete template", error);
-      setToastMessage({
-        show: true,
-        message: "Failed to delete template. Please try again.",
-        duration: 3000,
-        type: "error",
-      });
-    }
-  };
-
-  useEffect(() => {
-    if (studio_id) {
-      fetchExistingTemplates();
-    }
-  }, [studio_id]);
-
-  useEffect(() => {
-    if (selectedGame?.id) {
-      if (selectedGame.auto_reply_templates) {
-        try {
-          const parsedTemplates = JSON.parse(selectedGame.auto_reply_templates);
-          setTemplates(parsedTemplates.ratingTemplates || {});
-          setCustomTemplates(parsedTemplates.customTemplates || []);
-        } catch (e) {
-          console.error("Failed to parse auto_reply_templates", e);
-          setTemplates({});
-          setCustomTemplates([]);
-        }
-      }
-    }
-  }, [selectedGame?.id]);
-  return (
-    <div className="px-4 pb-4">
-      <div className="flex flex-col w-full p-0 pb-4">
-        <h3 className="flex items-center text-2xl font-semibold mb-2 gap-2">
-          <button
-            onClick={() => setShowManageTemplateSection(false)}
-            className="text-black hover:underline flex items-center ml-[-30px]"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <span className="text-black font-semibold">Template Management</span>
-        </h3>
+              <div className="px-4 pb-4">
+                <div className="flex flex-col w-full p-0 pb-4">
+                  <h3 className="flex items-center text-2xl font-semibold mb-2 gap-2">
+                    <button
+                      onClick={() => setShowManageTemplateSection(false)}
+                      className="text-black hover:underline flex items-center ml-[-30px]"
+                    >
+                      <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <span className="text-black font-semibold">
+                      Template Management
+                    </span>
+                  </h3>
 
         <p className="text-sm text-gray-600 w-full">
           Manage your studio-wide templates for automatic review responses.
@@ -626,208 +381,318 @@ const TemplateManagement = ({
             );
           })}
 
-          <h4 className="text-lg font-semibold mb-2">Rating Templates</h4>
-          {existingTemplates
-            .filter((template) => template.review_type.startsWith("rating_"))
-            .map((template) => (
-              <div key={template.id} className="mb-4 border p-2 rounded-md">
-                <div className="flex justify-between items-center mb-2">
-                  <label
-                    className="block text-sm font-medium text-[rgb(31 41 55 / var(--tw-text-opacity, 1))] bg-gray-200 rounded-xl p-2 leading-[0.55rem]
-           "
-                  >
-                    {template.review_type.replace("rating_", "")} Star Rating
-                  </label>
-                  <button
-                    onClick={() => {
-                      handleToggleEdit(template.id);
-                    }}
-                    className={`mt-2 border border-input text-black rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5 ${
-                      editMode[template.id]
-                        ? "bg-[rgb(22_163_74/_var(--tw-bg-opacity,1))] text-white"
-                        : "bg-background"
-                    }`}
-                  >
-                    {editMode[template.id] ? (
-                      <>
-                        <CheckIcon className="h-4 w-4 text-black text-white" />
-                        Save
-                      </>
-                    ) : (
-                      <>
-                        <PencilIcon className="h-4 w-4 text-black" />
-                        Edit
-                      </>
-                    )}
-                  </button>
-                </div>
-                {editMode[template.id] ? (
-                  <>
-                    <textarea
-                      ref={(ref) => (textareaRefs.current[template.id] = ref)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm leading-5 min-h-[60px] resize-none overflow-hidden "
-                      defaultValue={template.review_reply}
-                      onChange={(e) => {
-                        adjustTextareaHeight(e);
-                        setLocalTemplateChanges((prev) => ({
-                          ...prev,
-                          [template.id]: {
-                            ...prev[template.id],
-                            review_reply: e.target.value,
-                          },
-                        }));
-                      }}
-                      placeholder="Enter reply message"
-                    />
+                    <h4 className="text-lg font-semibold mb-2">
+                      Rating Templates
+                    </h4>
+                    {existingTemplates
+                      .filter((template) =>
+                        template.review_type.startsWith("rating_")
+                      )
+                      .map((template) => (
+                        <div
+                          key={template.id}
+                          className="mb-4 border p-2 rounded-md"
+                        >
+                          <div className="flex justify-between items-center mb-2">
+                            <label
+                              className="block text-sm font-medium text-[rgb(31 41 55 / var(--tw-text-opacity, 1))] bg-gray-200 rounded-xl p-2 leading-[0.55rem]
+                         "
+                            >
+                              {template.review_type.replace("rating_", "")} Star
+                              Rating
+                            </label>
+                            <button
+                              onClick={async () => {
+                                if (editMode[template.id]) {
+                                  setExistingTemplates((prev) =>
+                                    prev.map((t) => {
+                                      if (t.id === template.id) {
+                                        const changes =
+                                          localTemplateChanges[template.id] ||
+                                          {};
+                                        return {
+                                          ...t,
+                                          review_reply:
+                                            changes.review_reply ||
+                                            t.review_reply,
+                                        };
+                                      }
+                                      return t;
+                                    })
+                                  );
+                                  await templatesaved();
+                                }
+                                setEditMode((prev) => ({
+                                  ...prev,
+                                  [template.id]: !prev[template.id],
+                                }));
+                              }}
+                              className={`mt-2 border border-input text-black rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5 ${
+                                editMode[template.id]
+                                  ? "bg-[rgb(22_163_74/_var(--tw-bg-opacity,1))] text-white"
+                                  : "bg-background"
+                              }`}
+                            >
+                              {editMode[template.id] ? (
+                                <>
+                                  <CheckIcon className="h-4 w-4 text-black text-white" />
+                                  Save
+                                </>
+                              ) : (
+                                <>
+                                  <PencilIcon className="h-4 w-4 text-black" />
+                                  Edit
+                                </>
+                              )}
+                            </button>
+                          </div>
+                          {editMode[template.id] ? (
+                            <>
+                              <textarea
+                                ref={(ref) =>
+                                  (textareaRefs.current[template.id] = ref)
+                                }
+                                className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-sm leading-5 min-h-[60px] resize-none overflow-hidden "
+                                defaultValue={template.review_reply}
+                                onChange={(e) => {
+                                  adjustTextareaHeight(e);
+                                  setLocalTemplateChanges((prev) => ({
+                                    ...prev,
+                                    [template.id]: {
+                                      ...prev[template.id],
+                                      review_reply: e.target.value,
+                                    },
+                                  }));
+                                }}
+                                placeholder="Enter reply message"
+                              />
+                            </>
+                          ) : (
+                            <div className="p-3 bg-gray-50 border rounded-md text-sm leading-5">
+                              {template.review_reply}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                   </>
-                ) : (
-                  <div className="p-3 bg-gray-50 border rounded-md text-sm leading-5">
-                    {template.review_reply}
-                  </div>
                 )}
-              </div>
-            ))}
-        </>
-      )}
 
-      {/* Custom Tab */}
-      {selectedTab === "custom" && (
-        <>
-          <h4 className="text-lg font-semibold mb-2">Custom Templates</h4>
-          {existingTemplates
-            .filter((template) => !template.review_type?.startsWith("rating_"))
-            .map((template) => (
-              <div key={template.id} className="mb-4 border p-2 rounded-md">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    {template.review_type || "Custom Template"}
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        handleTemplateEditClick(template.id);
-                      }}
-                      className={`mt-2 rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5 ${
-                        editMode[template.id]
-                          ? "bg-[rgb(22_163_74_/_var(--tw-bg-opacity))] text-white"
-                          : "border border-black text-black"
-                      }`}
-                    >
-                      {editMode[template.id] ? (
-                        <>
-                          <Save className="h-4 w-4 text-white" />
-                        </>
-                      ) : (
-                        <>
-                          <Edit2Icon className="h-4 w-4 text-black" />
-                        </>
-                      )}
-                    </button>
-                    {!editMode[template.id] && (
-                      <button
-                        onClick={() => {
-                          setSelectedTemplateId(template.id);
-                          setShowConfirmation(true);
-                        }}
-                        className="mt-2 border border-red-500 text-red-500 rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5"
+                {/* Custom Tab */}
+                {selectedTab === "custom" && (
+                  <>
+                    <h4 className="text-lg font-semibold mb-2">
+                      Custom Templates
+                    </h4>
+                    {existingTemplates
+                      .filter(
+                        (template) =>
+                          !template.review_type?.startsWith("rating_")
+                      )
+                      .map((template) => (
+                        <div
+                          key={template.id}
+                          className="mb-4 border p-2 rounded-md"
+                        >
+                          <div className="flex justify-between items-center mb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                              {template.review_type || "Custom Template"}
+                            </label>
+                            <div className="flex items-center gap-2">
+                            <button
+                              onClick={async () => {
+                                if (editMode[template.id]) {
+                                  setExistingTemplates((prev) =>
+                                    prev.map((t) => {
+                                      if (t.id === template.id) {
+                                        const changes =
+                                          localTemplateChanges[template.id] ||
+                                          {};
+                                        return {
+                                          ...t,
+                                          review_type:
+                                            changes.review_type ||
+                                            t.review_type,
+                                          review_reply:
+                                            changes.review_reply ||
+                                            t.review_reply,
+                                        };
+                                      }
+                                      return t;
+                                    })
+                                  );
+                                  await templatesaved();
+                                }
+
+                                setEditMode((prev) => ({
+                                  ...prev,
+                                  [template.id]: !prev[template.id],
+                                }));
+                              }}
+                              className={`mt-2 rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5 ${
+                                editMode[template.id]
+                                  ? "bg-[rgb(22_163_74_/_var(--tw-bg-opacity))] text-white"
+                                  : "border border-black text-black"
+                              }`}
+                            >  
+                              {editMode[template.id] ? (
+                                <>
+                                  <Save className="h-4 w-4 text-white" />
+                                </>
+                              ) : (
+                                <>
+                                  <Edit2Icon className="h-4 w-4 text-black" />
+                                </>
+                              )}
+                            </button>
+                            {!editMode[template.id] && (
+                            <button
+                              onClick={() => {
+                                setSelectedTemplateId(template.id);
+                                setShowConfirmation(true);
+                              }}
+                              className="mt-2 border border-red-500 text-red-500 rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5"
+                            >
+                              <Trash2Icon className="h-4 w-4 text-red-500" />
+                            </button>
+                            )}
+                            {showConfirmation && (
+                              <ConfirmationPopup
+                                heading="Are you sure?"
+                                subHeading="Do you really want to delete this template?"
+                                onCancel={() => setShowConfirmation(false)}
+                                onConfirm={() => {
+                                  deleteTemplate(studio_id, selectedTemplateId);
+                                  setShowConfirmation(!showConfirmation);
+                                }}
+                              />
+                            )}
+                            </div>
+                          </div>
+                          {editMode[template.id] ? (
+                            <>
+                              <input
+                                type="text"
+                                className="mt-1 block w-full border border-gray-300 rounded-md p-2 mb-2"
+                                defaultValue={template.review_type}
+                                onChange={(e) => {
+                                  setLocalTemplateChanges((prev) => ({
+                                    ...prev,
+                                    [template.id]: {
+                                      ...prev[template.id],
+                                      review_type: e.target.value,
+                                    },
+                                  }));
+                                }}
+                                placeholder="Enter template title"
+                              />
+                              <textarea
+                                ref={(ref) =>
+                                  (textareaRefs.current[template.id] = ref)
+                                }
+                                className="mt-1 block w-full border border-gray-300 rounded-md p-2 overflow-hidden min-h-[60px] resize-none"
+                                defaultValue={template.review_reply}
+                                onChange={(e) => {
+                                  setLocalTemplateChanges((prev) => ({
+                                    ...prev,
+                                    [template.id]: {
+                                      ...prev[template.id],
+                                      review_reply: e.target.value,
+                                    },
+                                  }));
+                                }}
+                                placeholder="Enter reply message"
+                              />
+                            </>
+                          ) : (
+                            <div className="p-3 bg-gray-50 border rounded-md text-sm leading-5">
+                              {template.review_reply}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+
+                    {customTemplates.map((template, index) => (
+                      <div
+                        key={template.id}
+                        className="mt-4 mb-4 p-4 border rounded-md bg-white"
                       >
-                        <Trash2Icon className="h-4 w-4 text-red-500" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {editMode[template.id] ? (
-                  <>
-                    <input
-                      type="text"
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 mb-2"
-                      defaultValue={template.review_type}
-                      onChange={(e) => {
-                        setLocalTemplateChanges((prev) => ({
-                          ...prev,
-                          [template.id]: {
-                            ...prev[template.id],
-                            review_type: e.target.value,
-                          },
-                        }));
-                      }}
-                      placeholder="Enter template title"
-                    />
-                    <textarea
-                      ref={(ref) => (textareaRefs.current[template.id] = ref)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md p-2 overflow-hidden min-h-[60px] resize-none"
-                      defaultValue={template.review_reply}
-                      onChange={(e) => {
-                        setLocalTemplateChanges((prev) => ({
-                          ...prev,
-                          [template.id]: {
-                            ...prev[template.id],
-                            review_reply: e.target.value,
-                          },
-                        }));
-                      }}
-                      placeholder="Enter reply message"
-                    />
-                  </>
-                ) : (
-                  <div className="p-3 bg-gray-50 border rounded-md text-sm leading-5">
-                    {template.review_reply}
-                  </div>
-                )}
-              </div>
-            ))}
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="flex flex-col gap-1 mb-2">
+                            <label className="text-sm font-semibold tracking-tight text-gray-700">
+                              New Custom Template
+                            </label>
+                            <p className="text-sm text-muted-foreground">
+                              Create a new studio-wide template
+                            </p>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              const templateData = {
+                                studio_id,
+                                review_type: template.title,
+                                review_reply: template.text,
+                                template_type: "auto",
+                              };
 
-          {customTemplates.map((template, index) => (
-            <div
-              key={template.id}
-              className="mt-4 mb-4 p-4 border rounded-md bg-white"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex flex-col gap-1 mb-2">
-                  <label className="text-sm font-semibold tracking-tight text-gray-700">
-                    New Custom Template
-                  </label>
-                  <p className="text-sm text-muted-foreground">
-                    Create a new studio-wide template
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleSaveCustomTemplate(template)}
-                  disabled={!template.title.trim() || !template.text.trim()}
-                  className={`mt-2 rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5 
-                ${
-                  !template.title.trim() || !template.text.trim()
-                    ? "bg-gray-300 text-white cursor-not-allowed"
-                    : "bg-[rgb(22_163_74_/_var(--tw-bg-opacity))] text-white"
-                }`}
-                >
-                  <CheckIcon className="h-4 w-4 text-white" />
-                  Save
-                </button>
-              </div>
-              <input
-                type="text"
-                value={template.title}
-                onChange={(e) => {
-                  const updated = [...customTemplates];
-                  updated[index].title = e.target.value;
-                  setCustomTemplates(updated);
-                }}
-                placeholder="e.g. Bug Report Response"
-                className="mt-1 block w-full border border-gray-300 rounded-md p-2 mb-2"
-              />
-              <textarea
-                value={template.text}
-                onChange={(e) => {
-                  const updated = [...customTemplates];
-                  updated[index].text = e.target.value;
-                  setCustomTemplates(updated);
-                }}
-                placeholder="Enter your template response here"
-                className="mt-1 block w-full border border-gray-300 rounded-md p-2 overflow-hidden"
-              />
-            </div>
-          ))}
+                              try {
+                                const { data } = await api.post(
+                                  "v1/organic-ua/reply-template/create",
+                                  templateData
+                                );
+                                const savedTemplate = {
+                                  ...templateData,
+                                  id: data?.data?.id || data?.id || template.id,
+                                };
+                                setExistingTemplates((prev) => [
+                                  ...prev,
+                                  savedTemplate,
+                                ]);
+                                setCustomTemplates((prev) =>
+                                  prev.filter((t) => t.id !== template.id)
+                                );
+                              } catch (error) {
+                                showErrorToast(
+                                  "Failed to save custom template."
+                                );
+                              }
+                            }}
+                            disabled={
+                              !template.title.trim() || !template.text.trim()
+                            }
+                            className={`mt-2 rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5 
+                              ${
+                                !template.title.trim() || !template.text.trim()
+                                  ? "bg-gray-300 text-white cursor-not-allowed"
+                                  : "bg-[rgb(22_163_74_/_var(--tw-bg-opacity))] text-white"
+                              }`}
+                          >
+                            <CheckIcon className="h-4 w-4 text-white" />
+                            Save
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={template.title}
+                          onChange={(e) => {
+                            const updated = [...customTemplates];
+                            updated[index].title = e.target.value;
+                            setCustomTemplates(updated);
+                          }}
+                          placeholder="e.g. Bug Report Response"
+                          className="mt-1 block w-full border border-gray-300 rounded-md p-2 mb-2"
+                        />
+                        <textarea
+                          value={template.text}
+                          onChange={(e) => {
+                            const updated = [...customTemplates];
+                            updated[index].text = e.target.value;
+                            setCustomTemplates(updated);
+                          }}
+                          placeholder="Enter your template response here"
+                          className="mt-1 block w-full border border-gray-300 rounded-md p-2 overflow-hidden"
+                        />
+                      </div>
+                    ))}
 
           <div className="mt-4">
             <button
