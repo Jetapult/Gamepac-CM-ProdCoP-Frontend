@@ -339,9 +339,10 @@ const TemplateManagement = ({
         "v1/organic-ua/reply-template/create",
         templateData
       );
-  
-      const id = data?.data?.id || data?.id;
-      return { success: true, id };
+     return { 
+      success: true,
+      template: data.data, 
+    };
     } catch (error) {
       console.error("Create template failed:", error);
       return {
@@ -383,7 +384,7 @@ const TemplateManagement = ({
       template_type: "auto",
     };
   
-    const result = await createReplyTemplate(templateData);
+    const result = await templatesaved();
   
     if (result.success) {
       const savedTemplate = {
@@ -417,7 +418,7 @@ const TemplateManagement = ({
         };
         const res = await createTemplateAPI(newTemplate); 
         if (res.success) {
-          newTemplates.push({ ...newTemplate, id: res.id });
+          newTemplates.push( res.template);
           setTemplates((prev) => ({ ...prev, [r]: "" }));
         } else {
           setToastMessage({
@@ -442,7 +443,7 @@ const TemplateManagement = ({
         };
         const res = await createTemplateAPI(templateData);
         if (res.success) {
-          newTemplates.push({ ...templateData, id: res.id });
+          newTemplates.push(res.template);
           successfullySavedCustomTemplates.push(ct.id);
         } else {
           setToastMessage({
