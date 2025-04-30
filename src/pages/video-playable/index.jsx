@@ -1,131 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  Upload,
-  Play,
-  Pause,
-  RotateCw,
-  Plus,
-  Star,
-  Image,
-  Square,
-  Download,
-} from "lucide-react";
-import { Tooltip as ReactTooltip } from "react-tooltip";
+import { Download } from "lucide-react";
 import * as PIXI from "pixi.js";
-import ModificationControls from "./components/ModificationControls";
 import { baseModificationState, initialState, ModificationType } from "./state";
-import { buildPlayableAd, compressAllAssets } from "./utils";
+import { buildPlayableAd, getEasedProgress } from "./utils";
 import ToastMessage from "../../components/ToastMessage";
-import AssetSizeDisplay from './components/AssetSizeDisplay';
 import api from "../../api";
-
-const timelineContainerStyle = {
-  position: "absolute",
-  bottom: 0,
-  left: 0,
-  right: 0,
-  height: "48px",
-  backgroundColor: "#1f2937",
-  display: "flex",
-  alignItems: "center",
-  padding: "0 16px",
-};
-
-const timelineStyle = {
-  flex: 1,
-  height: "4px",
-  backgroundColor: "#374151",
-  borderRadius: "2px",
-  position: "relative",
-  margin: "0 16px",
-};
-
-const timelineProgressStyle = {
-  position: "absolute",
-  height: "100%",
-  backgroundColor: "#b9ff66",
-  borderRadius: "2px",
-};
-
-const timelineHandleStyle = {
-  position: "absolute",
-  width: "12px",
-  height: "12px",
-  backgroundColor: "#b9ff66",
-  borderRadius: "50%",
-  top: "50%",
-  transform: "translate(-50%, -50%)",
-  cursor: "pointer",
-};
-
-const timelineBreakStyle = {
-  position: "absolute",
-  width: "0",
-  height: "0",
-  borderLeft: "6px solid transparent",
-  borderRight: "6px solid transparent",
-  borderBottom: "8px solid #0d3ce5",
-  top: "10px",
-  transform: "translate(-50%, -100%)",
-  cursor: "pointer",
-  zIndex: 2,
-};
-
-const getEasedProgress = (progress, easingType) => {
-  switch (easingType) {
-    case "easeInQuad":
-      return progress * progress;
-    case "easeOutQuad":
-      return 1 - (1 - progress) * (1 - progress);
-    case "easeInOutQuad":
-      return progress < 0.5
-        ? 2 * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-    case "easeInCubic":
-      return progress * progress * progress;
-    case "easeOutCubic":
-      return 1 - Math.pow(1 - progress, 3);
-    case "easeInOutCubic":
-      return progress < 0.5
-        ? 4 * progress * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-    default:
-      return progress;
-  }
-};
-
-// Helper function to preload images and create PIXI textures safely
-const createTextureFromUrl = (url) => {
-  return new Promise((resolve, reject) => {
-    // Create a new image element
-    const img = new Image();
-    
-    // Handle successful load
-    img.onload = () => {
-      // Create a canvas element
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      
-      // Draw the image to canvas
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      
-      // Create a texture from the canvas (not directly from the URL)
-      const texture = PIXI.Texture.from(canvas);
-      resolve(texture);
-    };
-    
-    // Handle error
-    img.onerror = (e) => {
-      console.error("Failed to load image:", url, e);
-      reject(new Error(`Failed to load image: ${url}`));
-    };
-    
-    // Important: Set the src AFTER setting up handlers
-    img.src = url;
-  });
-};
+import Tabs from "./components/Tabs";
+import VideoUploader from "./components/VideoUploader";
+import CanvasContainer from "./components/CanvasContainer";
+import Timeline from "./components/Timeline";
+import { TabContent } from "./components/TabContent";
 
 export default function VideoPlayable() {
   const [isDragging, setIsDragging] = useState(false);
@@ -141,7 +25,6 @@ export default function VideoPlayable() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [orientation, setOrientation] = useState({ width: 375, height: 667 });
-  const [isExpanded, setIsExpanded] = useState(false);
   const [activeBreakIndex, setActiveBreakIndex] = useState(-1);
   const [tabs, setTabs] = useState([
     {
@@ -155,7 +38,6 @@ export default function VideoPlayable() {
   const pixiAppRef = useRef(null);
   const videoSpriteRef = useRef(null);
   const spritesRef = useRef([]);
-  const videoInputRef = useRef(null);
   const [isTimelineDragging, setIsTimelineDragging] = useState(false);
   const timelineRef = useRef(null);
   const [breakAudioElement, setBreakAudioElement] = useState(null);
@@ -164,9 +46,10 @@ export default function VideoPlayable() {
   const [toastMessage, setToastMessage] = useState({
     show: false,
     message: "",
-    type: ""
+    type: "",
   });
   const [assets, setAssets] = useState([]);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   // Create a ref that will hold the active audio elements keyed by modification id.
   const audioElementsRef = useRef({});
@@ -258,7 +141,7 @@ export default function VideoPlayable() {
     // Ensure video is visible
     if (videoSpriteRef.current) {
       videoSpriteRef.current.visible = true;
-      
+
       // Force a frame to be displayed if we have a video element
       if (videoRef.current) {
         const currentTime = time / 1000;
@@ -301,13 +184,13 @@ export default function VideoPlayable() {
     // Ensure video is visible
     if (videoSpriteRef.current) {
       videoSpriteRef.current.visible = true;
-      
+
       // Force a frame to be displayed
       if (videoRef.current) {
         videoRef.current.currentTime = time / 1000 || 0.001;
       }
     }
-    
+
     const newOverlay = {
       ...baseModificationState,
       type: ModificationType.OVERLAY,
@@ -357,13 +240,13 @@ export default function VideoPlayable() {
     // Ensure video is visible
     if (videoSpriteRef.current) {
       videoSpriteRef.current.visible = true;
-      
+
       // Force a frame to be displayed
       if (videoRef.current) {
         videoRef.current.currentTime = time / 1000 || 0.001;
       }
     }
-    
+
     const newEndScreen = {
       ...baseModificationState,
       type: ModificationType.END_SCREEN,
@@ -421,8 +304,6 @@ export default function VideoPlayable() {
       setBreakAudioElement(null);
     }
   };
-
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   const togglePlayPause = useCallback(() => {
     if (!videoSpriteRef.current) return;
@@ -560,13 +441,17 @@ export default function VideoPlayable() {
     videoElement.playsInline = true;
     videoElement.currentTime = 0;
 
-    videoElement.addEventListener("loadeddata", () => {
-      videoElement.pause();
-      setIsPlaying(false);
-      
-      // Force a frame to be displayed
-      videoElement.currentTime = 0.001;
-    }, { once: true });
+    videoElement.addEventListener(
+      "loadeddata",
+      () => {
+        videoElement.pause();
+        setIsPlaying(false);
+
+        // Force a frame to be displayed
+        videoElement.currentTime = 0.001;
+      },
+      { once: true }
+    );
 
     videoElement.addEventListener("timeupdate", () => {
       setCurrentTime(videoElement.currentTime * 1000);
@@ -586,18 +471,18 @@ export default function VideoPlayable() {
       const scale = Math.min(scaleX, scaleY);
       videoSprite.scale.set(scale);
       videoSprite.zIndex = 0;
-      
+
       // Clear any existing children and add the video sprite
       app.stage.removeChildren();
       app.stage.addChild(videoSprite);
       videoSpriteRef.current = videoSprite;
-      
+
       // IMPORTANT: assign the video element so that videoRef is not null
       videoRef.current = videoElement;
-      
+
       // Force the video to show a frame
       videoElement.currentTime = 0.001;
-      
+
       setDuration(videoElement.duration * 1000);
       setCurrentTime(0);
     };
@@ -610,10 +495,17 @@ export default function VideoPlayable() {
         URL.revokeObjectURL(videoUrl);
       }
       if (pixiAppRef.current) {
-        if (pixiContainerRef.current && pixiAppRef.current.view instanceof HTMLCanvasElement) {
+        if (
+          pixiContainerRef.current &&
+          pixiAppRef.current.view instanceof HTMLCanvasElement
+        ) {
           pixiContainerRef.current.removeChild(pixiAppRef.current.view);
         }
-        pixiAppRef.current.destroy(true, { children: true, texture: true, baseTexture: true });
+        pixiAppRef.current.destroy(true, {
+          children: true,
+          texture: true,
+          baseTexture: true,
+        });
         pixiAppRef.current = null;
       }
       if (videoSpriteRef.current) {
@@ -700,11 +592,26 @@ export default function VideoPlayable() {
 
       // Add breakpoint sprites (with even higher zIndex)
       currentBreak.sprites.forEach((spriteData) => {
-        if (!spriteData.file) return;
-
-        const sprite = PIXI.Sprite.from(spriteData.imageUrl);
-        sprite.__spriteId = spriteData.id;
-
+        if (!spriteData.file && !spriteData.directUrl) {
+          console.error("No valid source found for sprite:", spriteData);
+          return;
+        }
+        
+        let sprite;
+        try {
+          if (spriteData.file) {
+            // For local files
+            sprite = PIXI.Sprite.from(spriteData.imageUrl);
+          } else if (spriteData.directUrl) {
+            // For library assets
+            const cacheBuster = `?t=${Date.now()}`;
+            sprite = PIXI.Sprite.from(spriteData.directUrl + cacheBuster);
+          }
+        } catch (err) {
+          console.error("Failed to create sprite:", err);
+          return;
+        }
+        
         sprite.position.set(
           spriteData.position.x * app.screen.width,
           spriteData.position.y * app.screen.height
@@ -724,14 +631,16 @@ export default function VideoPlayable() {
         sprite.on("pointerdown", () => {
           // Check if the sprite is configured to open store URL
           if (spriteData.onClickAction === "open-store-url") {
-            const storeUrl = videoPlayable.general.iosUrl || videoPlayable.general.playstoreUrl;
+            const storeUrl =
+              videoPlayable.general.iosUrl ||
+              videoPlayable.general.playstoreUrl;
             if (storeUrl) {
-              window.open(storeUrl, '_blank');
+              window.open(storeUrl, "_blank");
             }
             setToastMessage({
               show: true,
               message: "Store URL clicked",
-              type: "info"
+              type: "info",
             });
           } else {
             // Default break behavior (resume video)
@@ -832,8 +741,26 @@ export default function VideoPlayable() {
 
         // Render break sprites.
         currentBreak.sprites.forEach((spriteData) => {
-          if (!spriteData.file) return;
-          const sprite = PIXI.Sprite.from(spriteData.imageUrl);
+          if (!spriteData.file && !spriteData.directUrl) {
+            console.error("No valid source found for sprite:", spriteData);
+            return;
+          }
+          
+          let sprite;
+          try {
+            if (spriteData.file) {
+              // For local files
+              sprite = PIXI.Sprite.from(spriteData.imageUrl);
+            } else if (spriteData.directUrl) {
+              // For library assets
+              const cacheBuster = `?t=${Date.now()}`;
+              sprite = PIXI.Sprite.from(spriteData.directUrl + cacheBuster);
+            }
+          } catch (err) {
+            console.error("Failed to create sprite:", err);
+            return;
+          }
+          
           const app = pixiAppRef.current;
           sprite.position.set(
             spriteData.position.x * app.screen.width,
@@ -847,32 +774,8 @@ export default function VideoPlayable() {
           // Make the sprite interactive: on pointerdown resume video.
           sprite.eventMode = "static";
           sprite.cursor = "pointer";
-          sprite.on("pointerdown", () => {
-            clearBreakContent();
-            // Only stop audio if stopOnVideoResume is true and audio is playing.
-            if (
-              currentBreak.stopOnVideoResume &&
-              currentBreak.backgroundMusic?.file &&
-              audioElementsRef.current[currentBreak.id]
-            ) {
-              stopModificationAudio(audioElementsRef.current[currentBreak.id]);
-              delete audioElementsRef.current[currentBreak.id];
-            }
-            const videoElement =
-              videoSpriteRef.current.texture.baseTexture.resource.source;
-            videoElement
-              .play()
-              .then(() => {
-                setIsPlaying(true);
-                setActiveBreakIndex(-1);
-              })
-              .catch((error) => {
-                console.error("Error resuming video:", error);
-              });
-          });
-
-          app.stage.addChild(sprite);
-          spritesRef.current.push(sprite);
+          
+          // Rest of sprite setup code...
         });
 
         // Ensure the video sprite remains at the bottom.
@@ -1012,7 +915,7 @@ export default function VideoPlayable() {
 
   const getAssets = async () => {
     try {
-      const assets = await api.get('/v1/assetGenerator/playable-assets');
+      const assets = await api.get("/v1/assetGenerator/playable-assets");
       setAssets(assets.data.data);
     } catch (error) {
       console.error("Error getting assets:", error);
@@ -1022,299 +925,6 @@ export default function VideoPlayable() {
   useEffect(() => {
     getAssets();
   }, []);
-
-  const renderExpandableButtons = () => (
-    <div
-      className={`absolute top-4 left-4 z-10 ${
-        isPreviewMode ? "pointer-events-none opacity-50" : ""
-      }`}
-    >
-      <div className="relative">
-        <button
-          onClick={() => !isPreviewMode && setIsExpanded(!isExpanded)}
-          className={`w-10 h-10 bg-[#b9ff66] rounded-full flex items-center justify-center ${
-            isPreviewMode ? "cursor-default" : "cursor-pointer"
-          }`}
-          disabled={isPreviewMode}
-        >
-          <Plus
-            className={`w-6 h-6 transition-transform ${
-              isExpanded ? "rotate-45" : ""
-            }`}
-          />
-        </button>
-
-        {isExpanded && !isPreviewMode && (
-          <div className="absolute left-0 top-12 space-y-2">
-            <button
-              data-tooltip-id="add-break"
-              onClick={() => addBreak(currentTime)}
-              className="w-10 h-10 bg-[#b9ff66] rounded-full flex items-center justify-center"
-              title="Add Break"
-            >
-              <Pause className="w-6 h-6" />
-            </button>
-            <ReactTooltip id="add-break" place="right" content="Add Break" />
-            <button
-              data-tooltip-id="add-end-screen"
-              onClick={addEndScreen}
-              className="w-10 h-10 bg-[#b9ff66] rounded-full flex items-center justify-center"
-              title="Add End Screen"
-            >
-              <Star className="w-6 h-6" />
-            </button>
-            <ReactTooltip
-              id="add-end-screen"
-              place="right"
-              content="Add End Screen"
-            />
-            <button
-              data-tooltip-id="add-overlay"
-              onClick={addOverlay}
-              className="w-10 h-10 bg-[#b9ff66] rounded-full flex items-center justify-center"
-              title="Add Permanent Overlay"
-            >
-              <Image className="w-6 h-6" />
-            </button>
-            <ReactTooltip
-              id="add-overlay"
-              place="right"
-              content="Add Permanent Overlay"
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderTabs = () => (
-    <div className="flex space-x-4 mb-6 overflow-x-auto bg-[#252627] py-2">
-      {tabs.map((tab) => (
-        <div key={tab.id} className="flex items-center">
-          <button
-            className={`px-2 py-2 rounded bg-transparent ${
-              activeTab.id === tab.id
-                ? "text-white"
-                : "text-[#b5b5b5] hover:text-white"
-            }`}
-            onClick={() => handleTabClick(tab)}
-          >
-            {tab.label}
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-
-  const handleCompressAssets = async () => {
-    try {
-      setToastMessage({
-        show: true,
-        message: "Compressing assets...",
-        type: "info"
-      });
-      
-      const compressedPlayable = await compressAllAssets(videoPlayable);
-      
-      setVideoPlayable(compressedPlayable);
-      
-      setToastMessage({
-        show: true,
-        message: "Assets compressed successfully!",
-        type: "success"
-      });
-    } catch (error) {
-      console.error("Error compressing assets:", error);
-      setToastMessage({
-        show: true,
-        message: "Failed to compress assets. Please try again.",
-        type: "error"
-      });
-    }
-  };
-
-  const renderTabContent = () => {
-    const activeTabData = tabs.find((tab) => tab.id === activeTab.id);
-    if (!activeTabData) return null;
-
-    switch (activeTabData.type) {
-      case "general":
-        return (
-          <div className="space-y-4 py- pb-10 overflow-y-auto h-[calc(100vh-250px)]">
-            <div>
-              <label className="block text-white text-xs mb-1">
-                Playable Ad Name
-              </label>
-              <input
-                type="text"
-                value={videoPlayable.general?.adName}
-                onChange={(e) => setVideoPlayable({...videoPlayable, general: {...videoPlayable.general, adName: e.target.value}})}
-                className="w-full px-2 py-1 rounded-md text-sm"
-                placeholder="Enter ad name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-white text-xs mb-1">
-                Video Source
-              </label>
-              <div className="flex items-center">
-                <input
-                  ref={videoInputRef}
-                  type="file"
-                  accept="video/*"
-                  onChange={handleVideoUpload}
-                  className="hidden"
-                  id="video-upload"
-                />
-                <input
-                  type="text"
-                  value={videoSource?.name}
-                  className="px-2 w-full py-1 rounded-l-md outline-none disabled:bg-black-800 text-sm"
-                  onClick={() => videoInputRef.current.click()}
-                  disabled
-                />
-                <div
-                  className="bg-[#b9ff66] px-2 py-1.5 rounded-r-md cursor-pointer"
-                  onClick={() => videoInputRef.current.click()}
-                >
-                  <Upload className="w-4 h-4 text-black" strokeWidth={2.5} />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-white text-xs mb-1">
-                iOS App Store URL
-              </label>
-              <input
-                type="url"
-                value={videoPlayable.general?.iosUrl}
-                onChange={(e) => setVideoPlayable({...videoPlayable, general: {...videoPlayable.general, iosUrl: e.target.value}})}
-                className="w-full px-2 py-1 rounded-md text-sm"
-                placeholder="Enter iOS App Store URL"
-              />
-            </div>
-
-            <div>
-              <label className="block text-white text-xs mb-1">
-                Google Play Store URL
-              </label>
-              <input
-                type="url"
-                value={videoPlayable.general?.playstoreUrl}
-                onChange={(e) => setVideoPlayable({...videoPlayable, general: {...videoPlayable.general, playstoreUrl: e.target.value}})}
-                className="w-full px-2 py-1 rounded-md text-sm"
-                placeholder="Enter Play Store URL"
-              />
-            </div>
-            <AssetSizeDisplay 
-              videoPlayable={videoPlayable} 
-              setToastMessage={setToastMessage}
-              setVideoPlayable={setVideoPlayable}
-            />
-          </div>
-        );
-      case "break":
-        return (
-          <ModificationControls
-            activeTab={activeTabData}
-            videoPlayable={videoPlayable}
-            setVideoPlayable={setVideoPlayable}
-            handleRemoveTab={handleRemoveTab}
-            assets={assets}
-          />
-        );
-      case "overlay":
-        return (
-          <ModificationControls
-            activeTab={activeTab}
-            videoPlayable={videoPlayable}
-            setVideoPlayable={setVideoPlayable}
-            handleRemoveTab={handleRemoveTab}
-            assets={assets}
-          />
-        );
-      case "end_screen":
-        return (
-          <ModificationControls
-            activeTab={activeTab}
-            videoPlayable={videoPlayable}
-            setVideoPlayable={setVideoPlayable}
-            handleRemoveTab={handleRemoveTab}
-            assets={assets}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
-  const renderModificationIndicators = () => {
-    return videoPlayable.modifications.map((modification, index) => {
-      const isActive = index === activeBreakIndex;
-
-      // Base triangle indicator style
-      const baseIndicatorStyle = {
-        position: "absolute",
-        width: 0,
-        height: 0,
-        borderLeft: "6px solid transparent",
-        borderRight: "6px solid transparent",
-        borderBottom: "12px solid",
-        cursor: "pointer",
-        transform: "translate(-50%, -50%)",
-        top: "10px",
-        zIndex: 2,
-      };
-
-      // Calculate position based on modification type
-      const position =
-        modification.type === ModificationType.OVERLAY
-          ? modification.startTime
-          : modification.time;
-
-      const style = {
-        ...baseIndicatorStyle,
-        borderBottomColor: isActive ? "#b9ff66" : "#4B5563",
-        left: `${(position / duration) * 100}%`,
-      };
-
-      // Add duration bar for overlay type
-      if (modification.type === ModificationType.OVERLAY) {
-        const durationBar = {
-          position: "absolute",
-          height: "2px",
-          backgroundColor: "#4B5563",
-          left: `${(modification.startTime / duration) * 100}%`,
-          width: `${
-            ((modification.endTime - modification.startTime) / duration) * 100
-          }%`,
-          top: "50%",
-          transform: "translateY(-50%)",
-          zIndex: 1,
-        };
-
-        return (
-          <div key={modification.id}>
-            <div
-              style={style}
-              onClick={() => handleModificationClick(index, modification)}
-            />
-            <div style={durationBar} />
-          </div>
-        );
-      }
-
-      return (
-        <div
-          key={modification.id}
-          style={style}
-          onClick={() => handleModificationClick(index, modification)}
-        />
-      );
-    });
-  };
 
   // Update the timeline click handler
   const handleTimelineClick = useCallback(
@@ -1353,20 +963,24 @@ export default function VideoPlayable() {
     const modification = videoPlayable.modifications[tab.modificationIndex];
 
     // Set the time based on modification type
-    const time = modification?.type === ModificationType.OVERLAY
-      ? modification.startTime
-      : modification?.time || 0;
+    const time =
+      modification?.type === ModificationType.OVERLAY
+        ? modification.startTime
+        : modification?.time || 0;
 
     // Update timeline position
     setCurrentTime(time);
-    
+
     // Ensure video is visible and showing the correct frame
     if (videoRef.current && videoSpriteRef.current) {
       videoSpriteRef.current.visible = true;
       videoRef.current.currentTime = time / 1000 || 0.001;
-      
+
       // Make sure video sprite is in the stage
-      if (pixiAppRef.current && !pixiAppRef.current.stage.children.includes(videoSpriteRef.current)) {
+      if (
+        pixiAppRef.current &&
+        !pixiAppRef.current.stage.children.includes(videoSpriteRef.current)
+      ) {
         pixiAppRef.current.stage.addChildAt(videoSpriteRef.current, 0);
         pixiAppRef.current.stage.sortChildren();
       }
@@ -1382,40 +996,22 @@ export default function VideoPlayable() {
     }
   };
 
-  const loadTexture = (url) => {
-    return new Promise((resolve, reject) => {
-      const texture = PIXI.Texture.from(url);
-      
-      // For already loaded textures
-      if (texture.valid) {
-        resolve(texture);
-        return;
-      }
-      
-      // For textures that need to load
-      texture.once('update', () => resolve(texture));
-      texture.once('error', (err) => reject(err));
-    });
-  };
-
   const renderSprite = async (spriteData, modification) => {
     if (!pixiAppRef.current || !spriteData) {
       console.error("Missing required refs or sprite data");
       return;
     }
-    
-    console.log("Starting to render sprite:", spriteData.id, "for modification type:", modification.type);
     const app = pixiAppRef.current;
-    
+
     // Create a temporary placeholder sprite
     const graphics = new PIXI.Graphics();
-    graphics.beginFill(0xCCCCCC, 0.7);
+    graphics.beginFill(0xcccccc, 0.7);
     graphics.drawRect(0, 0, 100, 100);
     graphics.endFill();
-    
+
     const tempTexture = app.renderer.generateTexture(graphics);
     const sprite = new PIXI.Sprite(tempTexture);
-    
+
     // Set sprite properties
     sprite.__spriteId = spriteData.id;
     sprite.position.set(
@@ -1423,91 +1019,78 @@ export default function VideoPlayable() {
       (spriteData.position?.y || 0.5) * app.screen.height
     );
     sprite.scale.set(spriteData.scale || 0.5);
-    sprite.anchor.set(
-      spriteData.anchor?.x || 0.5, 
-      spriteData.anchor?.y || 0.5
-    );
+    sprite.anchor.set(spriteData.anchor?.x || 0.5, spriteData.anchor?.y || 0.5);
     sprite.rotation = (spriteData.rotation || 0) * (Math.PI / 180);
     sprite.alpha = spriteData.transparency || 1;
-    
+
     // Add to stage immediately with placeholder
     app.stage.addChild(sprite);
     spritesRef.current.push(sprite);
-    
+
     // Set proper zIndex based on modification type
     if (modification) {
       sprite.__isOverlay = true;
-      
+
       if (modification.type === ModificationType.END_SCREEN) {
         sprite.zIndex = 4;
       } else if (modification.type === ModificationType.BREAK) {
-        sprite.zIndex = 3; 
+        sprite.zIndex = 3;
       } else {
         sprite.zIndex = 2;
       }
     }
-    
+
     // IMPORTANT: Handle blob URLs and direct URLs differently
     try {
       let texture;
-      
+
       // Check if this is a blob URL (local file) or a direct URL (S3/library asset)
       if (spriteData.file) {
         // For local files, use the blob URL directly WITHOUT cache busting
-        console.log("Loading texture from blob URL:", spriteData.imageUrl);
         texture = PIXI.Texture.from(spriteData.imageUrl);
       } else if (spriteData.directUrl) {
         // For S3/library assets, use the direct URL WITH cache busting
         const cacheBuster = `?t=${Date.now()}`;
-        console.log("Loading texture from direct URL:", spriteData.directUrl + cacheBuster);
         texture = PIXI.Texture.from(spriteData.directUrl + cacheBuster);
       } else {
         console.error("No valid source found for sprite:", spriteData.id);
         return sprite;
       }
-      
+
       // Handle texture loading completion
       if (!texture.valid) {
-        console.log("Texture not immediately valid, waiting for load");
         await new Promise((resolve, reject) => {
-          texture.once('update', () => {
-            console.log("Texture loaded successfully");
+          texture.once("update", () => {
             resolve();
           });
-          texture.once('error', (err) => {
+          texture.once("error", (err) => {
             console.error("Texture loading error:", err);
             reject(err);
           });
         });
       }
-      
-      console.log("Applying texture to sprite for", modification.type);
+
       sprite.texture = texture;
     } catch (err) {
       console.error("Failed to load texture:", err);
     }
-    
+
     // Make interactive if needed
-    sprite.eventMode = 'static';
-    sprite.cursor = 'pointer';
-    
+    sprite.eventMode = "static";
+    sprite.cursor = "pointer";
+
     // Ensure proper sorting
     app.stage.sortChildren();
-    
+
     return sprite;
   };
 
   const renderModifications = (modifications) => {
-    modifications.forEach(mod => {
+    modifications.forEach((mod) => {
       // ... existing code ...
-      
+
       // Add sprites
-      mod.sprites.forEach(spriteData => {
-        // Add explicit debug logging for each sprite
-        console.log("Rendering sprite for type:", mod.type, spriteData);
-        console.log("Sprite has directUrl:", spriteData.directUrl);
-        console.log("Sprite has imageUrl:", spriteData.imageUrl);
-        
+      mod.sprites.forEach((spriteData) => {
         renderSprite(spriteData, mod);
       });
     });
@@ -1544,8 +1127,8 @@ export default function VideoPlayable() {
     else if (
       activeTab &&
       (activeTab.type === ModificationType.OVERLAY ||
-       activeTab.type === ModificationType.END_SCREEN ||
-       activeTab.type === ModificationType.BREAK) // Add BREAK here to support it
+        activeTab.type === ModificationType.END_SCREEN ||
+        activeTab.type === ModificationType.BREAK) // Add BREAK here to support it
     ) {
       modificationsToRender = [
         videoPlayable.modifications[activeTab.modificationIndex],
@@ -1581,7 +1164,7 @@ export default function VideoPlayable() {
         );
         background.endFill();
         background.__isOverlay = true;
-        
+
         // Set zIndex based on modification type - add special handling for BREAK
         if (mod.type === ModificationType.END_SCREEN) {
           background.zIndex = 3;
@@ -1590,11 +1173,11 @@ export default function VideoPlayable() {
         } else {
           background.zIndex = 1; // Default for overlays
         }
-        
+
         pixiAppRef.current.stage.addChild(background);
         spritesRef.current.push(background);
       }
-      
+
       // Render sprites (preserving zIndex, animations, etc.)
       mod.sprites.forEach((spriteData) => renderSprite(spriteData, mod));
     });
@@ -1612,7 +1195,6 @@ export default function VideoPlayable() {
   useEffect(() => {
     if (!pixiAppRef.current) return;
     const app = pixiAppRef.current;
-    const startTime = Date.now();
 
     const animationTicker = (delta) => {
       // Get active modifications based on type and state
@@ -1673,20 +1255,26 @@ export default function VideoPlayable() {
     // Helper function to handle different types of animations
     const handleAnimation = (sprite, spriteData, type, anim) => {
       const currentTime = Date.now();
-      
+
       // Check if animation should stop based on repeat value
-      if (anim.repeat !== -1) { // -1 means infinite repeats
+      if (anim.repeat !== -1) {
+        // -1 means infinite repeats
         // Calculate how many times the animation has completed
-        const elapsedTime = currentTime - (sprite.__animationStartTime?.[type] || currentTime);
+        const elapsedTime =
+          currentTime - (sprite.__animationStartTime?.[type] || currentTime);
         const completedCycles = Math.floor(elapsedTime / anim.duration);
-        
+
         // If we've completed all repeats, set to final state and stop
         if (completedCycles > anim.repeat) {
           // Set to final state based on animation type
           switch (type) {
             case "position":
-              sprite.position.x = (anim.destination?.x || spriteData.position.x) * app.screen.width;
-              sprite.position.y = (anim.destination?.y || spriteData.position.y) * app.screen.height;
+              sprite.position.x =
+                (anim.destination?.x || spriteData.position.x) *
+                app.screen.width;
+              sprite.position.y =
+                (anim.destination?.y || spriteData.position.y) *
+                app.screen.height;
               break;
             case "scale":
               sprite.scale.x = anim.destination.w;
@@ -1699,7 +1287,7 @@ export default function VideoPlayable() {
           return; // Skip further animation processing
         }
       }
-      
+
       // Store animation start time if not already set
       if (!sprite.__animationStartTime) {
         sprite.__animationStartTime = {};
@@ -1707,17 +1295,20 @@ export default function VideoPlayable() {
       if (!sprite.__animationStartTime[type]) {
         sprite.__animationStartTime[type] = currentTime;
       }
-      
+
       // Calculate progress within the current cycle
       const cycleTime = currentTime % anim.duration;
       const progress = cycleTime / anim.duration;
-      
-      let easedProgress = anim.easing !== "linear"
-        ? getEasedProgress(progress, anim.easing)
-        : progress;
+
+      let easedProgress =
+        anim.easing !== "linear"
+          ? getEasedProgress(progress, anim.easing)
+          : progress;
 
       if (anim.yoyo) {
-        const cycle = Math.floor((currentTime % (anim.duration * 2)) / anim.duration);
+        const cycle = Math.floor(
+          (currentTime % (anim.duration * 2)) / anim.duration
+        );
         if (cycle === 1) easedProgress = 1 - easedProgress;
       }
 
@@ -1725,21 +1316,26 @@ export default function VideoPlayable() {
         case "position":
           const startX = spriteData.position.x * app.screen.width;
           const startY = spriteData.position.y * app.screen.height;
-          const endX = (anim.destination?.x || spriteData.position.x) * app.screen.width;
-          const endY = (anim.destination?.y || spriteData.position.y) * app.screen.height;
+          const endX =
+            (anim.destination?.x || spriteData.position.x) * app.screen.width;
+          const endY =
+            (anim.destination?.y || spriteData.position.y) * app.screen.height;
           sprite.position.x = startX + (endX - startX) * easedProgress;
           sprite.position.y = startY + (endY - startY) * easedProgress;
           break;
 
         case "scale":
           const startScale = spriteData.scale;
-          sprite.scale.x = startScale + (anim.destination.w - startScale) * easedProgress;
-          sprite.scale.y = startScale + (anim.destination.h - startScale) * easedProgress;
+          sprite.scale.x =
+            startScale + (anim.destination.w - startScale) * easedProgress;
+          sprite.scale.y =
+            startScale + (anim.destination.h - startScale) * easedProgress;
           break;
 
         case "transparency":
           const startAlpha = spriteData.transparency;
-          sprite.alpha = startAlpha + (anim.destination - startAlpha) * easedProgress;
+          sprite.alpha =
+            startAlpha + (anim.destination - startAlpha) * easedProgress;
           break;
       }
     };
@@ -1810,9 +1406,23 @@ export default function VideoPlayable() {
           isPreviewMode ? "pointer-events-none opacity-50 bg-gray-300" : ""
         }`}
       >
-        {renderTabs()}
+        <Tabs
+          tabs={tabs}
+          handleTabClick={handleTabClick}
+          activeTab={activeTab}
+        />
         {renderBuildButton()}
-        {renderTabContent()}
+        <TabContent
+          activeTab={activeTab}
+          tabs={tabs}
+          videoPlayable={videoPlayable}
+          setVideoPlayable={setVideoPlayable}
+          handleRemoveTab={handleRemoveTab}
+          assets={assets}
+          setToastMessage={setToastMessage}
+          handleVideoUpload={handleVideoUpload}
+          videoSource={videoSource}
+        />
       </div>
 
       <div
@@ -1834,118 +1444,47 @@ export default function VideoPlayable() {
         className="h-full relative bg-gray-900"
       >
         {!videoSource ? (
-          <div className="flex flex-col items-center justify-center h-full text-white">
-            <input
-              type="file"
-              accept="video/*"
-              onChange={handleVideoUpload}
-              className="hidden"
-              id="video-upload"
-            />
-            <label
-              htmlFor="video-upload"
-              className="flex flex-col items-center cursor-pointer p-8 border-2 border-dashed border-gray-600 rounded-lg hover:border-[#b9ff66] transition-colors"
-            >
-              <Upload className="w-12 h-12 mb-4" />
-              <span className="text-lg">Upload Video</span>
-              <span className="text-sm text-gray-400 mt-2">
-                Drag and drop or click to select
-              </span>
-            </label>
-          </div>
+          <VideoUploader handleVideoUpload={handleVideoUpload} />
         ) : (
-          <div className="h-full flex flex-col relative">
-            <div className="flex-1 bg-gray-900">
-              {renderExpandableButtons()}
-              <div
-                className="canvas-container"
-                style={{
-                  width: orientation.width + "px",
-                  height: orientation.height + "px",
-                  position: "relative",
-                  margin: "auto",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                }}
-              >
-                <div
-                  ref={pixiContainerRef}
-                  style={{
-                    position: "absolute",
-                    left: "50%",
-                    top: "50%",
-                    transform: "translate(-50%, -50%)",
-                    width: "100%",
-                    height: "100%",
-                  }}
-                />
-              </div>
-            </div>
-            <div
-              className={`absolute top-4 right-4 bg-gray-800 rounded-lg p-2 ${
-                isPreviewMode ? "pointer-events-none opacity-50" : ""
-              }`}
-            >
-              <button
-                onClick={toggleOrientation}
-                className="p-2 hover:bg-gray-700 rounded"
-                disabled={isPreviewMode}
-              >
-                <RotateCw className="w-5 h-5 text-white" />
-              </button>
-              <div className="text-white text-xs mt-1">
-                {orientation.width}x{orientation.height}
-              </div>
-            </div>
-            <div style={timelineContainerStyle} className="video-controls">
-              <button
-                onClick={togglePlayPause}
-                className={`w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-700 ${
-                  isPreviewMode && activeBreakIndex !== -1 ? "opacity-50" : ""
-                }`}
-                disabled={isPreviewMode && activeBreakIndex !== -1}
-                title="preview"
-              >
-                {isPlaying || (isPreviewMode && activeBreakIndex !== -1) ? (
-                  <Square />
-                ) : (
-                  <Play className="w-4 h-4 text-white" />
-                )}
-              </button>
-
-              <div
-                ref={timelineRef}
-                style={timelineStyle}
-                className="relative cursor-pointer"
-                onMouseDown={handleTimelineMouseDown}
-                onClick={handleTimelineClick}
-              >
-                <div
-                  style={{
-                    ...timelineProgressStyle,
-                    width: `${(currentTime / duration) * 100}%`,
-                  }}
-                />
-                {renderModificationIndicators()}
-                <div
-                  style={{
-                    ...timelineHandleStyle,
-                    left: `${(currentTime / duration) * 100}%`,
-                    width: "20px",
-                    height: "20px",
-                  }}
-                />
-              </div>
-
-              <div className="text-white text-sm ml-4">
-                {Math.floor(currentTime)}ms / {Math.floor(duration)}ms
-              </div>
-            </div>
-          </div>
+          <CanvasContainer
+            isPreviewMode={isPreviewMode}
+            currentTime={currentTime}
+            addBreak={addBreak}
+            addEndScreen={addEndScreen}
+            addOverlay={addOverlay}
+            orientation={orientation}
+            pixiContainerRef={pixiContainerRef}
+            toggleOrientation={toggleOrientation}
+            togglePlayPause={togglePlayPause}
+            activeBreakIndex={activeBreakIndex}
+            isPlaying={isPlaying}
+            timelineRef={timelineRef}
+            handleTimelineMouseDown={handleTimelineMouseDown}
+            handleTimelineClick={handleTimelineClick}
+            duration={duration}
+            videoPlayable={videoPlayable}
+            handleModificationClick={handleModificationClick}
+          />
         )}
+        <Timeline
+          togglePlayPause={togglePlayPause}
+          isPreviewMode={isPreviewMode}
+          activeBreakIndex={activeBreakIndex}
+          isPlaying={isPlaying}
+          timelineRef={timelineRef}
+          handleTimelineMouseDown={handleTimelineMouseDown}
+          handleTimelineClick={handleTimelineClick}
+          currentTime={currentTime}
+          duration={duration}
+          videoPlayable={videoPlayable}
+          handleModificationClick={handleModificationClick}
+        />
       </div>
       {toastMessage.show && (
-        <ToastMessage message={toastMessage} setToastMessage={setToastMessage} />
+        <ToastMessage
+          message={toastMessage}
+          setToastMessage={setToastMessage}
+        />
       )}
     </div>
   );

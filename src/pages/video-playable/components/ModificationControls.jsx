@@ -104,56 +104,35 @@ const ModificationControls = ({
     if (!file) return;
 
     try {
-      // Determine base sprite properties based on modification type
-      const baseSprite = {
+      // Create specific sprite based on source
+      let newSprite = {
         ...initialSpriteState,
         id: Date.now(),
-        position: { x: 0.5, y: 0.5 },
-        scale: 0.5,
-        anchor: { x: 0.5, y: 0.5 },
-        rotation: 0,
-        transparency: 1,
-        onClickAction:
-          currentModification.type === ModificationType.OVERLAY
-            ? "nothing"
-            : currentModification.type === ModificationType.BREAK
-            ? "resume-video"
-            : currentModification.type === ModificationType.END_SCREEN
-            ? "open-store-url"
-            : "nothing",
-        // Add a field to track modification type
-        modificationType: currentModification.type
       };
-
-      // Create specific sprite based on source
-      let newSprite;
       
-      // Case 1: Asset from library (S3 URL)
+      // Check if this is from library (direct URL) or local upload
       if (file.isDirectUrl) {
         console.log("Adding sprite from library URL:", file.url);
         newSprite = {
-          ...baseSprite,
+          ...newSprite,
           directUrl: file.url,
           imageUrl: file.url,
           file: null, // No local file
         };
       } else {
-        // Case 2: Local file upload
+        // For local file upload
         console.log("Adding sprite from local file upload");
         const imageUrl = URL.createObjectURL(file);
         newSprite = {
-          ...baseSprite,
+          ...newSprite,
           file: file,
           imageUrl: imageUrl,
           directUrl: null, // No direct URL
         };
       }
-      
-      console.log("Created sprite:", newSprite);
-      
-      // Update the modification with the new sprite
+
       updateModification({
-        sprites: [...currentModification.sprites, newSprite],
+        sprites: [...currentModification.sprites, newSprite]
       });
       
       // Set the active sprite
@@ -164,7 +143,7 @@ const ModificationControls = ({
         e.target.value = "";
       }
     } catch (error) {
-      console.error("Error adding sprite:", error);
+      console.error('Error adding sprite:', error);
     }
   };
 

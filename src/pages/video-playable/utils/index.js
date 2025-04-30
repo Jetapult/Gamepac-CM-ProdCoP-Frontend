@@ -1144,3 +1144,26 @@ export const compressAllAssets = async (videoPlayable, selectedAssets) => {
   
   return compressedPlayable;
 };
+
+export const getEasedProgress = (progress, easingType) => {
+  switch (easingType) {
+    case "easeInQuad":
+      return progress * progress;
+    case "easeOutQuad":
+      return 1 - (1 - progress) * (1 - progress);
+    case "easeInOutQuad":
+      return progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+    case "easeInCubic":
+      return progress * progress * progress;
+    case "easeOutCubic":
+      return 1 - Math.pow(1 - progress, 3);
+    case "easeInOutCubic":
+      return progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+    default:
+      return progress;
+  }
+};
