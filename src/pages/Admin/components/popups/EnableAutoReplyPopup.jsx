@@ -39,8 +39,7 @@ const EnableAutoReplyPopup = ({
 }) => {
   const [selectedType, setSelectedType] = useState({});
   const [rating, setRating] = useState(["1", "2", "3", "4", "5"]);
-  const [showManageTemplateSection, setShowManageTemplateSection] =
-    useState(false);
+  const [showManageTemplateSection, setShowManageTemplateSection] = useState(false);
 
 
   const handleRatingChange = (event) => {
@@ -64,24 +63,6 @@ const EnableAutoReplyPopup = ({
       setSelectedType(item);
     }
   };
-
-  // const handleCustomTemplateChange = (id, field, value) => {
-  //   console.log("inside handle custom template");
-  //   setCustomTemplates(
-  //     customTemplates.map((ct) =>
-  //       ct.id === id ? { ...ct, [field]: value } : ct
-  //     )
-  //   );
-  // };
-  // const handleUpdateTemplate = async (templateId, updatedData) => {
-  //   try {
-  //     await api.put(`v1/organic-ua/reply-template/${templateId}`, updatedData);
-  //     fetchExistingTemplates(); // Refresh templates after update
-  //     setEditMode(prev => ({ ...prev, [templateId]: false }));
-  //   } catch (error) {
-  //     console.error('Failed to update template:', error);
-  //   }
-  // };
 
   const enableAutoReply = async () => {
     try {
@@ -328,10 +309,104 @@ const TemplateManagement = ({
     setCustomTemplates([...customTemplates, newTemplate]);
   };
 
+  const handleTemplateEditClick = (templateId) => {
+    if (editMode[templateId]) {
+      setExistingTemplates((prev) =>
+        prev.map((t) => {
+          if (t.id === templateId) {
+            const changes = localTemplateChanges[templateId] || {};
+            return {
+              ...t,
+              review_type: changes.review_type || t.review_type,
+              review_reply: changes.review_reply || t.review_reply,
+            };
+          }
+          return t;
+        })
+      );
+     templatesaved();
+    }
+  
+    setEditMode((prev) => ({
+      ...prev,
+      [templateId]: !prev[templateId],
+    }));
+  };
+
+  const createTemplateAPI = async (templateData) => {
+    try {
+      const { data } = await api.post(
+        "v1/organic-ua/reply-template/create",
+        templateData
+      );
+     return { 
+      success: true,
+      template: data.data, 
+    };
+    } catch (error) {
+      console.error("Create template failed:", error);
+      return {
+        success: false,
+        error,
+      };
+    }
+  };
+  
+  
+  const handleToggleEdit = (templateId) => {
+    if (editMode[templateId]) {
+      setExistingTemplates((prev) =>
+        prev.map((t) => {
+          if (t.id === templateId) {
+            const changes = localTemplateChanges[templateId] || {};
+            return {
+              ...t,
+              review_reply: changes.review_reply || t.review_reply,
+            };
+          }
+          return t;
+        })
+      );
+     templatesaved();
+    }
+  
+    setEditMode((prev) => ({
+      ...prev,
+      [templateId]: !prev[templateId],
+    }));
+  };
+
+  const handleSaveCustomTemplate = async (template) => {
+    const templateData = {
+      studio_id,
+      review_type: template.title,
+      review_reply: template.text,
+      template_type: "auto",
+    };
+  
+    const result = await templatesaved();
+  
+    if (result.success) {
+      const savedTemplate = {
+        ...templateData,
+        id: result.data?.id || template.id,
+      };
+  
+      setExistingTemplates((prev) => [...prev, savedTemplate]);
+      setCustomTemplates((prev) => prev.filter((t) => t.id !== template.id));
+    } else {
+      setToastMessage({
+        show: true,
+        message: "Failed to save custom template.",
+        duration: 3000,
+        type: "error",
+      });
+    }
+  };  
 
   const templatesaved = async () => {
     const newTemplates = [];
-
+  
     // Save rating templates
     for (const r of rating) {
       if (templates[r]?.trim()) {
@@ -341,19 +416,11 @@ const TemplateManagement = ({
           review_reply: templates[r],
           template_type: "auto",
         };
-        try {
-          const { updateRatingTemplate } = await api.post(
-            "v1/organic-ua/reply-template/create",
-            newTemplate
-          );
-          console.log("updateRatingTemplate", updateRatingTemplate);
-          newTemplates.push({
-            ...newTemplate,
-            id: updateRatingTemplate?.id,
-          });
+        const res = await createTemplateAPI(newTemplate); 
+        if (res.success) {
+          newTemplates.push( res.template);
           setTemplates((prev) => ({ ...prev, [r]: "" }));
-        } catch (error) {
-          console.error("Failed to save rating template", error);
+        } else {
           setToastMessage({
             show: true,
             message: "Failed to save rating template. Please try again.",
@@ -363,34 +430,22 @@ const TemplateManagement = ({
         }
       }
     }
-
+  
     // Save custom templates
     const successfullySavedCustomTemplates = [];
     for (const ct of customTemplates) {
-      if (
-        ct.title &&
-        ct.text &&
-        !successfullySavedCustomTemplates.includes(ct.id)
-      ) {
+      if (ct.title && ct.text && !successfullySavedCustomTemplates.includes(ct.id)) {
         const templateData = {
           studio_id,
           review_type: ct.title,
           review_reply: ct.text,
           template_type: "auto",
         };
-        try {
-          const { updateCustomTemplate } = await api.post(
-            `v1/organic-ua/reply-template/create`,
-            templateData
-          );
-          console.log("updateRatingTemplate", updateCustomTemplate);
-          newTemplates.push({
-            ...templateData,
-            id: updateCustomTemplate?.updateCustomTemplate?.id,
-          });
+        const res = await createTemplateAPI(templateData);
+        if (res.success) {
+          newTemplates.push(res.template);
           successfullySavedCustomTemplates.push(ct.id);
-        } catch (error) {
-          console.error("Failed to save custom template", error);
+        } else {
           setToastMessage({
             show: true,
             message: "Failed to save custom template. Please try again.",
@@ -400,13 +455,16 @@ const TemplateManagement = ({
         }
       }
     }
-
+  
+    // Update local state
     if (newTemplates.length) {
       setExistingTemplates((prev) => [...prev, ...newTemplates]);
     }
     setCustomTemplates((prev) =>
       prev.filter((ct) => !successfullySavedCustomTemplates.includes(ct.id))
     );
+  
+    // Update existing edited templates
     for (const template of existingTemplates) {
       const changes = localTemplateChanges[template.id];
       if (
@@ -426,7 +484,7 @@ const TemplateManagement = ({
           template_type: "auto",
         };
         try {
-          const { response } = await api.put(
+          await api.put(
             `v1/organic-ua/reply-template/${studio_id}/${template.id}`,
             updatedData
           );
@@ -434,7 +492,7 @@ const TemplateManagement = ({
           console.error("Failed to update template", error);
           setToastMessage({
             show: true,
-            message: "Failed to save rating template. Please try again.",
+            message: "Failed to update template. Please try again.",
             duration: 3000,
             type: "error",
           });
@@ -442,6 +500,7 @@ const TemplateManagement = ({
       }
     }
   };
+  
 
   const deleteTemplate = async (studio_id, templateId) => {
     try {
@@ -453,7 +512,7 @@ const TemplateManagement = ({
       );
     } catch (error) {
       console.error("Failed to delete template", error);
-      setShowToastMessage({
+      setToastMessage({
         show: true,
         message: "Failed to delete template. Please try again.",
         duration: 3000,
@@ -581,28 +640,8 @@ const TemplateManagement = ({
                     {template.review_type.replace("rating_", "")} Star Rating
                   </label>
                   <button
-                    onClick={async () => {
-                      if (editMode[template.id]) {
-                        setExistingTemplates((prev) =>
-                          prev.map((t) => {
-                            if (t.id === template.id) {
-                              const changes =
-                                localTemplateChanges[template.id] || {};
-                              return {
-                                ...t,
-                                review_reply:
-                                  changes.review_reply || t.review_reply,
-                              };
-                            }
-                            return t;
-                          })
-                        );
-                        await templatesaved();
-                      }
-                      setEditMode((prev) => ({
-                        ...prev,
-                        [template.id]: !prev[template.id],
-                      }));
+                    onClick={() => {
+                      handleToggleEdit(template.id);
                     }}
                     className={`mt-2 border border-input text-black rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5 ${
                       editMode[template.id]
@@ -666,31 +705,8 @@ const TemplateManagement = ({
                   </label>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={async () => {
-                        if (editMode[template.id]) {
-                          setExistingTemplates((prev) =>
-                            prev.map((t) => {
-                              if (t.id === template.id) {
-                                const changes =
-                                  localTemplateChanges[template.id] || {};
-                                return {
-                                  ...t,
-                                  review_type:
-                                    changes.review_type || t.review_type,
-                                  review_reply:
-                                    changes.review_reply || t.review_reply,
-                                };
-                              }
-                              return t;
-                            })
-                          );
-                          await templatesaved();
-                        }
-
-                        setEditMode((prev) => ({
-                          ...prev,
-                          [template.id]: !prev[template.id],
-                        }));
+                      onClick={() => {
+                        handleTemplateEditClick(template.id);
                       }}
                       className={`mt-2 rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5 ${
                         editMode[template.id]
@@ -777,36 +793,7 @@ const TemplateManagement = ({
                   </p>
                 </div>
                 <button
-                  onClick={async () => {
-                    const templateData = {
-                      studio_id,
-                      review_type: template.title,
-                      review_reply: template.text,
-                      template_type: "auto",
-                    };
-
-                    try {
-                      const { data } = await api.post(
-                        "v1/organic-ua/reply-template/create",
-                        templateData
-                      );
-                      const savedTemplate = {
-                        ...templateData,
-                        id: data?.data?.id || data?.id || template.id,
-                      };
-                      setExistingTemplates((prev) => [...prev, savedTemplate]);
-                      setCustomTemplates((prev) =>
-                        prev.filter((t) => t.id !== template.id)
-                      );
-                    } catch (error) {
-                      setToastMessage({
-                        show: true,
-                        message: "Failed to save custom template.",
-                        duration: 3000,
-                        type: "error",
-                      });
-                    }
-                  }}
+                  onClick={() => handleSaveCustomTemplate(template)}
                   disabled={!template.title.trim() || !template.text.trim()}
                   className={`mt-2 rounded-md px-4 py-1 flex items-center gap-2 text-sm leading-5 
                 ${
