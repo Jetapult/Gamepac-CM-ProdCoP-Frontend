@@ -603,9 +603,8 @@ export default function VideoPlayable() {
             // For local files
             sprite = PIXI.Sprite.from(spriteData.imageUrl);
           } else if (spriteData.directUrl) {
-            // For library assets
-            const cacheBuster = `?t=${Date.now()}`;
-            sprite = PIXI.Sprite.from(spriteData.directUrl + cacheBuster);
+            const fixedCacheBuster = `?t=preview`;
+            sprite = PIXI.Sprite.from(spriteData.directUrl + fixedCacheBuster);
           }
         } catch (err) {
           console.error("Failed to create sprite:", err);
@@ -752,9 +751,8 @@ export default function VideoPlayable() {
               // For local files
               sprite = PIXI.Sprite.from(spriteData.imageUrl);
             } else if (spriteData.directUrl) {
-              // For library assets
-              const cacheBuster = `?t=${Date.now()}`;
-              sprite = PIXI.Sprite.from(spriteData.directUrl + cacheBuster);
+              const fixedCacheBuster = `?t=preview`;
+              sprite = PIXI.Sprite.from(spriteData.directUrl + fixedCacheBuster);
             }
           } catch (err) {
             console.error("Failed to create sprite:", err);
@@ -1049,9 +1047,8 @@ export default function VideoPlayable() {
         // For local files, use the blob URL directly WITHOUT cache busting
         texture = PIXI.Texture.from(spriteData.imageUrl);
       } else if (spriteData.directUrl) {
-        // For S3/library assets, use the direct URL WITH cache busting
-        const cacheBuster = `?t=${Date.now()}`;
-        texture = PIXI.Texture.from(spriteData.directUrl + cacheBuster);
+        const fixedCacheBuster = `?t=preview`;
+        texture = PIXI.Texture.from(spriteData.directUrl + fixedCacheBuster);
       } else {
         console.error("No valid source found for sprite:", spriteData.id);
         return sprite;
