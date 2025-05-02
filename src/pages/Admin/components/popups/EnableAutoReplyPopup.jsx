@@ -4,7 +4,7 @@ import {
   PencilIcon,
   Cog6ToothIcon,
 } from "@heroicons/react/20/solid";
-import { ArrowLeft, Save, Star, Trash2Icon, Edit2Icon } from "lucide-react";
+import { ArrowLeft, Save, Star, Trash2Icon, Edit2Icon, TriangleAlert } from "lucide-react";
 import React, { useEffect, useState, useRef } from "react";
 import api from "../../../../api";
 import { ratingFilter } from "../../../../constants/organicUA";
@@ -584,6 +584,18 @@ const TemplateManagement = ({
         </button>
       </div>
 
+      {/* Disclaimer Tab */}
+      <div className="bg-amber-50 text-yellow-700 p-4 m-4 ml-0 border border-border rounded-md">
+        <div className="flex flex-row items-start gap-1">
+            <div className="flex items-center justify-center rounded-full mt-[5px]">
+               <TriangleAlert className="w-3 h-3" />
+            </div>
+            <div className="flex flex-col">
+              Note: To dynamically include the reviewer's username in your reply template, use the placeholder {`{user}`}. This placeholder will be automatically replaced with the actual username when the template is used.
+            </div>
+        </div>
+      </div>
+     
       {/* Reply Tab */}
       {selectedTab === "reply" && (
         <>
