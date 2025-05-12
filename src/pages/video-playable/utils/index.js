@@ -23,6 +23,7 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
     <style>
       body { margin: 0; overflow: hidden; background: #000; }
       #game-container { width: 100vw; height: 100vh; }
+      video { image-rendering: high-quality; }
     </style>
 </head>
 <body>
@@ -35,7 +36,10 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
         width: window.innerWidth,
         height: window.innerHeight,
         backgroundColor: 0x000000,
-        resizeTo: window
+        resizeTo: window,
+        antialias: true,
+        autoDensity: true,
+        resolution: window.devicePixelRatio || 1
       });
       
       document.getElementById('game-container').appendChild(app.view);
@@ -275,12 +279,20 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
           videoElement.src = ASSETS.video;
           videoElement.crossOrigin = "anonymous";
           videoElement.preload = "auto";
-          // Temporarily mute to allow autoplay
           videoElement.muted = true;
           videoElement.playsInline = true;
+          videoElement.setAttribute('playsinline', '');
+          videoElement.style.objectFit = 'contain';
 
           videoElement.addEventListener('loadedmetadata', () => {
-            const videoBaseTexture = PIXI.BaseTexture.from(videoElement);
+            const videoBaseTexture = PIXI.BaseTexture.from(videoElement, {
+              scaleMode: PIXI.SCALE_MODES.LINEAR,
+              resourceOptions: {
+                autoPlay: false,
+                updateFPS: 60,
+                crossorigin: true
+              }
+            });
             const videoTexture = PIXI.Texture.from(videoBaseTexture);
             videoSprite = new PIXI.Sprite(videoTexture);
             
@@ -830,7 +842,7 @@ export const buildPlayableAd = async (videoPlayable) => {
       audio: {}
     };
 
-    // Convert video to base64
+    // Convert video to base64 without quality loss
     if (videoPlayable.general?.videoSource) {
       try {
         const videoBase64 = await blobToBase64(videoPlayable.general.videoSource);
