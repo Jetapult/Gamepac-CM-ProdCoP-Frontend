@@ -18,6 +18,7 @@ import { buildPlayableAd, compressAllAssets } from "./utils";
 import ToastMessage from "../../components/ToastMessage";
 import AssetSizeDisplay from './components/AssetSizeDisplay';
 import { CompressVideo } from "./utils/videoCompressor";
+import BuildPlayablePopup from './components/BuildPlayablePopup';
 
 const timelineContainerStyle = {
   position: "absolute",
@@ -137,6 +138,7 @@ export default function VideoPlayable() {
   const [showVideoCompressButton, setShowVideoCompressButton] = useState(false);
   const [isCompressingVideo, setIsCompressingVideo] = useState(false);
   const [originalVideoSize, setOriginalVideoSize] = useState(null);
+  const [showBuildPopup, setShowBuildPopup] = useState(false);
 
   // Create a ref that will hold the active audio elements keyed by modification id.
   const audioElementsRef = useRef({});
@@ -1704,27 +1706,37 @@ export default function VideoPlayable() {
     return () => app?.ticker?.remove(animationTicker);
   }, [activeBreakIndex, videoPlayable.modifications]);
 
+  const handleBuildClick = () => {
+    if (!videoSource) {
+      setToastMessage({
+        show: true,
+        message: "Please upload a video first",
+        type: "error"
+      });
+      return;
+    }
+    
+    if (!videoSizeValid) {
+      setToastMessage({
+        show: true,
+        message: "Please compress your video before building the playable ad",
+        type: "error"
+      });
+      return;
+    }
+    
+    setShowBuildPopup(true);
+  };
+
   const renderBuildButton = () => (
-    <>
-      <button
-        onClick={() => {
-          if (!videoSizeValid) {
-            setToastMessage({
-              show: true,
-              message: "Please compress your video before building the playable ad.",
-              type: "error"
-            });
-            return;
-          }
-          buildPlayableAd(videoPlayable);
-        }}
-        className={`px-4 py-2 ${videoSizeValid ? 'bg-[#b9ff66]' : 'bg-gray-400'} text-black rounded-lg flex items-center gap-2 w-full`}
-        disabled={!videoSource || !videoSizeValid}
-      >
-        <Download className="w-4 h-4" />
-        Build Playable Ad
-      </button>
-    </>
+    <button
+      onClick={handleBuildClick}
+      className={`px-4 py-2 ${videoSizeValid ? 'bg-[#b9ff66]' : 'bg-gray-400'} text-black rounded-lg flex items-center gap-2 w-full`}
+      disabled={!videoSource || !videoSizeValid}
+    >
+      <Download className="w-4 h-4" />
+      Build Playable Ad
+    </button>
   );
 
   const handleRemoveTab = (tabToRemove) => {
@@ -1956,6 +1968,13 @@ export default function VideoPlayable() {
             </button>
           </div>
         </div>
+      )}
+      {showBuildPopup && (
+        <BuildPlayablePopup
+          onClose={() => setShowBuildPopup(false)}
+          videoPlayable={videoPlayable}
+          setToastMessage={setToastMessage}
+        />
       )}
     </div>
   );
