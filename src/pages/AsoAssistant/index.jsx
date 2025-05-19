@@ -13,59 +13,79 @@ import { ChevronDown } from "lucide-react";
 import GamesDropdown from "../OrganicUA/components/smartFeedback/GamesDropdown";
 import { useNavigate, useParams } from "react-router-dom";
 import ToastMessage from "../../components/ToastMessage";
+import ASOCompetitorAnalysis from "./components/CompetitorAnalysis";
 
 const tabConfig = [
   // {
   //   label: "UA Static Ads",
+
   //   slug: "static-ads",
   // },
-  { 
-    label: "App Icon", 
-    slug: "app-icon", 
+  {
+    label: "App Icon",
+    slug: "app-icon",
   },
   {
     label: "ASO Texts",
     slug: "aso-texts",
   },
-  { 
-    label: "Ad Copies", 
-    slug: "ad-copies", 
+  {
+    label: "Ad Copies",
+    slug: "ad-copies",
   },
-//   { 
-//     label: "Videos", 
-//     slug: "videos", 
-//   },
-  { 
-    label: "Playables", 
-    slug: "playables", 
+  //   {
+  //     label: "Videos",
+  //     slug: "videos",
+  //   },
+  {
+    label: "Playables",
+    slug: "playables",
+  },
+  {
+    label: "Competitor Analysis",
+    slug: "competitor-analysis",
   },
 ];
 
 // Create a separate component for the tab content
-const TabContent = React.memo(({ currentTab, selectedGame, toastMessage, setToastMessage }) => {
-  switch (currentTab) {
-    case "static-ads":
-      return <StaticAdGenerator game={selectedGame} setToastMessage={setToastMessage} />;
-    case "app-icon":
-      return <AppIconGenerator game={selectedGame} />;
-    case "aso-texts":
-      return (
-        <AsoTextGenerator
-          selectedGame={selectedGame}
-          toastMessage={toastMessage}
-          setToastMessage={setToastMessage}
-        />
-      );
-    case "ad-copies":
-      return <AdCopyGenerator game={selectedGame} />;
-    case "videos":
-      return <VideoGenerator game={selectedGame} />;
-    case "playables":
-      return <PlayableGenerator />;
-    default:
-      return <StaticAdGenerator game={selectedGame} />;
+const TabContent = React.memo(
+  ({ currentTab, selectedGame, toastMessage, setToastMessage, studioId }) => {
+    switch (currentTab) {
+      case "static-ads":
+        return (
+          <StaticAdGenerator
+            game={selectedGame}
+            setToastMessage={setToastMessage}
+          />
+        );
+      case "app-icon":
+        return <AppIconGenerator game={selectedGame} />;
+      case "aso-texts":
+        return (
+          <AsoTextGenerator
+            selectedGame={selectedGame}
+            toastMessage={toastMessage}
+            setToastMessage={setToastMessage}
+          />
+        );
+      case "ad-copies":
+        return <AdCopyGenerator game={selectedGame} />;
+      case "videos":
+        return <VideoGenerator game={selectedGame} />;
+      case "playables":
+        return <PlayableGenerator />;
+      case "competitor-analysis":
+        return (
+          <ASOCompetitorAnalysis
+            studioId={studioId}
+            selectedGame={selectedGame}
+          />
+        );
+      default:
+        return <StaticAdGenerator game={selectedGame} />;
+    }
   }
-});
+);
 
 const AsoAssistant = () => {
   const [currentTab, setCurrentTab] = useState("app-icon");
@@ -74,13 +94,18 @@ const AsoAssistant = () => {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const userData = useSelector((state) => state.user.user);
+  const studios = useSelector((state) => state.admin.studios);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [toastMessage, setToastMessage] = useState({
     show: false,
     message: "",
     duration: 3000,
     type: "success",
   });
-  const studioSlug = localStorage.getItem("selectedStudio") || userData?.slug;
+
+  const [studioSlug, setStudioSlug] = useState("");
+  const [studioId, setStudioId] = useState("");
+
   const params = useParams();
   const navigate = useNavigate();
 
@@ -96,28 +121,49 @@ const AsoAssistant = () => {
     }
   };
 
-  const fetchGames = async () => {
+  const fetchGames = async (slug) => {
     try {
       setLoading(true);
-      const response = await api.get(`/v1/games/platform/${studioSlug}`);
-      setGames(response.data.data);
-      setSelectedGame(response.data.data[0]);
+
+      const response = await api.get(`/v1/games/platform/${slug}`);
+      const gameList = response.data.data;
+
+      if (gameList && gameList.length > 0) {
+        setGames(gameList);
+        setSelectedGame(gameList[0]);
+      } else {
+        setGames([]);
+        setSelectedGame(null);
+      }
+
       setLoading(false);
     } catch (error) {
       console.error("Error fetching games:", error);
+      setGames([]);
+      setSelectedGame(null);
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (userData.id) {
+    if (userData.id && userData.studio_id && studios.length > 0) {
       if (userData?.studio_type?.includes("studio_manager")) {
-        fetchAllgames();
+        setShowDropdown(true);
+        const otherStudio = studios.find(
+          (studio) => studio.slug !== userData?.slug
+        );
+        setStudioSlug(otherStudio.slug);
+        setStudioId(otherStudio.id);
+        fetchGames(otherStudio.slug);
       } else {
-        fetchGames();
+        const defaultSlug = userData?.slug;
+        const defaultId = userData?.studio_id;
+        setStudioSlug(defaultSlug);
+        setStudioId(defaultId);
+        fetchGames(defaultSlug);
       }
     }
-  }, [userData]);
+  }, [userData, studios]);
 
   const handleTabChange = (item, index) => {
     setCurrentTab(item.slug);
@@ -130,10 +176,42 @@ const AsoAssistant = () => {
     }
   }, [params.studio_slug]);
 
+  const handleStudioChange = async (e) => {
+    const selectedSlug = e.target.value;
+    setStudioSlug(selectedSlug);
+    const selectedStudio = studios.find((s) => s.slug === selectedSlug);
+    if (selectedStudio) {
+      setStudioId(selectedStudio.id);
+      fetchGames(selectedSlug);
+    } else {
+      console.warn("Selected studio not found in studio list.");
+    }
+  };
+
   return (
     <div className="mx-auto px-4 py-8 bg-white min-h-screen">
       <div className="flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-1/6">
+        <div className="w-full md:w-1/6 space-y-4">
+          {showDropdown && (
+            <div>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                defaultValue={studioSlug}
+                onChange={handleStudioChange}
+              >
+                {studios
+                  .filter(
+                    (studio) => !studio?.studio_type?.includes("studio_manager")
+                  )
+                  .map((studio) => (
+                    <option key={studio.id} value={studio.slug}>
+                      {studio.studio_name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
+
           <GamesDropdown
             selectedGame={selectedGame}
             setSelectedGame={setSelectedGame}
@@ -187,11 +265,12 @@ const AsoAssistant = () => {
                 </div>
 
                 <div className="py-6">
-                  <TabContent 
+                  <TabContent
                     currentTab={currentTab}
                     selectedGame={selectedGame}
                     toastMessage={toastMessage}
                     setToastMessage={setToastMessage}
+                    studioId={studioId}
                   />
                 </div>
               </div>
@@ -202,8 +281,8 @@ const AsoAssistant = () => {
                 Welcome to ASO Assistant
               </h2>
               <p className="text-gray-600 mb-6">
-                Select a game from the left panel to get started with generating
-                marketing assets.
+                Select a game and studio from the left panel to get started with
+                generating marketing assets.
               </p>
               {games.length === 0 && !loading && (
                 <NoData

@@ -1,6 +1,6 @@
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
-import api from '../../../api';
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
+import api from "../../../api";
 
 const blobToBase64 = (blob) => {
   return new Promise((resolve, reject) => {
@@ -18,11 +18,12 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${videoPlayable.general?.adName || 'Playable Ad'}</title>
+    <title>${videoPlayable.general?.adName || "Playable Ad"}</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
     <style>
       body { margin: 0; overflow: hidden; background: #000; }
       #game-container { width: 100vw; height: 100vh; }
+      video { image-rendering: high-quality; }
     </style>
 </head>
 <body>
@@ -35,7 +36,10 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
         width: window.innerWidth,
         height: window.innerHeight,
         backgroundColor: 0x000000,
-        resizeTo: window
+        resizeTo: window,
+        antialias: true,
+        autoDensity: true,
+        resolution: window.devicePixelRatio || 1
       });
       
       document.getElementById('game-container').appendChild(app.view);
@@ -119,16 +123,34 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
         // Set basic properties
         sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
         sprite.scale.set(spriteData.scale);
-        sprite.rotation = spriteData.rotation;
+        sprite.rotation = spriteData.rotation * (Math.PI / 180);
         sprite.alpha = spriteData.transparency;
         
-        // Calculate position taking modification.relativeToScreenSize into account
-        const x = modification.relativeToScreenSize
-          ? app.screen.width * spriteData.position.x
-          : spriteData.position.x;
-        const y = modification.relativeToScreenSize
-          ? app.screen.height * spriteData.position.y
-          : spriteData.position.y;
+        // Tag this sprite with the mod's type
+        sprite.__modType = modification.type;
+        
+        // Calculate position based on video bounds
+        let x, y;
+        
+        // Get video dimensions and position
+        const videoWidth = videoElement.videoWidth;
+        const videoHeight = videoElement.videoHeight;
+        
+        // Calculate video scale to fit in the app screen
+        const scaleX = app.screen.width / videoWidth;
+        const scaleY = app.screen.height / videoHeight;
+        const scale = Math.min(scaleX, scaleY);
+        
+        // Calculate video bounds (same calculation as in initVideo)
+        const scaledVideoWidth = videoWidth * scale;
+        const scaledVideoHeight = videoHeight * scale;
+        const videoX = (app.screen.width - scaledVideoWidth) / 2;
+        const videoY = (app.screen.height - scaledVideoHeight) / 2;
+        
+        // Position sprite relative to video bounds
+        x = videoX + (scaledVideoWidth * spriteData.position.x);
+        y = videoY + (scaledVideoHeight * spriteData.position.y);
+        
         sprite.position.set(x, y);
         
         // Save configuration for animations
@@ -175,6 +197,7 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
 
         app.stage.addChild(sprite);
         currentModifications.push(sprite);
+        return sprite;
       }
 
       function renderModification(mod) {
@@ -206,61 +229,7 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
         if (mod.sprites && mod.sprites.length > 0) {
           mod.sprites.forEach(spriteData => {
             if (ASSETS.images[spriteData.id]) {
-              const sprite = new PIXI.Sprite(PIXI.Texture.from(ASSETS.images[spriteData.id]));
-              // Tag this sprite with the mod's type:
-              sprite.__modType = mod.type;
-              sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
-              sprite.scale.set(spriteData.scale);
-              sprite.rotation = spriteData.rotation;
-              sprite.alpha = spriteData.transparency;
-              const x = mod.relativeToScreenSize
-                ? app.screen.width * spriteData.position.x
-                : spriteData.position.x;
-              const y = mod.relativeToScreenSize
-                ? app.screen.height * spriteData.position.y
-                : spriteData.position.y;
-              sprite.position.set(x, y);
-              sprite.eventMode = 'static';
-              sprite.cursor = 'pointer';
-              sprite.on('pointertap', (event) => {
-                event.stopPropagation();
-                
-                if (spriteData.onClickAction === 'open-store-url') {
-                  // Detect OS
-                  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-                  const isAndroid = /android/i.test(userAgent);
-                  const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-                  
-                  // Get appropriate store URL based on OS
-                  const storeUrl = isAndroid ? CONFIG.general.playstoreUrl : CONFIG.general.iosUrl;
-                  
-                  if (storeUrl) {
-                    // Use MRAID if available, otherwise fallback to window.open
-                    if (typeof mraid !== "undefined") {
-                      mraid.open(storeUrl);
-                    } else {
-                      window.open(storeUrl, '_blank');
-                    }
-                  } else {
-                    console.warn('No store URL configured for ' + (isAndroid ? 'Android' : 'iOS'));
-                  }
-                } else if (spriteData.onClickAction === 'resume-video') {
-                  if (activeBreakIndex !== -1) {
-                    const activeBreak = CONFIG.modifications[activeBreakIndex];
-                    if (activeBreak && audioElements[activeBreak.id]) {
-                      audioElements[activeBreak.id].pause();
-                      delete audioElements[activeBreak.id];
-                    }
-                    activeBreakIndex = -1;
-                    clearBreakModifications();
-                    videoElement.play().catch(console.error);
-                  }
-                }
-              });
-              // Save configuration (for later animations)
-              sprite.__spriteData = spriteData;
-              app.stage.addChild(sprite);
-              currentModifications.push(sprite);
+              renderSprite(spriteData, mod);
             }
           });
         }
@@ -310,12 +279,20 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
           videoElement.src = ASSETS.video;
           videoElement.crossOrigin = "anonymous";
           videoElement.preload = "auto";
-          // Temporarily mute to allow autoplay
           videoElement.muted = true;
           videoElement.playsInline = true;
+          videoElement.setAttribute('playsinline', '');
+          videoElement.style.objectFit = 'contain';
 
           videoElement.addEventListener('loadedmetadata', () => {
-            const videoBaseTexture = PIXI.BaseTexture.from(videoElement);
+            const videoBaseTexture = PIXI.BaseTexture.from(videoElement, {
+              scaleMode: PIXI.SCALE_MODES.LINEAR,
+              resourceOptions: {
+                autoPlay: false,
+                updateFPS: 60,
+                crossorigin: true
+              }
+            });
             const videoTexture = PIXI.Texture.from(videoBaseTexture);
             videoSprite = new PIXI.Sprite(videoTexture);
             
@@ -336,16 +313,17 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
       }
 
       function handleVideoTimeUpdate() {
-        const currentTime = videoElement.currentTime * 1000;
+        const currentTime = Math.floor(videoElement.currentTime * 1000);
 
         // If a break is active, do nothing here.
         if (activeBreakIndex !== -1) return;
 
         // Check if a break modification should be triggered.
+        const TOLERANCE_MS = 50; // 50ms tolerance
         const breakIndex = CONFIG.modifications.findIndex(mod =>
           mod.type === 'break' &&
           !triggeredBreakIds.has(mod.id) &&
-          currentTime >= mod.time
+          currentTime >= (mod.time - TOLERANCE_MS)
         );
 
         if (breakIndex !== -1) {
@@ -374,59 +352,7 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
           if (currentBreak.sprites && currentBreak.sprites.length > 0) {
             currentBreak.sprites.forEach(spriteData => {
               if (ASSETS.images[spriteData.id]) {
-                const sprite = new PIXI.Sprite(PIXI.Texture.from(ASSETS.images[spriteData.id]));
-                sprite.__modType = currentBreak.type;
-                sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
-                sprite.scale.set(spriteData.scale);
-                sprite.rotation = spriteData.rotation;
-                sprite.alpha = spriteData.transparency;
-                const x = currentBreak.relativeToScreenSize
-                  ? app.screen.width * spriteData.position.x
-                  : spriteData.position.x;
-                const y = currentBreak.relativeToScreenSize
-                  ? app.screen.height * spriteData.position.y
-                  : spriteData.position.y;
-                sprite.position.set(x, y);
-                sprite.eventMode = 'static';
-                sprite.cursor = 'pointer';
-                sprite.on('pointertap', (event) => {
-                  event.stopPropagation();
-                  
-                  if (spriteData.onClickAction === 'open-store-url') {
-                    // Detect OS
-                    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-                    const isAndroid = /android/i.test(userAgent);
-                    const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-                    
-                    // Get appropriate store URL based on OS
-                    const storeUrl = isAndroid ? CONFIG.general.playstoreUrl : CONFIG.general.iosUrl;
-                    
-                    if (storeUrl) {
-                      // Use MRAID if available, otherwise fallback to window.open
-                      if (typeof mraid !== "undefined") {
-                        mraid.open(storeUrl);
-                      } else {
-                        window.open(storeUrl, '_blank');
-                      }
-                    } else {
-                      console.warn('No store URL configured for ' + (isAndroid ? 'Android' : 'iOS'));
-                    }
-                  } else if (spriteData.onClickAction === 'resume-video') {
-                    if (activeBreakIndex !== -1) {
-                      const activeBreak = CONFIG.modifications[activeBreakIndex];
-                      if (activeBreak && audioElements[activeBreak.id]) {
-                        audioElements[activeBreak.id].pause();
-                        delete audioElements[activeBreak.id];
-                      }
-                      activeBreakIndex = -1;
-                      clearBreakModifications();
-                      videoElement.play().catch(console.error);
-                    }
-                  }
-                });
-                sprite.__spriteData = spriteData;
-                app.stage.addChild(sprite);
-                currentModifications.push(sprite);
+                renderSprite(spriteData, currentBreak);
               }
             });
           }
@@ -622,9 +548,37 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
             break;
           }
           case 'scale': {
+            // Store original position before scaling
+            const originalX = sprite.position.x;
+            const originalY = sprite.position.y;
+            
+            // Apply scale
             const startScale = spriteData.scale;
-            sprite.scale.x = startScale + (anim.destination.w - startScale) * easedProgress;
-            sprite.scale.y = startScale + (anim.destination.h - startScale) * easedProgress;
+            const newScaleX = startScale + (anim.destination.w - startScale) * easedProgress;
+            const newScaleY = startScale + (anim.destination.h - startScale) * easedProgress;
+            
+            sprite.scale.x = newScaleX;
+            sprite.scale.y = newScaleY;
+            
+            // For sprites positioned relative to screen, we need to recalculate position
+            // after scaling to make sure it stays in the correct place
+            if (sprite.__spriteData?.positionRelativeToScreen && typeof videoSprite !== 'undefined') {
+              // Get the video boundaries
+              const videoBounds = videoSprite.getBounds();
+              
+              // Recover the normalized position values directly from spriteData
+              const normalizedX = spriteData.position.x;
+              const normalizedY = spriteData.position.y;
+              
+              // Apply the normalized coordinates using video bounds
+              sprite.position.x = videoBounds.x + videoBounds.width * normalizedX;
+              sprite.position.y = videoBounds.y + videoBounds.height * normalizedY;
+            } else {
+              // For sprites not relative to screen, restore the original position
+              sprite.position.x = originalX;
+              sprite.position.y = originalY;
+            }
+            
             break;
           }
           case 'transparency': {
@@ -807,7 +761,8 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
               sprite.__modType = mod.type;
               sprite.anchor.set(spriteData.anchor.x, spriteData.anchor.y);
               sprite.scale.set(spriteData.scale);
-              sprite.rotation = spriteData.rotation;
+              // Convert degrees to radians for rotation
+              sprite.rotation = spriteData.rotation * (Math.PI / 180);
               sprite.alpha = spriteData.transparency;
               const x = mod.relativeToScreenSize
                 ? app.screen.width * spriteData.position.x
@@ -878,26 +833,28 @@ const generateHtmlTemplate = (videoPlayable, assets) => {
 </html>`;
 };
 
-export const buildPlayableAd = async (videoPlayable) => {
+export const buildPlayableAd = async (videoPlayable, networks = ["Web"]) => {
   try {
-    const zip = new JSZip();
+    const mainZip = new JSZip();
     const assets = {
-      video: '',
+      video: "",
       images: {},
-      audio: {}
+      audio: {},
     };
 
     // Convert video to base64
     if (videoPlayable.general?.videoSource) {
       try {
-        const videoBase64 = await blobToBase64(videoPlayable.general.videoSource);
+        const videoBase64 = await blobToBase64(
+          videoPlayable.general.videoSource
+        );
         assets.video = videoBase64;
       } catch (error) {
-        console.error('Error converting video:', error);
-        throw new Error('Failed to process video source');
+        console.error("Error converting video:", error);
+        throw new Error("Failed to process video source");
       }
     } else {
-      throw new Error('No video source found in general properties');
+      throw new Error("No video source found in general properties");
     }
 
     // Convert all modification assets
@@ -912,14 +869,89 @@ export const buildPlayableAd = async (videoPlayable) => {
       }
     }
 
-    // Generate HTML file with animations
-    const html = generateHtmlTemplate(videoPlayable, assets);
-    zip.file('index.html', html);
+    // Create Web build if selected
+    if (networks.includes("Web")) {
+      // Generate HTML file with animations
+      const htmlTemplate = generateHtmlTemplate(videoPlayable, assets);
+      mainZip.file("web-inline.html", htmlTemplate);
+    }
 
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
-    saveAs(zipBlob, `${videoPlayable.general?.adName || 'playable-ad'}.zip`);
+    // Create Facebook build if selected
+    if (networks.includes("Facebook")) {
+      const fbZip = new JSZip();
+
+      // Get the full HTML template that has all the functionality
+      const fullTemplate = generateHtmlTemplate(videoPlayable, assets);
+
+      // Extract the CSS from the template
+      const cssMatch = fullTemplate.match(/<style>([\s\S]*?)<\/style>/);
+      const cssContent = cssMatch ? cssMatch[1] : "";
+
+      // Extract the JavaScript from the template
+      const scriptMatch = fullTemplate.match(/<script>([\s\S]*?)<\/script>/);
+      let scriptContent = scriptMatch ? scriptMatch[1] : "";
+
+      // Add Facebook CTA click handling
+      scriptContent = scriptContent.replace(
+        /window\.open\(storeUrl, ['"]_blank['"]\);/g,
+        `if (typeof FbPlayableAd !== 'undefined') { FbPlayableAd.onCTAClick(); }
+        window.open(storeUrl, '_blank');`
+      );
+
+      // Download PIXI.js minified and include it directly in the JS file
+      try {
+        // Fetch the PIXI.js library
+        const pixiResponse = await fetch(
+          "https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"
+        );
+        const pixiCode = await pixiResponse.text();
+
+        // Prepend PIXI.js to our script content
+        scriptContent = pixiCode + "\n\n" + scriptContent;
+      } catch (error) {
+        console.error("Error fetching PIXI.js:", error);
+        throw new Error("Failed to download PIXI.js library");
+      }
+
+      // Create an HTML file that doesn't reference external JS
+      const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>${videoPlayable.general?.adName || "Playable Ad"}</title>
+  <style>
+    ${cssContent}
+  </style>
+</head>
+<body>
+  <!-- Keep the exact same body structure as in the original template -->
+  ${fullTemplate.match(/<body>([\s\S]*?)<script>/)[1]}
+  <!-- Load the bundled JS file with PIXI.js included -->
+  <script src="playable.js"></script>
+</body>
+</html>`;
+
+      // Add files to Facebook zip
+      fbZip.file("index.html", htmlContent);
+      fbZip.file("playable.js", scriptContent);
+
+      // Generate the Facebook zip
+      const fbZipBlob = await fbZip.generateAsync({ type: "blob" });
+      mainZip.file("facebook.zip", fbZipBlob);
+    }
+
+    // Generate and save the main zip file
+    const zipBlob = await mainZip.generateAsync({ type: "blob" });
+    const fileName = videoPlayable.general?.adName
+      ? `${videoPlayable.general.adName.replace(/\s+/g, "-")}`
+      : "playable-ad";
+
+    saveAs(zipBlob, `${fileName}.zip`);
+
+    return true;
   } catch (error) {
-    console.error('Error building playable ad:', error);
+    console.error("Error building playable ad:", error);
     throw error;
   }
 };
@@ -930,15 +962,15 @@ export const buildPlayableAd = async (videoPlayable) => {
 
 // Convert bytes to human-readable format
 export const formatBytes = (bytes, decimals = 2) => {
-  if (bytes === 0) return '0 B';
-  
+  if (bytes === 0) return "0 B";
+
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  
+  const sizes = ["B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 };
 
 // Get file size from a Blob or File object
@@ -950,11 +982,14 @@ export const getFileSize = (file) => {
 // Function to get the actual PIXI.js library size
 async function getPixiJsSize() {
   try {
-    const response = await fetch('https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.2/pixi.min.js', { method: 'HEAD' });
-    const contentLength = response.headers.get('content-length');
+    const response = await fetch(
+      "https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.2/pixi.min.js",
+      { method: "HEAD" }
+    );
+    const contentLength = response.headers.get("content-length");
     return contentLength ? parseInt(contentLength, 10) : 512 * 1024; // fallback to 512KB
   } catch (error) {
-    console.warn('Could not fetch PIXI.js size, using estimate', error);
+    console.warn("Could not fetch PIXI.js size, using estimate", error);
     return 512 * 1024; // fallback to 512KB
   }
 }
@@ -982,8 +1017,8 @@ export const calculateTotalSize = async (videoPlayable) => {
     total: librarySize,
     assets: {
       images: [],
-      audio: []
-    }
+      audio: [],
+    },
   };
 
   // Calculate video size with base64 overhead
@@ -997,38 +1032,44 @@ export const calculateTotalSize = async (videoPlayable) => {
 
   // Process all modifications without base64 overhead
   if (videoPlayable.modifications) {
-    videoPlayable.modifications.forEach(mod => {
+    videoPlayable.modifications.forEach((mod) => {
       // Process sprites (images)
       if (mod.sprites && mod.sprites.length > 0) {
-        mod.sprites.forEach(sprite => {
+        mod.sprites.forEach((sprite) => {
           if (sprite.file) {
             const spriteSize = sprite.file.size || 0;
             result.images += spriteSize;
             result.total += spriteSize;
-            
+
             // Add to detailed assets list
             result.assets.images.push({
               id: sprite.id,
-              name: sprite.file.name || `image-${sprite.id.toString().slice(-5)}.${sprite.isGif ? 'gif' : 'png'}`,
+              name:
+                sprite.file.name ||
+                `image-${sprite.id.toString().slice(-5)}.${
+                  sprite.isGif ? "gif" : "png"
+                }`,
               size: spriteSize,
               imageUrl: sprite.imageUrl,
-              file_type: sprite.file.type
+              file_type: sprite.file.type,
             });
           }
         });
       }
-      
+
       // Process background music (audio)
       if (mod.backgroundMusic?.file) {
         const audioSize = mod.backgroundMusic.file.size || 0;
         result.audio += audioSize;
         result.total += audioSize;
-        
+
         // Add to detailed assets list
         result.assets.audio.push({
           id: mod.id,
-          name: mod.backgroundMusic.file.name || `audio-${mod.id.toString().slice(-5)}.mp3`,
-          size: audioSize
+          name:
+            mod.backgroundMusic.file.name ||
+            `audio-${mod.id.toString().slice(-5)}.mp3`,
+          size: audioSize,
         });
       }
     });
@@ -1036,7 +1077,7 @@ export const calculateTotalSize = async (videoPlayable) => {
 
   // Add HTML template size to total
   result.total += result.html;
-  
+
   // Add ZIP overhead estimate (headers, structure) - approximately 2-5%
   const zipOverhead = Math.ceil(result.total * 0.05);
   result.zipOverhead = zipOverhead;
@@ -1050,51 +1091,55 @@ export const calculateTotalSize = async (videoPlayable) => {
  */
 
 // Simple image compression using canvas
-export const compressImage = async (imageFile, quality = 0.7, maxWidth = 1024) => {
+export const compressImage = async (
+  imageFile,
+  quality = 0.7,
+  maxWidth = 1024
+) => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       // Calculate new dimensions while maintaining aspect ratio
       let width = img.width;
       let height = img.height;
-      
+
       if (width > maxWidth) {
         height = (height * maxWidth) / width;
         width = maxWidth;
       }
-      
+
       // Create canvas and draw image
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);
-      
+
       // Convert to blob with compression
       canvas.toBlob(
         (blob) => {
           if (!blob) {
-            reject(new Error('Canvas to Blob conversion failed'));
+            reject(new Error("Canvas to Blob conversion failed"));
             return;
           }
-          
+
           // Create a new file from the blob
           const compressedFile = new File([blob], imageFile.name, {
-            type: 'image/jpeg',
-            lastModified: Date.now()
+            type: "image/jpeg",
+            lastModified: Date.now(),
           });
-          
+
           resolve(compressedFile);
         },
-        'image/jpeg',
+        "image/jpeg",
         quality
       );
     };
-    
+
     img.onerror = () => {
-      reject(new Error('Failed to load image for compression'));
+      reject(new Error("Failed to load image for compression"));
     };
-    
+
     // Load image from file
     img.src = URL.createObjectURL(imageFile);
   });
@@ -1105,38 +1150,41 @@ export const compressImageWithTinyPNG = async (imageFile) => {
   try {
     // Create FormData to send the file
     const formData = new FormData();
-    formData.append('file', imageFile);
-    
+    formData.append("file", imageFile);
+
     // Send the file to your backend compression endpoint
-    const response = await api.post('v1/assetGenerator/compress-image', formData);
-    console.log(response,'result')
+    const response = await api.post(
+      "v1/assetGenerator/compress-image",
+      formData
+    );
+    console.log(response, "result");
     if (response.status !== 200) {
       throw new Error(`Image compression failed: ${response.statusText}`);
     }
 
     const result = response.data;
-    
+
     // Convert the base64 string back to a File object
     const binaryString = atob(result.data);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
-    
+
     // Create a new File object with the same name as the original
     const compressedFile = new File([bytes], imageFile.name, {
       type: imageFile.type,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
-    
+
     return {
       file: compressedFile,
       originalSize: result.initialSize,
       compressedSize: result.compressedSize,
-      reductionPercentage: result.reductionPercentage
+      reductionPercentage: result.reductionPercentage,
     };
   } catch (error) {
-    console.error('TinyPNG compression failed:', error);
+    console.error("TinyPNG compression failed:", error);
     throw error;
   }
 };
@@ -1145,42 +1193,54 @@ export const compressImageWithTinyPNG = async (imageFile) => {
 export const compressAllAssets = async (videoPlayable, selectedAssets) => {
   // Create a deep copy of the videoPlayable object
   const compressedPlayable = JSON.parse(JSON.stringify(videoPlayable));
-  
+
   // We need to manually copy the File/Blob objects since they don't stringify
   if (videoPlayable.general?.videoSource) {
     compressedPlayable.general.videoSource = videoPlayable.general.videoSource;
   }
-  
+
   // Get selected asset IDs for quick lookup
-  const selectedImageIds = new Set(selectedAssets.images.map(img => img.id));
-  const selectedAudioIds = new Set(selectedAssets.audio.map(audio => audio.id));
-  
+  const selectedImageIds = new Set(selectedAssets.images.map((img) => img.id));
+  const selectedAudioIds = new Set(
+    selectedAssets.audio.map((audio) => audio.id)
+  );
+
   // Process all modifications
   for (let i = 0; i < videoPlayable.modifications.length; i++) {
     const mod = videoPlayable.modifications[i];
-    
+
     // Process sprites (images)
     if (mod.sprites && mod.sprites.length > 0) {
       for (let j = 0; j < mod.sprites.length; j++) {
         const sprite = mod.sprites[j];
-        
+
         // Check if this sprite was selected for compression
-        if (sprite.file && selectedImageIds.has(sprite.id) && sprite.file.type !== 'image/gif') {
+        if (
+          sprite.file &&
+          selectedImageIds.has(sprite.id) &&
+          sprite.file.type !== "image/gif"
+        ) {
           try {
             // Compress the image using TinyPNG
-            const compressionResult = await compressImageWithTinyPNG(sprite.file);
-            
+            const compressionResult = await compressImageWithTinyPNG(
+              sprite.file
+            );
+
             // Update the sprite with the compressed image
-            compressedPlayable.modifications[i].sprites[j].file = compressionResult.file;
-            
+            compressedPlayable.modifications[i].sprites[j].file =
+              compressionResult.file;
+
             // Store compression stats
             compressedPlayable.modifications[i].sprites[j].compressionStats = {
               originalSize: compressionResult.originalSize,
               compressedSize: compressionResult.compressedSize,
-              reductionPercentage: compressionResult.reductionPercentage
+              reductionPercentage: compressionResult.reductionPercentage,
             };
           } catch (error) {
-            console.error(`Failed to compress image for sprite ${sprite.id}:`, error);
+            console.error(
+              `Failed to compress image for sprite ${sprite.id}:`,
+              error
+            );
             // Keep the original file on error
             compressedPlayable.modifications[i].sprites[j].file = sprite.file;
           }
@@ -1190,14 +1250,15 @@ export const compressAllAssets = async (videoPlayable, selectedAssets) => {
         }
       }
     }
-    
+
     // Process background music (audio)
     if (mod.backgroundMusic?.file) {
       // Currently we just copy audio files as-is since audio compression is more complex
       // If selected for compression, you could add audio compression logic here
-      compressedPlayable.modifications[i].backgroundMusic.file = mod.backgroundMusic.file;
+      compressedPlayable.modifications[i].backgroundMusic.file =
+        mod.backgroundMusic.file;
     }
   }
-  
+
   return compressedPlayable;
 };
