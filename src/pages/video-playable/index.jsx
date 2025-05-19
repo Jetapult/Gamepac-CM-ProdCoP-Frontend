@@ -17,6 +17,8 @@ import { baseModificationState, initialState, ModificationType } from "./state";
 import { buildPlayableAd, compressAllAssets } from "./utils";
 import ToastMessage from "../../components/ToastMessage";
 import AssetSizeDisplay from './components/AssetSizeDisplay';
+import { CompressVideo } from "./utils/videoCompressor";
+import BuildPlayablePopup from './components/BuildPlayablePopup';
 
 const timelineContainerStyle = {
   position: "absolute",
@@ -132,6 +134,11 @@ export default function VideoPlayable() {
     message: "",
     type: ""
   });
+  const [videoSizeValid, setVideoSizeValid] = useState(false);
+  const [showVideoCompressButton, setShowVideoCompressButton] = useState(false);
+  const [isCompressingVideo, setIsCompressingVideo] = useState(false);
+  const [originalVideoSize, setOriginalVideoSize] = useState(null);
+  const [showBuildPopup, setShowBuildPopup] = useState(false);
 
   // Create a ref that will hold the active audio elements keyed by modification id.
   const audioElementsRef = useRef({});
@@ -424,6 +431,36 @@ export default function VideoPlayable() {
   const handleVideoUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Check file size
+      const fileSizeMB = file.size / (1024 * 1024);
+      
+      // Validate maximum size (50MB)
+      if (fileSizeMB > 50) {
+        setToastMessage({
+          show: true,
+          message: "Video file is too large. Maximum size is 50MB.",
+          type: "error"
+        });
+        return;
+      }
+      
+      // Track original size for display
+      setOriginalVideoSize(fileSizeMB);
+      
+      // Check if compression is needed (over 3.5MB)
+      if (fileSizeMB > 3.5) {
+        setVideoSizeValid(false);
+        setShowVideoCompressButton(true);
+        setToastMessage({
+          show: true,
+          message: `Video size is ${fileSizeMB.toFixed(1)}MB. Compression required before proceeding.`,
+          type: "warning"
+        });
+      } else {
+        setVideoSizeValid(true);
+        setShowVideoCompressButton(false);
+      }
+      
       setIsPlaying(false);
       setVideoSource(file);
       setCurrentTime(0);
@@ -436,6 +473,77 @@ export default function VideoPlayable() {
           adName: "Playable Ad",
         },
       }));
+    }
+  };
+
+  const handleCompressVideo = async () => {
+    try {
+      setIsCompressingVideo(true);
+      setToastMessage({
+        show: true,
+        message: "Compressing video...",
+        type: "info"
+      });
+      
+      // Call the API to compress the video
+      const response = await CompressVideo(videoPlayable.general.videoSource);
+      
+      // Create a new video file from the URL in the response
+      const compressedVideoUrl = response.data.url;
+      const compressedSizeMB = parseFloat(response.data.compressed_size_mb);
+      
+      // Fetch the video file from the URL
+      const videoResponse = await fetch(compressedVideoUrl);
+      const videoBlob = await videoResponse.blob();
+      const filename = compressedVideoUrl.split('/').pop();
+      const compressedVideoFile = new File([videoBlob], filename, { type: 'video/mp4' });
+      
+      if (compressedSizeMB <= 3.5) {
+        setVideoSizeValid(true);
+        setShowVideoCompressButton(false);
+        
+        // Update video source to show the compressed video
+        setVideoSource(compressedVideoFile);
+        
+        // Update the videoPlayable state with compressed video
+        setVideoPlayable(prev => ({
+          ...prev,
+          general: {
+            ...prev.general,
+            videoSource: compressedVideoFile
+          }
+        }));
+        
+        // Reset player state
+        setIsPlaying(false);
+        setCurrentTime(0);
+        setActiveBreakIndex(-1);
+        
+        const originalSizeMB = parseFloat(response.data.original_size_mb);
+        const compressionRatio = parseFloat(response.data.compression_ratio);
+        
+        setToastMessage({
+          show: true,
+          message: `Video compressed from ${originalSizeMB.toFixed(1)}MB to ${compressedSizeMB.toFixed(1)}MB (${compressionRatio}x reduction)`,
+          type: "success"
+        });
+      } else {
+        setVideoSizeValid(false);
+        setToastMessage({
+          show: true,
+          message: `Video is still ${compressedSizeMB.toFixed(1)}MB after compression. Please try a smaller video.`,
+          type: "error"
+        });
+      }
+    } catch (error) {
+      console.error("Error compressing video:", error);
+      setToastMessage({
+        show: true,
+        message: "Failed to compress video: " + error.message,
+        type: "error"
+      });
+    } finally {
+      setIsCompressingVideo(false);
     }
   };
 
@@ -559,6 +667,7 @@ export default function VideoPlayable() {
       
       // IMPORTANT: assign the video element so that videoRef is not null
       videoRef.current = videoElement;
+      console.log(videoRef.current,'videoElement')
       
       // Force the video to show a frame
       videoElement.currentTime = 0.001;
@@ -1597,19 +1706,37 @@ export default function VideoPlayable() {
     return () => app?.ticker?.remove(animationTicker);
   }, [activeBreakIndex, videoPlayable.modifications]);
 
+  const handleBuildClick = () => {
+    if (!videoSource) {
+      setToastMessage({
+        show: true,
+        message: "Please upload a video first",
+        type: "error"
+      });
+      return;
+    }
+    
+    if (!videoSizeValid) {
+      setToastMessage({
+        show: true,
+        message: "Please compress your video before building the playable ad",
+        type: "error"
+      });
+      return;
+    }
+    
+    setShowBuildPopup(true);
+  };
+
   const renderBuildButton = () => (
-    <>
-      <button
-        onClick={() => {
-          buildPlayableAd(videoPlayable);
-        }}
-        className="px-4 py-2 bg-[#b9ff66] text-black rounded-lg flex items-center gap-2 w-full"
-        disabled={!videoSource}
-      >
-        <Download className="w-4 h-4" />
-        Build Playable Ad
-      </button>
-    </>
+    <button
+      onClick={handleBuildClick}
+      className={`px-4 py-2 ${videoSizeValid ? 'bg-[#b9ff66]' : 'bg-gray-400'} text-black rounded-lg flex items-center gap-2 w-full`}
+      disabled={!videoSource || !videoSizeValid}
+    >
+      <Download className="w-4 h-4" />
+      Build Playable Ad
+    </button>
   );
 
   const handleRemoveTab = (tabToRemove) => {
@@ -1796,6 +1923,59 @@ export default function VideoPlayable() {
       {toastMessage.show && (
         <ToastMessage message={toastMessage} setToastMessage={setToastMessage} />
       )}
+      {!videoSizeValid && videoSource && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
+          <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full">
+            <h3 className="text-xl font-bold text-white mb-2">Video Compression Required</h3>
+            <p className="text-gray-300 mb-4">
+              Your video is {originalVideoSize.toFixed(1)}MB, which exceeds the maximum allowed size of 3.5MB.
+              You must compress your video before continuing.
+            </p>
+            
+            <button
+              onClick={handleCompressVideo}
+              disabled={isCompressingVideo}
+              className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-medium rounded-lg flex items-center gap-2 w-full mb-4"
+            >
+              {isCompressingVideo ? (
+                <>
+                  <span className="animate-spin mr-2">⚙️</span>
+                  Compressing...
+                </>
+              ) : (
+                <>
+                  <span>🗜️</span>
+                  Compress Video ({originalVideoSize.toFixed(1)}MB → 3.5MB)
+                </>
+              )}
+            </button>
+            
+            <button
+              onClick={() => {
+                // Reset video state to allow new upload
+                setVideoSource(null);
+                setVideoPlayable(prev => ({
+                  ...prev,
+                  general: {
+                    ...prev.general,
+                    videoSource: null
+                  }
+                }));
+              }}
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg w-full"
+            >
+              Cancel & Choose Different Video
+            </button>
+          </div>
+        </div>
+      )}
+      {showBuildPopup && (
+        <BuildPlayablePopup
+          onClose={() => setShowBuildPopup(false)}
+          videoPlayable={videoPlayable}
+          setToastMessage={setToastMessage}
+        />
+      )}
     </div>
   );
 }
@@ -1816,3 +1996,4 @@ const styles = `
 const styleSheet = document.createElement("style");
 styleSheet.innerText = styles;
 document.head.appendChild(styleSheet);
+
