@@ -54,6 +54,7 @@ import { AssetGenerator } from "./pages/AssetGenerator";
 import DataVisualization from "./pages/DataVisualization";
 import UAIntelligence from "./pages/UAIntelligence";
 import UACreativeAnalyser from "./pages/UAIntelligence/UACreativeAnalyser";
+import NewGameMarketIntelligence from "./pages/NewGameMarketIntelligence.jsx";
 
 
 function App() {
@@ -329,6 +330,7 @@ function App() {
             <Route path="/data-visualization" element={<PrivateRoute><DataVisualization /></PrivateRoute>}/>
             <Route path="/ua-intelligence" element={<PrivateRoute><UAIntelligence /></PrivateRoute>} />
             <Route path="/ua-intelligence/:ad_id" element={<PrivateRoute><UACreativeAnalyser /></PrivateRoute>} />
+            <Route path="/market-intel" element={<PrivateRoute><NewGameMarketIntelligence /></PrivateRoute>} />
             <Route
               path="*"
               element={<PageNotFound />}
