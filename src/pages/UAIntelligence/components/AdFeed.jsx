@@ -137,7 +137,7 @@ const adData = [
   },
 ];
 
-const VideoThumbnail = ({ videoSrc, alt, width, height }) => {
+export const VideoThumbnail = ({ videoSrc, alt, width, height }) => {
   const [thumbnail, setThumbnail] = useState("");
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -505,7 +505,7 @@ export default function AdFeed() {
                   </button>
                   <button
                     className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
-                    onClick={() => navigate(`/ua-intelligence/${selectedAd.id}`)}
+                    // onClick={() => navigate(`/ua-intelligence/${selectedAd.id}`)}
                   >
                     Analyse
                   </button>
