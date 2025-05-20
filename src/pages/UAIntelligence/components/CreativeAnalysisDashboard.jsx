@@ -1,524 +1,508 @@
-import React, { useState } from "react";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
-import { Bar } from "react-chartjs-2";
-import ChartDataLabels from "chartjs-plugin-datalabels";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ChartDataLabels
-);
-
-const topPerformers = [
-  {
-    name: "Gameplay Demo 1",
-    category: "Demo",
-    description: "Feature showcase with level progression",
-    cpi: 0.72,
-  },
-  {
-    name: "Character Story 3",
-    category: "Story",
-    description: "Emotional narrative with character development",
-    cpi: 0.85,
-  },
-  {
-    name: "Quick Demo 7",
-    category: "Demo",
-    description: "Core gameplay loop with visual rewards",
-    cpi: 0.89,
-  },
-  {
-    name: "Challenge Hook 2",
-    category: "Hook",
-    description: "Puzzle challenge with time pressure",
-    cpi: 0.94,
-  },
-];
-
-const lowPerformers = [
-  {
-    name: "Generic CTA 5",
-    category: "CTA",
-    description: "Standard call to action with app icon",
-    cpi: 1.82,
-  },
-  {
-    name: "Feature List 3",
-    category: "Hook",
-    description: "Text-heavy feature overview",
-    cpi: 1.76,
-  },
-  {
-    name: "Long Story 2",
-    category: "Story",
-    description: "Extended narrative without gameplay",
-    cpi: 1.68,
-  },
-  {
-    name: "Static Demo 4",
-    category: "Demo",
-    description: "Non-interactive feature showcase",
-    cpi: 1.54,
-  },
-];
-
-const creativeData = [
-  { category: "Hook", high: 8, medium: 12, low: 5 },
-  { category: "Story", high: 10, medium: 15, low: 8 },
-  { category: "Demo", high: 15, medium: 18, low: 4 },
-  { category: "CTA", high: 6, medium: 14, low: 9 },
-];
-
-// Mock data imports
-const performanceByCategory = [
-  { category: "Hook", cpi: 1.45, impressions: 320 },
-  { category: "Story", cpi: 1.32, impressions: 280 },
-  { category: "Demo", cpi: 0.87, impressions: 420 },
-  { category: "CTA", cpi: 1.28, impressions: 180 },
-];
-
-// Performance chart data
-const performanceChartData = {
-  labels: performanceByCategory.map((item) => item.category),
-  datasets: [
-    {
-      label: "CPI ($)",
-      data: performanceByCategory.map((item) => item.cpi),
-      backgroundColor: "#8884d8", // Purple color for CPI bars
-      yAxisID: "y",
-    },
-    {
-      label: "Impressions (K)",
-      data: performanceByCategory.map((item) => item.impressions),
-      backgroundColor: "#82ca9d", // Green color for Impressions bars
-      yAxisID: "y1",
-    },
-  ],
-};
-
-// Performance chart options
-const performanceChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  layout: {
-    padding: {
-      left: 0,
-      right: 0,
-      top: 20,
-      bottom: 0,
-    },
-  },
-  plugins: {
-    legend: {
-      position: "bottom",
-      align: "start",
-      labels: {
-        boxWidth: 12,
-        padding: 15,
-      },
-    },
-    tooltip: {
-      callbacks: {
-        label: function (context) {
-          let label = context.dataset.label || "";
-          if (label) {
-            label += ": ";
-          }
-          if (context.parsed.y !== null) {
-            if (context.dataset.label.includes("CPI")) {
-              label += "$" + context.parsed.y.toFixed(2);
-            } else {
-              label += context.parsed.y;
-            }
-          }
-          return label;
-        },
-      },
-    },
-    datalabels: {
-      display: false,
-    },
-  },
-  scales: {
-    x: {
-      grid: {
-        display: false,
-      },
-      ticks: {
-        padding: 5,
-      },
-    },
-    y: {
-      type: "linear",
-      position: "left",
-      title: {
-        display: true,
-        text: "CPI ($)",
-        padding: { top: 0, bottom: 0 },
-      },
-      ticks: {
-        callback: function (value) {
-          return "$" + value.toFixed(2);
-        },
-        padding: 5,
-      },
-      min: 0,
-    },
-    y1: {
-      type: "linear",
-      position: "right",
-      title: {
-        display: true,
-        text: "Impressions (K)",
-        padding: { top: 0, bottom: 0 },
-      },
-      grid: {
-        drawOnChartArea: false,
-      },
-      ticks: {
-        padding: 5,
-      },
-      min: 0,
-    },
-  },
-  barPercentage: 0.85,
-  categoryPercentage: 0.9,
-};
-
-// Distribution chart data
-const distributionChartData = {
-  labels: creativeData.map((item) => item.category),
-  datasets: [
-    {
-      label: "High Performing",
-      data: creativeData.map((item) => item.high),
-      backgroundColor: "#4ade80", // Green color
-      stack: "Stack 0",
-    },
-    {
-      label: "Medium Performing",
-      data: creativeData.map((item) => item.medium),
-      backgroundColor: "#facc15", // Yellow color
-      stack: "Stack 0",
-    },
-    {
-      label: "Low Performing",
-      data: creativeData.map((item) => item.low),
-      backgroundColor: "#f87171", // Red color
-      stack: "Stack 0",
-    },
-  ],
-};
-
-// Distribution chart options
-const distributionChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  layout: {
-    padding: {
-      left: 0,
-      right: 0,
-      top: 20,
-      bottom: 0,
-    },
-  },
-  plugins: {
-    legend: {
-      position: "bottom",
-      align: "start",
-      labels: {
-        boxWidth: 12,
-        padding: 15,
-      },
-    },
-    tooltip: {
-      callbacks: {
-        label: function (context) {
-          let label = context.dataset.label || "";
-          if (label) {
-            label += ": ";
-          }
-          if (context.parsed.y !== null) {
-            label += context.parsed.y;
-          }
-          return label;
-        },
-      },
-    },
-    datalabels: {
-      display: false,
-    },
-  },
-  scales: {
-    x: {
-      grid: {
-        display: false,
-      },
-      stacked: true,
-      ticks: {
-        padding: 5,
-      },
-    },
-    y: {
-      stacked: true,
-      title: {
-        display: true,
-        text: "Number of Creatives",
-        padding: { top: 0, bottom: 0 },
-      },
-      ticks: {
-        padding: 5,
-      },
-      min: 0,
-    },
-  },
-  barPercentage: 0.85,
-  categoryPercentage: 0.9,
-};
+import React, { useState, useRef, useCallback } from "react";
+import PlaceholderImg from "../../../assets/placeholder.svg";
 
 const CreativeAnalysisDashboard = () => {
-  const [timeRange, setTimeRange] = useState("30d");
+  const [uploadMethod, setUploadMethod] = useState("link"); // "link" or "file"
+  const [videoUrl, setVideoUrl] = useState("");
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [analysisResult, setAnalysisResult] = useState(null);
+
+  // File input ref
+  const inputRef = useRef(null);
+
+  // Sample analysis data (will be replaced with actual API response)
+  const sampleAnalysisData = {
+    meta_tags: ["Animated"],
+    creative_type: "Gameplay Footage",
+    messaging_theme: "Fail",
+    call_to_action: ["Try Now"],
+    primary_colors: ["Blue", "Yellow", "Red"],
+    audio_profile: "Music + SFX Only",
+    opening_hook: "Unexpected Humor",
+    duration_category: "≤60s",
+    game_mechanic: "Other (Pull the pin)",
+    language_used: "English",
+    script_summary:
+      "The ad shows a scene of a cold house with a mother and daughter. The puzzle is to pull the correct pins to get coins for the house so they aren't cold anymore. The demonstration in the ad causes the gold to go into a fire which makes the characters cry. The game shows different scenarios. The ad ends with 'Try Again'.",
+  };
+
+  // Handle file drop
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  // Handle file selection
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFile(e.target.files[0]);
+    }
+  };
+
+  const handleFile = (file) => {
+    // Validate file type
+    const validTypes = [
+      "video/mp4",
+      "video/mov",
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+    ];
+    if (!validTypes.includes(file.type)) {
+      setError(
+        "Please upload a valid video (MP4, MOV) or image (JPEG, PNG, GIF) file"
+      );
+      return;
+    }
+
+    setSelectedFile(file);
+    setError("");
+
+    // Create preview URL
+    const fileUrl = URL.createObjectURL(file);
+    setPreviewUrl(fileUrl);
+  };
+
+  // Handle URL input
+  const handleUrlChange = (e) => {
+    setVideoUrl(e.target.value);
+
+    // Basic URL validation
+    const url = e.target.value.trim();
+    const validTypes = [".mp4", ".mov", ".jpeg", ".jpg", ".png", ".gif"];
+    const isValidUrl = validTypes.some((type) =>
+      url.toLowerCase().endsWith(type)
+    );
+
+    if (url && !isValidUrl) {
+      setError(
+        "Please enter a valid URL for video (MP4, MOV) or image (JPEG, PNG, GIF) files"
+      );
+    } else {
+      setError("");
+      if (url) {
+        setPreviewUrl(url);
+      } else {
+        setPreviewUrl(null);
+      }
+    }
+  };
+
+  // Handle analysis
+  const analyzeCreative = () => {
+    if (!previewUrl) {
+      setError("Please upload a file or enter a URL first");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    // Simulate API call with timeout
+    setTimeout(() => {
+      setAnalysisResult(sampleAnalysisData);
+      setLoading(false);
+    }, 1500);
+  };
+
+  // Clean up object URLs when component unmounts
+  React.useEffect(() => {
+    return () => {
+      if (previewUrl && selectedFile) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl, selectedFile]);
+
   return (
-    <div className="grid gap-6">
-      <div className="flex flex-col md:flex-row justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">
-            Creative Analysis Dashboard
-          </h2>
-          <p className="text-gray-500">
-            Analyze your ad performance by creative concept and identify
-            patterns
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <select
-            className="rounded-md border border-gray-300 p-2 w-[180px]"
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-          >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-          </select>
-          <button className="p-2 border border-gray-300 rounded-md">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-            </svg>
-          </button>
-          <button className="p-2 border border-gray-300 rounded-md">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-          </button>
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+      {/* Left panel - History */}
+      <div className="md:col-span-3 border rounded-lg p-4 h-min">
+        <h3 className="text-lg font-medium mb-4">History</h3>
+        <div className="text-sm text-gray-500">
+          {analysisResult ? (
+            <div className="p-3 border rounded-md mb-2 cursor-pointer hover:bg-gray-50">
+              <div className="font-medium text-black">
+                {analysisResult.creative_type}
+              </div>
+              <div className="text-xs text-gray-400">
+                {new Date().toLocaleString()}
+              </div>
+            </div>
+          ) : (
+            <p>No analysis history yet</p>
+          )}
         </div>
       </div>
 
-      {/* Stats cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="p-4 pb-2">
-            <h3 className="text-sm font-medium">Total Creatives</h3>
-          </div>
-          <div className="p-4 pt-0">
-            <div className="text-2xl font-bold">124</div>
-            <p className="text-xs text-gray-500">+12% from last month</p>
-          </div>
-        </div>
+      {/* Right panel - Upload and Analysis */}
+      <div className="md:col-span-9">
+        {!analysisResult ? (
+          <div className="border rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-6">Upload Creative</h2>
 
-        <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="p-4 pb-2">
-            <h3 className="text-sm font-medium">Average CPI</h3>
-          </div>
-          <div className="p-4 pt-0">
-            <div className="text-2xl font-bold">$1.24</div>
-            <p className="text-xs text-gray-500">-8% from last month</p>
-          </div>
-        </div>
+            {/* Upload method toggle */}
+            <div className="flex mb-6">
+              <button
+                onClick={() => setUploadMethod("link")}
+                className={`px-4 py-2 rounded-l-md border ${
+                  uploadMethod === "link"
+                    ? "bg-white border-gray-200"
+                    : "bg-gray-100 border-gray-300"
+                }`}
+              >
+                Enter Link
+              </button>
+              <button
+                onClick={() => setUploadMethod("file")}
+                className={`px-4 py-2 rounded-r-md border-t border-r border-b ${
+                  uploadMethod === "file"
+                    ? "bg-white border-gray-200"
+                    : "bg-gray-100 border-gray-300"
+                }`}
+              >
+                Upload File
+              </button>
+            </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="p-4 pb-2">
-            <h3 className="text-sm font-medium">Best Performing Category</h3>
-          </div>
-          <div className="p-4 pt-0">
-            <div className="text-2xl font-bold">Demo</div>
-            <p className="text-xs text-gray-500">$0.87 avg. CPI</p>
-          </div>
-        </div>
+            {/* URL input method */}
+            {uploadMethod === "link" && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Enter video or image URL
+                </label>
+                <input
+                  type="text"
+                  value={videoUrl}
+                  onChange={handleUrlChange}
+                  className="w-full border border-gray-300 rounded-md p-3"
+                  placeholder="https://example.com/video.mp4"
+                />
+              </div>
+            )}
 
-        <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="p-4 pb-2">
-            <h3 className="text-sm font-medium">Conversion Rate</h3>
-          </div>
-          <div className="p-4 pt-0">
-            <div className="text-2xl font-bold">3.2%</div>
-            <p className="text-xs text-gray-500">+0.5% from last month</p>
-          </div>
-        </div>
-      </div>
+            {/* File upload method */}
+            {uploadMethod === "file" && (
+              <div
+                className={`mb-6 border-2 border-dashed rounded-lg p-8 text-center 
+                      ${
+                        dragActive
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-300"
+                      }`}
+                onDragEnter={handleDrag}
+                onDragOver={handleDrag}
+                onDragLeave={handleDrag}
+                onDrop={handleDrop}
+              >
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="video/mp4,video/mov,image/jpeg,image/png,image/gif"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <div className="flex flex-col items-center justify-center">
+                  <svg
+                    className="w-12 h-12 text-gray-400 mb-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    ></path>
+                  </svg>
+                  <p className="mb-2 text-sm text-gray-500">
+                    <span className="font-semibold">Click to upload</span> or
+                    drag and drop
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    MP4, MOV, JPEG, PNG or GIF
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => inputRef.current.click()}
+                    className="mt-4 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                  >
+                    Select File
+                  </button>
+                </div>
+              </div>
+            )}
 
-      {/* Charts section */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Performance by Creative Category Chart */}
-        <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="p-4">
-            <h3 className="text-xl font-semibold">
-              Performance by Creative Category
-            </h3>
-            <p className="text-sm text-gray-500">
-              CPI comparison across different creative concepts
-            </p>
-          </div>
-          <div className="p-0 px-4 pb-4" style={{ height: "360px" }}>
-            <Bar
-              data={performanceChartData}
-              options={performanceChartOptions}
-              style={{ width: "100%", height: "100%" }}
-            />
-          </div>
-        </div>
+            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-        {/* Creative Distribution Chart */}
-        <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="p-4">
-            <h3 className="text-xl font-semibold">Creative Distribution</h3>
-            <p className="text-sm text-gray-500">
-              Number of creatives by category and performance
-            </p>
-          </div>
-          <div className="p-0 px-4 pb-4" style={{ height: "360px" }}>
-            <Bar
-              data={distributionChartData}
-              options={distributionChartOptions}
-              style={{ width: "100%", height: "100%" }}
-            />
-          </div>
-        </div>
-      </div>
+            {/* Preview */}
+            {previewUrl && (
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  Preview
+                </h3>
+                <div className="border rounded-lg overflow-hidden w-[30%] h-[400px] relative">
+                  {previewUrl.toLowerCase().endsWith(".mp4") ||
+                  previewUrl.toLowerCase().endsWith(".mov") ||
+                  (selectedFile && selectedFile.type.startsWith("video/")) ? (
+                    <div className="h-full w-full relative overflow-hidden">
+                      {/* Video with blurred background */}
+                      <video
+                        src={previewUrl}
+                        className="absolute inset-0 w-full h-full object-cover blur-sm scale-110"
+                      />
 
-      {/* Top and Low Performers section */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Top Performers Card */}
-        <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="p-6">
-            <h3 className="text-xl font-semibold">Top Performing Creatives</h3>
-            <p className="text-sm text-gray-500">
-              Lowest CPI creatives across categories
-            </p>
-          </div>
-          <div className="p-6 pt-0">
-            <div className="space-y-4">
-              {topPerformers.map((creative, i) => (
-                <div key={i} className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                          creative.category === "Hook"
-                            ? "bg-blue-100 text-blue-800"
-                            : creative.category === "Demo"
-                            ? "bg-purple-100 text-purple-800"
-                            : creative.category === "Story"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-orange-100 text-orange-800"
-                        }`}
-                      >
-                        {creative.category}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {creative.name}
-                      </span>
+                      {/* Clear center video */}
+                      <div className="absolute inset-0 flex justify-center items-center">
+                        <div className="w-[70%] h-full overflow-hidden shadow-md">
+                          <video
+                            src={previewUrl}
+                            className="w-full h-full object-cover"
+                            controls
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500">
-                      {creative.description}
-                    </p>
-                  </div>
-                  <div className="text-sm font-medium text-green-600">
-                    ${creative.cpi} CPI
+                  ) : (
+                    <div className="h-full w-full relative overflow-hidden">
+                      {/* Image with blurred background */}
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="absolute inset-0 w-full h-full object-cover blur-sm scale-110"
+                      />
+
+                      {/* Clear center image */}
+                      <div className="absolute inset-0 flex justify-center items-center">
+                        <div className="w-[70%] h-full overflow-hidden shadow-md">
+                          <img
+                            src={previewUrl}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={analyzeCreative}
+              disabled={!previewUrl || loading}
+              className={`w-full bg-[#B9FF66] text-black py-3 px-6 rounded-md font-medium
+                    ${
+                      !previewUrl || loading
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:bg-[#a1ff33]"
+                    }`}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-black"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Analyzing...
+                </span>
+              ) : (
+                "Analyze Creative"
+              )}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Analysis result */}
+            <div className="border rounded-lg overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-12">
+                {/* Preview panel - Left side */}
+                <div className="md:col-span-5 bg-gray-100">
+                  <div className="h-[700px] w-full relative overflow-hidden">
+                    {previewUrl.toLowerCase().endsWith(".mp4") ||
+                    previewUrl.toLowerCase().endsWith(".mov") ||
+                    (selectedFile && selectedFile.type.startsWith("video/")) ? (
+                      <video
+                        src={previewUrl}
+                        className="w-full h-full object-cover"
+                        controls
+                      />
+                    ) : (
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
 
-        {/* Low Performers Card */}
-        <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="p-6">
-            <h3 className="text-xl font-semibold">Low Performing Creatives</h3>
-            <p className="text-sm text-gray-500">
-              Highest CPI creatives that need optimization
-            </p>
-          </div>
-          <div className="p-6 pt-0">
-            <div className="space-y-4">
-              {lowPerformers.map((creative, i) => (
-                <div key={i} className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                          creative.category === "Hook"
-                            ? "bg-blue-100 text-blue-800"
-                            : creative.category === "Demo"
-                            ? "bg-purple-100 text-purple-800"
-                            : creative.category === "Story"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-orange-100 text-orange-800"
-                        }`}
-                      >
-                        {creative.category}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {creative.name}
-                      </span>
+                {/* Analysis panel - Right side */}
+                <div className="md:col-span-7 p-6">
+                  <h3 className="text-xl font-semibold mb-6">
+                    Creative Analysis
+                  </h3>
+
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                      <div className="text-gray-500 text-sm mb-1">
+                        Creative Type
+                      </div>
+                      <div className="font-medium">
+                        {analysisResult.creative_type}
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500">
-                      {creative.description}
-                    </p>
+                    <div>
+                      <div className="text-gray-500 text-sm mb-1">
+                        Messaging Theme
+                      </div>
+                      <div className="font-medium">
+                        {analysisResult.messaging_theme}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-sm mb-1">
+                        Opening Hook
+                      </div>
+                      <div className="font-medium">
+                        {analysisResult.opening_hook}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-sm mb-1">Duration</div>
+                      <div className="font-medium">
+                        {analysisResult.duration_category}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-sm mb-1">
+                        Game Mechanic
+                      </div>
+                      <div className="font-medium">
+                        {analysisResult.game_mechanic}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-sm mb-1">
+                        Audio Profile
+                      </div>
+                      <div className="font-medium">
+                        {analysisResult.audio_profile}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-sm mb-1">Language</div>
+                      <div className="font-medium">
+                        {analysisResult.language_used}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-sm font-medium text-red-600">
-                    ${creative.cpi} CPI
+
+                  <div className="mb-6">
+                    <div className="text-gray-500 text-sm mb-2">
+                      Call to Action
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {analysisResult.call_to_action.map((cta, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                        >
+                          {cta}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <div className="text-gray-500 text-sm mb-2">
+                      Primary Colors
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {analysisResult.primary_colors.map((color, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
+                        >
+                          {color}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <div className="text-gray-500 text-sm mb-2">Meta Tags</div>
+                    <div className="flex flex-wrap gap-2">
+                      {analysisResult.meta_tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-gray-500 text-sm mb-2">
+                      Script Summary
+                    </div>
+                    <p className="text-sm">{analysisResult.script_summary}</p>
+                  </div>
+
+                  <div className="mt-6 flex justify-end">
+                    <button
+                      onClick={() => setAnalysisResult(null)}
+                      className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                    >
+                      Analyze Another
+                    </button>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
