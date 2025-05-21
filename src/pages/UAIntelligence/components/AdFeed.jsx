@@ -5,117 +5,87 @@ import { useNavigate } from "react-router-dom";
 const adData = [
   {
     id: 1,
-    title: "Match-3",
+    title: "Tripledot Studios",
     video:
-      "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/Candy+Crush+Saga.mp4",
-    watchTime: "00:30",
-    game: "Candy Crush Saga",
+      "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/Mahjong+Tile+Dynasty.mp4",
+    watchTime: "01:00",
+    game: "Mahjong Tile Dynastya",
     audience: {
-      age: "34",
-      geography: "US, UK, Canada",
-      gender: "Female - 50%",
+      age: "37",
+      geography: "-",
+      gender: "Female - 61%",
     },
     performance: "best",
     categories: ["Top games", "Inspiration"],
-    shareOfVoice: "5%",
+    shareOfVoice: "13.6%",
   },
   {
     id: 2,
-    title: "Match-3",
+    title: "Tripledot Studios",
     video:
-      "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/Royal+Match.mp4",
-    watchTime: "00:59",
-    game: "Royal Match ",
+      "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/Blossom+Match+-+Puzzle+Game.mp4",
+    watchTime: "01:00",
+    game: "Blossom Match - Puzzle Game",
     audience: {
-      age: "41",
-      geography: "US, Japan, South Korea",
+      age: "34",
+      geography: "-",
       gender: "Female - 64%",
     },
     performance: "best",
     categories: ["Competitors", "Top games"],
-    shareOfVoice: "8.7%",
+    shareOfVoice: "55.3%",
   },
   {
     id: 3,
-    title: "Match-3",
+    title: "Modern Times Group",
     video:
-      "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/Gardenscapes.mp4",
-    watchTime: "01:29",
-    game: "Garden Scapes",
+      "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/Tile+Match+puzzle+-+Tiletopia.mp4",
+    watchTime: "00:30",
+    game: "Tile Match puzzle - Tiletopia",
     audience: {
-      age: "36",
+      age: "37",
       geography: "US, Japan, Germany",
       gender: "Female 67%",
     },
     performance: "best",
     categories: ["Top games", "Inspiration", "Competitors"],
-    shareOfVoice: "11.5%",
+    shareOfVoice: "12%",
   },
   {
     id: 4,
-    title: "Home Decor Games",
+    title: "Brainit Games",
     video:
-      "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/Homescapes.mp4",
-    watchTime: "00:59",
-    game: "Homescapes",
+      "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/Mahjong+Solitaire+-+Tile+Match.mp4",
+    watchTime: "00:30",
+    game: "Mahjong Solitaire - Tile Match",
     audience: {
-      age: "35",
-      geography: "US, Japan, Germany",
-      gender: "Female 72%",
+      age: "40",
+      geography: "Brazil, New Zealand, Italy",
+      gender: "Female 58%",
     },
     performance: "best",
     categories: ["Top games", "Inspiration"],
-    shareOfVoice: "29.2%",
+    shareOfVoice: "5.6%",
   },
   {
     id: 5,
-    title: "Home Decor Games",
-    video:
-      "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/matchington+mansion.mp4",
-    watchTime: "00:54",
-    game: "Matchington Manshion ",
-    audience: { age: "36", geography: "US, Japan, UK", gender: "Female 73%" },
-    performance: "best",
-    categories: ["Top games", "Inspiration"],
-    shareOfVoice: "6.2%",
-  },
-  {
-    id: 6,
-    title: "Home Decor Games",
-    video:
-      "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/Dream+House+Design+Tile+Match.mp4",
-    watchTime: "00:22",
-    game: "Dream House Design: Tile Match ",
-    audience: {
-      age: "30",
-      geography: "US, Japan, Germany",
-      gender: "Female 86%",
-    },
-    performance: "best",
-    shareOfVoice: "20.4%",
-  },
-  {
-    id: 7,
-    title: "Tile Match",
+    title: "GamoVation",
     video:
       "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/Tile+Club+-+Match+Puzzle+Game.mp4",
     watchTime: "00:55",
-    game: "TiIle Club - Match Puzzle Game ",
-    audience: {
-      age: "36",
-      geography: "Us, Germany, Japan",
-      gender: "Female 64%",
-    },
+    game: "TiIe Club - Match Puzzle Game",
+    audience: { age: "36", geography: "US, Germany, Japan", gender: "Female 64%" },
     performance: "best",
+    categories: ["Top games", "Inspiration"],
     shareOfVoice: "12.1%",
   },
   {
-    id: 8,
-    title: "Tile Match ",
+    id: 6,
+    title: "Oakever Games",
     video:
       "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/Tile+Explorer-++Triple+Match.mp4",
     watchTime: "00:27",
-    game: "Tile Explorer - Triple Match ",
+    game: "DTile Explorer - Triple Match",
     audience: {
       age: "41",
       geography: "US, Japan, Germany",
@@ -125,15 +95,30 @@ const adData = [
     shareOfVoice: "9.4%",
   },
   {
-    id: 9,
-    title: "Tile Match ",
+    id: 7,
+    title: "Playflux",
     video:
       "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/Tile+Family+-+Match+Puzzle+Game.mp4",
     watchTime: "00:59",
-    game: "Tile Family: Match Puzzle Game ",
-    audience: { age: "37", geography: "US, UK, Japan", gender: "Female 77%" },
+    game: "Tile Family: Match Puzzle Game",
+    audience: {
+      age: "37",
+      geography: "US, UK, Japan",
+      gender: "Female 77%",
+    },
     performance: "best",
-    shareOfVoice: "37.60%",
+    shareOfVoice: "37.6%",
+  },
+  {
+    id: 8,
+    title: "Zen Match - Relaxing Puzzle",
+    video:
+      "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/rendered-videos/Zen+Match+-+Relaxing+Puzzle.mp4",
+    watchTime: "00:59",
+    game: "Zen Match - Relaxing Puzzle",
+    audience: { age: "35", geography: "US, Germany, UK", gender: "Female 82%" },
+    performance: "best",
+    shareOfVoice: "23.3%",
   },
 ];
 
@@ -186,14 +171,12 @@ export const VideoThumbnail = ({ videoSrc, alt, width, height }) => {
 
       {thumbnail ? (
         <div className={`h-[${height}px] w-full relative overflow-hidden`}>
-          {/* Blurred background version of the same image (larger and behind) */}
           <img
             src={thumbnail}
             alt={alt}
             className="absolute inset-0 w-full h-full object-cover blur-sm scale-110"
           />
 
-          {/* Clear center image with drop shadow */}
           <div className="absolute inset-0 flex justify-center items-center">
             <div className="w-[70%] h-full overflow-hidden shadow-md">
               <img
