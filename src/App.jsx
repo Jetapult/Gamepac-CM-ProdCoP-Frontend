@@ -55,6 +55,13 @@ import DataVisualization from "./pages/DataVisualization";
 import UAIntelligence from "./pages/UAIntelligence";
 import UACreativeAnalyser from "./pages/UAIntelligence/UACreativeAnalyser";
 import NewGameMarketIntelligence from "./pages/NewGameMarketIntelligence.jsx";
+import GameDesignDocument from "./pages/GameDesignDocument/index.jsx";
+import Collaboration from "./pages/GameDesignDocument/collaboration/Collaboration.jsx";
+import GDDList from "./pages/GameDesignDocument/gdd/index.jsx";
+import NewGDD from "./pages/GameDesignDocument/gdd/NewGDD.jsx";
+import GDDProject from "./pages/GameDesignDocument/gdd/Projects.jsx";
+import TranslatorPage from "./pages/GameDesignDocument/Translator/Translator.jsx";
+import ConceptGenerator from "./pages/GameDesignDocument/conceptGenerator/ConceptGenerator.jsx";
 
 
 function App() {
@@ -331,6 +338,14 @@ function App() {
             <Route path="/ua-intelligence" element={<PrivateRoute><UAIntelligence /></PrivateRoute>} />
             <Route path="/ua-intelligence/:ad_id" element={<PrivateRoute><UACreativeAnalyser /></PrivateRoute>} />
             <Route path="/market-intel" element={<PrivateRoute><NewGameMarketIntelligence /></PrivateRoute>} />
+            <Route path="/gdd" element={<PrivateRoute><GameDesignDocument /></PrivateRoute>} />
+            <Route path="/gdd/collaboration" element={<PrivateRoute><Collaboration /></PrivateRoute>} />
+            <Route path="/gdd-editor" element={<PrivateRoute><GDDList /></PrivateRoute>} />
+            <Route path="/gdd/new" element={<PrivateRoute><NewGDD /></PrivateRoute>} />
+            <Route path="/gdd/:projectId" element={<PrivateRoute><GDDProject /></PrivateRoute>} />
+            <Route path="/gdd/translator" element={<PrivateRoute><TranslatorPage /></PrivateRoute>} />
+            <Route path="/gdd/translator/:id" element={<PrivateRoute><TranslatorPage /></PrivateRoute>} />
+            <Route path="/gdd/concept-generator" element={<PrivateRoute><ConceptGenerator /></PrivateRoute>} />
             <Route
               path="*"
               element={<PageNotFound />}
