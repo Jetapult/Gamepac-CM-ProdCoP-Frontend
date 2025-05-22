@@ -178,7 +178,7 @@ export default function ConceptGenerator() {
       const concepts = generateMockConcepts(formValues);
       setGameConcepts(concepts);
       setPdfUrl(
-        "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/queryPac-lite/%5BHC%5D%5BTM%5D+Feature+Spec_+Lucky+Shovel.pdf"
+        "https://gamepacbucket.s3.ap-south-1.amazonaws.com/development/studioAssets/jetapult/queryPac-lite/Tile+Match_++New+Game.pdf"
       );
     } catch (error) {
       console.error("Error generating game concepts:", error);
