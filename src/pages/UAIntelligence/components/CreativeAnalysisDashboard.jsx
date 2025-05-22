@@ -11,23 +11,53 @@ const CreativeAnalysisDashboard = () => {
   const [error, setError] = useState("");
   const [analysisResult, setAnalysisResult] = useState(null);
 
-  // File input ref
   const inputRef = useRef(null);
 
-  // Sample analysis data (will be replaced with actual API response)
   const sampleAnalysisData = {
-    meta_tags: ["Animated"],
+    meta_tags: ["Real Actors"],
     creative_type: "Gameplay Footage",
-    messaging_theme: "Fail",
-    call_to_action: ["Try Now"],
-    primary_colors: ["Blue", "Yellow", "Red"],
-    audio_profile: "Music + SFX Only",
-    opening_hook: "Unexpected Humor",
+    messaging_theme: "Challenge",
+    call_to_action: ["Play Now"],
+    primary_colors: ["Blue", "Green", "Purple"],
+    audio_profile: "Music + Female Voiceover",
+    opening_hook: "Other (Display of detailed gameboard)",
     duration_category: "≤60s",
-    game_mechanic: "Other (Pull the pin)",
+    game_mechanic: "Match-3",
     language_used: "English",
     script_summary:
-      "The ad shows a scene of a cold house with a mother and daughter. The puzzle is to pull the correct pins to get coins for the house so they aren't cold anymore. The demonstration in the ad causes the gold to go into a fire which makes the characters cry. The game shows different scenarios. The ad ends with 'Try Again'.",
+      "The ad showcases a woman playing Zen Match on an iPad, followed by game screen. The woman clears the board. The ad ends with a call to action to 'Play Now'.",
+    scenes: [
+      {
+        scene_number: 1,
+        start_time: 0.0,
+        end_time: 55.333333333333336,
+        duration: 55.333333333333336,
+        start_frame: 0,
+        end_frame: 1660,
+        scene_description:
+          "A woman is playing the 'Zen Match' game on a tablet. She is using a stylus to match tiles on the screen. The game board is full of tiles, and she's working to clear them.",
+        visual_elements:
+          'A woman\'s hands holding a tablet, a stylus, the Zen Match game board displayed on the tablet screen with many tiles featuring various images (flowers, plants, fruits), a wooden table, and the Zen Match logo in the top left corner with the words "CLEAR THE BOARD" above the tablet.',
+        mood: "Calm, focused, and engaging. The visual of the game suggests it can be relaxing and fun.",
+        contribution_to_ad:
+          "The scene demonstrates the gameplay of 'Zen Match' and highlights the use of the touch screen with a stylus. It also emphasizes the visual appeal of the game to entice viewers to try it.",
+      },
+      {
+        scene_number: 2,
+        start_time: 55.333333333333336,
+        end_time: 58.666666666666664,
+        duration: 3.3333333333333286,
+        start_frame: 1660,
+        end_frame: 1760,
+        scene_description:
+          "The scene showcases gameplay from the Zen Match mobile game. A hand interacts with tiles on a mobile device screen, solving a puzzle. The screen changes to demonstrate different levels and tile arrangements within the game.",
+        visual_elements:
+          "Several mobile device screens are displayed with various levels from the Zen Match game loaded on them. A hand appears to be interacting with the tile matching gameplay. The game's logo, 'Zen Match,' is prominently displayed above the screens, and 'Play Now' and store download buttons are featured at the bottom of the screen.",
+        mood: "Calm, relaxed, and inviting. The visuals imply a simple and engaging puzzle experience.",
+        contribution_to_ad:
+          'This scene provides a direct demonstration of the game\'s core mechanics and visuals. It allows potential players to see the gameplay in action and promotes user engagement by encouraging players to choose a level and get started. The call to action "Play Now" emphasizes immediate accessibility.',
+      },
+    ],
   };
 
   // Handle file drop
@@ -138,7 +168,7 @@ const CreativeAnalysisDashboard = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
       {/* Left panel - History */}
-      <div className="md:col-span-3 border rounded-lg p-4 h-min">
+      <div className="md:col-span-3 border rounded-lg p-4 h-min bg-white">
         <h3 className="text-lg font-medium mb-4">History</h3>
         <div className="text-sm text-gray-500">
           {analysisResult ? (
@@ -159,7 +189,7 @@ const CreativeAnalysisDashboard = () => {
       {/* Right panel - Upload and Analysis */}
       <div className="md:col-span-9">
         {!analysisResult ? (
-          <div className="border rounded-lg p-6">
+          <div className="border rounded-lg p-6 bg-white">
             <h2 className="text-xl font-semibold mb-6">Upload Creative</h2>
 
             {/* Upload method toggle */}
@@ -168,8 +198,8 @@ const CreativeAnalysisDashboard = () => {
                 onClick={() => setUploadMethod("link")}
                 className={`px-4 py-2 rounded-l-md border ${
                   uploadMethod === "link"
-                    ? "bg-white border-gray-200"
-                    : "bg-gray-100 border-gray-300"
+                    ? "bg-gray-100 border-gray-200"
+                    : "bg-white border-gray-300"
                 }`}
               >
                 Enter Link
@@ -178,8 +208,8 @@ const CreativeAnalysisDashboard = () => {
                 onClick={() => setUploadMethod("file")}
                 className={`px-4 py-2 rounded-r-md border-t border-r border-b ${
                   uploadMethod === "file"
-                    ? "bg-white border-gray-200"
-                    : "bg-gray-100 border-gray-300"
+                    ? "bg-gray-100 border-gray-200"
+                    : "bg-white border-gray-300"
                 }`}
               >
                 Upload File
@@ -352,8 +382,8 @@ const CreativeAnalysisDashboard = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Analysis result */}
-            <div className="border rounded-lg overflow-hidden">
+            {/* Analysis result - Two columns for preview and basic info */}
+            <div className="border rounded-lg overflow-hidden bg-white">
               <div className="grid grid-cols-1 md:grid-cols-12">
                 {/* Preview panel - Left side */}
                 <div className="md:col-span-5 bg-gray-100">
@@ -376,7 +406,7 @@ const CreativeAnalysisDashboard = () => {
                   </div>
                 </div>
 
-                {/* Analysis panel - Right side */}
+                {/* Analysis panel - Right side (basic info only) */}
                 <div className="md:col-span-7 p-6">
                   <h3 className="text-xl font-semibold mb-6">
                     Creative Analysis
@@ -489,17 +519,54 @@ const CreativeAnalysisDashboard = () => {
                     </div>
                     <p className="text-sm">{analysisResult.script_summary}</p>
                   </div>
-
-                  <div className="mt-6 flex justify-end">
-                    <button
-                      onClick={() => setAnalysisResult(null)}
-                      className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
-                    >
-                      Analyze Another
-                    </button>
-                  </div>
                 </div>
               </div>
+            </div>
+            
+            {/* Scene by Scene Analysis - Full Width */}
+            <div className="border rounded-lg overflow-hidden bg-white p-6">
+              <h3 className="text-xl font-semibold mb-4">Scene by Scene Analysis</h3>
+              
+              <div className="space-y-4">
+                {analysisResult.scenes && analysisResult.scenes.map((scene, index) => (
+                  <div key={index} className="border rounded-md p-4 bg-gray-50">
+                    <div className="flex justify-between items-center mb-3">
+                      <h5 className="font-medium text-lg">Scene {scene.scene_number}</h5>
+                      <span className="text-sm text-gray-500">
+                        {scene.start_time.toFixed(1)}s - {scene.end_time.toFixed(1)}s 
+                        ({scene.duration.toFixed(1)}s)
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <div className="text-sm font-medium text-gray-500 mb-2">Description</div>
+                        <p className="mb-4">{scene.scene_description}</p>
+                      
+                        <div className="text-sm font-medium text-gray-500 mb-2">Visual Elements</div>
+                        <p>{scene.visual_elements}</p>
+                      </div>
+                      
+                      <div>
+                        <div className="text-sm font-medium text-gray-500 mb-2">Mood</div>
+                        <p className="mb-4">{scene.mood}</p>
+                        
+                        <div className="text-sm font-medium text-gray-500 mb-2">Contribution</div>
+                        <p>{scene.contribution_to_ad}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                onClick={() => {setAnalysisResult(null); setPreviewUrl(null)}}
+                className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+              >
+                Analyze Another
+              </button>
             </div>
           </div>
         )}
