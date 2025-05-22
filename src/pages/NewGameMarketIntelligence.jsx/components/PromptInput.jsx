@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 
-export function PromptInput() {
+export function PromptInput({ setIsLoadData }) {
   const [prompt, setPrompt] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [recentPrompts, setRecentPrompts] = useState([
@@ -42,6 +42,7 @@ export function PromptInput() {
               type="submit"
               disabled={isLoading}
               className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-[#b9ff66] focus:outline-none"
+              onClick={() => setIsLoadData(true)}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -60,7 +61,7 @@ export function PromptInput() {
                 <path d="M8 4v3m0 0L6.5 5.5M8 7 6.5 5.5" />
                 <path d="m6 20 4-3 1.5-3-4.5-4 3 1 .5-3.5 2 2 2-2 .5 3.5 3-1-4.5 4 1.5 3 4 3" />
               </svg>
-              {isLoading ? "Analyzing..." : "Generate Insights"}
+              {isLoading ? "Analyzing..." : "Generate Report"}
             </button>
           </div>
 
