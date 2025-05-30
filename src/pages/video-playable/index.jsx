@@ -14,7 +14,7 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 import * as PIXI from "pixi.js";
 import ModificationControls from "./components/ModificationControls";
 import { baseModificationState, initialState, ModificationType } from "./state";
-import { buildPlayableAd, compressAllAssets } from "./utils";
+import { compressAllAssets } from "./utils";
 import ToastMessage from "../../components/ToastMessage";
 import AssetSizeDisplay from './components/AssetSizeDisplay';
 import { CompressVideo } from "./utils/videoCompressor";
