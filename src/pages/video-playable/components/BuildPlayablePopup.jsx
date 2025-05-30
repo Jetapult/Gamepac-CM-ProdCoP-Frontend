@@ -131,6 +131,7 @@ const BuildPlayablePopup = ({
                   <input
                     type="checkbox"
                     className="form-checkbox h-5 w-5 text-purple-600 rounded"
+                    onChange={() => handleNetworkToggle(network)}
                   />
                   <span className="text-white flex items-center">
                     {network}
