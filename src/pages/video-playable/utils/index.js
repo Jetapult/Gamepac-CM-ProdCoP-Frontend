@@ -1,8 +1,9 @@
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import api from "../../../api";
+import { buildMintegralPlayable } from "./mintegralbuild";
 
-const blobToBase64 = (blob) => {
+export const blobToBase64 = (blob) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
@@ -11,7 +12,7 @@ const blobToBase64 = (blob) => {
   });
 };
 
-const generateHtmlTemplate = (videoPlayable, assets) => {
+export const generateHtmlTemplate = (videoPlayable, assets) => {
   return `
 <!DOCTYPE html>
 <html>
@@ -857,23 +858,30 @@ export const buildPlayableAd = async (videoPlayable, networks = ["Web"]) => {
       throw new Error("No video source found in general properties");
     }
 
-    // Convert all modification assets
-    for (const mod of videoPlayable.modifications) {
-      for (const sprite of mod.sprites) {
-        if (sprite.file) {
-          assets.images[sprite.id] = await blobToBase64(sprite.file);
+    // Convert all modification assets for Web, Facebook AND Mintegral builds
+    if (networks.includes("Web") || networks.includes("Facebook") || networks.includes("Mintegral")) {
+      for (const mod of videoPlayable.modifications) {
+        for (const sprite of mod.sprites) {
+          if (sprite.file) {
+            assets.images[sprite.id] = await blobToBase64(sprite.file);
+          }
         }
-      }
-      if (mod.backgroundMusic?.file) {
-        assets.audio[mod.id] = await blobToBase64(mod.backgroundMusic.file);
+        if (mod.backgroundMusic?.file) {
+          assets.audio[mod.id] = await blobToBase64(mod.backgroundMusic.file);
+        }
       }
     }
 
     // Create Web build if selected
     if (networks.includes("Web")) {
-      // Generate HTML file with animations
       const htmlTemplate = generateHtmlTemplate(videoPlayable, assets);
       mainZip.file("web-inline.html", htmlTemplate);
+    }
+
+    // Create Mintegral build if selected
+    if (networks.includes("Mintegral")) {
+      const mintegralZipBlob = await buildMintegralPlayable(videoPlayable);
+      mainZip.file("mintegral.zip", mintegralZipBlob);
     }
 
     // Create Facebook build if selected
