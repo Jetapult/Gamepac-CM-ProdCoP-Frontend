@@ -66,6 +66,7 @@ const SmartFeedback = ({
   const querytags = searchParams.get("tags");
   const gameIdparam = searchParams.get("gameId");
   const gameTypeparam = searchParams.get("gameType");
+  const reviewIds = searchParams.get("review_ids")
 
   const orderBy = [
     {
@@ -186,6 +187,9 @@ const SmartFeedback = ({
         const tags = [];
         selectedTags.filter((x) => tags.push(x.value));
         paramData.tags = tags.join(",");
+      }
+      if (reviewIds) {
+        paramData.reviewIds = reviewIds;
       }
       if (sortBy) {
         const sort_by = sortBy.value.split(" ");

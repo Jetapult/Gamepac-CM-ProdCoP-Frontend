@@ -6,6 +6,7 @@ import "./weeklyReport.css";
 import moment from "moment";
 import Select from "react-select";
 import NoData from "../../../../components/NoData";
+import { useSearchParams } from "react-router-dom";
 
 const WeeklyReport = ({ games, studio_slug, setGames }) => {
   const userData = useSelector((state) => state.user.user);
@@ -14,6 +15,10 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
   const [selectedGame, setSelectedGame] = useState({});
   const [selectedDate, setSelectedDate] = useState({});
   const [selectedTab, setSelectedTab] = useState("android");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const gameIdparam = searchParams.get("gameId");
+  const gameTypeparam = searchParams.get("gameType");
+  const dateparam = searchParams.get("date");
 
   const getSundays = (startDate, endDate) => {
     const start = new Date(startDate);
@@ -123,6 +128,24 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
       setSelectedDate(sundays[0]);
     }
   }, [sundays.length]);
+  useEffect(() => {
+    if (games.length) {
+      if (gameIdparam && gameTypeparam) {
+        const game = games.find((x) => parseInt(x.id) === parseInt(gameIdparam));
+        if (game) {
+          setSelectedGame({ ...game, platform: gameTypeparam });
+        }
+      } else {
+        const gameData = games[0];
+        setSelectedGame({ ...gameData, platform: "android" });
+      }
+    }
+  }, [games.length, gameIdparam, gameTypeparam]);
+  useEffect(() => {
+    if (dateparam) {
+      setSelectedDate(sundays.find((x) => x.value.start_date === dateparam));
+    }
+  }, [dateparam]);
   return (
     <div className="shadow-md bg-white w-full h-full p-4">
       <h1 className="text-2xl">Weekly Review Analysis Report</h1>
