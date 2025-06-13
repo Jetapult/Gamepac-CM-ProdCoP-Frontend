@@ -13,3 +13,23 @@
   box-sizing: border-box;
   padding: 0 10px;
 }
+.review-details-card:after {
+  content: "";
+  border-bottom: 1px solid #ccc;
+  border-right: 1px solid #ccc;
+  background-color: white;
+  position: absolute;
+  right: var(--triangle-right, 32%);
+  top: -10px;
+  width: 20px;
+  height: 20px;
+  transform: rotate(225deg);
+}
+@media (min-width: 1600px) {
+  .review-details-card:after {
+    right: var(--triangle-right, 10%);
+  }
+  .review-details-card {
+    right: auto !important;
+  }
+}
