@@ -40,8 +40,9 @@ const ModificationControls = ({
   videoPlayable,
   setVideoPlayable,
   handleRemoveTab,
+  selectedSpriteId,
+  setSelectedSpriteId,
 }) => {
-  const [activeSpriteId, setActiveSpriteId] = useState(null);
   const audioUploadRef = useRef(null);
 
   if (
@@ -121,7 +122,7 @@ const ModificationControls = ({
       updateModification({
         sprites: [...currentModification.sprites, newSprite],
       });
-      setActiveSpriteId(newSprite.id);
+      setSelectedSpriteId(newSprite.id);
       // Reset the input value so the user can select the same image again later.
       e.target.value = "";
     } catch (error) {
@@ -143,7 +144,7 @@ const ModificationControls = ({
         (_, index) => index !== spriteIndex
       ),
     });
-    setActiveSpriteId(null);
+    setSelectedSpriteId(null);
   };
 
   const renderTimeControls = () => {
@@ -327,8 +328,8 @@ const ModificationControls = ({
       )}
 
       <Sprites
-        activeSpriteId={activeSpriteId}
-        setActiveSpriteId={setActiveSpriteId}
+        activeSpriteId={selectedSpriteId}
+        setActiveSpriteId={setSelectedSpriteId}
         currentModification={currentModification}
         handleSpriteImageUpload={handleSpriteImageUpload}
         handleSpriteUpdate={handleSpriteUpdate}
