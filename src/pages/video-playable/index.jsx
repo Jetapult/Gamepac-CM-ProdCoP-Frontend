@@ -1099,7 +1099,10 @@ export default function VideoPlayable() {
           sprite._spriteId = spriteData.id; // Ensure sprite has ID
           sprite.__spriteId = spriteData.id; // Ensure both ID formats are set
           
-          handleSpriteSelection(spriteData.id);
+          // Only auto-select if no sprite is currently selected
+          if (!selectedSpriteId) {
+            handleSpriteSelection(spriteData.id);
+          }
           
           const border = updateSpriteBorder(sprite, app);
           if (border) {
@@ -1829,7 +1832,10 @@ export default function VideoPlayable() {
       sprite._spriteId = spriteData.id; // Ensure sprite has ID
       sprite.__spriteId = spriteData.id; // Ensure both ID formats are set
       
-      handleSpriteSelection(spriteData.id);
+      // Only auto-select if no sprite is currently selected
+      if (!selectedSpriteId) {
+        handleSpriteSelection(spriteData.id);
+      }
       
       const border = updateSpriteBorder(sprite, app);
       if (border) {
