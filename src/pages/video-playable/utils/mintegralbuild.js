@@ -295,11 +295,35 @@ export const buildMintegralPlayable = async (videoPlayable) => {
     for (const mod of videoPlayable.modifications) {
       for (const sprite of mod.sprites) {
         if (sprite.file) {
-          assets.images[sprite.id] = await blobToBase64(sprite.file);
+          try {
+            // Check if this is a library asset (has our mock file)
+            if (sprite.file.__isLibraryAsset) {
+              // For library assets, use the imageUrl directly (it's already a data URL)
+              assets.images[sprite.id] = sprite.imageUrl;
+            } else {
+              // For uploaded files, convert to base64
+              assets.images[sprite.id] = await blobToBase64(sprite.file);
+            }
+          } catch (error) {
+            console.error(`Error processing sprite ${sprite.id} in Mintegral build:`, error);
+            console.error('Sprite file details:', {
+              hasFile: !!sprite.file,
+              isLibraryAsset: sprite.file?.__isLibraryAsset,
+              fileType: typeof sprite.file,
+              fileName: sprite.file?.name,
+              hasImageUrl: !!sprite.imageUrl
+            });
+            throw new Error(`Failed to process sprite ${sprite.id} in Mintegral build: ${error.message}`);
+          }
         }
       }
       if (mod.backgroundMusic?.file) {
-        assets.audio[mod.id] = await blobToBase64(mod.backgroundMusic.file);
+        try {
+          assets.audio[mod.id] = await blobToBase64(mod.backgroundMusic.file);
+        } catch (error) {
+          console.error(`Error processing audio for modification ${mod.id} in Mintegral build:`, error);
+          throw new Error(`Failed to process audio for modification ${mod.id} in Mintegral build: ${error.message}`);
+        }
       }
     }
 
