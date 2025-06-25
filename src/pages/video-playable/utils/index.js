@@ -5,6 +5,16 @@ import { buildMintegralPlayable } from "./mintegralbuild";
 
 export const blobToBase64 = (blob) => {
   return new Promise((resolve, reject) => {
+    if (!blob) {
+      reject(new Error('Blob parameter is null or undefined'));
+      return;
+    }
+    
+    if (!(blob instanceof Blob) && !(blob instanceof File)) {
+      reject(new Error(`Invalid blob type: expected Blob or File, got ${typeof blob}. Object: ${JSON.stringify(blob)}`));
+      return;
+    }
+    
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
@@ -863,11 +873,35 @@ export const buildPlayableAd = async (videoPlayable, networks = ["Web"]) => {
       for (const mod of videoPlayable.modifications) {
         for (const sprite of mod.sprites) {
           if (sprite.file) {
-            assets.images[sprite.id] = await blobToBase64(sprite.file);
+            try {
+              // Check if this is a library asset (has our mock file)
+              if (sprite.file.__isLibraryAsset) {
+                // For library assets, use the imageUrl directly (it's already a data URL)
+                assets.images[sprite.id] = sprite.imageUrl;
+              } else {
+                // For uploaded files, convert to base64
+                assets.images[sprite.id] = await blobToBase64(sprite.file);
+              }
+            } catch (error) {
+              console.error(`Error processing sprite ${sprite.id}:`, error);
+              console.error('Sprite file details:', {
+                hasFile: !!sprite.file,
+                isLibraryAsset: sprite.file?.__isLibraryAsset,
+                fileType: typeof sprite.file,
+                fileName: sprite.file?.name,
+                hasImageUrl: !!sprite.imageUrl
+              });
+              throw new Error(`Failed to process sprite ${sprite.id}: ${error.message}`);
+            }
           }
         }
         if (mod.backgroundMusic?.file) {
-          assets.audio[mod.id] = await blobToBase64(mod.backgroundMusic.file);
+          try {
+            assets.audio[mod.id] = await blobToBase64(mod.backgroundMusic.file);
+          } catch (error) {
+            console.error(`Error processing audio for modification ${mod.id}:`, error);
+            throw new Error(`Failed to process audio for modification ${mod.id}: ${error.message}`);
+          }
         }
       }
     }
@@ -1045,7 +1079,24 @@ export const calculateTotalSize = async (videoPlayable) => {
       if (mod.sprites && mod.sprites.length > 0) {
         mod.sprites.forEach((sprite) => {
           if (sprite.file) {
-            const spriteSize = sprite.file.size || 0;
+            let spriteSize;
+            
+            // Handle library assets differently
+            if (sprite.file.__isLibraryAsset) {
+              // For library assets, estimate size from data URL or use default
+              if (sprite.imageUrl && sprite.imageUrl.startsWith('data:')) {
+                // Estimate size from data URL (base64 encoded)
+                const base64Data = sprite.imageUrl.split(',')[1];
+                spriteSize = base64Data ? Math.ceil(base64Data.length * 0.75) : 50 * 1024; // ~50KB default
+              } else {
+                // Default size for library assets
+                spriteSize = 50 * 1024; // 50KB default estimate
+              }
+            } else {
+              // For uploaded files, use actual file size
+              spriteSize = sprite.file.size || 0;
+            }
+            
             result.images += spriteSize;
             result.total += spriteSize;
 
@@ -1060,6 +1111,7 @@ export const calculateTotalSize = async (videoPlayable) => {
               size: spriteSize,
               imageUrl: sprite.imageUrl,
               file_type: sprite.file.type,
+              isLibraryAsset: sprite.file.__isLibraryAsset || false,
             });
           }
         });
@@ -1226,7 +1278,8 @@ export const compressAllAssets = async (videoPlayable, selectedAssets) => {
         if (
           sprite.file &&
           selectedImageIds.has(sprite.id) &&
-          sprite.file.type !== "image/gif"
+          sprite.file.type !== "image/gif" &&
+          !sprite.file.__isLibraryAsset // Don't try to compress library assets
         ) {
           try {
             // Compress the image using TinyPNG
@@ -1253,7 +1306,7 @@ export const compressAllAssets = async (videoPlayable, selectedAssets) => {
             compressedPlayable.modifications[i].sprites[j].file = sprite.file;
           }
         } else {
-          // Copy the original file for non-selected sprites
+          // Copy the original file for non-selected sprites or library assets
           compressedPlayable.modifications[i].sprites[j].file = sprite.file;
         }
       }

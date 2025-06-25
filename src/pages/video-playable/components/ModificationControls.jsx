@@ -1,10 +1,11 @@
-import { Pencil, Trash, Palette, X } from "lucide-react";
+import { Pencil, Trash, Palette, X, Upload, FolderOpen } from "lucide-react";
 import { Switch } from "@headlessui/react";
 import { initialSpriteState, ModificationType } from "../state";
 import { useRef, useState } from "react";
 import SpriteEditor from "./SpriteEditor";
 import React from "react";
 import { SketchPicker } from "react-color";
+import AssetLibraryModal from "./AssetLibraryModal";
 
 // Helper function to convert hex color into an RGB object
 const hexToRgb = (hex) => {
@@ -40,8 +41,9 @@ const ModificationControls = ({
   videoPlayable,
   setVideoPlayable,
   handleRemoveTab,
+  selectedSpriteId,
+  setSelectedSpriteId,
 }) => {
-  const [activeSpriteId, setActiveSpriteId] = useState(null);
   const audioUploadRef = useRef(null);
 
   if (
@@ -97,12 +99,13 @@ const ModificationControls = ({
     });
   };
 
-  const handleSpriteImageUpload = async (e) => {
+  const handleSpriteImageUpload = async (e, libraryImageUrl = null) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      const imageUrl = URL.createObjectURL(file);
+      // Use library imageUrl if provided, otherwise create object URL from file
+      const imageUrl = libraryImageUrl || URL.createObjectURL(file);
       const newSprite = {
         ...initialSpriteState,
         id: Date.now(),
@@ -121,7 +124,7 @@ const ModificationControls = ({
       updateModification({
         sprites: [...currentModification.sprites, newSprite],
       });
-      setActiveSpriteId(newSprite.id);
+      setSelectedSpriteId(newSprite.id);
       // Reset the input value so the user can select the same image again later.
       e.target.value = "";
     } catch (error) {
@@ -143,7 +146,7 @@ const ModificationControls = ({
         (_, index) => index !== spriteIndex
       ),
     });
-    setActiveSpriteId(null);
+    setSelectedSpriteId(null);
   };
 
   const renderTimeControls = () => {
@@ -327,12 +330,14 @@ const ModificationControls = ({
       )}
 
       <Sprites
-        activeSpriteId={activeSpriteId}
-        setActiveSpriteId={setActiveSpriteId}
+        activeSpriteId={selectedSpriteId}
+        setActiveSpriteId={setSelectedSpriteId}
         currentModification={currentModification}
         handleSpriteImageUpload={handleSpriteImageUpload}
         handleSpriteUpdate={handleSpriteUpdate}
         handleSpriteDelete={handleSpriteDelete}
+        updateModification={updateModification}
+        setSelectedSpriteId={setSelectedSpriteId}
       />
     </div>
   );
@@ -387,55 +392,93 @@ const Sprites = ({
   handleSpriteImageUpload,
   handleSpriteUpdate,
   handleSpriteDelete,
+  updateModification,
+  setSelectedSpriteId,
 }) => {
   const fileInputRef = useRef(null);
+  const [showAssetLibrary, setShowAssetLibrary] = useState(false);
+
+  const handleAssetLibrarySelect = async (file, imageUrl) => {
+    try {
+      const newSprite = {
+        ...initialSpriteState,
+        id: Date.now(),
+        file,
+        imageUrl,
+        onClickAction:
+          currentModification.type === ModificationType.OVERLAY
+            ? "nothing"
+            : currentModification.type === ModificationType.BREAK
+            ? "resume-video"
+            : currentModification.type === ModificationType.END_SCREEN
+            ? "open-store-url"
+            : "nothing",
+      };
+
+      updateModification({
+        sprites: [...currentModification.sprites, newSprite],
+      });
+      setSelectedSpriteId(newSprite.id);
+    } catch (error) {
+      console.error("Error adding sprite from library:", error);
+    }
+  };
+
   return (
     <>
       <div className="flex items-center">
         {currentModification.sprites.map((sprite, spriteIndex) => (
           <div
-            className="bg-white rounded border border-[#800080] mr-2 cursor-pointer"
-            onClick={() => setActiveSpriteId(sprite.id)}
+            className={`bg-white rounded border mr-2 cursor-pointer ${
+              sprite.id === activeSpriteId ? 'border-[#800080] border-2' : 'border-gray-300'
+            }`}
+            onClick={() => setSelectedSpriteId(sprite.id)}
             key={sprite.id}
           >
             <img
               src={sprite.imageUrl}
               className="w-8 h-8 object-cover rounded"
+              alt={`Sprite ${spriteIndex + 1}`}
             />
           </div>
         ))}
-        <div className="flex items-center justify-between">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleSpriteImageUpload}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 bg-[#b9ff66] px-4 py-1.5 rounded text-black"
-          >
-            Add Sprite
-          </button>
+        
+        {/* Upload Options */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAssetLibrary(true)}
+              className="flex items-center gap-2 bg-[#b9ff66] text-black px-3 py-1.5 rounded text-sm transition-colors"
+              title="Choose from asset library"
+            >
+              Asset
+            </button>
+          </div>
         </div>
       </div>
-      {/* <div className="flex items-center gap-2">
-        <button className="bg-[#b9ff66] px-4 py-1.5 rounded text-black">Choose from library</button>
-        <button className="bg-[#b9ff66] px-4 py-1.5 rounded text-black">Generate AI UGC Ad</button>
-      </div> */}
-      {currentModification.sprites.map(
-        (sprite, spriteIndex) =>
-          sprite.id === activeSpriteId && (
+      
+      <AssetLibraryModal
+        isOpen={showAssetLibrary}
+        onClose={() => setShowAssetLibrary(false)}
+        onSelectAsset={handleAssetLibrarySelect}
+      />
+      
+      {/* Sprite Editor */}
+      {currentModification.sprites.length > 0 && activeSpriteId && (
+        (() => {
+          const selectedSprite = currentModification.sprites.find(s => s.id === activeSpriteId);
+          const spriteIndex = currentModification.sprites.findIndex(s => s.id === activeSpriteId);
+          return selectedSprite ? (
             <SpriteEditor
-              key={sprite.id}
-              sprite={sprite}
+              key={selectedSprite.id}
+              sprite={selectedSprite}
               onUpdate={(updatedSprite) =>
                 handleSpriteUpdate(spriteIndex, updatedSprite)
               }
               onDelete={() => handleSpriteDelete(spriteIndex)}
             />
-          )
+          ) : null;
+        })()
       )}
     </>
   );
