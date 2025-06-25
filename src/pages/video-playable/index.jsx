@@ -142,6 +142,260 @@ export default function VideoPlayable() {
 
   // Create a ref that will hold the active audio elements keyed by modification id.
   const audioElementsRef = useRef({});
+  
+  const [selectedSpriteId, setSelectedSpriteId] = useState(null);
+  
+  const selectionTimeoutRef = useRef(null);
+  
+  const handleSpriteSelection = useCallback((spriteId) => {
+    if (selectionTimeoutRef.current) {
+      clearTimeout(selectionTimeoutRef.current);
+    }
+    
+    selectionTimeoutRef.current = setTimeout(() => {
+      setSelectedSpriteId(spriteId);
+    }, 10);
+  }, []);
+  
+  useEffect(() => {
+    return () => {
+      if (selectionTimeoutRef.current) {
+        clearTimeout(selectionTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  const safeDestroy = (obj) => {
+    if (!obj) return;
+    
+    try {
+      if (obj.destroyed === true) return;
+      
+      if (obj.parent && typeof obj.parent.removeChild === 'function') {
+        try {
+          obj.parent.removeChild(obj);
+        } catch (removeError) {
+          console.warn('Error removing from parent:', removeError.message);
+        }
+      }
+      
+      if (typeof obj.destroy === 'function') {
+        if (obj._texture && obj._texture.destroyed) return;
+        if (obj.texture && obj.texture.destroyed) return;
+        
+        obj.destroy({ children: true, texture: false, baseTexture: false });
+      }
+    } catch (error) {
+      console.warn('Safe destroy warning:', error.message);
+    }
+  };
+  
+  const createSpriteBorder = (sprite, app) => {
+    if (isPreviewMode || !sprite || !app) return null;
+    
+    const border = new PIXI.Graphics();
+    
+    border.eventMode = "none";
+    border.interactive = false;
+    
+    const drawBorder = () => {
+      try {
+        border.clear();
+        border.lineStyle(4, 0x00ff00, 0.9);
+        
+        let bounds;
+        try {
+          bounds = sprite.getLocalBounds();
+        } catch {
+          bounds = { x: 0, y: 0, width: sprite.width || 50, height: sprite.height || 50 };
+        }
+        
+        if (bounds && bounds.width > 0 && bounds.height > 0) {
+          const scaledWidth = bounds.width * sprite.scale.x;
+          const scaledHeight = bounds.height * sprite.scale.y;
+          
+          const borderX = bounds.x * sprite.scale.x;
+          const borderY = bounds.y * sprite.scale.y;
+          
+          border.drawRect(borderX, borderY, scaledWidth, scaledHeight);
+          
+          border.position.copyFrom(sprite.position);
+          border.scale.set(1, 1);
+          border.rotation = sprite.rotation;
+          border.alpha = 0.9;
+          border.zIndex = sprite.zIndex + 0.1;
+          
+          border._isBorder = true;
+          border._parentSpriteId = sprite._spriteId || sprite.__spriteId;
+        } else {
+          const defaultSize = 50;
+          border.drawRect(-defaultSize/2, -defaultSize/2, defaultSize, defaultSize);
+          border.position.copyFrom(sprite.position);
+          border.scale.set(1, 1);
+          border.rotation = sprite.rotation;
+          border.alpha = 0.9;
+          border.zIndex = sprite.zIndex + 0.1;
+          border._isBorder = true;
+          border._parentSpriteId = sprite._spriteId || sprite.__spriteId;
+        }
+      } catch (error) {
+        console.warn('Error drawing border:', error);
+      }
+    };
+    
+    if (sprite.texture && sprite.texture.baseTexture && sprite.texture.baseTexture.valid) {
+      drawBorder();
+    } else {
+      let attempts = 0;
+      const maxAttempts = 10;
+      const tryDrawBorder = () => {
+        if (sprite.texture && sprite.texture.baseTexture && sprite.texture.baseTexture.valid) {
+          drawBorder();
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(tryDrawBorder, 100);
+        } else {
+          drawBorder();
+        }
+      };
+      setTimeout(tryDrawBorder, 50);
+    }
+    
+    return border;
+  };
+  
+  const removeAllBorders = () => {
+    if (!pixiAppRef.current || !pixiAppRef.current.stage) return;
+    
+    try {
+      const children = [...pixiAppRef.current.stage.children];
+      children.forEach(child => {
+        if (child && child._isBorder) {
+          try {
+            safeDestroy(child);
+          } catch (error) {
+            console.warn('Error removing border:', error);
+          }
+        }
+      });
+    } catch (error) {
+      console.warn('Error in removeAllBorders:', error);
+    }
+  };
+
+  const updateSpriteBorder = (sprite, app) => {
+    if (isPreviewMode || !sprite || !app) return null;
+    
+    const spriteId = sprite._spriteId || sprite.__spriteId;
+    
+    const existingBorder = app.stage.children.find(child => 
+      child._isBorder && child._parentSpriteId === spriteId
+    );
+    
+    if (selectedSpriteId && spriteId === selectedSpriteId) {
+      if (existingBorder) {
+        try {
+          existingBorder.clear();
+          existingBorder.lineStyle(4, 0x00ff00, 0.9);
+          
+          existingBorder.eventMode = "none";
+          existingBorder.interactive = false;
+          
+          let bounds;
+          try {
+            bounds = sprite.getLocalBounds();
+          } catch {
+            bounds = { x: 0, y: 0, width: sprite.width || 50, height: sprite.height || 50 };
+          }
+          
+          if (bounds && bounds.width > 0 && bounds.height > 0) {
+            const scaledWidth = bounds.width * sprite.scale.x;
+            const scaledHeight = bounds.height * sprite.scale.y;
+            
+            const borderX = bounds.x * sprite.scale.x;
+            const borderY = bounds.y * sprite.scale.y;
+            
+            existingBorder.drawRect(borderX, borderY, scaledWidth, scaledHeight);
+            
+            existingBorder.position.copyFrom(sprite.position);
+            existingBorder.scale.set(1, 1);
+            existingBorder.rotation = sprite.rotation;
+            existingBorder.alpha = 0.9;
+            existingBorder.zIndex = sprite.zIndex + 0.1;
+          } else {
+            const defaultSize = 50;
+            existingBorder.drawRect(-defaultSize/2, -defaultSize/2, defaultSize, defaultSize);
+            existingBorder.position.copyFrom(sprite.position);
+            existingBorder.scale.set(1, 1);
+            existingBorder.rotation = sprite.rotation;
+            existingBorder.alpha = 0.9;
+            existingBorder.zIndex = sprite.zIndex + 0.1;
+          }
+          
+          return existingBorder;
+        } catch (error) {
+          console.warn('Error updating existing border:', error);
+          safeDestroy(existingBorder);
+        }
+      }
+      
+      const newBorder = createSpriteBorder(sprite, app);
+      if (newBorder) {
+        app.stage.addChild(newBorder);
+        return newBorder;
+      }
+    } else if (existingBorder) {
+      try {
+        safeDestroy(existingBorder);
+      } catch (error) {
+        console.warn('Error removing existing border:', error);
+      }
+    }
+    
+    return null;
+  };
+
+  const refreshSelectedSpriteBorder = () => {
+    if (isPreviewMode || !pixiAppRef.current || !selectedSpriteId) return;
+    
+    try {
+      const app = pixiAppRef.current;
+      
+      const selectedSprite = app.stage.children.find(child => {
+        const spriteId = child._spriteId || child.__spriteId;
+        return spriteId === selectedSpriteId && !child._isBorder;
+      });
+      
+      if (selectedSprite) {
+        const border = updateSpriteBorder(selectedSprite, app);
+        
+        if (border && !spritesRef.current.includes(border)) {
+          spritesRef.current.push(border);
+        }
+        
+        app.stage.sortChildren();
+      } else {
+        const orphanedBorders = app.stage.children.filter(child => 
+          child._isBorder && child._parentSpriteId === selectedSpriteId
+        );
+        
+        orphanedBorders.forEach(border => {
+          try {
+            safeDestroy(border);
+            const index = spritesRef.current.indexOf(border);
+            if (index > -1) {
+              spritesRef.current.splice(index, 1);
+            }
+          } catch (error) {
+            console.warn('Error removing orphaned border:', error);
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('Error refreshing border:', error);
+    }
+  };
+
   // On mount, initialize the PIXI app and attach its canvas to the right container
   useEffect(() => {
     if (pixiContainerRef.current) {
@@ -187,34 +441,50 @@ export default function VideoPlayable() {
   };
 
   const clearBreakContent = useCallback(() => {
-    if (!pixiAppRef.current) return;
+    if (!pixiAppRef.current || !pixiAppRef.current.stage) return;
 
-    // Clear all sprites
-    spritesRef.current?.forEach((sprite) => {
-      if (sprite && sprite?.destroy) {
-        sprite?.destroy();
+    try {
+      removeAllBorders();
+
+      if (spritesRef.current && Array.isArray(spritesRef.current)) {
+        spritesRef.current.forEach((sprite) => {
+          safeDestroy(sprite);
+        });
+        spritesRef.current = [];
       }
-    });
-    spritesRef.current = [];
 
-    // Reset stage
-    const app = pixiAppRef.current;
-    app.stage.removeChildren();
-    if (videoSpriteRef.current) {
-      app.stage.addChild(videoSpriteRef.current);
+      const app = pixiAppRef.current;
+      try {
+        app.stage.removeChildren();
+        if (videoSpriteRef.current) {
+          app.stage.addChild(videoSpriteRef.current);
+        }
+      } catch (error) {
+        console.warn('Error resetting stage:', error);
+      }
+    } catch (error) {
+      console.error('Error in clearBreakContent:', error);
     }
   }, []);
 
   const clearOverlayContent = () => {
-    if (!pixiAppRef.current) return;
-    // Remove any child marked as an overlay from the stage.
-    spritesRef.current = spritesRef.current.filter((child) => {
-      if (child.__isOverlay) {
-        pixiAppRef.current.stage.removeChild(child);
-        return false;
-      }
-      return true;
-    });
+    if (!pixiAppRef.current || !pixiAppRef.current.stage) return;
+    
+    try {
+      spritesRef.current = spritesRef.current.filter((child) => {
+        if (child && (child.__isOverlay || child._isBorder)) {
+          try {
+            safeDestroy(child);
+          } catch (error) {
+            console.warn('Error removing overlay/border child:', error);
+          }
+          return false;
+        }
+        return true;
+      });
+    } catch (error) {
+      console.warn('Error in clearOverlayContent:', error);
+    }
   };
 
   const addBreak = useCallback((time) => {
@@ -746,9 +1016,7 @@ export default function VideoPlayable() {
 
     // Clear previous sprites
     spritesRef.current.forEach((sprite) => {
-      if (sprite && sprite.destroy) {
-        sprite?.destroy();
-      }
+      safeDestroy(sprite);
     });
     spritesRef.current = [];
 
@@ -795,45 +1063,52 @@ export default function VideoPlayable() {
         // Set breakpoint sprite zIndex (now updated to 6)
         sprite.zIndex = 6;
 
-        sprite.on("pointerdown", () => {
-          // Check if the sprite is configured to open store URL
-          if (spriteData.onClickAction === "open-store-url") {
-            const storeUrl = videoPlayable.general.iosUrl || videoPlayable.general.playstoreUrl;
-            if (storeUrl) {
-              window.open(storeUrl, '_blank');
-            }
-            setToastMessage({
-              show: true,
-              message: "Store URL clicked",
-              type: "info"
-            });
-          } else {
-            // Default break behavior (resume video)
-            clearBreakContent();
-            if (
-              currentBreak.stopOnVideoResume &&
-              currentBreak.backgroundMusic?.file &&
-              audioElementsRef.current[currentBreak.id]
-            ) {
-              stopModificationAudio(audioElementsRef.current[currentBreak.id]);
-              delete audioElementsRef.current[currentBreak.id];
-            }
-            const videoElement =
-              videoSpriteRef.current.texture.baseTexture.resource.source;
-            videoElement
-              .play()
-              .then(() => {
-                setIsPlaying(true);
-                setActiveBreakIndex(-1);
-              })
-              .catch((error) => {
-                console.error("Error resuming video:", error);
-              });
+        sprite.on("pointerdown", (event) => {
+          if (!isPreviewMode) {
+            event.stopPropagation();
+            handleSpriteSelection(spriteData.id);
+            return;
           }
+          
+          clearBreakContent();
+          if (
+            currentBreak.stopOnVideoResume &&
+            currentBreak.backgroundMusic?.file &&
+            audioElementsRef.current[currentBreak.id]
+          ) {
+            stopModificationAudio(audioElementsRef.current[currentBreak.id]);
+            delete audioElementsRef.current[currentBreak.id];
+          }
+          const videoElement =
+            videoSpriteRef.current.texture.baseTexture.resource.source;
+          videoElement
+            .play()
+            .then(() => {
+              setIsPlaying(true);
+              setActiveBreakIndex(-1);
+            })
+            .catch((error) => {
+              console.error("Error resuming video:", error);
+            });
         });
 
         app.stage.addChild(sprite);
         spritesRef.current.push(sprite);
+        
+        if (!isPreviewMode) {
+          sprite._spriteId = spriteData.id; // Ensure sprite has ID
+          sprite.__spriteId = spriteData.id; // Ensure both ID formats are set
+          
+          // Only auto-select if no sprite is currently selected
+          if (!selectedSpriteId) {
+            handleSpriteSelection(spriteData.id);
+          }
+          
+          const border = updateSpriteBorder(sprite, app);
+          if (border) {
+            spritesRef.current.push(border);
+          }
+        }
       });
 
       // Ensure the video sprite is at the bottom
@@ -845,12 +1120,22 @@ export default function VideoPlayable() {
     app.stage.sortChildren();
 
     return () => {
-      spritesRef?.current?.forEach((sprite) => {
-        if (sprite && sprite?.destroy) {
-          sprite?.destroy();
+      if (spritesRef.current) {
+        if (Array.isArray(spritesRef.current)) {
+          spritesRef.current.forEach((sprite) => {
+            safeDestroy(sprite);
+          });
+        } else {
+          Object.values(spritesRef.current || {}).forEach((typeContainer) => {
+            Object.values(typeContainer || {}).forEach((parentContainer) => {
+              Object.values(parentContainer || {}).forEach((sprite) => {
+                safeDestroy(sprite);
+              });
+            });
+          });
         }
-      });
-      spritesRef.current = [];
+        spritesRef.current = [];
+      }
     };
   }, [activeBreakIndex, videoPlayable.modifications]);
 
@@ -921,7 +1206,14 @@ export default function VideoPlayable() {
           // Make the sprite interactive: on pointerdown resume video.
           sprite.eventMode = "static";
           sprite.cursor = "pointer";
-          sprite.on("pointerdown", () => {
+          sprite.on("pointerdown", (event) => {
+            if (!isPreviewMode) {
+              event.stopPropagation();
+              handleSpriteSelection(spriteData.id);
+              return;
+            }
+            
+            // In preview mode, handle break resume behavior
             clearBreakContent();
             // Only stop audio if stopOnVideoResume is true and audio is playing.
             if (
@@ -1014,14 +1306,24 @@ export default function VideoPlayable() {
 
   useEffect(() => {
     return () => {
-      Object.values(spritesRef.current || {}).forEach((typeContainer) => {
-        Object.values(typeContainer || {}).forEach((parentContainer) => {
-          Object.values(parentContainer || {}).forEach((sprite) => {
-            sprite?.destroy();
+      if (spritesRef.current) {
+        // Handle both array and nested object structures
+        if (Array.isArray(spritesRef.current)) {
+          spritesRef.current.forEach((sprite) => {
+            safeDestroy(sprite);
           });
-        });
-      });
-      spritesRef.current = [];
+        } else {
+          // Handle nested object structure
+          Object.values(spritesRef.current || {}).forEach((typeContainer) => {
+            Object.values(typeContainer || {}).forEach((parentContainer) => {
+              Object.values(parentContainer || {}).forEach((sprite) => {
+                safeDestroy(sprite);
+              });
+            });
+          });
+        }
+        spritesRef.current = [];
+      }
     };
   }, []);
 
@@ -1045,6 +1347,45 @@ export default function VideoPlayable() {
       videoElement.removeEventListener("ended", handleVideoEnd);
     };
   }, [stopBreakAudio, clearBreakContent]);
+
+  useEffect(() => {
+    if (!isPreviewMode) {
+      // Stop all active modification audios when preview is off.
+      Object.keys(audioElementsRef.current).forEach((modId) => {
+        stopModificationAudio(audioElementsRef.current[modId]);
+      });
+      // Clear the audio elements reference.
+      audioElementsRef.current = {};
+    } else {
+      // When entering preview mode, remove all borders and clear selected sprite
+      removeAllBorders();
+      setSelectedSpriteId(null);
+    }
+  }, [isPreviewMode]);
+
+  // Add useEffect to update borders when sprite properties change
+  useEffect(() => {
+    if (isPreviewMode || !pixiAppRef.current) return;
+    
+    // Debounce the border update to prevent excessive updates during rapid property changes
+    const timeoutId = setTimeout(() => {
+      refreshSelectedSpriteBorder();
+    }, 16); // Use requestAnimationFrame timing (16ms) for smooth updates
+
+    return () => clearTimeout(timeoutId);
+  }, [videoPlayable.modifications, activeTab, selectedSpriteId, isPreviewMode]);
+
+  // Separate useEffect for selectedSpriteId changes to ensure immediate border updates
+  useEffect(() => {
+    if (isPreviewMode || !pixiAppRef.current) return;
+    
+    // Immediate border update when sprite selection changes
+    const timeoutId = setTimeout(() => {
+      refreshSelectedSpriteBorder();
+    }, 5); // Very small delay for selection changes
+
+    return () => clearTimeout(timeoutId);
+  }, [selectedSpriteId]);
 
   useEffect(() => {
     if (!isPreviewMode) return;
@@ -1072,17 +1413,6 @@ export default function VideoPlayable() {
       }
     });
   }, [currentTime, isPreviewMode, videoPlayable.modifications]);
-
-  useEffect(() => {
-    if (!isPreviewMode) {
-      // Stop all active modification audios when preview is off.
-      Object.keys(audioElementsRef.current).forEach((modId) => {
-        stopModificationAudio(audioElementsRef.current[modId]);
-      });
-      // Clear the audio elements reference.
-      audioElementsRef.current = {};
-    }
-  }, [isPreviewMode]);
 
   const renderExpandableButtons = () => (
     <div
@@ -1283,6 +1613,8 @@ export default function VideoPlayable() {
             videoPlayable={videoPlayable}
             setVideoPlayable={setVideoPlayable}
             handleRemoveTab={handleRemoveTab}
+            selectedSpriteId={selectedSpriteId}
+            setSelectedSpriteId={setSelectedSpriteId}
           />
         );
       case "overlay":
@@ -1292,6 +1624,8 @@ export default function VideoPlayable() {
             videoPlayable={videoPlayable}
             setVideoPlayable={setVideoPlayable}
             handleRemoveTab={handleRemoveTab}
+            selectedSpriteId={selectedSpriteId}
+            setSelectedSpriteId={setSelectedSpriteId}
           />
         );
       case "end_screen":
@@ -1301,6 +1635,8 @@ export default function VideoPlayable() {
             videoPlayable={videoPlayable}
             setVideoPlayable={setVideoPlayable}
             handleRemoveTab={handleRemoveTab}
+            selectedSpriteId={selectedSpriteId}
+            setSelectedSpriteId={setSelectedSpriteId}
           />
         );
       default:
@@ -1407,6 +1743,8 @@ export default function VideoPlayable() {
   const handleTabClick = (tab) => {
     setActiveTab(tab);
 
+    setSelectedSpriteId(null);
+
     // Find the corresponding modification
     const modification = videoPlayable.modifications[tab.modificationIndex];
 
@@ -1464,11 +1802,20 @@ export default function VideoPlayable() {
     }
     
     // Enable interaction so we can detect clicks.
-    sprite.interactive = true;
-    sprite.buttonMode = true;
-    sprite.on("pointerdown", () => {
-      // If open store url is the assigned action, show toast message.
+    sprite.eventMode = "static";
+    sprite.cursor = "pointer";
+    sprite.on("pointerdown", (event) => {
+      if (!isPreviewMode) {
+        event.stopPropagation();
+        handleSpriteSelection(spriteData.id);
+        return;
+      }
+      
       if (spriteData.onClickAction === "open-store-url") {
+        const storeUrl = videoPlayable.general.iosUrl || videoPlayable.general.playstoreUrl;
+        if (storeUrl) {
+          window.open(storeUrl, '_blank');
+        }
         setToastMessage({
           show: true,
           message: "Store URL clicked",
@@ -1480,6 +1827,21 @@ export default function VideoPlayable() {
     
     app.stage.addChild(sprite);
     spritesRef.current.push(sprite);
+    
+    if (!isPreviewMode) {
+      sprite._spriteId = spriteData.id; // Ensure sprite has ID
+      sprite.__spriteId = spriteData.id; // Ensure both ID formats are set
+      
+      // Only auto-select if no sprite is currently selected
+      if (!selectedSpriteId) {
+        handleSpriteSelection(spriteData.id);
+      }
+      
+      const border = updateSpriteBorder(sprite, app);
+      if (border) {
+        spritesRef.current.push(border);
+      }
+    }
   };
 
   useEffect(() => {
