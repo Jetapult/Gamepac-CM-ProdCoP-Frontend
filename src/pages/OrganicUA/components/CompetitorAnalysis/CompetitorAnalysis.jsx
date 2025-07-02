@@ -4,17 +4,13 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Star,
-  RefreshCw,
-  Download,
   BarChart,
   LineChart,
   PieChart,
-  Filter,
-  ChevronDown,
-  Search,
   Loader,
+  ArrowLeft,
 } from "lucide-react";
-import { XMarkIcon } from "@heroicons/react/20/solid";
+import GameCard from "./GameCard";
 
 const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
   const [loading, setLoading] = useState(true);
@@ -24,15 +20,17 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
   const [gameData, setGameData] = useState(null);
   const [gameReviews, setGameReviews] = useState([]);
   const [openScreenshot, setOpenScreenshot] = useState(null);
-  
+
+  const [currentView, setCurrentView] = useState("list");
 
   const [selectedCompetitors, setSelectedCompetitors] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
-  const [isGamesDropdownOpen, setIsGamesDropdownOpen] = useState(false);
 
   const [sentimentData, setSentimentData] = useState(null);
   const [sentimentLoading, setSentimentLoading] = useState(false);
-  const [isAddNewGamePopupOpen, setIsAddNewGamePopupOpen] = useState(false);
+
+  const [selectedPlatform, setSelectedPlatform] = useState("ios");
+
   const studioId = userData?.studio_type?.includes("studio_manager")
     ? studios.filter((x) => x.slug === studio_slug)[0]?.id
     : userData?.studio_id;
@@ -40,14 +38,18 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
   const fetchCompetitorGames = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/v1/competitor-games", {
-        params: { studio_id: studioId },
-      });
-      setCompetitorGames(response.data.data);
+      const [iosResponse, androidResponse] = await Promise.all([
+        api.get(`/v1/app-overview/${studioId}/ios`),
+        api.get(`/v1/app-overview/${studioId}/android`),
+      ]);
+
+      const allGames = [...iosResponse.data.data, ...androidResponse.data.data];
+
+      setCompetitorGames(allGames);
 
       // Select the first game by default
-      if (response.data.data.length > 0) {
-        setSelectedGame(response.data.data[0]);
+      if (allGames.length > 0) {
+        setSelectedGame(allGames[0]);
       }
     } catch (err) {
       console.error("Error fetching competitor games:", err);
@@ -57,16 +59,11 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
     }
   };
 
-  // Fetch game details
-  const fetchGameDetails = async (gameId) => {
+  const fetchGameDetails = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/v1/competitor-games/${gameId}/data`);
-      setGameData(response.data.data);
-
-      // Set default competitors based on the game data
-      // This is just a placeholder - you'll need to adjust this based on your actual data structure
-      setSelectedCompetitors([response.data.data.competitor_name]);
+      setGameData(selectedGame);
+      setSelectedCompetitors([selectedGame.name]);
     } catch (err) {
       console.error("Error fetching game details:", err);
       setError("Failed to load game details");
@@ -75,34 +72,47 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
     }
   };
 
-  // Fetch game reviews
-  const fetchGameReviews = async (gameId) => {
+  const fetchGameReviews = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/v1/competitor-games/${gameId}/reviews`);
-      setGameReviews(response.data.data);
+      const response = await api.get(
+        `/v1/app-overview/reviews/${studioId}/${selectedGame.app_id}`
+      );
+      setGameReviews(response.data.data || []);
     } catch (err) {
       console.error("Error fetching game reviews:", err);
-      setError("Failed to load game reviews");
+      setGameReviews([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Function to fetch sentiment analysis data
   const fetchSentimentAnalysis = async (gameId) => {
     setSentimentLoading(true);
     try {
-      const response = await api.get(
-        `/v1/competitor-games/${gameId}/sentiment-analysis`
-      );
+      const response = await api.get(`/v1/app-overview/sentiment/${studioId}/${selectedGame.app_id}`);
       setSentimentData(response.data.data);
     } catch (err) {
       console.error("Error fetching sentiment analysis:", err);
-      setError("Failed to load sentiment analysis");
+      setSentimentData(null);
     } finally {
       setSentimentLoading(false);
     }
+  };
+
+  const handleGameCardClick = (game) => {
+    setSelectedGame(game);
+    setCurrentView("detail");
+    setActiveTab("overview");
+    setSentimentData(null);
+  };
+
+  const handleBackToList = () => {
+    setCurrentView("list");
+    setSelectedGame(null);
+    setGameData(null);
+    setGameReviews([]);
+    setSentimentData(null);
   };
 
   // Initial load
@@ -114,11 +124,11 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
 
   // Fetch game details and reviews when a game is selected
   useEffect(() => {
-    if (selectedGame) {
-      fetchGameDetails(selectedGame.id);
-      fetchGameReviews(selectedGame.id);
+    if (selectedGame && currentView === "detail") {
+      fetchGameDetails();
+      fetchGameReviews();
     }
-  }, [selectedGame]);
+  }, [selectedGame, currentView]);
 
   // Fetch sentiment data when switching to sentiment tab
   useEffect(() => {
@@ -127,7 +137,7 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
     }
   }, [activeTab, selectedGame]);
 
-  // Helper function to render star ratings - fixed version
+  // Helper function to render star ratings
   const renderStars = (rating) => {
     return (
       <div className="flex">
@@ -165,19 +175,6 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
     }
   };
 
-  // Function to refresh data
-  const handleRefreshData = () => {
-    if (selectedGame) {
-      fetchGameDetails(selectedGame.id);
-      fetchGameReviews(selectedGame.id);
-    }
-  };
-
-  // Helper to get platform data (Android or iOS)
-  const getPlatformData = (game) => {
-    return game?.android_data || game?.ios_data || null;
-  };
-
   // Helper function to render sentiment score bars
   const renderSentimentScore = (score, label) => {
     // Calculate color based on score
@@ -204,17 +201,17 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
   };
 
   // Loading state
-  if (loading && !gameData) {
+  if (loading && competitorGames.length === 0) {
     return (
       <div className="shadow-md bg-white w-full h-full p-4 flex items-center justify-center">
         <Loader className="w-8 h-8 animate-spin text-gray-400" />
-        <span className="ml-2">Loading competitor data...</span>
+        <span className="ml-2">Loading app data...</span>
       </div>
     );
   }
 
   // Error state
-  if (error && !gameData) {
+  if (error && competitorGames.length === 0) {
     return (
       <div className="shadow-md bg-white w-full h-full p-4 flex items-center justify-center">
         <div className="text-red-500">
@@ -230,131 +227,93 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
     );
   }
 
-  // Get the platform data for the selected game
-  const platformData = gameData ? getPlatformData(gameData) : null;
+  // Filter games by platform for display
+  const filteredGames = competitorGames.filter(
+    (game) => selectedPlatform === "all" || game.os === selectedPlatform
+  );
+
+  // Render list view
+  if (currentView === "list") {
+    return (
+      <div className="shadow-md bg-white w-full h-full p-4">
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between p-4 border-b">
+            <div>
+              <h1 className="text-2xl font-bold">App Performance Analysis</h1>
+              <p className="text-muted-foreground">
+                Analyze your studio's app performance and insights
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              {/* Platform filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Platform:</span>
+                <select
+                  value={selectedPlatform}
+                  onChange={(e) => setSelectedPlatform(e.target.value)}
+                  className="px-3 py-1 border rounded-md text-sm"
+                >
+                  <option value="all">All Platforms</option>
+                  <option value="ios">iOS</option>
+                  <option value="android">Android</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 p-4 overflow-auto">
+            {filteredGames.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <div className="mb-4">
+                  <BarChart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No Apps Found
+                  </h3>
+                  <p className="text-gray-500 mb-4">
+                    {selectedPlatform === "all"
+                      ? "No apps found for your studio. Make sure your studio has apps published on the app stores."
+                      : `No apps found for ${selectedPlatform.toUpperCase()}. Try switching to a different platform.`}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredGames.map((game) => (
+                  <GameCard
+                    key={`${game.id}-${game.os}`}
+                    game={game}
+                    onClick={() => handleGameCardClick(game)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const platformData = selectedGame;
 
   return (
     <div className="shadow-md bg-white w-full h-full p-4">
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between p-4 border-b">
-          <div>
-            <h1 className="text-2xl font-bold">Competitor Analysis</h1>
-            <p className="text-muted-foreground">
-              Compare your app's performance with competitors
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            {/* Game selector dropdown with label */}
-            <div className="flex flex-col">
-              <label
-                htmlFor="game-selector"
-                className="text-sm font-medium mb-1 text-gray-600"
-              >
-                Select a game to analyze
-              </label>
-              <div className="relative">
-                <button
-                  id="game-selector"
-                  className="flex items-center justify-between w-[220px] h-9 px-3 py-2 border rounded-md text-sm"
-                  onClick={() => setIsGamesDropdownOpen(!isGamesDropdownOpen)}
-                >
-                  <span className="truncate">
-                    {selectedGame?.competitor_name || "Select a game"}
-                  </span>
-                  <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
-                </button>
-                {isGamesDropdownOpen && (
-                  <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-                    <div className="py-1">
-                      <button
-                        className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 truncate"
-                        onClick={() => {
-                          setIsAddNewGamePopupOpen(true);
-                          setIsGamesDropdownOpen(false);
-                        }}
-                      >
-                        Add New Game
-                      </button>
-                      {competitorGames.map((game) => (
-                        <button
-                          key={game.id}
-                          className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 truncate"
-                          onClick={() => {
-                            setSelectedGame(game);
-                            setIsGamesDropdownOpen(false);
-                          }}
-                        >
-                          {game.competitor_name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Time Range:</span>
-              <div className="relative">
-                <button
-                  className="flex items-center justify-between w-[120px] h-9 px-3 py-2 border rounded-md text-sm"
-                  onClick={() => setIsTimeRangeOpen(!isTimeRangeOpen)}
-                >
-                  <span>{timeRange === "7" ? "Last 7 days" : 
-                         timeRange === "30" ? "Last 30 days" :
-                         timeRange === "90" ? "Last 90 days" : "Custom"}</span>
-                  <ChevronDown className="w-4 h-4 ml-2" />
-                </button>
-                {isTimeRangeOpen && (
-                  <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg">
-                    <div className="py-1">
-                      <button 
-                        className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100" 
-                        onClick={() => {setTimeRange("7"); setIsTimeRangeOpen(false);}}
-                      >
-                        Last 7 days
-                      </button>
-                      <button 
-                        className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
-                        onClick={() => {setTimeRange("30"); setIsTimeRangeOpen(false);}}
-                      >
-                        Last 30 days
-                      </button>
-                      <button 
-                        className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
-                        onClick={() => {setTimeRange("90"); setIsTimeRangeOpen(false);}}
-                      >
-                        Last 90 days
-                      </button>
-                      <button 
-                        className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
-                        onClick={() => {setTimeRange("custom"); setIsTimeRangeOpen(false);}}
-                      >
-                        Custom
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div> */}
-
-            {/* <button 
-              className="inline-flex items-center px-3 py-2 text-sm border rounded-md hover:bg-gray-100"
-              onClick={handleRefreshData}
-              disabled={loading}
+          <div className="flex items-center">
+            <button
+              onClick={handleBackToList}
+              className="inline-flex items-center px-3 py-2 text-sm border rounded-md hover:bg-gray-100 mr-4"
             >
-              {loading ? (
-                <Loader className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4 mr-2" />
-              )}
-              Refresh Data
+              <ArrowLeft className="w-4 h-4" />
             </button>
-            
-            <button className="inline-flex items-center px-3 py-2 text-sm border rounded-md hover:bg-gray-100">
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </button> */}
+            <div>
+              <h1 className="text-2xl font-bold">
+                {selectedGame?.name || "App Performance Analysis"}
+              </h1>
+              <p className="text-muted-foreground">
+                Detailed analysis and insights
+              </p>
+            </div>
           </div>
         </div>
 
@@ -369,7 +328,7 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
               </div>
               <div className="p-4 pt-0">
                 <div className="text-2xl font-bold">
-                  {platformData.score ? platformData.score.toFixed(1) : "N/A"}
+                  {platformData.rating ? platformData.rating.toFixed(1) : "N/A"}
                 </div>
                 <div className="mt-4">
                   {selectedCompetitors.map((competitor, index) => (
@@ -378,7 +337,7 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                       className="flex items-start justify-between mt-2"
                     >
                       <span className="text-sm">{competitor}</span>
-                      {platformData.score && renderStars(platformData.score)}
+                      {platformData.rating && renderStars(platformData.rating)}
                     </div>
                   ))}
                 </div>
@@ -393,9 +352,9 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
               </div>
               <div className="p-4 pt-0">
                 <div className="text-2xl font-bold">
-                  {platformData.reviews
-                    ? platformData.reviews.toLocaleString()
-                    : "N/A"}
+                  {platformData.global_rating_count
+                    ? platformData.global_rating_count.toLocaleString()
+                    : platformData.rating_count?.toLocaleString() || "N/A"}
                 </div>
                 <div className="mt-4">
                   {selectedCompetitors.map((competitor, index) => (
@@ -405,9 +364,10 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                     >
                       <span className="text-sm">{competitor}</span>
                       <span className="font-medium">
-                        {platformData.reviews
-                          ? platformData.reviews.toLocaleString()
-                          : "N/A"}
+                        {platformData.global_rating_count
+                          ? platformData.global_rating_count.toLocaleString()
+                          : platformData.rating_count?.toLocaleString() ||
+                            "N/A"}
                       </span>
                     </div>
                   ))}
@@ -415,85 +375,62 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
               </div>
             </div>
 
-            {/* Ratings distribution card */}
+            {/* Downloads/Revenue card */}
             <div className="border rounded-lg shadow-sm">
               <div className="flex flex-row items-center justify-between p-4 pb-2">
-                <h3 className="text-sm font-medium">Ratings Distribution</h3>
+                <h3 className="text-sm font-medium">Monthly Performance</h3>
                 <PieChart className="w-4 h-4 text-muted-foreground" />
               </div>
               <div className="p-4 pt-0">
-                <div className="text-2xl font-bold">
-                  {platformData.ratings
-                    ? platformData.ratings.toLocaleString()
-                    : "N/A"}{" "}
-                  ratings
+                <div className="text-lg font-bold">
+                  {platformData.last_month_downloads_string || "N/A"}
                 </div>
-                <div className="mt-4">
-                  {platformData.histogram && (
-                    <div className="space-y-2">
-                      {[5, 4, 3, 2, 1].map((star, index) => (
-                        <div key={star} className="flex items-center text-sm">
-                          <div className="w-12 text-right mr-2">
-                            <span>{star} ⭐</span>
-                          </div>
-                          <div className="w-[200px] bg-gray-200 h-2 rounded-full overflow-hidden">
-                            <div
-                              className="bg-yellow-400 h-full"
-                              style={{
-                                width: `${
-                                  platformData.ratings
-                                    ? (platformData.histogram[star - 1] /
-                                        platformData.ratings) *
-                                      100
-                                    : 0
-                                }%`,
-                              }}
-                            ></div>
-                          </div>
-                          <div className="w-16 ml-2 text-gray-500">
-                            {platformData.histogram[star - 1].toLocaleString()}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <div className="text-sm text-gray-500 mb-2">Downloads</div>
+                <div className="text-lg font-bold">
+                  {platformData.last_month_revenue_string || "N/A"}
                 </div>
+                <div className="text-sm text-gray-500">Revenue</div>
               </div>
             </div>
 
-            {/* Install data card */}
+            {/* App Info card */}
             <div className="border rounded-lg shadow-sm">
               <div className="flex flex-row items-center justify-between p-4 pb-2">
-                <h3 className="text-sm font-medium">Installs</h3>
+                <h3 className="text-sm font-medium">App Info</h3>
                 <LineChart className="w-4 h-4 text-muted-foreground" />
               </div>
               <div className="p-4 pt-0">
-                <div className="text-2xl font-bold">
-                  {platformData.installs || "N/A"}
-                </div>
-                <div className="mt-4 text-sm">
-                  <div className="flex justify-between mt-2">
-                    <span>Last Updated</span>
+                <div className="text-sm space-y-2">
+                  <div className="flex justify-between">
+                    <span>Platform</span>
+                    <span className="font-medium uppercase">
+                      {platformData.os}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Version</span>
                     <span className="font-medium">
-                      {platformData.last_updated
+                      {platformData.version || "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Released</span>
+                    <span className="font-medium">
+                      {platformData.release_date
                         ? new Date(
-                            platformData.last_updated
+                            platformData.release_date
                           ).toLocaleDateString()
                         : "N/A"}
                     </span>
                   </div>
-                  <div className="flex justify-between mt-2">
-                    <span>Released</span>
+                  <div className="flex justify-between">
+                    <span>Updated</span>
                     <span className="font-medium">
-                      {platformData.released
-                        ? new Date(platformData.released).toLocaleDateString()
+                      {platformData.updated_date
+                        ? new Date(
+                            platformData.updated_date
+                          ).toLocaleDateString()
                         : "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between mt-2">
-                    <span>Version</span>
-                    <span className="font-medium">
-                      {platformData.version || "N/A"}
                     </span>
                   </div>
                 </div>
@@ -530,24 +467,7 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
               >
                 Sentiment Analysis
               </button>
-              {/* <button 
-                className={`px-4 py-2 text-sm ${activeTab === "keywords" ? "bg-gray-100 font-medium" : ""}`}
-                onClick={() => setActiveTab("keywords")}
-              >
-                Keywords
-              </button> */}
             </div>
-
-            {/* <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="search"
-                  placeholder="Search reviews..."
-                  className="w-[200px] pl-8 h-9 px-3 py-2 border rounded-md"
-                />
-              </div>
-            </div> */}
           </div>
 
           {activeTab === "overview" && platformData && (
@@ -555,7 +475,7 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
               <div className="p-4">
                 <h3 className="text-lg font-semibold">App Details</h3>
                 <p className="text-sm text-gray-500">
-                  Information about {gameData?.competitor_name}
+                  Information about {platformData?.name}
                 </p>
               </div>
               <div className="p-4 grid md:grid-cols-2 gap-6">
@@ -564,26 +484,27 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                     {platformData.icon_url && (
                       <img
                         src={platformData.icon_url}
-                        alt={gameData?.competitor_name}
+                        alt={platformData?.name}
                         className="w-20 h-20 rounded-lg"
                       />
                     )}
                     <div>
-                      <h4 className="font-semibold">
-                        {gameData?.competitor_name}
-                      </h4>
+                      <h4 className="font-semibold">{platformData?.name}</h4>
                       <p className="text-sm text-gray-500">
-                        {platformData.developer || "Unknown Developer"}
+                        {platformData.publisher_name || "Unknown Developer"}
                       </p>
                       <p className="text-sm mt-1">
-                        Package: {gameData?.package_name}
+                        {platformData.os === "ios" ? "Bundle ID" : "Package"}:{" "}
+                        {platformData.bundle_id || platformData.package_name}
                       </p>
                     </div>
                   </div>
 
                   <div className="mb-4">
-                    <h5 className="font-medium mb-1">Summary</h5>
-                    <p className="text-sm">{platformData.summary}</p>
+                    <h5 className="font-medium mb-1">Description</h5>
+                    <p className="text-sm line-clamp-4">
+                      {platformData.description}
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 text-sm">
@@ -594,15 +515,15 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                     <div>
                       <h5 className="font-medium mb-1">Price</h5>
                       <p>
-                        {platformData.free
+                        {platformData.price === 0
                           ? "Free"
-                          : `${platformData.price} ${platformData.currency}`}
+                          : `$${platformData.price}`}
                       </p>
                     </div>
                     {platformData.in_app_purchases && (
                       <div className="col-span-2">
                         <h5 className="font-medium mb-1">In-App Purchases</h5>
-                        <p>{platformData.in_app_purchase_price}</p>
+                        <p>Available</p>
                       </div>
                     )}
                   </div>
@@ -645,7 +566,7 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
               <div className="p-4">
                 <h3 className="text-lg font-semibold">Latest Reviews</h3>
                 <p className="text-sm text-gray-500">
-                  Recent reviews for {gameData?.competitor_name}
+                  Recent reviews for {platformData?.name}
                 </p>
               </div>
               <div className="p-4">
@@ -665,32 +586,31 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                             Rating
                           </th>
                           <th className="h-10 px-2 text-left align-middle font-medium">
-                            Review
+                            Title & Content
                           </th>
                           <th className="h-10 px-2 text-left align-middle font-medium">
-                            Date
+                            Tags & Sentiment
+                          </th>
+                          <th className="h-10 px-2 text-left align-middle font-medium">
+                            Version & Date
                           </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {gameReviews.map((review) => (
-                          <tr key={review.review_id} className="border-b">
+                        {gameReviews.map((review, index) => (
+                          <tr
+                            key={review.review_id || index}
+                            className="border-b"
+                          >
                             <td className="p-2 align-middle font-medium">
                               <div className="flex items-center">
-                                {review.user_image ? (
-                                  <img
-                                    src={review.user_image}
-                                    alt=""
-                                    className="w-8 h-8 rounded-full mr-2"
-                                  />
-                                ) : (
-                                  <div className="w-8 h-8 rounded-full bg-gray-200 mr-2 flex items-center justify-center">
-                                    {review.user_name.charAt(0)}
-                                  </div>
-                                )}
-                                <span className="text-sm truncate max-w-32">
-                                  {review.user_name}
-                                </span>
+                                <div className="w-8 h-8 rounded-full bg-gray-200 mr-2 flex items-center justify-center">
+                                  {review.username?.charAt(0) || "U"}
+                                </div>
+                                <div>
+                                  <span className="text-sm font-semibold">{review.username || "Anonymous"}</span>
+                                  <div className="text-xs text-gray-400">{review.country}</div>
+                                </div>
                               </div>
                             </td>
                             <td className="p-2 align-middle">
@@ -699,7 +619,7 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                                   <Star
                                     key={star}
                                     className={`w-4 h-4 ${
-                                      star <= review.score
+                                      star <= (review.rating || 0)
                                         ? "fill-yellow-400 text-yellow-400"
                                         : "fill-muted text-muted-foreground"
                                     }`}
@@ -708,12 +628,41 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                               </div>
                             </td>
                             <td className="p-2 align-middle max-w-md">
-                              <p className="text-sm line-clamp-2">
-                                {review.content}
-                              </p>
+                              <div className="font-bold">{review.title}</div>
+                              <div className="text-sm">{review.content || "No review text"}</div>
+                              {review.parsed_content && review.parsed_content.length > 0 && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {review.parsed_content.flat().map((word, i) => (
+                                    <span key={i} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded">
+                                      {word}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </td>
-                            <td className="p-2 align-middle whitespace-nowrap">
-                              {new Date(review.created_at).toLocaleDateString()}
+                            <td className="p-2 align-middle">
+                              <div className="flex flex-wrap gap-1">
+                                {review.tags && review.tags.map((tag, i) => (
+                                  <span key={i} className="inline-block bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded">
+                                    {tag.replace(/_/g, " ")}
+                                  </span>
+                                ))}
+                              </div>
+                              <div className="mt-1">
+                                <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
+                                  review.sentiment === "happy"
+                                    ? "bg-green-100 text-green-800"
+                                    : review.sentiment === "unhappy"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}>
+                                  {review.sentiment}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="p-2 align-middle text-xs">
+                              <div>v{review.version}</div>
+                              <div>{review.review_date ? new Date(review.review_date).toLocaleDateString() : "N/A"}</div>
                             </td>
                           </tr>
                         ))}
@@ -734,7 +683,7 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
               <div className="p-4">
                 <h3 className="text-lg font-semibold">Sentiment Analysis</h3>
                 <p className="text-sm text-gray-500">
-                  Analysis of review sentiment for {gameData?.competitor_name}
+                  Analysis of review sentiment for {platformData?.name}
                 </p>
               </div>
               <div className="p-4">
@@ -750,75 +699,23 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
                       </h4>
 
                       {renderSentimentScore(
-                        sentimentData.gameDesign,
+                        sentimentData.gameDesign || 0,
                         "Game Design"
                       )}
                       {renderSentimentScore(
-                        sentimentData.customerSupport,
+                        sentimentData.customerSupport || 0,
                         "Customer Support"
                       )}
                       {renderSentimentScore(
-                        sentimentData.reliability,
+                        sentimentData.reliability || 0,
                         "Reliability"
                       )}
 
                       <div className="mt-4 text-sm text-gray-500">
-                        Based on analysis of {sentimentData.reviewCount} reviews
+                        Based on analysis of {sentimentData.reviewCount || 0}{" "}
+                        reviews
                       </div>
                     </div>
-
-                    {/* <div className="border rounded-lg p-4">
-                      <h4 className="text-base font-medium mb-4">Sentiment Distribution</h4>
-                      <div className="h-64 flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="flex justify-center">
-                            <div className="relative w-40 h-40 rounded-full">
-                              <div 
-                                className="absolute inset-0 bg-green-500 rounded-full" 
-                                style={{ 
-                                  clipPath: `polygon(50% 50%, 50% 0%, ${50 + 50 * Math.cos(2 * Math.PI * sentimentData.gameDesign/30)}% ${50 - 50 * Math.sin(2 * Math.PI * sentimentData.gameDesign/30)}%, 50% 50%)` 
-                                }}
-                              ></div>
-                              <div 
-                                className="absolute inset-0 bg-red-500 rounded-full" 
-                                style={{ 
-                                  clipPath: `polygon(50% 50%, ${50 + 50 * Math.cos(2 * Math.PI * sentimentData.gameDesign/30)}% ${50 - 50 * Math.sin(2 * Math.PI * sentimentData.gameDesign/30)}%, ${50 + 50 * Math.cos(2 * Math.PI * (sentimentData.gameDesign + sentimentData.customerSupport)/30)}% ${50 - 50 * Math.sin(2 * Math.PI * (sentimentData.gameDesign + sentimentData.customerSupport)/30)}%, 50% 50%)` 
-                                }}
-                              ></div>
-                              <div 
-                                className="absolute inset-0 bg-blue-500 rounded-full" 
-                                style={{ 
-                                  clipPath: `polygon(50% 50%, ${50 + 50 * Math.cos(2 * Math.PI * (sentimentData.gameDesign + sentimentData.customerSupport)/30)}% ${50 - 50 * Math.sin(2 * Math.PI * (sentimentData.gameDesign + sentimentData.customerSupport)/30)}%, ${50 + 50 * Math.cos(0)}% ${50 - 50 * Math.sin(0)}%, 50% 50%)` 
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                          <div className="flex justify-center mt-4 space-x-4">
-                            <div className="flex items-center">
-                              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                              <span className="text-sm">Game Design</span>
-                            </div>
-                            <div className="flex items-center">
-                              <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                              <span className="text-sm">Customer Support</span>
-                            </div>
-                            <div className="flex items-center">
-                              <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                              <span className="text-sm">Reliability</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div> */}
-
-                    {/* <div className="border rounded-lg p-4 md:col-span-2">
-                      <h4 className="text-base font-medium mb-4">Sentiment Over Time</h4>
-                      <div className="h-64 flex items-center justify-center border rounded-md bg-muted/10">
-                        <p className="text-muted-foreground">
-                          Sentiment trend chart would appear here
-                        </p>
-                      </div>
-                    </div> */}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
@@ -836,14 +733,7 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
           )}
         </div>
       </div>
-      {isAddNewGamePopupOpen && (
-        <AddNewGamePopup
-          onClose={() => setIsAddNewGamePopupOpen(false)}
-          studioId={studioId}
-          setCompetitorGames={setCompetitorGames}
-          setSelectedGame={setSelectedGame}
-        />
-      )}
+
       {openScreenshot && (
         <ImagePreviewPopup
           screenshots={openScreenshot.list}
@@ -851,115 +741,6 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
           onClose={() => setOpenScreenshot(null)}
         />
       )}
-    </div>
-  );
-};
-
-const AddNewGamePopup = ({ onClose, studioId, setCompetitorGames, setSelectedGame }) => {
-  const [gameName, setGameName] = useState("");
-  const [packageName, setPackageName] = useState("");
-  const [appStoreId, setAppStoreId] = useState("");
-  const [loading, setLoading] = useState(false);
- 
-
-  const onSubmit = async () => {
-    try{
-      setLoading(true);
-      const response = await api.post('/v1/competitor-games',{
-        studio_id: studioId,
-        competitor_name: gameName,
-        package_name: packageName,
-        app_id: appStoreId
-      });
-      setCompetitorGames(prev => [response.data.data, ...prev]);
-      setSelectedGame(response.data.data);
-      setLoading(false);
-      onClose();
-    } catch (error) {
-      console.error(error);
-      setLoading(false);
-    }
-  };
-  return (
-    <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none bg-[#12111157]">
-      <div className="relative my-6 mx-auto max-w-3xl w-[500px]">
-        <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
-          <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
-            <h3 className="text-2xl font-semibold whitespace-pre-line">
-              Add New Game
-            </h3>
-            <button
-              className="p-1 ml-auto border-0 text-black float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
-              onClick={onClose}
-            >
-              <XMarkIcon className="w-6 h-6 text-[#d6d6d6]" />
-            </button>
-          </div>
-          <div className="p-4">
-            <div className="mb-4">
-              <label htmlFor="game-name" className="text-sm font-medium">
-                Game Name
-              </label>
-              <input
-                type="text"
-                id="game-name"
-                className="w-full p-2 border rounded-md"
-                value={gameName}
-                onChange={(e) => setGameName(e.target.value)}
-              />
-            </div>
-            <div className="mb-4">
-              <label htmlFor="game-name" className="text-sm font-medium">
-                Package Name
-              </label>
-              <input
-                type="text"
-                id="game-name"
-                className="w-full p-2 border rounded-md"
-                value={packageName}
-                onChange={(e) => setPackageName(e.target.value)}
-              />
-            </div>
-            <div className="mb-4">
-              <label htmlFor="game-name" className="text-sm font-medium">
-                App Store ID
-              </label>
-              <input
-                type="text"
-                id="game-name"
-                className="w-full p-2 border rounded-md"
-                value={appStoreId}
-                onChange={(e) => setAppStoreId(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-4 border-t border-solid border-blueGray-200 p-4">
-            <button
-              className="bg-[#f3f3f3] text-[#000] px-4 py-2 rounded-md"
-              onClick={onClose}
-            >
-              Cancel
-            </button>
-            {(gameName && (packageName || appStoreId)) ? (
-              <>
-              {loading ? <Loader className="w-6 h-6 animate-spin text-gray-400" /> : <button
-                className="bg-[#B9FF66] text-[#000] px-4 py-2 rounded-md hover:bg-[#000] hover:text-[#B9FF66]"
-                onClick={onSubmit}
-              >
-                Create
-              </button>}
-              </>
-            ) : (
-              <button
-                className="bg-[#B9FF66] text-[#000] px-4 py-2 rounded-md opacity-50 cursor-not-allowed"
-                disabled
-              >
-                Create
-              </button>
-            )}
-          </div>
-        </div>
-      </div>       
     </div>
   );
 };

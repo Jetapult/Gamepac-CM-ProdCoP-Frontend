@@ -331,7 +331,6 @@ const ModificationControls = ({
 
       <Sprites
         activeSpriteId={selectedSpriteId}
-        setActiveSpriteId={setSelectedSpriteId}
         currentModification={currentModification}
         handleSpriteImageUpload={handleSpriteImageUpload}
         handleSpriteUpdate={handleSpriteUpdate}
@@ -387,7 +386,6 @@ const BackgroundEditor = ({ currentModification, updateModification }) => {
 
 const Sprites = ({
   activeSpriteId,
-  setActiveSpriteId,
   currentModification,
   handleSpriteImageUpload,
   handleSpriteUpdate,
