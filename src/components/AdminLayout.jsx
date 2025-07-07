@@ -43,6 +43,7 @@ const AdminLayout = ({ children }) => {
     setSelectedStudio(studio);
     dispatch(addStudioData(studio));
     localStorage.setItem("selectedStudio", studio.slug);
+    localStorage.setItem("selectedStudioId", studio.id);
     navigate(`/${studio.slug}/dashboard`);
     // if (parseInt(studio.id) !== parseInt(userData.studio_id)) {
     //   window.location.reload();

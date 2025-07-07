@@ -19,6 +19,7 @@ export const isAuthenticated = () => {
       localStorage.removeItem("jwt");
       localStorage.removeItem("loginTime");
       localStorage.removeItem("selectedStudio");
+      localStorage.removeItem("selectedStudioId");
       window.location.replace("/");
     }
     return JSON.parse(localStorage.getItem("jwt"));
@@ -32,5 +33,6 @@ export const logout = () => {
     localStorage.removeItem("jwt");
     localStorage.removeItem("loginTime");
     localStorage.removeItem("selectedStudio");
+    localStorage.removeItem("selectedStudioId");
   }
 };

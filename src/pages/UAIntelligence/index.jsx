@@ -9,15 +9,15 @@ const UAIntelligence = () => {
   const [isGameAnalyzed, setIsGameAnalyzed] = useState(false);
   return (
     <div>
-      {isGameAnalyzed ? (
-        <Feed />
-      ) : (
+      {/* {isGameAnalyzed ? ( */}
+      <Feed user={user} />
+      {/* ) : (
         <UserInput
           user={user}
           setAds={setAds}
           setIsGameAnalyzed={setIsGameAnalyzed}
         />
-      )}
+      )} */}
     </div>
   );
 };
