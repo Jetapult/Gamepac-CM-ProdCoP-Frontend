@@ -62,6 +62,7 @@ import NewGDD from "./pages/GameDesignDocument/gdd/NewGDD.jsx";
 import GDDProject from "./pages/GameDesignDocument/gdd/Projects.jsx";
 import TranslatorPage from "./pages/GameDesignDocument/Translator/Translator.jsx";
 import ConceptGenerator from "./pages/GameDesignDocument/conceptGenerator/ConceptGenerator.jsx";
+import { Chatbot } from "./pages/GamepacAIAssistant/chatbot.jsx";
 
 
 function App() {
@@ -353,6 +354,7 @@ function App() {
           </Routes>
         </Router>
       </>
+      <Chatbot />
     </div>
   );
 }
