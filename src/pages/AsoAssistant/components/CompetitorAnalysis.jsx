@@ -1,20 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   TrendingUp,
   Eye,
   Zap,
-  ArrowDownRight,
-  ArrowUpRight,
   Star,
   BarChart,
-  LineChart,
-  PieChart,
   Loader,
   ArrowLeft,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import api from "../../../api";
+import Pagination from "../../../components/Pagination";
 
 export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSelectedGame }) {
   const [loading, setLoading] = useState(true);
@@ -29,11 +28,29 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
   const [currentView, setCurrentView] = useState("list");
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedPlatform, setSelectedPlatform] = useState("ios");
-  const [descriptionTab, setDescriptionTab] = useState("selectedApp");
 
-  // Fetch competitor games
+  const [keywordData, setKeywordData] = useState([]);
+  const [keywordLoading, setKeywordLoading] = useState(false);
+  const [keywordError, setKeywordError] = useState(null);
+  const [keywordSearch, setKeywordSearch] = useState("");
+  const [keywordSearchInput, setKeywordSearchInput] = useState("");
+  const [keywordPage, setKeywordPage] = useState(1);
+  const [keywordTotalPages, setKeywordTotalPages] = useState(1);
+  const [keywordTotalItems, setKeywordTotalItems] = useState(0);
+  const [keywordSortBy, setKeywordSortBy] = useState("rank");
+  const [keywordSortOrder, setKeywordSortOrder] = useState("asc");
+
+  const lastStudioIdRef = useRef(null);
+  const isLoadingRef = useRef(false);
+
   const fetchCompetitorGames = async () => {
+    if (isLoadingRef.current) {
+      return;
+    }
+
+    isLoadingRef.current = true;
     setLoading(true);
+    
     try {
       const [iosResponse, androidResponse] = await Promise.all([
         api.get(`/v1/app-overview/${studioId}/ios`),
@@ -59,6 +76,7 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
       setError("Failed to load competitor games");
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
   };
 
@@ -96,12 +114,84 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
     }
   };
 
+  const handleKeywordSearch = (searchTerm) => {
+    setKeywordSearchInput(searchTerm);
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (keywordSearchInput !== keywordSearch) {
+        setKeywordSearch(keywordSearchInput);
+        setKeywordPage(1);
+        fetchKeywordData(keywordSearchInput, 1, keywordSortBy, keywordSortOrder);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [keywordSearchInput]);
+
+  const handleKeywordPageChange = (newPage) => {
+    setKeywordPage(newPage);
+    fetchKeywordData(keywordSearch, newPage, keywordSortBy, keywordSortOrder);
+  };
+
+  const handleKeywordSort = (sortBy, sortOrder) => {
+    setKeywordSortBy(sortBy);
+    setKeywordSortOrder(sortOrder);
+    setKeywordPage(1);
+    fetchKeywordData(keywordSearch, 1, sortBy, sortOrder);
+  };
+
+  const fetchKeywordData = async (search = "", page = 1, sortBy = "rank", sortOrder = "asc") => {
+    if (!selectedGame) return;
+    
+    setKeywordLoading(true);
+    setKeywordError(null);
+    
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "20",
+        sortBy,
+        sortOrder,
+      });
+      
+      if (search.trim()) {
+        params.append('search', search.trim());
+      }
+      
+      const response = await api.get(
+        `/v1/app-overview/current-keyword/${studioId}/${selectedGame.app_id}?${params}`
+      );
+      
+      setKeywordData(response.data.data || []);
+      setKeywordTotalPages(response.data.totalPages || 1);
+      setKeywordTotalItems(response.data.totalItems || 0);
+      setKeywordPage(response.data.currentPage || 1);
+    } catch (err) {
+      console.error("Error fetching keyword data:", err);
+      setKeywordError("Failed to load keyword data");
+      setKeywordData([]);
+    } finally {
+      setKeywordLoading(false);
+    }
+  };
+
+  const resetKeywordState = () => {
+    setKeywordData([]);
+    setKeywordSearch("");
+    setKeywordSearchInput("");
+    setKeywordPage(1);
+    setKeywordError(null);
+  };
+
   const handleGameCardClick = (game) => {
     setSelectedGame(game);
     setCurrentView("detail");
     setActiveTab("overview");
     setSentimentData(null);
     setGameReviews([]);
+    resetKeywordState();
   };
 
   const handleBackToList = () => {
@@ -109,30 +199,47 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
     setSelectedGame(null);
     setGameReviews([]);
     setSentimentData(null);
+    resetKeywordState();
   };
 
-  // Initial load
   useEffect(() => {
-    if (studioId) {
+    if (studioId && studioId !== lastStudioIdRef.current) {
+      lastStudioIdRef.current = studioId;
       fetchCompetitorGames();
     }
-  }, [studioId, propSelectedGame]);
+  }, [studioId]);
 
-  // Fetch game reviews when a game is selected
+  useEffect(() => {
+    if (propSelectedGame && competitorGames.length > 0) {
+      const matchingGame = competitorGames.find(game => 
+        game.app_id === propSelectedGame.app_id || 
+        game.name === propSelectedGame.game_name
+      );
+      if (matchingGame) {
+        setSelectedGame(matchingGame);
+        setCurrentView("detail");
+      }
+    }
+  }, [propSelectedGame, competitorGames]);
+
   useEffect(() => {
     if (selectedGame && currentView === "detail") {
       fetchGameReviews();
     }
   }, [selectedGame, currentView]);
 
-  // Fetch sentiment data when switching to sentiment tab
   useEffect(() => {
     if (activeTab === "ratings" && selectedGame && !sentimentData) {
       fetchSentimentAnalysis();
     }
   }, [activeTab, selectedGame]);
 
-  // Helper function to render sentiment score bars
+  useEffect(() => {
+    if (activeTab === "keywords" && selectedGame && keywordData.length === 0) {
+      fetchKeywordData();
+    }
+  }, [activeTab, selectedGame]);
+
   const renderSentimentScore = (score, label) => {
     const getColor = (score) => {
       if (score >= 8) return "bg-green-500";
@@ -156,7 +263,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
     );
   };
 
-  // Loading state
   if (loading && competitorGames.length === 0) {
     return (
       <div className="w-full">
@@ -168,7 +274,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
     );
   }
 
-  // Error state
   if (error && competitorGames.length === 0) {
     return (
       <div className="w-full">
@@ -187,12 +292,10 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
     );
   }
 
-  // Filter games by platform for display
   const filteredGames = competitorGames.filter(
     (game) => selectedPlatform === "all" || game.os === selectedPlatform
   );
 
-  // Game Card Component
   const GameCard = ({ game, onClick }) => (
     <div
       onClick={onClick}
@@ -230,7 +333,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
     </div>
   );
 
-  // Render list view
   if (currentView === "list") {
     return (
       <div className="w-full">
@@ -282,7 +384,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
     );
   }
 
-  // Render detail view with original ASO design
   return (
     <div className="w-full">
       <div className="border rounded-md p-6">
@@ -301,7 +402,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
           </div>
         </div>
 
-        {/* Selected App Info */}
         <div className="flex items-center p-3 border rounded-md bg-primary/5 border-primary/20 mb-6">
           {selectedGame?.icon_url ? (
             <img
@@ -321,7 +421,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="mb-6">
           <div className="flex space-x-1 border-b">
             {["overview", "keywords", "metadata", "ratings", "visuals"].map((tab) => (
@@ -340,12 +439,10 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
           </div>
         </div>
 
-        {/* Tab Content */}
         <div>
           {activeTab === "overview" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Rating Card */}
                 <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="p-4 pb-2">
                     <h3 className="text-sm font-medium flex items-center">
@@ -365,7 +462,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
                   </div>
                 </div>
 
-                {/* Content Rating Card */}
                 <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="p-4 pb-2">
                     <h3 className="text-sm font-medium flex items-center">
@@ -380,7 +476,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
                   </div>
                 </div>
 
-                {/* Update Frequency Card */}
                 <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="p-4 pb-2">
                     <h3 className="text-sm font-medium flex items-center">
@@ -397,7 +492,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
                   </div>
                 </div>
 
-                {/* Downloads/Revenue Card */}
                 <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="p-4 pb-2">
                     <h3 className="text-sm font-medium flex items-center">
@@ -426,14 +520,188 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
                 <div className="p-4 border-b">
                   <h3 className="text-base font-medium">Keyword Analysis</h3>
                   <p className="text-sm text-gray-500">
-                    Keyword data not available with current API endpoints
+                    Current keyword rankings for {selectedGame?.name}
                   </p>
                 </div>
-                <div className="p-4">
-                  <div className="text-center py-8 text-gray-500">
-                    <p>Keyword analysis requires additional API endpoints.</p>
-                    <p>Contact your administrator to enable keyword tracking.</p>
+                
+                <div className="p-4 border-b bg-gray-50">
+                  <div className="flex flex-col sm:flex-row gap-4 items-center">
+                    <div className="flex-1">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Search keywords..."
+                          value={keywordSearchInput}
+                          onChange={(e) => handleKeywordSearch(e.target.value)}
+                          className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                          <svg
+                            className="w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {keywordSearch.trim() && (
+                      <button
+                        onClick={() => {
+                          setKeywordSearchInput("");
+                          setKeywordSearch("");
+                          setKeywordPage(1);
+                          fetchKeywordData("", 1, keywordSortBy, keywordSortOrder);
+                        }}
+                        className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                      >
+                        Clear search
+                      </button>
+                    )}
                   </div>
+                  
+                  <div className="mt-3">
+                    <div className="text-sm text-gray-600">
+                      {keywordLoading ? (
+                        "Loading keywords..."
+                      ) : keywordError ? (
+                        <span className="text-red-600">{keywordError}</span>
+                      ) : (
+                        <>
+                          Showing {keywordData.length} of {keywordTotalItems} keywords
+                          {keywordSearch.trim() && (
+                            <span className="ml-2 text-blue-600 font-medium">
+                              for "{keywordSearch}"
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-4">
+                  {keywordLoading ? (
+                    <div className="flex justify-center items-center py-12">
+                      <Loader className="w-6 h-6 animate-spin text-gray-400" />
+                      <span className="ml-2 text-gray-500">Loading keywords...</span>
+                    </div>
+                  ) : keywordError ? (
+                    <div className="text-center py-12">
+                      <div className="text-red-600 mb-4">{keywordError}</div>
+                      <button
+                        onClick={() => fetchKeywordData(keywordSearch, keywordPage, keywordSortBy, keywordSortOrder)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : keywordData.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <svg
+                        className="w-12 h-12 mx-auto mb-4 text-gray-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      <p className="text-lg font-medium">No keywords found</p>
+                      <p className="text-sm">
+                        {keywordSearch.trim() 
+                          ? "Try adjusting your search terms or clear the search"
+                          : "No keyword data available for this app"}
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="overflow-x-auto">
+                        <table className="w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <button
+                                  onClick={() => {
+                                    const newOrder = keywordSortBy === 'rank' && keywordSortOrder === 'asc' ? 'desc' : 'asc';
+                                    handleKeywordSort('rank', newOrder);
+                                  }}
+                                  className="flex items-center gap-1 hover:text-gray-700 focus:outline-none"
+                                >
+                                  Rank
+                                  {keywordSortBy === 'rank' && (
+                                    keywordSortOrder === 'asc' ? (
+                                      <ChevronUp className="w-4 h-4" />
+                                    ) : (
+                                      <ChevronDown className="w-4 h-4" />
+                                    )
+                                  )}
+                                </button>
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Keyword
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Country
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {keywordData.map((keyword, index) => (
+                              <tr key={`${keyword.term}-${keyword.rank}-${index}`} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="flex items-center">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      keyword.rank <= 10 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : keyword.rank <= 30 
+                                        ? 'bg-yellow-100 text-yellow-800' 
+                                        : 'bg-red-100 text-red-800'
+                                    }`}>
+                                      #{keyword.rank}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {keyword.term}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-500">
+                                    {keyword.country}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      
+                      {keywordTotalPages > 1 && (
+                        <div className="mt-6">
+                          <Pagination
+                            totalReviews={keywordTotalItems}
+                            currentPage={keywordPage}
+                            limit={20}
+                            setCurrentPage={handleKeywordPageChange}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -453,7 +721,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
                 </div>
               </div>
 
-              {/* Subtitle */}
               <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                 <div className="p-4 border-b">
                   <h3 className="text-base font-medium">Subtitle</h3>
@@ -465,7 +732,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
                 </div>
               </div>
 
-              {/* Description */}
               <div className="border rounded-lg overflow-hidden bg-white shadow-sm md:col-span-2">
                 <div className="p-4 border-b">
                   <h3 className="text-base font-medium">Description</h3>
@@ -512,7 +778,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
           {activeTab === "ratings" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Rating Overview */}
                 <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="p-4 border-b">
                     <h3 className="text-base font-medium">Rating Overview</h3>
@@ -566,7 +831,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
                   </div>
                 </div>
 
-                {/* Sentiment Analysis */}
                 <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="p-4 border-b">
                     <h3 className="text-base font-medium">Review Sentiment Analysis</h3>
@@ -601,7 +865,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
                 </div>
               </div>
 
-              {/* Reviews Table */}
               <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                 <div className="p-4 border-b">
                   <h3 className="text-base font-medium">Latest Reviews</h3>
@@ -692,7 +955,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
 
           {activeTab === "visuals" && (
             <div className="space-y-6">
-              {/* App Icon */}
               <div>
                 <h3 className="font-medium mb-3">App Icon</h3>
                 <div className="flex items-center">
@@ -717,7 +979,6 @@ export default function ASOCompetitorAnalysis({ studioId, selectedGame: propSele
                 </div>
               </div>
 
-              {/* Screenshots */}
               <div>
                 <h3 className="font-medium mb-3">Screenshots</h3>
                 <div className="grid grid-cols-1 gap-6">
