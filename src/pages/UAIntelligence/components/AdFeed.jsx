@@ -2,15 +2,31 @@ import { useState } from "react";
 import PlaceholderImg from "../../../assets/placeholder.svg";
 import InfiniteScroll from "react-infinite-scroll-component";
 import moment from "moment";
+import { useNavigate } from "react-router-dom";
+import api from "../../../api";
 
 export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData, totalItems, filters }) {
   const [selectedAd, setSelectedAd] = useState(null);
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleAdClick = (ad) => {
     setSelectedAd(ad);
     setOpen(true);
   };
+
+  const analyseCreative = async () => {
+    try{
+      const isCreativeAnalysisPresent = await api.get(`/v1/ua-intel/media-analysis/creative-gallery/${selectedAd.id}`);
+      if(Object.keys(isCreativeAnalysisPresent.data.data).length > 0){
+        navigate(`/ua-intelligence/analyse/${isCreativeAnalysisPresent.data.data.id}`);
+      }else{
+        navigate(`/ua-intelligence/analyse?url=${selectedAd.creative_url}&ad_id=${selectedAd.id}`);
+      }
+    }catch(error){
+      console.log(error);
+    }
+  }
 
   const formatDuration = (seconds) => {
     if (!seconds) return null;
@@ -341,6 +357,7 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
                   </button>
                   <button
                     className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
+                    onClick={analyseCreative}
                   >
                     Analyse
                   </button>
