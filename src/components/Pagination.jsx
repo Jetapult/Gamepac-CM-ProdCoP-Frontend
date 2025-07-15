@@ -4,7 +4,7 @@ import FirstPageIcon from "../assets/first-page-icon.svg";
 import LastPageIcon from "../assets/last-page-icon.svg";
 
 const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
-  const totalPages = Math.ceil(totalReviews / 10);
+  const totalPages = Math.ceil(totalReviews / (limit || 10));
   const pageWindowSize = 5;
 
   let startPage = Math.max(1, currentPage - Math.floor(pageWindowSize / 2));
@@ -16,6 +16,9 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
   const setPage = (page) => {
     setCurrentPage(page);
   };
+
+  const startItem = ((currentPage - 1) * (limit || 10)) + 1;
+  const endItem = Math.min(currentPage * (limit || 10), totalReviews);
 
   return (
     <div className="flex items-center justify-between border-t border-gray-200 bg-white py-3 pl-4">
@@ -30,7 +33,7 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
         </a>
         <a
           onClick={() =>
-            Math.ceil(totalReviews / 10) > 1
+            totalPages > 1
               ? setCurrentPage((prev) => prev + 1)
               : {}
           }
@@ -40,10 +43,10 @@ const Pagination = ({ totalReviews, currentPage, limit, setCurrentPage }) => {
         </a>
       </div>
       <div>
-          {totalReviews > limit && (
+          {totalReviews > (limit || 10) && (
             <p className="text-sm text-gray-700">
-              Showing <span className="font-medium">{currentPage}</span> to{" "}
-              <span className="font-medium">{limit}</span> of{" "}
+              Showing <span className="font-medium">{startItem}</span> to{" "}
+              <span className="font-medium">{endItem}</span> of{" "}
               <span className="font-medium">{totalReviews}</span> results
             </p>
           )}
