@@ -96,12 +96,14 @@ function Navbar() {
         >
           {studioSlug ? (
             <>
-              {adminData.studio_logo && <img
-                src={adminData.studio_logo}
-                alt="Icon"
-                className={`w-auto h-10 mr-2 text-gray-600 inline`}
-                style={{ marginBottom: "0 rem" }}
-              />}
+              {adminData.studio_logo && (
+                <img
+                  src={adminData.studio_logo}
+                  alt="Icon"
+                  className={`w-auto h-10 mr-2 text-gray-600 inline`}
+                  style={{ marginBottom: "0 rem" }}
+                />
+              )}
             </>
           ) : (
             <img
@@ -162,26 +164,44 @@ function Navbar() {
               (studioSlug &&
                 studioSlug !== userData?.slug &&
                 userData?.studio_type?.includes("studio_manager")) ? (
-                <div
-                  className={`duration-150 hover:text-gray-500 relative ai-tools hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
-                    location.pathname.includes("organic-ua")
-                      ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
-                      : ""
-                  }`}
-                >
-                  <a
-                    className="block cursor-pointer"
-                    onClick={() =>
-                      navigate(
-                        studioSlug
-                          ? `/organic-ua/smart-feedback/${studioSlug}`
-                          : "/organic-ua/smart-feedback"
-                      )
-                    }
+                <>
+                  <div
+                    className={`duration-150 hover:text-gray-500 relative ai-tools hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
+                      location.pathname.includes("organic-ua")
+                        ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                        : ""
+                    }`}
                   >
-                    <div className="flex gap-2 items-center">Socials</div>
-                  </a>
-                </div>
+                    <a
+                      className="block cursor-pointer"
+                      onClick={() =>
+                        navigate(
+                          studioSlug
+                            ? `/organic-ua/smart-feedback/${studioSlug}`
+                            : "/organic-ua/smart-feedback"
+                        )
+                      }
+                    >
+                      <div className="flex gap-2 items-center">Socials</div>
+                    </a>
+                  </div>
+                  <div
+                    className={`duration-150 hover:text-gray-500 relative ai-tools hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
+                      location.pathname.includes("ua-intelligence")
+                        ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                        : ""
+                    }`}
+                  >
+                    <a
+                      className="block cursor-pointer"
+                      onClick={() =>
+                        navigate(`/ua-intelligence`)
+                      }
+                    >
+                      <div className="flex gap-2 items-center">UA Intel</div>
+                    </a>
+                  </div>
+                </>
               ) : (
                 <></>
               )}
@@ -206,8 +226,8 @@ function Navbar() {
                             setShowUserDropdown(false);
                           }}
                         >
-                            Note Taker
-                            <ChevronDownIcon className="w-5 h-5 inline ml-1" />
+                          Note Taker
+                          <ChevronDownIcon className="w-5 h-5 inline ml-1" />
                         </a>
                         {showNoteTakerDropdown && (
                           <div
@@ -237,22 +257,21 @@ function Navbar() {
                           </div>
                         )}
                       </li>
-                      <li
-                        className={`cursor-pointer duration-150 hover:text-gray-500 relative ai-tools hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
-                          location.pathname.includes("ai-")
-                            ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black  after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
-                            : ""
-                        }`}
-                      >
-                        <a
-                          className="block"
-                          onClick={() => navigate("/ai-tools")}
-                        >
-                            AI Tools
-                        </a>
-                      </li>
                     </>
                   )}
+                {!userData.studio_type?.includes("external_studio") && (
+                  <li
+                    className={`cursor-pointer duration-150 hover:text-gray-500 relative ai-tools hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
+                      location.pathname.includes("ai-")
+                        ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black  after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                        : ""
+                    }`}
+                  >
+                    <a className="block" onClick={() => navigate("/ai-tools")}>
+                      AI Tools
+                    </a>
+                  </li>
+                )}
                 {userData.studio_type?.includes("external_studio") && (
                   <ReactPopover trigger="hover" content={<p>Coming soon</p>}>
                     <div className="flex gap-2 items-center cursor-pointer">
