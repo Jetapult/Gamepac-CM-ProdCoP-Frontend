@@ -355,7 +355,7 @@ function App() {
           </Routes>
         </Router>
       </>
-      <Chatbot />
+      {/* <Chatbot /> */}
     </div>
   );
 }

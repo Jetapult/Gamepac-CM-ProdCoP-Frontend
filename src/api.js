@@ -13,3 +13,10 @@ const api = axios.create({
 });
 
 export default api;
+
+const papi = axios.create({
+  // baseURL: 'http://localhost:8000/papi',
+  baseURL: 'https://prod.gamepacai.com/papi',
+});
+
+export { papi };
