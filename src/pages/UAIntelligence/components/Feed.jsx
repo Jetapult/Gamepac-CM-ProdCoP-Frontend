@@ -29,7 +29,7 @@ const Feed = ({user}) => {
     minDuration: "",
     maxDuration: "",
     limit: 20,
-    sortBy: "first_seen_at",
+    sortBy: "share",
     sortOrder: "DESC"
   })
 
@@ -53,7 +53,7 @@ const Feed = ({user}) => {
     params.append('page', page.toString())
     params.append('limit', (filters?.limit || 20).toString())
     
-    params.append('sortBy', filters?.sortBy || 'first_seen_at')
+    params.append('sortBy', filters?.sortBy || 'share')
     params.append('sortOrder', filters?.sortOrder || 'DESC')
     
     if (filters?.search) {
