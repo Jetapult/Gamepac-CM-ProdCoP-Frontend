@@ -21,7 +21,7 @@ const Feed = ({user}) => {
   
   const [filters, setFilters] = useState({
     search: "",
-    latest_batch: true,
+    latest_batch: false,
     network: [],
     ad_type: [],
     startDate: "",

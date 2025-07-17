@@ -7,7 +7,7 @@ export default function FilterSidebar({ onFiltersChange, availableNetworks, avai
   
   const [filters, setFilters] = useState({
     search: "",
-    latest_batch: true,
+    latest_batch: false,
     network: [],
     ad_type: [],
     startDate: "",
@@ -80,7 +80,7 @@ export default function FilterSidebar({ onFiltersChange, availableNetworks, avai
   const resetFilters = () => {
     const defaultFilters = {
       search: "",
-      latest_batch: true,
+      latest_batch: false,
       network: [],
       ad_type: [],
       startDate: "",
@@ -299,7 +299,7 @@ export default function FilterSidebar({ onFiltersChange, availableNetworks, avai
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      {/* <div className="space-y-2">
                         <div className="flex items-center space-x-2">
                           <input 
                             type="checkbox" 
@@ -310,7 +310,7 @@ export default function FilterSidebar({ onFiltersChange, availableNetworks, avai
                           />
                           <label htmlFor="latest_batch" className="text-sm">Latest batch only</label>
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 )}
