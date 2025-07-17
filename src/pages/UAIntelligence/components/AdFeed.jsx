@@ -5,7 +5,15 @@ import moment from "moment";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api";
 
-export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData, totalItems, filters }) {
+export default function AdFeed({
+  adsData,
+  loading,
+  error,
+  hasMore,
+  loadMoreData,
+  totalItems,
+  filters,
+}) {
   const [selectedAd, setSelectedAd] = useState(null);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -16,23 +24,65 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
   };
 
   const analyseCreative = async () => {
-    try{
-      const isCreativeAnalysisPresent = await api.get(`/v1/ua-intel/media-analysis/creative-gallery/${selectedAd.id}`);
-      if(Object.keys(isCreativeAnalysisPresent.data.data).length > 0){
-        navigate(`/ua-intelligence/analyse/${isCreativeAnalysisPresent.data.data.id}`);
-      }else{
-        navigate(`/ua-intelligence/analyse?url=${selectedAd.creative_url}&ad_id=${selectedAd.id}`);
+    try {
+      const isCreativeAnalysisPresent = await api.get(
+        `/v1/ua-intel/media-analysis/creative-gallery/${selectedAd.id}`
+      );
+      if (Object.keys(isCreativeAnalysisPresent.data.data).length > 0) {
+        navigate(
+          `/ua-intelligence/analyse/${isCreativeAnalysisPresent.data.data.id}`
+        );
+      } else {
+        navigate(
+          `/ua-intelligence/analyse?url=${selectedAd.creative_url}&ad_id=${selectedAd.id}`
+        );
       }
-    }catch(error){
+    } catch (error) {
       console.log(error);
     }
-  }
+  };
 
   const formatDuration = (seconds) => {
     if (!seconds) return null;
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  const getNetworkLogo = (network) => {
+    const logos = {
+      'Facebook': '/src/assets/network-logos/facebook-logo.png',
+      'Instagram': '/src/assets/network-logos/Instagram_logo.webp',
+      'Admob': '/src/assets/network-logos/google-admob.svg',
+      'Youtube': '/src/assets/network-logos/youtube-logo.png',
+      'TikTok': '/src/assets/network-logos/tiktok-logo.png',
+      'Twitter': '/src/assets/network-logos/X-logo.jpg',
+      'Pinterest': '/src/assets/network-logos/Pinterest-logo.png',
+      'Snapchat': '/src/assets/network-logos/snapchat-logo.png',
+      'Line': '/src/assets/network-logos/line-logo.png',
+      'Unity': '/src/assets/network-logos/unity-logo.webp',
+      'Applovin': '/src/assets/network-logos/applovin.webp',
+      'Supersonic': '/src/assets/network-logos/supersonic-logo.png',
+      'Vungle': '/src/assets/network-logos/Liftoff_icon.webp',
+      'Chartboost': '/src/assets/network-logos/chartboost-logo.png',
+      'InMobi': '/src/assets/network-logos/InMobi-Logo.png',
+      'Tapjoy': '/src/assets/network-logos/tapjoy-logo.png',
+      'Mintegral': '/src/assets/network-logos/mintegral-logo.png',
+      'Pangle': '/src/assets/network-logos/pangle-logo.png',
+      'Smaato': '/src/assets/network-logos/smaato-logo.avif',
+      'Verve': '/src/assets/network-logos/verve-logo.png',
+      'Moloco': '/src/assets/network-logos/moloco-ads-logo.png',
+      'Adcolony': '/src/assets/network-logos/adcolony-logo.png',
+      'BidMachine': '/src/assets/network-logos/bid-machine-logo.png',
+      'Digital Turbine': '/src/assets/network-logos/digital-turbine.webp',
+      'Meta Audience Network': '/src/assets/network-logos/meta-logo.png',
+      'Mopub': '/src/assets/network-logos/mopub.png',
+      'IronSource': '/src/assets/network-logos/ironsource-logo.png',
+    };
+    
+    return logos[network] || null;
   };
 
   if (loading && adsData.length === 0) {
@@ -57,7 +107,9 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
           <div className="text-lg text-red-600 mb-2">{error}</div>
-          <div className="text-sm text-gray-500">Please try again or adjust your filters</div>
+          <div className="text-sm text-gray-500">
+            Please try again or adjust your filters
+          </div>
         </div>
       </div>
     );
@@ -68,7 +120,9 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
           <div className="text-lg text-gray-600 mb-2">No ads found</div>
-          <div className="text-sm text-gray-500">Try adjusting your filters</div>
+          <div className="text-sm text-gray-500">
+            Try adjusting your filters
+          </div>
         </div>
       </div>
     );
@@ -76,7 +130,7 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
 
   return (
     <>
-      <div className="mb-6 flex justify-between items-center">
+      <div className="flex justify-between items-center">
         <div className="flex items-center gap-4 flex-wrap">
           <span className="text-gray-600">
             Showing {adsData.length} of {totalItems} results
@@ -88,8 +142,11 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
           )}
           {filters?.network && filters.network.length > 0 && (
             <div className="flex gap-1 flex-wrap">
-              {filters.network.map(network => (
-                <span key={network} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+              {filters.network.map((network) => (
+                <span
+                  key={network}
+                  className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                >
                   {network}
                 </span>
               ))}
@@ -97,8 +154,11 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
           )}
           {filters?.ad_type && filters.ad_type.length > 0 && (
             <div className="flex gap-1 flex-wrap">
-              {filters.ad_type.map(adType => (
-                <span key={adType} className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+              {filters.ad_type.map((adType) => (
+                <span
+                  key={adType}
+                  className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm"
+                >
                   {adType}
                 </span>
               ))}
@@ -124,7 +184,9 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
             <div className="text-gray-400">
               <div className="text-center">
                 <div className="text-lg font-medium">That's all!</div>
-                <div className="text-sm">You've seen all {totalItems} results</div>
+                <div className="text-sm">
+                  You've seen all {totalItems} results
+                </div>
               </div>
             </div>
           </div>
@@ -132,15 +194,39 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
         scrollableTarget="scrollableDiv"
         height={"calc(100vh - 220px)"}
       >
-        <div 
-          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        >
-          {adsData.map((ad,index) => (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {adsData.map((ad, index) => (
             <div
               key={ad.id + index}
-              className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow cursor-pointer hover:shadow-lg transition-shadow"
+              className="relative overflow-hidden rounded-lg border border-gray-200 bg-white shadow cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => handleAdClick(ad)}
             >
+              <div className="p-2 flex">
+                <img
+                  src={ad.game_icon_url}
+                  alt="Game Icon"
+                  className="w-10 h-10 object-cover rounded-full"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+                <div className="flex flex-col pl-2">
+                  <p className="text-sm font-medium">{ad.game_name}</p>
+                  <div className="flex items-center gap-2">
+                    {getNetworkLogo(ad.network) && (
+                      <img
+                        src={getNetworkLogo(ad.network)}
+                        alt={ad.network}
+                        className="w-4 h-4 object-contain"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    )}
+                    <p className="text-xs text-gray-500">{ad.network}</p>
+                  </div>
+                </div>
+              </div>
               <div className="p-0">
                 <div className="relative">
                   <div className="h-[240px] w-full relative overflow-hidden">
@@ -154,10 +240,12 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
                             e.target.src = PlaceholderImg;
                           }}
                         />
-                        
+
                         <div className="absolute inset-0 flex justify-center items-center">
                           <div className="w-[70%] h-full overflow-hidden shadow-md">
-                            {ad.video_duration && (ad.creative_url?.includes('.mp4') || ad.preview_url?.includes('.mp4')) ? (
+                            {ad.video_duration &&
+                            (ad.creative_url?.includes(".mp4") ||
+                              ad.preview_url?.includes(".mp4")) ? (
                               <video
                                 src={ad.thumb_url}
                                 className="w-full h-full object-cover"
@@ -166,13 +254,18 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
                                 onMouseEnter={(e) => e.target.play()}
                                 onMouseLeave={(e) => e.target.pause()}
                                 onError={(e) => {
-                                  e.target.style.display = 'none';
-                                  e.target.nextSibling.style.display = 'block';
+                                  e.target.style.display = "none";
+                                  e.target.nextSibling.style.display = "block";
                                 }}
                               />
                             ) : (
                               <img
-                                src={ad.thumb_url || ad.creative_url || ad.preview_url || PlaceholderImg}
+                                src={
+                                  ad.thumb_url ||
+                                  ad.creative_url ||
+                                  ad.preview_url ||
+                                  PlaceholderImg
+                                }
                                 alt={ad.title}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
@@ -184,7 +277,7 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
                               src={ad.thumb_url || PlaceholderImg}
                               alt={ad.title}
                               className="w-full h-full object-cover"
-                              style={{ display: 'none' }}
+                              style={{ display: "none" }}
                             />
                           </div>
                         </div>
@@ -203,69 +296,71 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
                       {ad.ad_type}
                     </span>
                   </div>
-                  <div className="absolute left-2 top-2">
+                  {/* <div className="absolute left-2 top-2">
                     <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-green-100 text-green-800">
                       {ad.network}
                     </span>
-                  </div>
-                  
-                  {ad.game_icon_url && (
-                    <div className="absolute bottom-2 left-2">
-                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-white shadow-md border border-gray-200">
-                        <img
-                          src={ad.game_icon_url}
-                          alt="Game Icon"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
+                  </div> */}
                   {ad.video_duration && (
                     <div className="absolute bottom-2 right-2">
                       <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-black bg-opacity-70 text-white">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
                         </svg>
                         {formatDuration(ad.video_duration)}
                       </span>
                     </div>
                   )}
                 </div>
-                
-                <div className="p-4">
-                  <h3 className="mb-2 font-semibold line-clamp-2">{ad.title}</h3>
+                <p className="text-[11px] text-gray-500 text-right pt-1 pr-2">{moment(ad.first_seen_at).format("DD-MM-YYYY")} ~ {moment(ad.last_seen_at).format("DD-MM-YYYY")}</p>
+
+                <div className="p-3 px-4 min-h-[140px]">
+                  {ad.title && <h3 className="mb-2 text-sm line-clamp-2">
+                    {ad.title}
+                  </h3>}
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     {ad.video_duration && (
                       <div>
                         <p className="text-gray-500">Duration</p>
-                        <p className="font-medium">{formatDuration(ad.video_duration)}</p>
+                        <p className="font-medium">
+                          {formatDuration(ad.video_duration)}
+                        </p>
                       </div>
                     )}
-                    <div>
+                    {ad?.share &&<div>
                       <p className="text-gray-500">Share of Voice</p>
-                      <p className="font-medium">{(ad.share * 100).toFixed(1)}%</p>
-                    </div>
+                      <p className="font-medium">
+                        {(ad?.share * 100)?.toFixed(2)}%
+                      </p>
+                    </div>}
                     {ad.width && ad.height && (
                       <div>
                         <p className="text-gray-500">Dimensions</p>
-                        <p className="font-medium">{ad.width}x{ad.height}</p>
+                        <p className="font-medium">
+                          {ad.width}x{ad.height}
+                        </p>
                       </div>
                     )}
                     <div>
                       <p className="text-gray-500">Last Seen</p>
-                      <p className="font-medium">{moment(ad.last_seen_at).format("DD-MM-YYYY")}</p>
+                      <p className="font-medium">
+                        {moment(ad.last_seen_at).format("DD-MM-YYYY")}
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="flex justify-between bg-gray-50 px-4 py-2">
-                <span className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-0.5 text-xs font-medium">
-                  {ad.button_text || "View"}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 font-medium">CTA :</span>
+                  <span className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-0.5 text-xs font-medium">
+                    {ad.button_text || "View"}
+                  </span>
+                </div>
                 <button
                   className="inline-flex items-center justify-center rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   onClick={(e) => {
@@ -315,8 +410,8 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
                       className="w-full h-full object-contain bg-black"
                       controls
                       onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'block';
+                        e.target.style.display = "none";
+                        e.target.nextSibling.style.display = "block";
                       }}
                     />
                   ) : (
@@ -330,12 +425,12 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
                     />
                   )}
                 </div>
-                
+
                 <div className="mt-4 flex gap-2 items-center">
                   <button
                     className="flex-1 rounded-md bg-[#b9ff66] px-4 py-2"
                     onClick={() => {
-                      window.open(selectedAd.creative_url, "_blank")
+                      window.open(selectedAd.creative_url, "_blank");
                     }}
                   >
                     <svg
@@ -363,7 +458,7 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
                   </button>
                 </div>
               </div>
-              
+
               <div className="grid gap-4">
                 <div>
                   <h3 className="mb-2 text-lg font-semibold">Ad Information</h3>
@@ -375,52 +470,81 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
                           alt="Game Icon"
                           className="w-8 h-8 rounded object-cover"
                           onError={(e) => {
-                            e.target.style.display = 'none';
+                            e.target.style.display = "none";
                           }}
                         />
                         <div>
                           <p className="text-sm text-gray-500">Game</p>
-                          <p className="text-lg font-semibold">{selectedAd.game_name || "Game"}</p>
+                          <p className="text-lg font-semibold">
+                            {selectedAd.game_name || "Game"}
+                          </p>
                         </div>
                       </div>
                     )}
                     <div className="rounded-lg bg-gray-100 p-3">
                       <p className="text-sm text-gray-500">Network</p>
-                      <p className="text-lg font-semibold">{selectedAd.network}</p>
+                      <div className="flex items-center gap-2">
+                        {getNetworkLogo(selectedAd.network) && (
+                          <img
+                            src={getNetworkLogo(selectedAd.network)}
+                            alt={selectedAd.network}
+                            className="w-5 h-5 object-contain"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
+                          />
+                        )}
+                        <p className="text-lg font-semibold">
+                          {selectedAd.network}
+                        </p>
+                      </div>
                     </div>
                     <div className="rounded-lg bg-gray-100 p-3">
                       <p className="text-sm text-gray-500">Ad Type</p>
-                      <p className="text-lg font-semibold">{selectedAd.ad_type}</p>
+                      <p className="text-lg font-semibold">
+                        {selectedAd.ad_type}
+                      </p>
                     </div>
                     {selectedAd.video_duration && (
                       <div className="rounded-lg bg-gray-100 p-3">
                         <p className="text-sm text-gray-500">Duration</p>
-                        <p className="text-lg font-semibold">{formatDuration(selectedAd.video_duration)}</p>
+                        <p className="text-lg font-semibold">
+                          {formatDuration(selectedAd.video_duration)}
+                        </p>
                       </div>
                     )}
                     <div className="rounded-lg bg-gray-100 p-3">
                       <p className="text-sm text-gray-500">Share of Voice</p>
-                      <p className="text-lg font-semibold">{(selectedAd.share * 100).toFixed(1)}%</p>
+                      <p className="text-lg font-semibold">
+                        {(selectedAd.share * 100).toFixed(1)}%
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {(selectedAd.width || selectedAd.height) && (
                   <div>
-                    <h3 className="mb-2 text-lg font-semibold">Creative Details</h3>
+                    <h3 className="mb-2 text-lg font-semibold">
+                      Creative Details
+                    </h3>
                     <div className="grid grid-cols-2 gap-4">
                       {selectedAd.width && selectedAd.height && (
                         <div className="rounded-lg bg-gray-100 p-3">
                           <p className="text-sm text-gray-500">Dimensions</p>
-                          <p className="text-lg font-semibold">{selectedAd.width} x {selectedAd.height}</p>
+                          <p className="text-lg font-semibold">
+                            {selectedAd.width} x {selectedAd.height}
+                          </p>
                         </div>
                       )}
-                      {selectedAd.ad_formats && selectedAd.ad_formats.length > 0 && (
-                        <div className="rounded-lg bg-gray-100 p-3">
-                          <p className="text-sm text-gray-500">Formats</p>
-                          <p className="text-lg font-semibold">{selectedAd.ad_formats.join(", ")}</p>
-                        </div>
-                      )}
+                      {selectedAd.ad_formats &&
+                        selectedAd.ad_formats.length > 0 && (
+                          <div className="rounded-lg bg-gray-100 p-3">
+                            <p className="text-sm text-gray-500">Formats</p>
+                            <p className="text-lg font-semibold">
+                              {selectedAd.ad_formats.join(", ")}
+                            </p>
+                          </div>
+                        )}
                     </div>
                   </div>
                 )}
@@ -430,11 +554,15 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
                   <div className="grid grid-cols-2 gap-4">
                     <div className="rounded-lg bg-gray-100 p-3">
                       <p className="text-sm text-gray-500">First Seen</p>
-                      <p className="text-lg font-semibold">{moment(selectedAd.first_seen_at).format("DD-MM-YYYY")}</p>
+                      <p className="text-lg font-semibold">
+                        {moment(selectedAd.first_seen_at).format("DD-MM-YYYY")}
+                      </p>
                     </div>
                     <div className="rounded-lg bg-gray-100 p-3">
                       <p className="text-sm text-gray-500">Last Seen</p>
-                      <p className="text-lg font-semibold">{moment(selectedAd.last_seen_at).format("DD-MM-YYYY")}</p>
+                      <p className="text-lg font-semibold">
+                        {moment(selectedAd.last_seen_at).format("DD-MM-YYYY")}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -455,4 +583,3 @@ export default function AdFeed({ adsData, loading, error, hasMore, loadMoreData,
     </>
   );
 }
-
