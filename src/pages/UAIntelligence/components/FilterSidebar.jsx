@@ -15,7 +15,7 @@ export default function FilterSidebar({ onFiltersChange, availableNetworks, avai
     minDuration: "",
     maxDuration: "",
     limit: 20,
-    sortBy: "first_seen_at",
+    sortBy: "share",
     sortOrder: "DESC"
   })
 
@@ -370,9 +370,9 @@ export default function FilterSidebar({ onFiltersChange, availableNetworks, avai
                           onChange={(e) => handleFilterChange('sortBy', e.target.value)}
                           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                         >
+                          <option value="share">Share of Voice</option>
                           <option value="first_seen_at">First Seen</option>
                           <option value="last_seen_at">Last Seen</option>
-                          <option value="share">Share of Voice</option>
                           <option value="video_duration">Duration</option>
                         </select>
                       </div>
