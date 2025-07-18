@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wrench, Code, BarChart3, Settings, ChevronDown, Users, Gamepad2, Plus, Rss, Scissors, Play, FileEdit, Palette, Languages, Map } from 'lucide-react';
+import { Wrench, Code, BarChart3, Settings, ChevronDown, Users, Gamepad2, Plus, Rss, Scissors, Play, FileEdit, Palette, Languages, Map, MessageCircle, TrendingUp } from 'lucide-react';
 
 const QuickActions = ({ onAction, ContextStudioData }) => {
   const [showToolsSubmenu, setShowToolsSubmenu] = useState(false);
@@ -49,8 +49,8 @@ const QuickActions = ({ onAction, ContextStudioData }) => {
       { icon: Scissors, label: 'Creative Breakdown', color: 'from-orange-400 to-red-400' },
       { icon: Play, label: 'Playable Editor', color: 'from-yellow-400 to-orange-400' },
       { icon: FileEdit, label: 'UGC Editor', color: 'from-green-400 to-yellow-400' },
-      { icon: FileEdit, label: 'CommPac', color: 'from-green-400 to-yellow-400' },
-      { icon: FileEdit, label: 'ASOPac', color: 'from-green-400 to-yellow-400' },
+      { icon: MessageCircle, label: 'CommPac', color: 'from-blue-400 to-purple-400' },
+      { icon: TrendingUp, label: 'ASOPac', color: 'from-purple-400 to-pink-400' },
     ],
     'Dev': [
       { icon: Palette, label: 'Asset Gen', color: 'from-blue-400 to-purple-400' },

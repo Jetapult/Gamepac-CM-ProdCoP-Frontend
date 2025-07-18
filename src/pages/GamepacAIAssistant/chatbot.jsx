@@ -130,7 +130,7 @@ export function Chatbot({ setShowChatbotDropdown, userData, studios}) {
             </div>
           </div>
 
-          <div className="absolute top-[73px] left-0 right-0 z-10">
+          <div className="absolute top-[65px] left-0 right-0 z-10">
             <QuickActions onAction={handleQuickActionClick} ContextStudioData={ContextStudioData} />
           </div>
 
