@@ -8,7 +8,7 @@ import Select from "react-select";
 import NoData from "../../../../components/NoData";
 import { useSearchParams } from "react-router-dom";
 
-const WeeklyReport = ({ games, studio_slug, setGames }) => {
+const WeeklyReport = ({ games, setGames, ContextStudioData }) => {
   const userData = useSelector((state) => state.user.user);
   const studios = useSelector((state) => state.admin.studios);
   const [weeklyReport, setWeeklyReport] = useState([]);
@@ -100,11 +100,7 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
         ...selectedDate.value,
       };
       const weeklyReportResponse = await api.get(
-        `v1/organic-ua/weekly-reports/${selectedGame.id}/${
-          studio_slug
-            ? studios.filter((x) => x.slug === studio_slug)[0]?.id
-            : userData.studio_id
-        }`,
+        `v1/organic-ua/weekly-reports/${selectedGame.id}/${ContextStudioData?.id}`,
         { params: paramData }
       );
       setWeeklyReport(weeklyReportResponse.data.data);
@@ -158,7 +154,6 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
             selectedTab={selectedTab}
             setSelectedTab={setSelectedTab}
             setGames={setGames}
-            studio_slug={studio_slug}
           />
         </div>
         <Select

@@ -4,7 +4,7 @@ import api, { papi } from "../../../api";
 import HistorySidebar from "./HistorySidebar";
 import moment from "moment";
 
-const CreativeAnalysisDashboard = ({ analysisId, userData }) => {
+const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [uploadMethod, setUploadMethod] = useState("file");
@@ -21,9 +21,7 @@ const CreativeAnalysisDashboard = ({ analysisId, userData }) => {
 
   const inputRef = useRef(null);
   const hasProcessedUrlParams = useRef(false);
-  const STUDIO_ID = userData?.studio_type?.includes("studio_manager")
-    ? localStorage.getItem("selectedStudioId")
-    : userData?.studio_id;
+  const STUDIO_ID = ContextStudioData?.id;
 
   useEffect(() => {
     if (analysisId) {

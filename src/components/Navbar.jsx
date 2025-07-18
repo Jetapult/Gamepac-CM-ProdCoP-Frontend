@@ -16,9 +16,10 @@ import { isAuthenticated, logout } from "../auth";
 import AnalyticsPopup from "./AnalyticsPopup";
 import { ChartBarSquareIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 import { SparklesIcon } from "@heroicons/react/24/outline";
-import packageInfo from "../../package.json";
 import ReactPopover from "./Popover";
 import { addStudioData } from "../store/reducer/adminSlice";
+import { BotMessageSquare, PanelRight } from "lucide-react";
+import { Chatbot } from "../pages/GamepacAIAssistant/chatbot";
 
 function Navbar() {
   const userData = useSelector((state) => state.user.user);
@@ -29,6 +30,7 @@ function Navbar() {
   const [showAnalyticsPopup, setShowAnalyticsPopup] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showNoteTakerDropdown, setShowNoteTakerDropdown] = useState(false);
+  const [showChatbotDropdown, setShowChatbotDropdown] = useState(false);
   const studioSlug = localStorage.getItem("selectedStudio");
   const wrapperRef = useRef(null);
   const dispatch = useDispatch();
@@ -121,11 +123,14 @@ function Navbar() {
         <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
           {isAuthenticated() ? (
             <>
-              <ul className="text-gray-7000 relative">
+              <ul className="text-gray-7000 relative flex flex-row gap-6">
+                <li>
+                  <span className="cursor-pointer" onClick={() => setShowChatbotDropdown(!showChatbotDropdown)}>{showChatbotDropdown ? <PanelRight className="w-6 h-6" /> : <BotMessageSquare className="w-6 h-6" />}</span>
+                </li>
                 <li
-                  className={`duration-150 hover:text-gray-500 hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:left-[50%] hover:after:translate-x-[-50%] hover:after:rounded-full ${
+                  className={`duration-150 hover:text-gray-500 hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:rounded-full ${
                     location.pathname.includes("dashboard")
-                      ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black after:absolute after:bottom-[-16px] after:left-[50%] after:translate-x-[-50%] after:rounded-full"
+                      ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black after:absolute after:bottom-[-16px] after:rounded-full"
                       : ""
                   }`}
                 >
@@ -139,7 +144,7 @@ function Navbar() {
                   </a>
                 </li>
               </ul>
-              {userData?.studio_type?.includes("studio_manager") &&
+              {/* {userData?.studio_type?.includes("studio_manager") &&
                 studioSlug?.includes("holy-cow-studio") && (
                   <ul>
                     <li
@@ -204,9 +209,9 @@ function Navbar() {
                 </>
               ) : (
                 <></>
-              )}
+              )} */}
               <ul className="justify-end items-center space-y-6 md:flex md:space-x-6 md:space-y-0 ">
-                {(!studioSlug || studioSlug === userData?.slug) &&
+                {/* {(!studioSlug || studioSlug === userData?.slug) &&
                   !userData.studio_type?.includes("external_studio") && (
                     <>
                       <li
@@ -292,7 +297,7 @@ function Navbar() {
                   >
                     Docs
                   </a>
-                </li>
+                </li> */}
                 <li
                   className="duration-150 text-black hover:text-gray-900 relative"
                   ref={wrapperRef}
@@ -370,6 +375,9 @@ function Navbar() {
         </div>
         {showAnalyticsPopup && (
           <AnalyticsPopup setShowModal={setShowAnalyticsPopup} />
+        )}
+        {showChatbotDropdown && (
+          <Chatbot setShowChatbotDropdown={setShowChatbotDropdown} userData={userData} studios={studios} />
         )}
       </div>
     </>

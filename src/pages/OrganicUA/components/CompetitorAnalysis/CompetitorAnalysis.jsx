@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import GameCard from "./GameCard";
 
-const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
+const CompetitorAnalysis = ({ ContextStudioData }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [competitorGames, setCompetitorGames] = useState([]);
@@ -31,9 +31,7 @@ const CompetitorAnalysis = ({ studio_slug, userData, studios }) => {
 
   const [selectedPlatform, setSelectedPlatform] = useState("ios");
 
-  const studioId = userData?.studio_type?.includes("studio_manager")
-    ? studios.filter((x) => x.slug === studio_slug)[0]?.id
-    : userData?.studio_id;
+  const studioId = ContextStudioData?.id;
 
   const fetchCompetitorGames = async () => {
     setLoading(true);

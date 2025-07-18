@@ -2,9 +2,11 @@ import { useEffect, useState } from "react"
 import AdFeed from "./AdFeed"
 import FilterSidebar from "./FilterSidebar"
 import api from "../../../api"
+import { useSelector } from "react-redux"
 
 const Feed = ({user}) => {
-  const studioId = user?.studio_type?.includes("studio_manager") ? localStorage.getItem("selectedStudioId") : user?.studio_id;
+  const ContextStudioData = useSelector((state) => state.admin.ContextStudioData);
+  const studioId = ContextStudioData?.id;
   
   const availableNetworks = [
     "Adcolony", "Admob", "Applovin", "BidMachine", "Chartboost", "Digital Turbine", 

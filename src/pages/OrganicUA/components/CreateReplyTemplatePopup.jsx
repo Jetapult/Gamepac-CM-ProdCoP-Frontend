@@ -9,12 +9,10 @@ const CreateReplyTemplatePopup = ({
   setShowCreateReplyTemplatePopup,
   selectedTemplate,
   setSelectedTemplate,
-  studio_slug,
   setTemplates,
   setToastMessage,
+  ContextStudioData
 }) => {
-  const studios = useSelector((state) => state.admin.studios);
-  const userData = useSelector((state) => state.user.user);
   const [replyTemplate, setReplyTemplate] = useState({
     review_type: "",
     review_reply: "",
@@ -44,17 +42,11 @@ const CreateReplyTemplatePopup = ({
         review_type: replyTemplate.review_type,
         review_reply: replyTemplate.review_reply,
         template_type: 'manual',
-        studio_id: studio_slug
-          ? studios.filter((x) => x.slug === studio_slug)[0].id
-          : userData.studio_id,
+        studio_id: ContextStudioData?.id,
       };
       const templatesResponse = selectedTemplate.id
         ? await api.put(
-            `v1/organic-ua/reply-template/${
-              studio_slug
-                ? studios.filter((x) => x.slug === studio_slug)[0].id
-                : userData.studio_id
-            }/${selectedTemplate.id}`,
+            `v1/organic-ua/reply-template/${ContextStudioData?.id}/${selectedTemplate.id}`,
             requestbody
           )
         : await api.post(`v1/organic-ua/reply-template/create`, requestbody);

@@ -34,9 +34,8 @@ const GamesDropdown = ({
   selectedTab,
   setSelectedTab,
   setGames,
-  studio_slug,
 }) => {
-  const userData = useSelector((state) => state.user.user);
+  const ContextStudioData = useSelector((state) => state.admin.ContextStudioData);
   const [showGamesDropdown, setShowGamesDropdown] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [refresh, setRefresh] = useState(0);
@@ -75,7 +74,7 @@ const GamesDropdown = ({
       if (response.status === 200) {
         setSelectedGame(game);
         const gamesresponse = await fetchAllgames(
-          studio_slug ? studio_slug : userData.studio_id
+          ContextStudioData?.id
         );
         setGames(gamesresponse);
         setRefresh(refresh ? 0 : 1);
@@ -96,7 +95,7 @@ const GamesDropdown = ({
       const response = await api.delete(`/v1/games/${game.id}/unpin`);
       if (response.status === 200) {
         const gamesresponse = await fetchAllgames(
-          studio_slug ? studio_slug : userData.studio_id
+          ContextStudioData?.id
         );
         setGames(gamesresponse);
         setRefresh(refresh ? 0 : 1);

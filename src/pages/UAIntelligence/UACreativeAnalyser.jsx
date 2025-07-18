@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 
 const UACreativeAnalyser = () => {
   const userData = useSelector((state) => state.user.user);
+  const ContextStudioData = useSelector((state) => state.admin.ContextStudioData);
   const [activeTab, setActiveTab] = useState("dashboard");
   const { ad_id } = useParams();
 
@@ -79,7 +80,7 @@ const UACreativeAnalyser = () => {
 
         <div className="p-6">
           {activeTab === "dashboard" && (
-            <CreativeAnalysisDashboard analysisId={ad_id} userData={userData} />
+            <CreativeAnalysisDashboard analysisId={ad_id} userData={userData} ContextStudioData={ContextStudioData} />
           )}
           
           {activeTab === "brief" && (
