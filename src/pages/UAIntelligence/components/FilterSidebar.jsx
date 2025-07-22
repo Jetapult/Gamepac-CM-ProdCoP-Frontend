@@ -88,7 +88,7 @@ export default function FilterSidebar({ onFiltersChange, availableNetworks, avai
       minDuration: "",
       maxDuration: "",
       limit: 20,
-      sortBy: "first_seen_at",
+      sortBy: "share",
       sortOrder: "DESC"
     }
     setFilters(defaultFilters)
@@ -122,11 +122,11 @@ export default function FilterSidebar({ onFiltersChange, availableNetworks, avai
       {isOpen && <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setIsOpen(false)} />}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-80 transform bg-white shadow-lg transition-transform duration-200 md:static md:z-0 md:translate-x-0 md:shadow-none md:overflow-y-auto ${
+        className={`fixed rounded-lg inset-y-0 left-0 z-50 w-80 transform bg-white shadow-lg transition-transform duration-200 md:static md:z-0 md:translate-x-0 md:shadow-none md:overflow-y-auto ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-6 h-full flex flex-col">
+        <div className="px-6 py-4 h-full flex flex-col">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Filters</h2>
             <button 
@@ -234,8 +234,8 @@ export default function FilterSidebar({ onFiltersChange, availableNetworks, avai
                   <div className="pb-4 pt-2">
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Network</label>
-                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                        <label className="text-sm font-semibold">Network</label>
+                        <div className="space-y-2 max-h-[180px] overflow-y-scroll">
                         <div className="flex items-center space-x-2">
                             <input 
                               type="checkbox" 
@@ -267,8 +267,8 @@ export default function FilterSidebar({ onFiltersChange, availableNetworks, avai
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Ad Type</label>
-                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                        <label className="text-sm font-semibold">Ad Type</label>
+                        <div className="space-y-2 max-h-[180px] overflow-y-scroll">
                         <div className="flex items-center space-x-2">
                             <input 
                               type="checkbox" 

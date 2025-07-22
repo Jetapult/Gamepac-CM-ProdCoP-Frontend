@@ -1,9 +1,37 @@
-import { useState } from "react";
+import React, { useState, useEffect } from 'react';
 import PlaceholderImg from "../../../assets/placeholder.svg";
 import InfiniteScroll from "react-infinite-scroll-component";
 import moment from "moment";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api";
+
+const formatAdType = (adType) => {
+  if (!adType) return "";
+  return adType
+    .split(/[_-]/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
+const getRandomCTAColor = (buttonText) => {
+  const colors = [
+    'bg-blue-100 text-blue-800 border-blue-200',
+    'bg-green-100 text-green-800 border-green-200',
+    'bg-purple-100 text-purple-800 border-purple-200',
+    'bg-pink-100 text-pink-800 border-pink-200',
+    'bg-indigo-100 text-indigo-800 border-indigo-200',
+    'bg-yellow-100 text-yellow-800 border-yellow-200',
+    'bg-red-100 text-red-800 border-red-200',
+    'bg-orange-100 text-orange-800 border-orange-200',
+    'bg-teal-100 text-teal-800 border-teal-200',
+    'bg-cyan-100 text-cyan-800 border-cyan-200',
+    'bg-lime-100 text-lime-800 border-lime-200',
+    'bg-emerald-100 text-emerald-800 border-emerald-200'
+  ];
+  
+  const hash = buttonText?.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) || 0;
+  return colors[hash % colors.length];
+};
 
 export default function AdFeed({
   adsData,
@@ -159,7 +187,7 @@ export default function AdFeed({
                   key={adType}
                   className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm"
                 >
-                  {adType}
+                  {formatAdType(adType)}
                 </span>
               ))}
             </div>
@@ -293,14 +321,9 @@ export default function AdFeed({
 
                   <div className="absolute right-2 top-2">
                     <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800">
-                      {ad.ad_type}
+                      {formatAdType(ad.ad_type)}
                     </span>
                   </div>
-                  {/* <div className="absolute left-2 top-2">
-                    <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-green-100 text-green-800">
-                      {ad.network}
-                    </span>
-                  </div> */}
                   {ad.video_duration && (
                     <div className="absolute bottom-2 right-2">
                       <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-black bg-opacity-70 text-white">
@@ -316,12 +339,18 @@ export default function AdFeed({
                     </div>
                   )}
                 </div>
-                <p className="text-[11px] text-gray-500 text-right pt-1 pr-2">{moment(ad.first_seen_at).format("DD-MM-YYYY")} ~ {moment(ad.last_seen_at).format("DD-MM-YYYY")}</p>
+                <p className="text-[11px] text-gray-500 text-right pt-1 pr-2">
+                  <span className="font-medium">Active: </span>
+                  {moment(ad.first_seen_at).format("DD-MM-YYYY")} ~ {moment(ad.last_seen_at).format("DD-MM-YYYY")}
+                </p>
 
                 <div className="p-3 px-4 min-h-[140px]">
-                  {ad.title && <h3 className="mb-2 text-sm line-clamp-2">
-                    {ad.title}
-                  </h3>}
+                  {ad.title && <div className="mb-2">
+                    <span className="text-xs text-gray-500 font-medium">Title: </span>
+                    <h3 className="text-sm line-clamp-2 inline">
+                      {ad.title}
+                    </h3>
+                  </div>}
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     {ad.video_duration && (
                       <div>
@@ -357,7 +386,7 @@ export default function AdFeed({
               <div className="flex justify-between bg-gray-50 px-4 py-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500 font-medium">CTA :</span>
-                  <span className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-0.5 text-xs font-medium">
+                  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${getRandomCTAColor(ad.button_text)}`}>
                     {ad.button_text || "View"}
                   </span>
                 </div>
@@ -502,7 +531,7 @@ export default function AdFeed({
                     <div className="rounded-lg bg-gray-100 p-3">
                       <p className="text-sm text-gray-500">Ad Type</p>
                       <p className="text-lg font-semibold">
-                        {selectedAd.ad_type}
+                        {formatAdType(selectedAd.ad_type)}
                       </p>
                     </div>
                     {selectedAd.video_duration && (

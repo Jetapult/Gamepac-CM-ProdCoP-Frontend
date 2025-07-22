@@ -4,7 +4,45 @@ import api, { papi } from "../../../api";
 import HistorySidebar from "./HistorySidebar";
 import moment from "moment";
 
-const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) => {
+const renderMarkdownText = (text) => {
+  if (!text) return "";
+  
+  let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  const lines = formatted.split('\n');
+  const processedLines = [];
+  
+  lines.forEach((line, index) => {
+    const trimmedLine = line.trim();
+    
+    if (!trimmedLine) {
+      processedLines.push('<div class="h-2"></div>');
+    } else if (trimmedLine.startsWith('*   ')) {
+      const content = trimmedLine.substring(4);
+      processedLines.push(`<div class="ml-6 mb-1 flex items-start"><span class="text-gray-400 mr-2 mt-1 text-xs">•</span><span class="text-sm">${content}</span></div>`);
+    } else if (trimmedLine.startsWith('* ')) {
+      const content = trimmedLine.substring(2);
+      processedLines.push(`<div class="ml-3 mb-1 flex items-start"><span class="text-gray-600 mr-2 mt-1">•</span><span class="text-sm">${content}</span></div>`);
+    } else {
+      processedLines.push(`<div class="mb-2 text-sm">${trimmedLine}</div>`);
+    }
+  });
+  
+  return processedLines.join('');
+};
+
+const MarkdownRenderer = ({ content, className = "" }) => {
+  const renderedContent = renderMarkdownText(content);
+  
+  return (
+    <div 
+      className={className}
+      dangerouslySetInnerHTML={{ __html: renderedContent }}
+    />
+  );
+};
+
+const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData, onAnalysisDataChange, hideHistorySidebar = false }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [uploadMethod, setUploadMethod] = useState("file");
@@ -28,6 +66,12 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) 
       fetchAnalysisById(analysisId);
     }
   }, [analysisId]);
+
+  useEffect(() => {
+    if (analysisData && onAnalysisDataChange) {
+      onAnalysisDataChange(analysisData);
+    }
+  }, [analysisData, onAnalysisDataChange]);
 
   useEffect(() => {
     const urlParam = searchParams.get("url");
@@ -74,7 +118,6 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) 
         analysis_id: apiResponse.id,
       };
     } else {
-      // Data structure from upload API
       analysis = apiResponse.analysis;
       baseData = {
         media_url: apiResponse.media_url || "",
@@ -83,37 +126,85 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) 
       };
     }
 
-    return {
-      ...baseData,
-      meta_tags:
-        analysis["meta_tags"] || analysis["Meta Tags and Sub Tags"] || [],
-      creative_type:
-        analysis["creative_type"] || analysis["Type of Creative"] || "",
-      messaging_theme:
-        analysis["messaging"] || analysis["Messaging on Creative"] || "",
-      call_to_action: Array.isArray(analysis["call_to_action"])
-        ? analysis["call_to_action"]
-        : Array.isArray(analysis["Call to Action on Creative"])
-        ? analysis["Call to Action on Creative"]
-        : [
-            analysis["call_to_action"] ||
-              analysis["Call to Action on Creative"],
-          ].filter(Boolean),
-      primary_colors:
-        analysis["primary_colors"] ||
-        analysis["3 Primary Colors on Creative"] ||
-        [],
-      audio_profile: analysis["audio"] || analysis["Audio"] || "",
-      opening_hook: analysis["opening_hook"] || analysis["Opening Hook"] || "",
-      duration_category: analysis["Duration"] || "",
-      game_mechanic:
-        analysis["game_mechanic"] || analysis["Game Mechanic"] || "",
-      language_used:
-        analysis["language"] || analysis["Language Used in the Video"] || "",
-      script_summary:
-        analysis["summary"] || analysis["Summary of the Video Script"] || "",
-      scenes: analysis.scenes || [],
-    };
+    const isImageAnalysis = analysis && (
+      analysis.ad_type || 
+      analysis.visual_hook || 
+      analysis.art_style ||
+      analysis.game_category
+    );
+
+    if (isImageAnalysis) {
+      return {
+        ...baseData,
+        creative_type: analysis.ad_type || "",
+        messaging_theme: analysis.visual_hook || "",
+        opening_hook: analysis.primary_visual_focus || "",
+        game_mechanic: analysis.gameplay_cue || "",
+        primary_colors: analysis.color_palette ? [analysis.color_palette] : [],
+        call_to_action: analysis.call_to_action_cue ? [analysis.call_to_action_cue] : [],
+        script_summary: analysis.description || "",
+        
+        art_style: analysis.art_style || "",
+        emotional_tone: analysis.emotional_tone || "",
+        scene_setting: analysis.scene_setting || "",
+        target_demographic: analysis.target_demographic || "",
+        game_category: analysis.game_category || "",
+        theme_tags: analysis.theme_tags || [],
+        character_presence: analysis.character_presence || "",
+        branding_visibility: analysis.branding_visibility || "",
+        
+        ui_elements: analysis.ui_elements || {},
+        
+        performance_triggers: analysis.performance_triggers || {},
+        marketing_insights: analysis.marketing_insights || {},
+        ab_testing_recommendations: analysis.ab_testing_recommendations || {},
+        platform_optimization_tips: analysis.platform_optimization_tips || {},
+        technical_specs: analysis.technical_specs || {},
+        possible_variations: analysis.possible_variations || [],
+        
+        is_image_analysis: true,
+        
+        meta_tags: [],
+        audio_profile: "N/A (Image)",
+        duration_category: "N/A (Image)",
+        language_used: "N/A (Image)",
+        scenes: [],
+      };
+    } else {
+      return {
+        ...baseData,
+        meta_tags:
+          analysis["meta_tags"] || analysis["Meta Tags and Sub Tags"] || [],
+        creative_type:
+          analysis["creative_type"] || analysis["Type of Creative"] || "",
+        messaging_theme:
+          analysis["messaging"] || analysis["Messaging on Creative"] || "",
+        call_to_action: Array.isArray(analysis["call_to_action"])
+          ? analysis["call_to_action"]
+          : Array.isArray(analysis["Call to Action on Creative"])
+          ? analysis["Call to Action on Creative"]
+          : [
+              analysis["call_to_action"] ||
+                analysis["Call to Action on Creative"],
+            ].filter(Boolean),
+        primary_colors:
+          analysis["primary_colors"] ||
+          analysis["3 Primary Colors on Creative"] ||
+          [],
+        audio_profile: analysis["audio"] || analysis["Audio"] || "",
+        opening_hook: analysis["opening_hook"] || analysis["Opening Hook"] || "",
+        duration_category: analysis["Duration"] || "",
+        game_mechanic:
+          analysis["game_mechanic"] || analysis["Game Mechanic"] || "",
+        language_used:
+          analysis["language"] || analysis["Language Used in the Video"] || "",
+        script_summary:
+          analysis["summary"] || analysis["Summary of the Video Script"] || "",
+        scenes: analysis.scenes || [],
+        
+        is_image_analysis: false,
+      };
+    }
   };
 
   const fetchAnalysisById = async (id) => {
@@ -295,31 +386,35 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) 
 
   if (fetchingAnalysis) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        <HistorySidebar currentAnalysisId={analysisId} studioId={STUDIO_ID} />
-        <div className="md:col-span-9 flex items-center justify-center">
-          <div className="flex items-center space-x-2">
-            <svg
-              className="animate-spin h-8 w-8 text-gray-600"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-            <span className="text-gray-600">Loading analysis...</span>
+      <div className={`grid gap-8 ${hideHistorySidebar ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-12'}`}>
+        {!hideHistorySidebar && (
+          <HistorySidebar currentAnalysisId={analysisId} studioId={STUDIO_ID} />
+        )}
+        <div className={hideHistorySidebar ? 'col-span-1' : 'md:col-span-9'}>
+          <div className="flex items-center justify-center">
+            <div className="flex items-center space-x-2">
+              <svg
+                className="animate-spin h-8 w-8 text-gray-600"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <span className="text-gray-600">Loading analysis...</span>
+            </div>
           </div>
         </div>
       </div>
@@ -328,24 +423,28 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) 
 
   if (analysisId && error && !analysisData) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        <HistorySidebar currentAnalysisId={analysisId} studioId={STUDIO_ID} />
-        <div className="md:col-span-9 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-red-500 text-lg mb-4">{error}</div>
-            <div className="flex gap-2 justify-center">
-              <button
-                onClick={() => fetchAnalysisById(analysisId)}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              >
-                Try Again
-              </button>
-              <button
-                onClick={() => navigate("/ua-intelligence/analyse")}
-                className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
-              >
-                Back to Upload
-              </button>
+      <div className={`grid gap-8 ${hideHistorySidebar ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-12'}`}>
+        {!hideHistorySidebar && (
+          <HistorySidebar currentAnalysisId={analysisId} studioId={STUDIO_ID} />
+        )}
+        <div className={hideHistorySidebar ? 'col-span-1' : 'md:col-span-9'}>
+          <div className="flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-red-500 text-lg mb-4">{error}</div>
+              <div className="flex gap-2 justify-center">
+                <button
+                  onClick={() => fetchAnalysisById(analysisId)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={() => navigate("/ua-intelligence/analyse")}
+                  className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                >
+                  Back to Upload
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -354,9 +453,11 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) 
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-      <HistorySidebar currentAnalysisId={analysisId} studioId={STUDIO_ID} />
-      <div className="md:col-span-9">
+    <div className={`grid gap-8 ${hideHistorySidebar ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-12'}`}>
+      {!hideHistorySidebar && (
+        <HistorySidebar currentAnalysisId={analysisId} studioId={STUDIO_ID} />
+      )}
+      <div className={hideHistorySidebar ? 'col-span-1' : 'md:col-span-9'}>
         {analysisData && Object.keys(analysisData).length > 0 ? (
           <div className="space-y-6">
             <div className="border rounded-lg overflow-hidden bg-white">
@@ -386,16 +487,11 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) 
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-semibold">Creative Analysis</h3>
                     <div className="text-right">
-                      {analysisData?.analysis_id && (
-                        <div className="text-sm text-gray-500">
-                          ID: {analysisData?.analysis_id}
-                        </div>
-                      )}
                       {analysisData?.created_at && (
                         <div className="text-sm text-gray-500">
                           Created:{" "}
                           {moment(analysisData?.created_at).format(
-                            "Do MM YYYY h:m"
+                            "Do MMM YYYY h:mm A"
                           )}
                         </div>
                       )}
@@ -423,7 +519,7 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) 
                     </div>
                     <div>
                       <div className="text-gray-500 text-sm mb-1">
-                        Messaging Theme
+                        {analysisData?.is_image_analysis ? "Visual Hook" : "Messaging Theme"}
                       </div>
                       <div className="font-medium">
                         {analysisData?.messaging_theme}
@@ -431,38 +527,75 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) 
                     </div>
                     <div>
                       <div className="text-gray-500 text-sm mb-1">
-                        Opening Hook
+                        {analysisData?.is_image_analysis ? "Primary Focus" : "Opening Hook"}
                       </div>
                       <div className="font-medium">
                         {analysisData?.opening_hook}
                       </div>
                     </div>
-                    <div>
-                      <div className="text-gray-500 text-sm mb-1">Duration</div>
-                      <div className="font-medium">
-                        {analysisData?.duration_category}
-                      </div>
-                    </div>
+                    
+                    {analysisData?.is_image_analysis ? (
+                      <>
+                        <div>
+                          <div className="text-gray-500 text-sm mb-1">Game Category</div>
+                          <div className="font-medium">
+                            {analysisData?.game_category}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500 text-sm mb-1">Art Style</div>
+                          <div className="font-medium">
+                            {analysisData?.art_style}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500 text-sm mb-1">Emotional Tone</div>
+                          <div className="font-medium">
+                            {analysisData?.emotional_tone}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500 text-sm mb-1">Character Presence</div>
+                          <div className="font-medium">
+                            {analysisData?.character_presence}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500 text-sm mb-1">Target Demographic</div>
+                          <div className="font-medium">
+                            {analysisData?.target_demographic}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <div className="text-gray-500 text-sm mb-1">Duration</div>
+                          <div className="font-medium">
+                            {analysisData?.duration_category}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500 text-sm mb-1">Audio Profile</div>
+                          <div className="font-medium">
+                            {analysisData?.audio_profile}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500 text-sm mb-1">Language</div>
+                          <div className="font-medium">
+                            {analysisData?.language_used}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    
                     <div>
                       <div className="text-gray-500 text-sm mb-1">
-                        Game Mechanic
+                        {analysisData?.is_image_analysis ? "Gameplay Cue" : "Game Mechanic"}
                       </div>
                       <div className="font-medium">
                         {analysisData?.game_mechanic}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500 text-sm mb-1">
-                        Audio Profile
-                      </div>
-                      <div className="font-medium">
-                        {analysisData?.audio_profile}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500 text-sm mb-1">Language</div>
-                      <div className="font-medium">
-                        {analysisData?.language_used}
                       </div>
                     </div>
                   </div>
@@ -485,51 +618,151 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) 
 
                   <div className="mb-6">
                     <div className="text-gray-500 text-sm mb-2">
-                      Primary Colors
+                      {analysisData?.is_image_analysis ? "Color Palette" : "Primary Colors"}
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {analysisData?.primary_colors?.map((color, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
-                        >
-                          {color}
-                        </span>
-                      ))}
-                    </div>
+                    {analysisData?.is_image_analysis ? (
+                      <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
+                        <p className="text-sm">{analysisData?.primary_colors?.[0] || "Not specified"}</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {analysisData?.primary_colors?.map((color, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
+                          >
+                            {color}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mb-6">
-                    <div className="text-gray-500 text-sm mb-2">Meta Tags</div>
+                    <div className="text-gray-500 text-sm mb-2">
+                      {analysisData?.is_image_analysis ? "Theme Tags" : "Meta Tags"}
+                    </div>
                     <div className="flex flex-wrap gap-2">
-                      {analysisData?.meta_tags?.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                      {analysisData?.is_image_analysis 
+                        ? analysisData?.theme_tags?.map((tag, index) => (
+                            <span
+                              key={index}
+                              className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
+                            >
+                              {tag}
+                            </span>
+                          ))
+                        : analysisData?.meta_tags?.map((tag, index) => (
+                            <span
+                              key={index}
+                              className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm"
+                            >
+                              {tag}
+                            </span>
+                          ))
+                      }
                     </div>
                   </div>
+
+                  {analysisData?.is_image_analysis && (
+                    <>
+                      <div className="mb-6">
+                        <div className="text-gray-500 text-sm mb-2">Scene Setting</div>
+                        <MarkdownRenderer content={analysisData?.scene_setting} />
+                      </div>
+
+                      {analysisData?.ui_elements && Object.keys(analysisData.ui_elements).length > 0 && (
+                        <div className="mb-6">
+                          <div className="text-gray-500 text-sm mb-2">UI Elements</div>
+                          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                            {analysisData.ui_elements.main_interface && (
+                              <div>
+                                <span className="font-medium text-sm">Main Interface:</span>
+                                <MarkdownRenderer content={analysisData.ui_elements.main_interface} className="mt-1" />
+                              </div>
+                            )}
+                            {analysisData.ui_elements.interaction_elements && (
+                              <div>
+                                <span className="font-medium text-sm">Interaction Elements:</span>
+                                <MarkdownRenderer content={analysisData.ui_elements.interaction_elements} className="mt-1" />
+                              </div>
+                            )}
+                            {analysisData.ui_elements.feedback_mechanism && (
+                              <div>
+                                <span className="font-medium text-sm">Feedback Mechanism:</span>
+                                <MarkdownRenderer content={analysisData.ui_elements.feedback_mechanism} className="mt-1" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {analysisData?.performance_triggers && Object.keys(analysisData.performance_triggers).length > 0 && (
+                        <div className="mb-6">
+                          <div className="text-gray-500 text-sm mb-2">Performance Triggers</div>
+                          <div className="bg-green-50 rounded-lg p-4 space-y-3">
+                            {Object.entries(analysisData.performance_triggers).map(([key, value]) => (
+                              <div key={key}>
+                                <span className="font-medium text-sm capitalize">{key.replace(/_/g, ' ')}:</span>
+                                <MarkdownRenderer content={value} className="mt-1" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {analysisData?.marketing_insights && Object.keys(analysisData.marketing_insights).length > 0 && (
+                        <div className="mb-6">
+                          <div className="text-gray-500 text-sm mb-2">Marketing Insights</div>
+                          <div className="bg-blue-50 rounded-lg p-4 space-y-3">
+                            {Object.entries(analysisData.marketing_insights).map(([key, value]) => (
+                              <div key={key}>
+                                <span className="font-medium text-sm capitalize">{key.replace(/_/g, ' ')}:</span>
+                                <MarkdownRenderer content={value} className="mt-1" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {analysisData?.technical_specs && Object.keys(analysisData.technical_specs).length > 0 && (
+                        <div className="mb-6">
+                          <div className="text-gray-500 text-sm mb-2">Technical Specifications</div>
+                          <div className="grid grid-cols-2 gap-4">
+                            {Object.entries(analysisData.technical_specs).map(([key, value]) => (
+                              <div key={key} className="p-3 bg-gray-50 rounded-lg">
+                                <div className="text-gray-500 text-xs mb-1 capitalize">
+                                  {key.replace(/_/g, ' ')}
+                                </div>
+                                <div className="font-medium text-sm">{value}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {analysisData?.possible_variations && analysisData.possible_variations.length > 0 && (
+                        <div className="mb-6">
+                          <div className="text-gray-500 text-sm mb-2">Possible Variations</div>
+                          <div className="space-y-2">
+                            {analysisData.possible_variations.map((variation, index) => (
+                              <div key={index} className="p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                                <MarkdownRenderer content={variation} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
 
                   <div>
                     <div className="text-gray-500 text-sm mb-2">
-                      Script Summary
+                     {analysisData?.is_image_analysis ? "Ad Summary" : "Script Summary"}
                     </div>
-                    <p className="text-sm">{analysisData?.script_summary}</p>
+                    <MarkdownRenderer content={analysisData?.script_summary} />
                   </div>
 
-                  {/* {analysisData?.response && (
-                    <div className="mt-4">
-                      <div className="text-gray-500 text-sm mb-2">
-                        Analysis Summary
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        {analysisData?.response}
-                      </p>
-                    </div>
-                  )} */}
                 </div>
               </div>
             </div>
@@ -571,14 +804,14 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) 
                           <div className="text-sm font-medium text-gray-500 mb-2">
                             Description
                           </div>
-                          <p className="mb-4">{scene.scene_description}</p>
+                          <MarkdownRenderer content={scene.scene_description} className="mb-4" />
 
                           {scene.visual_elements && (
                             <>
                               <div className="text-sm font-medium text-gray-500 mb-2">
                                 Visual Elements
                               </div>
-                              <p>{scene.visual_elements}</p>
+                              <MarkdownRenderer content={scene.visual_elements} />
                             </>
                           )}
                         </div>
@@ -589,14 +822,14 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) 
                               <div className="text-sm font-medium text-gray-500 mb-2">
                                 Mood
                               </div>
-                              <p className="mb-4">{scene.mood}</p>
+                              <MarkdownRenderer content={scene.mood} className="mb-4" />
                             </>
                           )}
 
                           <div className="text-sm font-medium text-gray-500 mb-2">
                             Engagement Elements
                           </div>
-                          <p>{scene.engagement_elements}</p>
+                          <MarkdownRenderer content={scene.engagement_elements} />
                         </div>
                       </div>
                     </div>
@@ -615,16 +848,6 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData }) 
               >
                 Analyze New Creative
               </button>
-              <div className="flex gap-2">
-                {analysisId && (
-                  <button
-                    onClick={() => fetchAnalysisById(analysisId)}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                  >
-                    Refresh Analysis
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         ) : (

@@ -124,7 +124,7 @@ const Feed = ({user}) => {
   }, [studioId, filters])
   
   return (
-    <div className="flex h-[calc(100vh-75px)] bg-gray-50 overflow-hidden">
+    <div className="flex h-[calc(100vh-60px)] bg-gray-50 overflow-hidden">
       <FilterSidebar 
         onFiltersChange={handleFiltersChange}
         availableNetworks={availableNetworks}
