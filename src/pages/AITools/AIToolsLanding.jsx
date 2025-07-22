@@ -38,7 +38,7 @@ const aiTools = [
     name: "Asset Generator",
     description: "Generate UI assets for your mobile game, ASO and more.",
     icon: SparklesIcon,
-    link: "/assetGenerator",
+    link: "/asset-generator",
   },
   {
     id: 6,

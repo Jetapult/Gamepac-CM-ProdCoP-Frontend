@@ -1,23 +1,18 @@
 import { useState, useRef, useEffect } from "react"
 import {
-  MessageCircle,
   Send,
-  Minimize2,
   Bot,
   User,
-  Gamepad2,
-  Code,
-  Palette,
-  Settings,
   HelpCircle,
   CheckCircle,
   XCircle,
-  MessageSquareMore,
-  MessageSquareText,
+  X,
 } from "lucide-react"
+import QuickActions from "./QuickActions"
+import { useSelector } from "react-redux";
 
-export function Chatbot() {
-  const [isExpanded, setIsExpanded] = useState(false)
+export function Chatbot({ setShowChatbotDropdown, userData, studios}) {
+  const ContextStudioData = useSelector((state) => state.admin.ContextStudioData);
   const [messages, setMessages] = useState([
     {
       id: "1",
@@ -29,34 +24,8 @@ export function Chatbot() {
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [confirmation, setConfirmation] = useState(null)
-  const messagesEndRef = useRef(null)
+  const messagesEndRef = useRef(null);
 
-  const quickActions = [
-    {
-      id: "code-help",
-      label: "Code Help",
-      icon: <Code className="w-4 h-4" />,
-      description: "Get coding assistance and debugging help",
-    },
-    {
-      id: "design-tips",
-      label: "Design Tips",
-      icon: <Palette className="w-4 h-4" />,
-      description: "UI/UX design guidance for mobile games",
-    },
-    {
-      id: "game-mechanics",
-      label: "Game Mechanics",
-      icon: <Gamepad2 className="w-4 h-4" />,
-      description: "Advice on game mechanics and features",
-    },
-    {
-      id: "optimization",
-      label: "Optimization",
-      icon: <Settings className="w-4 h-4" />,
-      description: "Performance optimization tips",
-    },
-  ]
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -74,6 +43,11 @@ export function Chatbot() {
       timestamp: new Date(),
     }
     setMessages((prev) => [...prev, newMessage])
+  }
+
+  const handleQuickActionClick = (action) => {
+    addMessage(`Selected: ${action}`, 'user')
+    simulateAssistantResponse(`I've activated ${action} for you. What would you like to do next?`)
   }
 
   const simulateAssistantResponse = (userMessage) => {
@@ -112,36 +86,6 @@ export function Chatbot() {
     }
   }
 
-  const handleQuickAction = (action) => {
-    addMessage(`I need help with: ${action.label}`, "user")
-
-    setTimeout(() => {
-      let response = ""
-      switch (action.id) {
-        case "code-help":
-          response =
-            "I'm ready to help with your coding challenges! Please share your code snippet or describe the issue you're facing. I can assist with Unity C#, Java/Kotlin for Android, Swift/Objective-C for iOS, and cross-platform frameworks."
-          break
-        case "design-tips":
-          response =
-            "Here are some key mobile game design principles:\n\n• Keep UI elements large enough for touch interaction (44px minimum)\n• Use consistent visual language and color schemes\n• Implement intuitive gesture controls\n• Design for different screen sizes and orientations\n\nWhat specific design challenge are you working on?"
-          break
-        case "game-mechanics":
-          response =
-            "Let's discuss game mechanics! Popular mobile game mechanics include:\n\n• Progressive difficulty curves\n• Achievement and reward systems\n• Social features and leaderboards\n• Daily challenges and events\n• Gacha/collection mechanics\n\nWhat type of game are you developing?"
-          break
-        case "optimization":
-          response =
-            "Mobile optimization is essential! Here are key areas to focus on:\n\n• Reduce draw calls and optimize rendering\n• Compress textures and audio files\n• Implement object pooling\n• Optimize battery usage\n• Test on various devices\n\nWhich aspect would you like to dive deeper into?"
-          break
-      }
-      setIsTyping(false)
-      addMessage(response, "assistant")
-    }, 1000)
-
-    setIsTyping(true)
-  }
-
   const showConfirmation = (message, onConfirm) => {
     setConfirmation({
       id: Date.now().toString(),
@@ -161,23 +105,10 @@ export function Chatbot() {
     }
   }
 
-  if (!isExpanded) {
-    return (
-      <div className="fixed bottom-4 right-4 z-50">
-        <button
-          onClick={() => setIsExpanded(true)}
-          className="rounded-full w-14 h-14 bg-gradient-to-r from-green-400 to-lime-400 hover:from-green-500 hover:to-lime-500 shadow-lg flex items-center justify-center text-white transition-all duration-200"
-        >
-          <MessageSquareText className="w-6 h-6" />
-        </button>
-      </div>
-    )
-  }
-
   return (
     <>
-      <div className="fixed bottom-4 right-4 z-50 w-80 max-w-[calc(100vw-2rem)]">
-        <div className="bg-white/95 backdrop-blur-sm border border-green-200 shadow-2xl rounded-lg">
+      <div className="fixed bottom-0 right-0 z-50 w-96 max-w-[calc(100vw-2rem)]">
+        <div className="bg-white/95 backdrop-blur-sm border border-green-200 shadow-2xl rounded-s-lg h-[calc(100vh-56px)] relative">
           {/* Header */}
           <div className="p-4 pb-3 border-b border-gray-100">
             <div className="flex items-center justify-between">
@@ -191,16 +122,19 @@ export function Chatbot() {
                 </div>
               </div>
               <button 
-                onClick={() => setIsExpanded(false)} 
+                onClick={() => setShowChatbotDropdown(false)} 
                 className="h-8 w-8 p-0 rounded-md hover:bg-gray-100 flex items-center justify-center transition-colors"
               >
-                <Minimize2 className="w-4 h-4" />
+                <X  className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Messages */}
-          <div className="h-80 overflow-y-auto p-4 space-y-3">
+          <div className="absolute top-[65px] left-0 right-0 z-10">
+            <QuickActions onAction={handleQuickActionClick} ContextStudioData={ContextStudioData} />
+          </div>
+
+          <div className="pt-[100px] pb-[80px] h-[calc(100vh-220px)] overflow-y-auto p-4 space-y-3">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -252,24 +186,6 @@ export function Chatbot() {
               </div>
             )}
             <div ref={messagesEndRef} />
-          </div>
-
-          {/* Quick Actions */}
-          <div className="p-4 border-t bg-gray-50/50">
-            <p className="text-xs text-gray-600 mb-2">Quick Actions:</p>
-            <div className="grid grid-cols-2 gap-2">
-              {quickActions.map((action) => (
-                <button
-                  key={action.id}
-                  onClick={() => handleQuickAction(action)}
-                  className="flex items-center justify-start gap-2 h-auto p-2 text-xs border border-gray-200 rounded-md hover:bg-gray-50 transition-colors bg-white"
-                  title={action.description}
-                >
-                  {action.icon}
-                  {action.label}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Input */}

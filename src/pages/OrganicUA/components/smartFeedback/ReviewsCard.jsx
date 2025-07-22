@@ -27,10 +27,10 @@ const ReviewsCard = ({
   limit,
   setReviews,
   selectedGame,
-  studio_slug,
   templates,
   setTemplates,
   searchText,
+  ContextStudioData
 }) => {
   const userData = useSelector((state) => state.user.user);
   const studios = useSelector((state) => state.admin.studios);
@@ -128,9 +128,7 @@ const ReviewsCard = ({
             : review.responsebody,
         reviewId: review.id,
         gameId: selectedGame.id,
-        studioId: studio_slug
-          ? studios.filter((x) => x.slug === studio_slug)[0].id
-          : userData.studio_id,
+        studioId: ContextStudioData?.id,
         platform: selectedGame.platform,
         contentType:
           selectedGame.platform === "android"
@@ -365,9 +363,7 @@ const ReviewsCard = ({
           : {
               reviewId: reviewId,
               reply: review.reply,
-              studio_id: studio_slug
-                ? studios.filter((x) => x.slug === studio_slug)[0].id
-                : userData.studio_id,
+              studio_id: ContextStudioData?.id,
             };
       const response = await api.post(url, requestbody);
       if (response.status === 200) {
@@ -794,9 +790,9 @@ const ReviewsCard = ({
           setShowCreateReplyTemplatePopup={setShowCreateReplyTemplatePopup}
           selectedTemplate={selectedTemplate}
           setSelectedTemplate={setSelectedTemplate}
-          studio_slug={studio_slug}
           setTemplates={setTemplates}
           setToastMessage={setToastMessage}
+          ContextStudioData={ContextStudioData}
         />
       )}
       {showAddTagPopup && (
@@ -808,7 +804,7 @@ const ReviewsCard = ({
           setReviews={setReviews}
           setSelectedReview={setSelectedReview}
           selectedGame={selectedGame}
-          studio_slug={studio_slug}
+          ContextStudioData={ContextStudioData}
         />
       )}
     </>

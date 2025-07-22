@@ -3,7 +3,8 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   selectedStudio: {},
   totalStudio: 0,
-  studios: []
+  studios: [],
+  ContextStudioData: {}
 };
 
 const adminSlice = createSlice({
@@ -18,9 +19,12 @@ const adminSlice = createSlice({
     },
     addStudios: (state, action) => {
       state.studios = action.payload;
+    },
+    addContextStudioData: (state, action) => {
+      state.ContextStudioData = action.payload;
     }
   },
 });
 
-export const { addStudioData, addTotalStudio, addStudios } = adminSlice.actions;
+export const { addStudioData, addTotalStudio, addStudios, addContextStudioData } = adminSlice.actions;
 export default adminSlice.reducer;

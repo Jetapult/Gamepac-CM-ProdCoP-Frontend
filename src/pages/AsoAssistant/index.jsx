@@ -8,10 +8,8 @@ import StaticAdGenerator from "./components/StaticAdGenerator";
 import { useSelector } from "react-redux";
 import api from "../../api";
 import NoData from "../../components/NoData";
-import { PuzzlePieceIcon } from "@heroicons/react/20/solid";
-import { ChevronDown } from "lucide-react";
 import GamesDropdown from "../OrganicUA/components/smartFeedback/GamesDropdown";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import ToastMessage from "../../components/ToastMessage";
 import ASOCompetitorAnalysis from "./components/CompetitorAnalysis";
 
@@ -88,6 +86,7 @@ const TabContent = React.memo(
 );
 
 const AsoAssistant = () => {
+  const ContextStudioData = useSelector((state) => state.admin.ContextStudioData);
   const [currentTab, setCurrentTab] = useState("app-icon");
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedTab, setSelectedTab] = useState("android");
@@ -106,20 +105,9 @@ const AsoAssistant = () => {
   const [studioSlug, setStudioSlug] = useState("");
   const [studioId, setStudioId] = useState("");
 
-  const params = useParams();
   const navigate = useNavigate();
 
   const tabItems = useMemo(() => tabConfig, []);
-
-  const fetchAllgames = async () => {
-    try {
-      const response = await api.get(`/v1/games`);
-      setGames(response.data.data);
-      setSelectedGame(response.data.data[0]);
-    } catch (error) {
-      console.error("Error fetching games:", error);
-    }
-  };
 
   const fetchGames = async (slug) => {
     try {
@@ -146,35 +134,18 @@ const AsoAssistant = () => {
   };
 
   useEffect(() => {
-    if (userData.id && userData.studio_id && studios.length > 0) {
-      if (userData?.studio_type?.includes("studio_manager")) {
-        setShowDropdown(true);
-        const otherStudio = studios.find(
-          (studio) => studio.slug !== userData?.slug
-        );
-        setStudioSlug(otherStudio.slug);
-        setStudioId(otherStudio.id);
-        fetchGames(otherStudio.slug);
-      } else {
-        const defaultSlug = userData?.slug;
-        const defaultId = userData?.studio_id;
-        setStudioSlug(defaultSlug);
-        setStudioId(defaultId);
-        fetchGames(defaultSlug);
-      }
+    if (userData.id && userData.studio_id) {
+      setStudioSlug(ContextStudioData.slug);
+      setStudioId(ContextStudioData.id);
+      fetchGames(ContextStudioData.slug);
     }
-  }, [userData, studios]);
+  }, [userData, ContextStudioData?.id]);
 
   const handleTabChange = (item, index) => {
     setCurrentTab(item.slug);
     navigate(`/aso-assistant/${item.slug}`);
   };
 
-  useEffect(() => {
-    if (params.studio_slug) {
-      setCurrentTab(params.studio_slug);
-    }
-  }, [params.studio_slug]);
 
   const handleStudioChange = async (e) => {
     const selectedSlug = e.target.value;
