@@ -15,7 +15,7 @@ const AddTagPopup = ({
   setReviews,
   setSelectedReview,
   selectedGame,
-  studio_slug,
+  ContextStudioData,
 }) => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [submitLoader, setSubmitLoader] = useState(false);
@@ -32,9 +32,7 @@ const AddTagPopup = ({
       const requestbody = {
         tags: tags,
         reviewId: selectedReview.id,
-        studioId: studio_slug
-          ? studios.filter((x) => x.slug === studio_slug)[0].id
-          : userData.studio_id,
+        studioId: ContextStudioData?.id,
         gameId: selectedGame.id,
       };
       const templatesResponse =

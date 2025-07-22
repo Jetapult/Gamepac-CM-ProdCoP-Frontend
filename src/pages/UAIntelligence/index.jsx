@@ -3,11 +3,7 @@ import Feed from "./components/Feed";
 
 const UAIntelligence = () => {
   const user = useSelector((state) => state.user.user);
-  return (
-    <div>
-      <Feed user={user} />
-    </div>
-  );
+  return <Feed user={user} />;
 };
 
 export default UAIntelligence;

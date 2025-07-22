@@ -71,12 +71,11 @@ const HistorySidebar = ({ currentAnalysisId, studioId }) => {
   }
 
   return (
-    <div className="md:col-span-3 border rounded-lg bg-white overflow-hidden">
+    <div className="md:col-span-3 rounded-lg bg-white overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-200">
         <h3 className="text-sm font-medium text-gray-900">History</h3>
       </div>
       
-      <div>
         {analysisHistory.length === 0 && !loading ? (
           <div className="text-center py-8 px-4">
             <div className="text-sm text-gray-500">No history yet</div>
@@ -84,7 +83,7 @@ const HistorySidebar = ({ currentAnalysisId, studioId }) => {
         ) : (
           <div
             id="history-scrollable-div"
-            style={{ maxHeight: "calc(100vh - 300px)", overflow: "auto" }}
+            style={{ maxHeight: "calc(100vh - 200px)", overflow: "auto" }}
           >
             <InfiniteScroll
               dataLength={analysisHistory.length}
@@ -135,7 +134,7 @@ const HistorySidebar = ({ currentAnalysisId, studioId }) => {
             </InfiniteScroll>
           </div>
         )}
-      </div>
+      
     </div>
   );
 };

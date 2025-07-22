@@ -6,7 +6,7 @@ import ToastMessage from "../../../components/ToastMessage";
 import ConfirmationPopup from "../../../components/ConfirmationPopup";
 import NoData from "../../../components/NoData";
 
-const Templates = ({ studio_slug, templates, setTemplates }) => {
+const Templates = ({ templates, setTemplates, ContextStudioData }) => {
   const [showCreateReplyTemplatePopup, setShowCreateReplyTemplatePopup] =
     useState(false);
   const [toastMessage, setToastMessage] = useState({
@@ -17,16 +17,10 @@ const Templates = ({ studio_slug, templates, setTemplates }) => {
   });
   const [selectedTemplate, setSelectedTemplate] = useState({});
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
-  const studios = useSelector((state) => state.admin.studios);
-  const userData = useSelector((state) => state.user.user);
   const deleteTemplate = async () => {
     try {
       const templatesResponse = await api.delete(
-        `/v1/organic-ua/reply-template/delete/${
-          studio_slug
-            ? studios.filter((x) => x.slug === studio_slug)[0].id
-            : userData.studio_id
-        }/${selectedTemplate.id}`
+        `/v1/organic-ua/reply-template/delete/${ContextStudioData?.id}/${selectedTemplate.id}`
       );
       setTemplates((prev) =>
         prev.filter((x) => {
@@ -116,9 +110,9 @@ const Templates = ({ studio_slug, templates, setTemplates }) => {
           setShowCreateReplyTemplatePopup={setShowCreateReplyTemplatePopup}
           selectedTemplate={selectedTemplate}
           setSelectedTemplate={setSelectedTemplate}
-          studio_slug={studio_slug}
           setTemplates={setTemplates}
           setToastMessage={setToastMessage}
+          ContextStudioData={ContextStudioData}
         />
       )}
       {toastMessage.show && (

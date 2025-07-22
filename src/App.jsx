@@ -37,7 +37,7 @@ import WordSearchPuzzleGame from "./pages/HTML5Games/WordSearchPuzzleGame";
 import HTML5Games from "./pages/HTML5Games";
 import Analytics from "./pages/Analytics/Analytics";
 import Signup from "./pages/Login/Signup";
-import { addStudios } from "./store/reducer/adminSlice";
+import { addContextStudioData, addStudios } from "./store/reducer/adminSlice";
 import Docs from "./pages/Docs";
 import OrganicUA from "./pages/OrganicUA";
 import HiddenObjectsGame from "./pages/HTML5Games/HiddenObjectsGame";
@@ -62,7 +62,6 @@ import NewGDD from "./pages/GameDesignDocument/gdd/NewGDD.jsx";
 import GDDProject from "./pages/GameDesignDocument/gdd/Projects.jsx";
 import TranslatorPage from "./pages/GameDesignDocument/Translator/Translator.jsx";
 import ConceptGenerator from "./pages/GameDesignDocument/conceptGenerator/ConceptGenerator.jsx";
-import { Chatbot } from "./pages/GamepacAIAssistant/chatbot.jsx";
 
 
 function App() {
@@ -85,10 +84,27 @@ function App() {
             .get("/v1/game-studios")
             .then((res) => {
               dispatch(addStudios(res.data.data));
+              const ContextStudioData = res.data.data.find((studio) =>
+                studioData.data.data.studio_type?.includes("studio_manager")
+                  ? studio.slug?.includes("holy-cow-studio")
+                  : studio.slug?.includes(studioData?.data?.data?.slug)
+              );
+              dispatch(addContextStudioData(ContextStudioData));
             })
             .catch((err) => {
               console.log(err);
             });
+        }
+        else {
+          dispatch(addContextStudioData({
+            "id": studioData.data.data.studio_id,
+            "studio_name": studioData.data.data.studio_name,
+            "contact_email": studioData.data.data.contact_email,
+            "phone": studioData.data.data.phone,
+            "studio_type": studioData.data.data.studio_type,
+            "slug": studioData.data.data.slug,
+            "studio_logo": studioData.data.data.studio_logo
+          }));
         }
       }
     } catch (err) {
@@ -334,7 +350,7 @@ function App() {
             <Route path="/aso-assistant" element={<PrivateRoute><AsoAssistant /></PrivateRoute>} />
             <Route path="/aso-assistant/:studio_slug" element={<PrivateRoute><AsoAssistant /></PrivateRoute>} />
             {/* <Route path="/creativeAnalyser" element={<PrivateRoute><CreativeAnalyser/></PrivateRoute>} /> */}
-            <Route path ="/assetGenerator" element={<PrivateRoute><AssetGenerator/></PrivateRoute>}/>
+            <Route path ="/asset-generator" element={<PrivateRoute><AssetGenerator/></PrivateRoute>}/>
             <Route path="/data-visualization" element={<PrivateRoute><DataVisualization /></PrivateRoute>}/>
             <Route path="/ua-intelligence" element={<PrivateRoute><UAIntelligence /></PrivateRoute>} />
             <Route path="/ua-intelligence/analyse" element={<PrivateRoute><UACreativeAnalyser /></PrivateRoute>} />
@@ -355,7 +371,6 @@ function App() {
           </Routes>
         </Router>
       </>
-      {/* <Chatbot /> */}
     </div>
   );
 }
