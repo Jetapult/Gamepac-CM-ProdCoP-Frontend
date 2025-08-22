@@ -538,24 +538,24 @@ const TextTranslate = ({
   return (
     <>
       <div className="flex items-center gap-2 mb-2">
-        <div class="relative mt-2 min-w-28">
+        <div className="relative mt-2 min-w-28">
           <button
             type="button"
-            class="relative w-full cursor-default rounded-md bg-white py-1.5 px-2 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none sm:text-sm/6 cursor-pointer hover:bg-[#f3f3f3]"
+            className="relative w-full cursor-default rounded-md bg-white py-1.5 px-2 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none sm:text-sm/6 cursor-pointer hover:bg-[#f3f3f3]"
             aria-haspopup="listbox"
             aria-expanded="true"
             aria-labelledby="listbox-label"
             onClick={() => setShowGender(!showGender)}
           >
-            <span class="flex items-center justify-between">
-              <span class="block truncate">{selectedGender?.name}</span>
+            <span className="flex items-center justify-between">
+              <span className="block truncate">{selectedGender?.name}</span>
               <ChevronDownIcon className="w-6 h-6 text-gray-500 inline pointer-events-none ml-3" />
             </span>
           </button>
 
           {showGender && (
             <ul
-              class="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+              className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
               tabIndex="-1"
               role="listbox"
               aria-labelledby="listbox-label"
@@ -565,7 +565,7 @@ const TextTranslate = ({
               {genders.map((gender) => (
                 <li
                   key={gender.id}
-                  class="relative cursor-default select-none py-2 px-3 text-gray-900 cursor-pointer hover:bg-[#f3f3f3]"
+                  className="relative cursor-default select-none py-2 px-3 text-gray-900 cursor-pointer hover:bg-[#f3f3f3]"
                   id="listbox-option-0"
                   role="option"
                   onClick={() => {
@@ -573,8 +573,8 @@ const TextTranslate = ({
                     setShowGender(false);
                   }}
                 >
-                  <div class="flex items-center">
-                    <span class="block truncate font-normal">
+                  <div className="flex items-center">
+                    <span className="block truncate font-normal">
                       {gender.name}
                     </span>
                   </div>
@@ -583,24 +583,24 @@ const TextTranslate = ({
             </ul>
           )}
         </div>
-        <div class="relative mt-2 min-w-28">
+        <div className="relative mt-2 min-w-28">
           <button
             type="button"
-            class="relative w-full cursor-default rounded-md bg-white py-1.5 px-2 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none sm:text-sm/6 cursor-pointer hover:bg-[#f3f3f3]"
+            className="relative w-full cursor-default rounded-md bg-white py-1.5 px-2 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none sm:text-sm/6 cursor-pointer hover:bg-[#f3f3f3]"
             aria-haspopup="listbox"
             aria-expanded="true"
             aria-labelledby="listbox-label"
             onClick={() => setShowContextType(!showContextType)}
           >
-            <span class="flex items-center justify-between">
-              <span class="block truncate">{selectedContextType?.name}</span>
+            <span className="flex items-center justify-between">
+              <span className="block truncate">{selectedContextType?.name}</span>
               <ChevronDownIcon className="w-6 h-6 text-gray-500 inline pointer-events-none ml-3" />
             </span>
           </button>
 
           {showContextType && (
             <ul
-              class="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+              className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
               tabIndex="-1"
               role="listbox"
               aria-labelledby="listbox-label"
@@ -610,7 +610,7 @@ const TextTranslate = ({
               {contextTypes.map((contextType) => (
                 <li
                   key={contextType.id}
-                  class="relative cursor-default select-none py-2 px-3 text-gray-900 cursor-pointer hover:bg-[#f3f3f3]"
+                  className="relative cursor-default select-none py-2 px-3 text-gray-900 cursor-pointer hover:bg-[#f3f3f3]"
                   id="listbox-option-0"
                   role="option"
                   onClick={() => {
@@ -618,8 +618,8 @@ const TextTranslate = ({
                     setShowContextType(false);
                   }}
                 >
-                  <div class="flex items-center">
-                    <span class="block truncate font-normal">
+                  <div className="flex items-center">
+                    <span className="block truncate font-normal">
                       {contextType.name}
                     </span>
                   </div>

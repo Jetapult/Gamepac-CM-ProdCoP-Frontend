@@ -355,6 +355,8 @@ function App() {
             <Route path="/ua-intelligence" element={<PrivateRoute><UAIntelligence /></PrivateRoute>} />
             <Route path="/ua-intelligence/analyse" element={<PrivateRoute><UACreativeAnalyser /></PrivateRoute>} />
             <Route path="/ua-intelligence/analyse/:ad_id" element={<PrivateRoute><UACreativeAnalyser /></PrivateRoute>} />
+            <Route path="/ua-intelligence/brief-generator" element={<PrivateRoute><UACreativeAnalyser /></PrivateRoute>} />
+            <Route path="/ua-intelligence/brief-generator/:ad_id" element={<PrivateRoute><UACreativeAnalyser /></PrivateRoute>} />
             <Route path="/market-intel" element={<PrivateRoute><NewGameMarketIntelligence /></PrivateRoute>} />
             <Route path="/gdd" element={<PrivateRoute><GameDesignDocument /></PrivateRoute>} />
             <Route path="/gdd/collaboration" element={<PrivateRoute><Collaboration /></PrivateRoute>} />
