@@ -191,7 +191,7 @@ const Message = ({ message, setSelectedPage, setMessages }) => {
 
   const convertToNestedList = (text) => {
     const lines = text.split("\n");
-    let html = '<ul class="list-disc ml-6">';
+    let html = '<ul className="list-disc ml-6">';
     let currentLevel = 0;
 
     lines.forEach((line) => {
@@ -207,7 +207,7 @@ const Message = ({ message, setSelectedPage, setMessages }) => {
       }
 
       while (currentLevel < level) {
-        html += '<ul class="list-[circle] ml-6">';
+        html += '<ul className="list-[circle] ml-6">';
         currentLevel++;
       }
 
@@ -237,23 +237,23 @@ const Message = ({ message, setSelectedPage, setMessages }) => {
           return section
             .replace(
               /^#\s+(.*)$/gm,
-              '<h1 class="text-2xl font-bold mb-3">$1</h1>'
+              '<h1 className="text-2xl font-bold mb-3">$1</h1>'
             )
             .replace(
               /^##\s+(.*)$/gm,
-              '<h2 class="text-xl font-semibold mb-2">$1</h2>'
+              '<h2 className="text-xl font-semibold mb-2">$1</h2>'
             )
             .replace(
               /^###\s+(.*)$/gm,
-              '<h3 class="text-lg font-medium mb-2">$1</h3>'
+              '<h3 className="text-lg font-medium mb-2">$1</h3>'
             )
             .replace(
               /^####\s+(.*)$/gm,
-              '<h4 class="text-base font-medium mb-2">$1</h4>'
+              '<h4 className="text-base font-medium mb-2">$1</h4>'
             );
         } else if (/^\d+\./.test(trimmedSection)) {
           const lines = section.split("\n");
-          let html = '<div class="mb-2">';
+          let html = '<div className="mb-2">';
           let inBulletList = false;
 
           lines.forEach((line) => {
@@ -263,20 +263,20 @@ const Message = ({ message, setSelectedPage, setMessages }) => {
                 html += "</ul>";
                 inBulletList = false;
               }
-              html += `<div class="text-md mb-3">${trimmedLine}</div>`;
+              html += `<div className="text-md mb-3">${trimmedLine}</div>`;
             } else if (trimmedLine.startsWith("-")) {
               if (!inBulletList) {
-                html += '<ul class="list-disc ml-8 space-y-1">';
+                html += '<ul className="list-disc ml-8 space-y-1">';
                 inBulletList = true;
               }
               const content = trimmedLine.replace(/^-\s*/, "").trim();
-              html += `<li class="mb-1">${content}</li>`;
+              html += `<li className="mb-1">${content}</li>`;
             } else if (trimmedLine) {
               if (inBulletList) {
                 html += "</ul>";
                 inBulletList = false;
               }
-              html += `<div class="mb-2">${trimmedLine}</div>`;
+              html += `<div className="mb-2">${trimmedLine}</div>`;
             }
           });
 
@@ -287,13 +287,13 @@ const Message = ({ message, setSelectedPage, setMessages }) => {
           return convertToNestedList(section);
         }
 
-        return `<div class="mb-2">${section}</div>`;
+        return `<div className="mb-2">${section}</div>`;
       })
       .join("");
 
     formattedMessage = formattedMessage?.replace(
       /\*\*(.*?)\*\*/g,
-      "<strong class='font-semibold'>$1</strong>"
+      "<strong className='font-semibold'>$1</strong>"
     );
 
     formattedMessage = formattedMessage?.replace(
@@ -305,23 +305,23 @@ const Message = ({ message, setSelectedPage, setMessages }) => {
           .filter((row) => !/^\|[\s-]+\|$/.test(row));
 
         let tableHtml =
-          '<table class="border-collapse border border-gray-300 my-2">';
+          '<table className="border-collapse border border-gray-300 my-2">';
 
         rows.forEach((row, rowIndex) => {
           const cells = row.split("|").filter((cell) => cell.trim() !== "");
           if (rowIndex === 0) {
             tableHtml += "<thead><tr>";
             cells.forEach((cell) => {
-              tableHtml += `<th class="border border-gray-300 px-4 py-2 bg-gray-200 font-bold">${cell.trim()}</th>`;
+              tableHtml += `<th className="border border-gray-300 px-4 py-2 bg-gray-200 font-bold">${cell.trim()}</th>`;
             });
             tableHtml += "</tr></thead><tbody>";
           } else {
             tableHtml += "<tr>";
             cells.forEach((cell, cellIndex) => {
               if (cellIndex === 0) {
-                tableHtml += `<th class="border border-gray-300 px-4 py-2 bg-gray-100 font-semibold text-left">${cell.trim()}</th>`;
+                tableHtml += `<th className="border border-gray-300 px-4 py-2 bg-gray-100 font-semibold text-left">${cell.trim()}</th>`;
               } else {
-                tableHtml += `<td class="border border-gray-300 px-4 py-2">${cell.trim()}</td>`;
+                tableHtml += `<td className="border border-gray-300 px-4 py-2">${cell.trim()}</td>`;
               }
             });
             tableHtml += "</tr>";
