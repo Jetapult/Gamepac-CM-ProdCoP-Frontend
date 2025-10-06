@@ -56,7 +56,7 @@ const QuickActions = ({ onAction, ContextStudioData }) => {
   const toolsSubmenu = [
     { icon: Users, label: 'UA', color: 'from-orange-400 to-red-400', hasSubmenu: true },
     { icon: Gamepad2, label: 'Dev', color: 'from-blue-400 to-indigo-400', hasSubmenu: true },
-    { icon: Plus, label: 'New Games', color: 'from-green-400 to-emerald-400', hasSubmenu: true },
+    // { icon: Plus, label: 'New Games', color: 'from-green-400 to-emerald-400', hasSubmenu: true },
   ];
 
   const actionsSubmenu = [
@@ -78,9 +78,9 @@ const QuickActions = ({ onAction, ContextStudioData }) => {
       { icon: Languages, label: 'Transl8', color: 'from-indigo-400 to-blue-400' },
       { icon: Map, label: 'LevelGen', color: 'from-cyan-400 to-indigo-400' },
     ],
-    'New Games': [
-      { icon: FileEdit, label: 'GDD Agent', color: 'from-green-400 to-emerald-400' },
-    ],
+    // 'New Games': [
+    //   { icon: FileEdit, label: 'GDD Agent', color: 'from-green-400 to-emerald-400' },
+    // ],
   };
 
   const handleActionClick = (action) => {

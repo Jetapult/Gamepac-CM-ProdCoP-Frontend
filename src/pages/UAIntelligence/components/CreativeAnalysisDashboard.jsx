@@ -303,18 +303,18 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData, on
     //   url?.toLowerCase()?.endsWith(type)
     // );
 
-    if (url) {
-      setError(
-        "Please enter a valid URL for video (MP4, MOV) or image (JPEG, PNG, GIF) files"
-      );
-    } else {
+    // if (url) {
+    //   setError(
+    //     "Please enter a valid URL for video (MP4, MOV) or image (JPEG, PNG, GIF) files"
+    //   );
+    // } else {
       setError("");
       if (url) {
         setPreviewUrl(url);
       } else {
         setPreviewUrl(null);
       }
-    }
+    // }
   };
 
   const analyzeCreative = async (url, method, adId) => {

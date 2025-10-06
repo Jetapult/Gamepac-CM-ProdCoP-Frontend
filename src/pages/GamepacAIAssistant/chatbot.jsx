@@ -1013,7 +1013,7 @@ export function Chatbot({ setShowChatbotDropdown, userData, studios }) {
                                 <span className="text-xs truncate flex-1">
                                   {attachment.original_name}
                                 </span>
-                                {attachment.id && (
+                                {/* {attachment.id && (
                                   <button
                                     onClick={() =>
                                       downloadAttachment(attachment)
@@ -1022,7 +1022,7 @@ export function Chatbot({ setShowChatbotDropdown, userData, studios }) {
                                   >
                                     <Download className="w-3 h-3" />
                                   </button>
-                                )}
+                                )} */}
                               </div>
                             ))}
                           </div>

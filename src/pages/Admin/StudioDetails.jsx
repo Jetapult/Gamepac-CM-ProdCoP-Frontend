@@ -7,6 +7,8 @@ import StudioSettings from "./components/studioSettings/StudioSettings";
 import StudioDashboard from "./components/studioDashboard/StudioDashboard";
 import { useSelector } from "react-redux";
 import StudioAppStoreKeys from "./components/studioAppStoreKeys/StudioAppStoreKeys";
+import OnboardingProcessForm from "./components/onboardingForm/OnboardingProcessForm";
+import StudioProfile from "./components/studioProfile/StudioProfile";
 
 const StudioDetails = () => {
   const adminData = useSelector((state) => state.admin.selectedStudio);
@@ -51,6 +53,18 @@ const StudioDetails = () => {
       id: "4",
       label: "API key",
       value: "apple-api-key",
+      show: !adminData?.studio_type?.includes("studio_manager") ? true : false,
+    },
+    {
+      id: "5",
+      label: "Upload Onboarding",
+      value: "upload-onboarding",
+      show: adminData?.studio_type?.includes("studio_manager") ? true : false,
+    },
+    {
+      id: "6",
+      label: "Studio Profile",
+      value: "profile",
       show: !adminData?.studio_type?.includes("studio_manager") ? true : false,
     },
   ];
@@ -142,6 +156,22 @@ const StudioDetails = () => {
 
       {selectedTab === "apple-api-key" && (
         <StudioAppStoreKeys
+          studioData={adminData}
+          setToastMessage={setToastMessage}
+          setSelectedTab={setSelectedTab}
+        />
+      )}
+
+      {selectedTab === "upload-onboarding" && (
+        <OnboardingProcessForm
+          studioData={adminData}
+          setToastMessage={setToastMessage}
+          setSelectedTab={setSelectedTab}
+        />
+      )}
+
+      {selectedTab === "profile" && (
+        <StudioProfile
           studioData={adminData}
           setToastMessage={setToastMessage}
           setSelectedTab={setSelectedTab}
