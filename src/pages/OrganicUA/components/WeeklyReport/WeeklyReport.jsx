@@ -53,44 +53,44 @@ const WeeklyReport = ({ games, setGames, ContextStudioData }) => {
     return content
       .replace(
         /<b>Sentiment Analysis<\/b>/g,
-        '<h1 class="report-heading sentiment-analysis">Sentiment Analysis</h1>'
+        '<h1 className="report-heading sentiment-analysis">Sentiment Analysis</h1>'
       )
       .replace(
         /<b>Trends & Insights<\/b>/g,
-        '<h1 class="report-heading trends-insights">Trends & Insights</h1>'
+        '<h1 className="report-heading trends-insights">Trends & Insights</h1>'
       )
       .replace(
         /<b>Actionable Recommendations<\/b>/g,
-        '<h1 class="report-heading actionable-recommendations">Actionable Recommendations</h1>'
+        '<h1 className="report-heading actionable-recommendations">Actionable Recommendations</h1>'
       )
       .replace(
-        /<h1 class="report-heading actionable-recommendations">Actionable Recommendations<\/h1>([\s\S]*?)$/g,
+        /<h1 className="report-heading actionable-recommendations">Actionable Recommendations<\/h1>([\s\S]*?)$/g,
         (match, p1) => {
           return match.replace(/(\d+\. [^\.]+\.)/g, "<li>$1</li>");
         }
       )
-      .replace(/- Positive: \d+(\.\d+)?%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Neutral: \d+(\.\d+)?%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Negative: \d+(\.\d+)?%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Appreciation: \d+%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Ads Concern: \d+%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Concern: \d+%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Need more info: \d+%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Progress saving: \d+%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Bug: \d+%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- IAP Concern: \d+%/g, '<p class="padding-left-20">$&</p>')
+      .replace(/- Positive: \d+(\.\d+)?%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Neutral: \d+(\.\d+)?%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Negative: \d+(\.\d+)?%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Appreciation: \d+%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Ads Concern: \d+%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Concern: \d+%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Need more info: \d+%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Progress saving: \d+%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Bug: \d+%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- IAP Concern: \d+%/g, '<p className="padding-left-20">$&</p>')
       .replace(
         /- Crashes\/ANR: \d+(\.\d+)?%/g,
-        '<p class="padding-left-20">$&</p>'
+        '<p className="padding-left-20">$&</p>'
       )
       .replace(
         /- Lag\/Freeze: \d+(\.\d+)?%/g,
-        '<p class="padding-left-20">$&</p>'
+        '<p className="padding-left-20">$&</p>'
       )
       .replace(/(\d+\.\sApp Version - [^:]+: [^\.]+\.)/g, "<li>$1</li>")
       .replace(
         /<b>Negative Feedback<\/b>/g,
-        '<h1 class="report-heading negative-feedback">Negative Feedback</h1>'
+        '<h1 className="report-heading negative-feedback">Negative Feedback</h1>'
       );
   };
 

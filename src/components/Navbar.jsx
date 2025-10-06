@@ -129,6 +129,22 @@ function Navbar() {
                 </li>
                 <li
                   className={`duration-150 hover:text-gray-500 hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:rounded-full ${
+                    location.pathname.includes("idea-pac")
+                      ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black after:absolute after:bottom-[-16px] after:rounded-full"
+                      : ""
+                  }`}
+                >
+                  <a
+                    className="block cursor-pointer"
+                    onClick={() =>
+                      navigate(`/${studioSlug || userData?.slug}/idea-pac`)
+                    }
+                  >
+                    IdeaPac
+                  </a>
+                </li>
+                <li
+                  className={`duration-150 hover:text-gray-500 hover:after:content-[''] hover:after:h-[3px] hover:after:w-10 hover:after:bg-gray-500 hover:after:absolute hover:after:bottom-[-16px] hover:after:rounded-full ${
                     location.pathname.includes("dashboard")
                       ? "text-black font-bold after:content-[''] after:h-[3px] after:w-10 after:bg-black after:absolute after:bottom-[-16px] after:rounded-full"
                       : ""

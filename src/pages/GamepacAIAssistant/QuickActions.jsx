@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wrench, Code, BarChart3, Settings, ChevronDown, Users, Gamepad2, Plus, Rss, Scissors, Play, FileEdit, Palette, Languages, Map, MessageCircle, TrendingUp } from 'lucide-react';
+import { getAuthToken } from '../../utils';
 
 const QuickActions = ({ onAction, ContextStudioData }) => {
   const [showToolsSubmenu, setShowToolsSubmenu] = useState(false);
   const [showActionsSubmenu, setShowActionsSubmenu] = useState(false);
   const [activeToolSubmenu, setActiveToolSubmenu] = useState(null);
   const navigate = useNavigate();
+  const token = getAuthToken()?.token;
 
   const routeMap = {
     'UA Feed': '/ua-intelligence',
     'Creative Breakdown': '/ua-intelligence/analyse',
     'Playable Editor': '/video-editor',
-    'UGC Editor': '/ugc-editor',
+    'UGC Editor': `https://editor.gamepacai.com?token=${token}`,
     'Asset Gen': '/asset-generator',
     'Transl8': '/translate',
     'LevelGen': '/data-visualization',
@@ -25,6 +27,25 @@ const QuickActions = ({ onAction, ContextStudioData }) => {
     'ASOPac': '/aso-assistant',
   };
 
+  // Helper function to check if URL is external
+  const isExternalUrl = (url) => {
+    return url && (url.startsWith('http://') || url.startsWith('https://'));
+  };
+
+  // Helper function to handle navigation
+  const handleNavigation = (route, label) => {
+    if (route) {
+      if (isExternalUrl(route)) {
+        window.open(route, '_blank', 'noopener,noreferrer');
+      } else {
+        navigate(route);
+      }
+      if (onAction) onAction(label);
+    } else if (onAction) {
+      onAction(label);
+    }
+  };
+
   const actions = [
     { icon: Wrench, label: 'Tools', color: 'from-yellow-500 to-orange-500', hasSubmenu: true },
     { icon: Code, label: 'Actions', color: 'from-green-500 to-emerald-500', hasSubmenu: true },
@@ -35,7 +56,7 @@ const QuickActions = ({ onAction, ContextStudioData }) => {
   const toolsSubmenu = [
     { icon: Users, label: 'UA', color: 'from-orange-400 to-red-400', hasSubmenu: true },
     { icon: Gamepad2, label: 'Dev', color: 'from-blue-400 to-indigo-400', hasSubmenu: true },
-    { icon: Plus, label: 'New Games', color: 'from-green-400 to-emerald-400', hasSubmenu: true },
+    // { icon: Plus, label: 'New Games', color: 'from-green-400 to-emerald-400', hasSubmenu: true },
   ];
 
   const actionsSubmenu = [
@@ -57,9 +78,9 @@ const QuickActions = ({ onAction, ContextStudioData }) => {
       { icon: Languages, label: 'Transl8', color: 'from-indigo-400 to-blue-400' },
       { icon: Map, label: 'LevelGen', color: 'from-cyan-400 to-indigo-400' },
     ],
-    'New Games': [
-      { icon: FileEdit, label: 'GDD Agent', color: 'from-green-400 to-emerald-400' },
-    ],
+    // 'New Games': [
+    //   { icon: FileEdit, label: 'GDD Agent', color: 'from-green-400 to-emerald-400' },
+    // ],
   };
 
   const handleActionClick = (action) => {
@@ -74,12 +95,7 @@ const QuickActions = ({ onAction, ContextStudioData }) => {
     } else {
       // Handle direct navigation for Metrics and Settings
       const route = routeMap[action.label];
-      if (route) {
-        navigate(route);
-        onAction(action.label);
-      } else {
-        onAction(action.label);
-      }
+      handleNavigation(route, action.label);
       setShowToolsSubmenu(false);
       setShowActionsSubmenu(false);
       setActiveToolSubmenu(null);
@@ -91,12 +107,7 @@ const QuickActions = ({ onAction, ContextStudioData }) => {
       setActiveToolSubmenu(activeToolSubmenu === tool.label ? null : tool.label);
     } else {
       const route = routeMap[tool.label];
-      if (route) {
-        navigate(route);
-        onAction(tool.label);
-      } else {
-        onAction(tool.label);
-      }
+      handleNavigation(route, tool.label);
       setShowToolsSubmenu(false);
       setActiveToolSubmenu(null);
     }
@@ -104,12 +115,7 @@ const QuickActions = ({ onAction, ContextStudioData }) => {
 
   const handleSubMenuClick = (item) => {
     const route = routeMap[item.label];
-    if (route) {
-      navigate(route);
-      onAction(item.label);
-    } else {
-      onAction(item.label);
-    }
+    handleNavigation(route, item.label);
     setShowToolsSubmenu(false);
     setShowActionsSubmenu(false);
     setActiveToolSubmenu(null);
@@ -117,12 +123,7 @@ const QuickActions = ({ onAction, ContextStudioData }) => {
 
   const handleActionsClick = (item) => {
     const route = routeMap[item.label];
-    if (route) {
-      navigate(route);
-      onAction(item.label);
-    } else {
-      onAction(item.label);
-    }
+    handleNavigation(route, item.label);
     setShowActionsSubmenu(false);
     setShowToolsSubmenu(false);
     setActiveToolSubmenu(null);

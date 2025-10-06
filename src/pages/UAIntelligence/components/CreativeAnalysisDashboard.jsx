@@ -16,15 +16,15 @@ const renderMarkdownText = (text) => {
     const trimmedLine = line.trim();
     
     if (!trimmedLine) {
-      processedLines.push('<div class="h-2"></div>');
+      processedLines.push('<div className="h-2"></div>');
     } else if (trimmedLine.startsWith('*   ')) {
       const content = trimmedLine.substring(4);
-      processedLines.push(`<div class="ml-6 mb-1 flex items-start"><span class="text-gray-400 mr-2 mt-1 text-xs">•</span><span class="text-sm">${content}</span></div>`);
+      processedLines.push(`<div className="ml-6 mb-1 flex items-start"><span className="text-gray-400 mr-2 mt-1 text-xs">•</span><span className="text-sm">${content}</span></div>`);
     } else if (trimmedLine.startsWith('* ')) {
       const content = trimmedLine.substring(2);
-      processedLines.push(`<div class="ml-3 mb-1 flex items-start"><span class="text-gray-600 mr-2 mt-1">•</span><span class="text-sm">${content}</span></div>`);
+      processedLines.push(`<div className="ml-3 mb-1 flex items-start"><span className="text-gray-600 mr-2 mt-1">•</span><span className="text-sm">${content}</span></div>`);
     } else {
-      processedLines.push(`<div class="mb-2 text-sm">${trimmedLine}</div>`);
+      processedLines.push(`<div className="mb-2 text-sm">${trimmedLine}</div>`);
     }
   });
   
@@ -303,18 +303,18 @@ const CreativeAnalysisDashboard = ({ analysisId, userData, ContextStudioData, on
     //   url?.toLowerCase()?.endsWith(type)
     // );
 
-    if (url) {
-      setError(
-        "Please enter a valid URL for video (MP4, MOV) or image (JPEG, PNG, GIF) files"
-      );
-    } else {
+    // if (url) {
+    //   setError(
+    //     "Please enter a valid URL for video (MP4, MOV) or image (JPEG, PNG, GIF) files"
+    //   );
+    // } else {
       setError("");
       if (url) {
         setPreviewUrl(url);
       } else {
         setPreviewUrl(null);
       }
-    }
+    // }
   };
 
   const analyzeCreative = async (url, method, adId) => {
