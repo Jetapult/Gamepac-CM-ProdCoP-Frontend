@@ -11,8 +11,13 @@ import {
   Filler,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import { ArrowUp, ArrowDown, File, Mic, ChevronRight } from "lucide-react";
+import { ArrowUp, ArrowDown, ChevronRight } from "lucide-react";
 import PropTypes from "prop-types";
+import gameIcon from "../../assets/game-icon.png";
+import playableShowcase from "../../assets/playable-showcase.png";
+import mergeGame from "../../assets/2x_Retina.png";
+import smileGame from "../../assets/smiley.png";
+import GamepacAssistant from "../../components/IdeaPack/GamepacAssistant";
 
 ChartJS.register(
   CategoryScale,
@@ -126,7 +131,7 @@ const IdeaPac = () => {
           font: {
             size: 12,
           },
-          padding: 5,
+          padding: 0,
           maxTicksLimit: 3,
         },
         beginAtZero: true,
@@ -145,7 +150,7 @@ const IdeaPac = () => {
       padding: {
         left: 0,
         right: 0,
-        top: 10,
+        top: 0,
         bottom: 0,
       },
     },
@@ -210,11 +215,17 @@ const IdeaPac = () => {
     { name: "ArtFit", score: 65 },
     { name: "Confid. adj", score: 80 },
   ];
+  const topGames = [
+    { name: "Royal Match", img: gameIcon },
+    { name: "Brawl Stars", img: playableShowcase },
+    { name: "Smiley Wars", img: smileGame },
+    { name: "Merge Game", img: mergeGame },
+  ];
   return (
-    <div className="bg-[#404040] h-[100vh]">
+    <div className="bg-[#404040] h-[100%]">
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-8 p-4">
-          <div className="bg-[#303030] rounded-[20px] p-6 border-[0.5px] border-[#636363]">
+        <div className="col-span-8 p-4 pr-2">
+          <div className="bg-[#303030] rounded-[10px] p-6 border-[0.5px] border-[#303030]">
             <div className="flex justify-between items-center mb-4">
               <h1 className="text-3xl font-bold text-white">
                 Opportunity - Idle Merge
@@ -235,26 +246,30 @@ const IdeaPac = () => {
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <button className="bg-transparent text-white text-sm rounded-2xl px-3 py-1 border border-white flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-white"></span> Casual
+                  <span className="w-2 h-2 rounded-full border-white border"></span>{" "}
+                  Casual
                 </button>
                 <button className="bg-transparent text-white text-sm rounded-2xl px-3 py-1 border border-white flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-white"></span> RPG
+                  <span className="w-2 h-2 rounded-full border-white border"></span>{" "}
+                  RPG
                 </button>
                 <button className="bg-transparent text-white text-sm rounded-2xl px-3 py-1 border border-white flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-white"></span> Puzzle
+                  <span className="w-2 h-2 rounded-full border-white border"></span>{" "}
+                  Puzzle
                 </button>
                 <button className="bg-transparent text-white text-sm rounded-2xl px-3 py-1 border border-white flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-white"></span>{" "}
+                  <span className="w-2 h-2 rounded-full border-white border"></span>{" "}
                   Simulation
                 </button>
                 <button className="bg-transparent text-white text-sm rounded-2xl px-3 py-1 border border-white flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-white"></span> FPS
+                  <span className="w-2 h-2 rounded-full border-white border"></span>{" "}
+                  FPS
                 </button>
               </div>
             </div>
             <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-6 bg-[#434343] rounded-[20px] p-6 pb-4">
-                <div className="flex justify-between items-center mb-4">
+              <div className="col-span-6 bg-[#434343] rounded-[10px] p-4">
+                <div className="flex justify-between items-center mb-2">
                   <h2 className="text-white text-[24px] font-bold">
                     Market Snapshot
                   </h2>
@@ -263,7 +278,7 @@ const IdeaPac = () => {
                   </p>
                 </div>
 
-                <div className="flex gap-4 mb-6">
+                <div className="flex gap-4 mb-2">
                   <div className="flex items-center gap-2">
                     <span className="bg-[#FFC90A] text-[12px] px-2 py-0.5 rounded-full font-medium flex items-center">
                       <ArrowUp className="text-black" size={12} />
@@ -280,11 +295,15 @@ const IdeaPac = () => {
                   </div>
                 </div>
 
-                <div className="h-36 mb-4 relative w-full border-b border-dashed border-gray-500">
-                  <Line data={chartData} options={chartOptions} />
+                <div className="h-56 relative w-full">
+                  <Line
+                    className="w-full h-full"
+                    data={chartData}
+                    options={chartOptions}
+                  />
                 </div>
 
-                <div className="space-y-2 text-sm pt-2">
+                <div className="space-y-2 text-sm pt-6">
                   <div className="flex items-center gap-2">
                     <span className="text-white text-[16px] before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
                       Growth:
@@ -307,7 +326,7 @@ const IdeaPac = () => {
               </div>
               <div className="col-span-6 space-y-4">
                 {/* Fit Score card */}
-                <div className="bg-[#434343] rounded-[20px] p-6 pb-4">
+                <div className="bg-[#434343] rounded-[10px] p-6 pb-4">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-white text-[24px] font-bold">
                       Fit Score
@@ -317,12 +336,12 @@ const IdeaPac = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-4">
+                  <div className="flex gap-8">
                     <div className="flex justify-center mb-4">
                       <CircularProgress score={75} />
                     </div>
 
-                    <div className="space-y-4 mt-2">
+                    <div className="space-y-4 mt-2 w-full">
                       {fitScoreMetrics.map((metric) => (
                         <div key={metric.name} className="flex flex-col">
                           <span className="text-sm text-[#fff] min-w-[100px]">
@@ -341,7 +360,7 @@ const IdeaPac = () => {
                 </div>
 
                 {/* Confidence Level card */}
-                <div className="bg-[#434343] rounded-[20px] p-6 pb-4 border-[0.5px] border-[#636363]">
+                <div className="bg-[#434343] rounded-[10px] p-6 pb-4 border-[0.5px] border-[#636363]">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-white text-[24px] font-bold">
                       Confidence Level
@@ -376,95 +395,34 @@ const IdeaPac = () => {
             </div>
           </div>
           <div className="grid grid-cols-12 gap-4 mt-4">
-            <div className="bg-[#303030] rounded-[20px] p-6 border-[0.5px] border-[#636363] col-span-6">
+            <div className="bg-[#303030] rounded-[10px] p-6 border-[0.5px] border-[#303030] col-span-6">
               <h3 className="text-white text-xl font-bold mb-2">Controls</h3>
             </div>
-            <div className="bg-[#303030] rounded-[20px] p-6 border-[0.5px] border-[#636363] col-span-6">
+            <div className="bg-[#303030] rounded-[10px] p-6 border-[0.5px] border-[#303030] col-span-6">
               <h3 className="text-white text-xl font-bold mb-2">
                 Top Games - Idle Merge
               </h3>
+              <div className="grid grid-cols-4 gap-4 mt-2">
+                {topGames.map((g) => (
+                  <div key={g.name}>
+                    <div className="rounded-[14px] overflow-hidden border border-white/70 bg-[#1f1f1f] w-full h-[80px] flex items-center justify-center">
+                      <img
+                        src={g.img}
+                        alt={g.name}
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                    <div className="text-white text-sm text-center mt-2 truncate">
+                      {g.name}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-        <div className="col-span-4 p-4">
-          <div className="bg-[#303030] rounded-[20px]  border-[0.5px] border-[#636363] h-full flex flex-col">
-            <div className="bg-[#0E0E0F59] flex items-center justify-between p-4 rounded-[20px] border-b-0">
-              <h2 className="text-white text-[20px] font-bold">
-                Gamepac Assistant
-              </h2>
-              <button className="bg-white text-[#303030] rounded-full px-3 py-1 text-xs font-medium">
-                New Chat
-              </button>
-            </div>
-            <div className="p-2 flex flex-col flex-1">
-              <div className="text-center text-gray-300 text-xs mb-4">
-                Friday, October 3
-              </div>
-
-              {/* Messages Scroll Area */}
-              <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-                {/* User message (right) */}
-                <div className="flex w-full justify-end">
-                  <div className="max-w-[80%] bg-[#3a3a3a] border border-[#535353] rounded-xl p-4 text-gray-200 text-sm text-left">
-                    How are the downloads of merge-based puzzle games in the US
-                    vs India?
-                  </div>
-                </div>
-
-                {/* Assistant reply (left) */}
-                <div className="flex w-full justify-start">
-                  <div className="max-w-[85%] bg-[#4a4a4a] border border-[#5a5a5a] rounded-xl p-4 text-gray-200 text-sm">
-                    <ul className="list-disc ml-5 space-y-4">
-                      <li>
-                        Since Growth is high and Retention is in the Top 25%,
-                        merge-based puzzle games are gaining strong traction
-                        globally.
-                      </li>
-                      <li>
-                        In markets like the US, downloads are likely higher but
-                        more expensive (higher CPI).
-                      </li>
-                      <li>
-                        In India, downloads would be cheaper but monetization
-                        may be weaker.
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Chips under reply */}
-                <div className="flex gap-2">
-                  <button className="px-3 py-1 rounded-full border border-[#7a7a7a] text-xs text-white">
-                    Expand on this further
-                  </button>
-                  <button className="px-3 py-1 rounded-full border border-[#7a7a7a] text-xs text-white">
-                    Other country comparison
-                  </button>
-                </div>
-              </div>
-
-              {/* Input pinned to bottom */}
-              <div className="pt-4 bg-[#0E0E0F59] p-4 rounded-[20px]">
-                <input
-                  className="w-full rounded-[16px] p-3 border border-[#545454]  bg-[#2f2f2f] text-gray-300 text-sm"
-                  placeholder="Ask, add files or find anything"
-                ></input>
-                <div className="flex items-center justify-between mt-3">
-                  <button className="w-9 h-9 rounded-full bg-white/10 text-white border border-[#6b6b6b]  flex items-center justify-center">
-                    <File size={16} />
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <button className="w-9 h-9 rounded-full bg-white/10 text-white border border-[#6b6b6b] flex items-center justify-center">
-                      <Mic size={16} />
-                    </button>
-                    <button className="rounded-full bg-white text-[#303030] px-4 py-2 text-xs font-semibold">
-                      Ask AI ▸
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="col-span-4 py-4">
+          <GamepacAssistant />
         </div>
       </div>
     </div>
