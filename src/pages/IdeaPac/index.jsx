@@ -99,6 +99,15 @@ const IdeaPac = () => {
     };
   }, [studioId, loadPrevOpps]);
 
+  // If a specific cardId is provided via query param, select it in details
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const cardId = params.get("cardId");
+    if (cardId) {
+      setActiveTabId(String(cardId));
+    }
+  }, []);
+
   // Right panel generator moved into its own component
 
   // Tabs are handled in OpportunityDetails
@@ -179,7 +188,7 @@ const IdeaPac = () => {
                       }
                       endMessage={
                         <div className="px-4 py-2 text-xs text-center text-gray-400">
-                         •••
+                          •••
                         </div>
                       }
                       scrollableTarget="prevOppScrollContainer"
@@ -232,7 +241,15 @@ const IdeaPac = () => {
           </div>
 
           {/* Generate New Opportunity */}
-          <OpportunityGenerator />
+          <OpportunityGenerator
+            onGenerated={async ({ cardId } = {}) => {
+              if (cardId != null) {
+                setActiveTabId(String(cardId));
+              }
+              // Refresh the previous opportunities list to get the latest
+              await handleReloadPrevOpps();
+            }}
+          />
         </div>
       </div>
     </div>

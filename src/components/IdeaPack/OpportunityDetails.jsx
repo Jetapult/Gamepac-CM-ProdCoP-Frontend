@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,7 +11,15 @@ import {
   Filler,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import { ArrowUp, ArrowDown, FileText, ChartNoAxesColumn } from "lucide-react";
+import {
+  ArrowUp,
+  ArrowDown,
+  FileText,
+  ChartNoAxesColumn,
+  CheckCircle,
+  Circle,
+  Loader2,
+} from "lucide-react";
 import { PDFViewer } from "../../pages/GameDesignDocument/conceptGenerator/PDFViewer";
 import api from "../../api";
 import PropTypes from "prop-types";
@@ -98,8 +106,61 @@ export default function OpportunityDetails({
   const [tabs, setTabs] = useState([]);
   const [tabsLoading, setTabsLoading] = useState(false);
   const [tabsError, setTabsError] = useState("");
+  const [autoGenerating, setAutoGenerating] = useState(false);
+  const [autoGenError, setAutoGenError] = useState("");
 
   const [selectedPdf, setSelectedPdf] = useState(null);
+  const hasAttemptedAutoGenerateRef = useRef(false);
+  const autoGenInFlightRef = useRef(false);
+
+  // Reset auto-generate guard when studio changes
+  useEffect(() => {
+    hasAttemptedAutoGenerateRef.current = false;
+  }, [studioId]);
+
+  // Define helpers BEFORE effects that depend on them
+  const reloadTabs = useCallback(async () => {
+    try {
+      setTabsLoading(true);
+      setTabsError("");
+      const res = await api.get(`/v1/ideapac/opportunity-cards`, {
+        params: { studio_id: studioId, page: 1, limit: 5 },
+      });
+      const items = Array.isArray(res?.data?.data) ? res.data.data : [];
+      const baseTabs = items.slice(0, 3).map((item, index) => ({
+        id: String(item?.id ?? index + 1),
+        label: `${item?.genre_name || ""} | ${item?.sub_genre_name || ""}`,
+      }));
+      setTabs(baseTabs);
+      if (items[0]?.id != null) {
+        setActiveTabId(String(items[0].id));
+      }
+    } catch (e) {
+      setTabsError("Failed to load tabs");
+    } finally {
+      setTabsLoading(false);
+    }
+  }, [studioId, setActiveTabId]);
+
+  const triggerAutoGenerate = useCallback(async () => {
+    if (autoGenInFlightRef.current) return;
+    try {
+      setAutoGenError("");
+      setAutoGenerating(true);
+      autoGenInFlightRef.current = true;
+      await api.post(`/v1/ideapac/opportunity-card/generate`, {
+        studio_id: studioId,
+        simulate: false,
+      });
+      // After successful generation, reload list and show details
+      await reloadTabs();
+    } catch (e) {
+      setAutoGenError("Failed to generate opportunity. Please retry.");
+    } finally {
+      setAutoGenerating(false);
+      autoGenInFlightRef.current = false;
+    }
+  }, [reloadTabs, studioId]);
 
   useEffect(() => {
     const loadTabs = async () => {
@@ -111,6 +172,16 @@ export default function OpportunityDetails({
           params: { studio_id: studioId, page: 1, limit: 5 },
         });
         const items = Array.isArray(res?.data?.data) ? res.data.data : [];
+
+        if (items.length === 0) {
+          // No cards yet: trigger once per studio
+          if (!hasAttemptedAutoGenerateRef.current) {
+            hasAttemptedAutoGenerateRef.current = true;
+            triggerAutoGenerate();
+          }
+          return;
+        }
+
         const baseTabs = items.slice(0, 3).map((item, index) => ({
           id: String(item?.id ?? index + 1),
           label: `${item?.genre_name || ""} | ${item?.sub_genre_name || ""}`,
@@ -134,7 +205,7 @@ export default function OpportunityDetails({
       }
     };
     loadTabs();
-  }, [studioId]);
+  }, [studioId, triggerAutoGenerate]);
 
   // Ensure a default selection after tabs are loaded if none selected yet
   useEffect(() => {
@@ -350,11 +421,31 @@ export default function OpportunityDetails({
   const negativeInsights = detail?.insights?.negative || [];
   const neutralInsights = detail?.insights?.neutral || [];
 
-  const topGames = [
-    { name: "Royal Match", img: gameIcon, author: "Voodoo" },
-    { name: "Brawl Stars", img: playableShowcase, author: "Supercell" },
-    { name: "Smiley Wars", img: smileGame, author: "Brawl Stars" },
+  // Prefer API-provided top apps, fallback to placeholders for resilience
+  const rawTopApps = Array.isArray(detail?.top_apps) ? detail.top_apps : [];
+  const topApps = rawTopApps.slice(0, 6).map((app, index) => ({
+    url: typeof app?.url === "string" ? app.url : "#",
+    name: typeof app?.name === "string" ? app.name : `App ${index + 1}`,
+    iconUrl: typeof app?.icon_url === "string" ? app.icon_url : null,
+    publisher:
+      typeof app?.publisher_name === "string" ? app.publisher_name : "",
+  }));
+  const placeholderTopApps = [
+    { url: "#", name: "Royal Match", iconUrl: gameIcon, publisher: "Voodoo" },
+    {
+      url: "#",
+      name: "Brawl Stars",
+      iconUrl: playableShowcase,
+      publisher: "Supercell",
+    },
+    {
+      url: "#",
+      name: "Smiley Wars",
+      iconUrl: smileGame,
+      publisher: "Brawl Stars",
+    },
   ];
+  const topItemsToRender = topApps.length > 0 ? topApps : placeholderTopApps;
 
   const isTabsPlaceholder = tabsLoading || !!tabsError || tabs.length === 0;
   const placeholderTabs = [1, 2, 3].map((i) => ({
@@ -405,301 +496,356 @@ export default function OpportunityDetails({
       </div>
 
       <div className="bg-[#303030] rounded-[10px] p-6  -mt-1">
-        {/* Header */}
-        <div className="flex justify-between items-start mb-2">
-          <div>
-            <h1 className="text-4xl font-bold text-white leading-tight">
-              {title}
-            </h1>
-            <p className="text-gray-300 -mt-1">{subtitle}</p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-2">
-              {activeView === "market" ? (
-                <button
-                  onClick={() => {
-                    setActiveView("gdd");
-                    console.log("selectedPdf", selectedPdf);
-                  }}
-                  className="bg-[#27C128] text-white rounded-2xl px-4 py-2 text-sm font-medium flex items-center gap-1 hover:cursor-pointer "
-                  disabled={!selectedPdf}
-                >
-                  View GDD <FileText size={16} />
-                </button>
-              ) : (
-                <button
-                  onClick={() => setActiveView("market")}
-                  className="bg-[#27C128] text-white rounded-2xl px-4 py-2 text-sm font-medium flex items-center gap-1 hover:cursor-pointer"
-                >
-                  View Market <ChartNoAxesColumn size={16} />
-                </button>
+        {autoGenerating ? (
+          <div className="min-h-[440px] flex items-center justify-center">
+            <div className="text-center max-w-[520px] mx-auto">
+              <h2 className="text-white text-2xl font-bold mb-6">
+                Finding the right Opportunity for you…
+              </h2>
+              <div className="space-y-4 text-left inline-block">
+                <div className="flex items-center gap-3 text-gray-200">
+                  <CheckCircle className="text-[#27C128]" size={20} />
+                  <span>Creating a Market Snapshot</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-200">
+                  <CheckCircle className="text-[#27C128]" size={20} />
+                  <span>Determining Fit Score</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-200">
+                  <Loader2 className="animate-spin text-white" size={20} />
+                  <span>Identifying Top Games</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-400">
+                  <Circle size={20} />
+                  <span>Generating Insights</span>
+                </div>
+              </div>
+              {autoGenError && (
+                <div className="mt-6 text-red-400">
+                  {autoGenError}
+                  <button
+                    onClick={triggerAutoGenerate}
+                    className="ml-3 underline text-white"
+                  >
+                    Retry
+                  </button>
+                </div>
               )}
             </div>
-            {activeView === "market" && (
-              <div className="flex items-center gap-4">
-                <span className="text-gray-300 text-sm">Confidence Level</span>
-                <div className="w-[220px] h-3 relative rounded-full bg-[#1f1f1f] overflow-hidden">
-                  <div
-                    className="h-3 rounded-full"
-                    style={{
-                      width: `${confPct}%`,
-                      background:
-                        confPct < 20
-                          ? confidenceFillBackground
-                          : "linear-gradient(90deg, #FF3B30 0%, #FF9500 25%, #FFD60A 50%, #34C759 100%)",
-                    }}
-                  />
-                </div>
-                {typeof confidenceLevel === "number" && (
-                  <span className="text-gray-300 text-sm">
-                    {Math.round(confidenceLevel)}%
-                  </span>
-                )}
-              </div>
-            )}
           </div>
-        </div>
-
-        {loading && (
-          <div className="py-10 text-center text-gray-300">Loading...</div>
-        )}
-        {!loading && error && (
-          <div className="py-6 text-center text-red-400">
-            {error}
-            <button
-              className="ml-3 underline"
-              onClick={async () => {
-                try {
-                  setLoading(true);
-                  setError("");
-                  const res = await api.get(
-                    `/v1/ideapac/opportunity-cards/${activeTabId}`,
-                    {
-                      params: { studio_id: studioId },
-                    }
-                  );
-                  const data = res?.data?.data || null;
-                  setDetail(data);
-                  if (data?.prd_url) {
-                    setSelectedPdf(data.prd_url);
-                  }
-                } catch (e) {
-                  setError("Failed to load opportunity details");
-                } finally {
-                  setLoading(false);
-                }
-              }}
-            >
-              Reload
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && (
+        ) : (
           <>
-            {/* Market Section */}
-            {activeView === "market" && (
+            {/* Header */}
+            <div className="flex justify-between items-start mb-2">
               <div>
-                {/* Market */}
-                <div className="grid grid-cols-12 gap-4">
-                  <div className="col-span-6 bg-[#434343] rounded-[10px] p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h2 className="text-white text-[24px] font-bold">
-                        Market Snapshot
-                      </h2>
-                      <p className="bg-[#323232] text-white text-sm rounded-md px-3 py-1">
-                        3 Year Trend
-                      </p>
-                    </div>
-
-                    <div className="flex gap-4 mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="bg-[#FFC90A] text-[12px] px-2 py-0.5 rounded-full font-medium flex items-center">
-                          {downloadsUp ? (
-                            <ArrowUp className="text-black" size={12} />
-                          ) : (
-                            <ArrowDown className="text-black" size={12} />
-                          )}
-                          {typeof yoyDownloads === "number"
-                            ? Math.abs(yoyDownloads)
-                            : 0}
-                          %
-                        </span>
-                        <span className="text-gray-300 text-sm">
-                          Downloads (#)
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="bg-[#45E12A] text-[12px] px-2 py-0.5 rounded-full font-medium flex items-center">
-                          {revenueUp ? (
-                            <ArrowUp className="text-black" size={12} />
-                          ) : (
-                            <ArrowDown className="text-black" size={12} />
-                          )}
-                          {typeof yoyRevenue === "number"
-                            ? Math.abs(yoyRevenue)
-                            : 0}
-                          %
-                        </span>
-                        <span className="text-gray-300 text-sm">
-                          IAP Revenue (USD)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="h-56 relative w-full">
-                      <Line
-                        className="w-full h-full"
-                        data={chartData}
-                        options={chartOptions}
+                <h1 className="text-4xl font-bold text-white leading-tight">
+                  {title}
+                </h1>
+                <p className="text-gray-300 -mt-1">{subtitle}</p>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2">
+                  {activeView === "market" ? (
+                    <button
+                      onClick={() => {
+                        setActiveView("gdd");
+                        console.log("selectedPdf", selectedPdf);
+                      }}
+                      className="bg-[#27C128] text-white rounded-2xl px-4 py-2 text-sm font-medium flex items-center gap-1 hover:cursor-pointer "
+                      disabled={!selectedPdf}
+                    >
+                      View GDD <FileText size={16} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setActiveView("market")}
+                      className="bg-[#27C128] text-white rounded-2xl px-4 py-2 text-sm font-medium flex items-center gap-1 hover:cursor-pointer"
+                    >
+                      View Market <ChartNoAxesColumn size={16} />
+                    </button>
+                  )}
+                </div>
+                {activeView === "market" && (
+                  <div className="flex items-center gap-4">
+                    <span className="text-gray-300 text-sm">
+                      Confidence Level
+                    </span>
+                    <div className="w-[220px] h-3 relative rounded-full bg-[#1f1f1f] overflow-hidden">
+                      <div
+                        className="h-3 rounded-full"
+                        style={{
+                          width: `${confPct}%`,
+                          background:
+                            confPct < 20
+                              ? confidenceFillBackground
+                              : "linear-gradient(90deg, #FF3B30 0%, #FF9500 25%, #FFD60A 50%, #34C759 100%)",
+                        }}
                       />
                     </div>
-
-                    <div className="space-y-2 text-sm pt-6">
-                      <div className="flex items-center gap-2">
-                        <span className="text-white text-[16px] before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
-                          Active User Growth:
-                        </span>
-                        <span className="text-white font-medium ml-1">
-                          {detail?.market_snapshot?.growth || "-"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-white text-[16px] before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
-                          Retention:
-                        </span>
-                        <span className="text-white font-medium ml-1">
-                          {detail?.market_snapshot?.retention || "-"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-white text-[16px] before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
-                          Monetization:
-                        </span>
-                        <span className="text-white font-medium ml-1">
-                          {detail?.market_snapshot?.monetization || "-"}
-                        </span>
-                      </div>
-                    </div>
+                    {typeof confidenceLevel === "number" && (
+                      <span className="text-gray-300 text-sm">
+                        {Math.round(confidenceLevel)}%
+                      </span>
+                    )}
                   </div>
-                  <div className="col-span-6 space-y-4">
-                    {/* Fit Score card */}
-                    <div className="bg-[#434343] rounded-[10px] p-6 pb-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-white text-[24px] font-bold">
-                          Fit Score
-                        </h2>
-                        <div className="relative group">
-                          <div className="w-[20px] h-[20px] rounded-full bg-[#a1a1a1] flex items-center justify-center hover:cursor-pointer">
-                            <div className=" text-white">?</div>
-                          </div>
-                          <div className="absolute right-0 mt-2 w-[320px] p-3 rounded-md bg-black/90 text-white text-xs leading-snug shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-20">
-                            Your Feasibility Score reflects how well your idea
-                            aligns with market trends and your studio’s
-                            capabilities. It’s based on weighted inputs across
-                            Market Fit, Technical Fit, Art Fit plus a ±5%
-                            confidence adjustment.
-                          </div>
-                        </div>
-                      </div>
+                )}
+              </div>
+            </div>
 
-                      <div className="flex gap-8">
-                        <div className="flex justify-center mb-4">
-                          <CircularProgress score={totalScore} />
-                        </div>
-
-                        <div className="space-y-4 mt-2 w-full">
-                          {fitScoreMetrics.map((metric) => (
-                            <div key={metric.name} className="flex flex-col">
-                              <span className="text-sm text-[#fff] min-w-[100px]">
-                                {metric.name}
-                              </span>
-                              <div className="w-full flex-1">
-                                <div
-                                  className="h-1 rounded-full transition-all duration-300"
-                                  style={{
-                                    width: `${metric.score}%`,
-                                    backgroundColor: metric.color,
-                                  }}
-                                ></div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    {/* Top Games card - placeholder retained */}
-                    <div className="bg-[#434343] rounded-[10px] p-6 border-[0.5px] border-[#636363]">
-                      <h3 className="text-white text-xl font-bold mb-2">
-                        Top Games
-                      </h3>
-                      <div className="grid grid-cols-3 gap-4 mt-2 ">
-                        {topGames.map((g, idx) => (
-                          <div key={`${g}-${idx}`}>
-                            <div className="rounded-[14px] overflow-hidden border border-white/70 bg-[#1f1f1f] w-full h-[80px] flex items-center justify-center">
-                              <img
-                                src={g.img}
-                                alt={g.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div className="text-white text-center mt-2 truncate">
-                              {g.name}
-                            </div>
-                            <div className="text-gray-200 text-sm text-center truncate">
-                              {g.author}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {/* Insights */}
-                <div className="py-6 pl-2 col-span-12">
-                  <h3 className="text-white pl-6 text-xl font-bold mb-4">
-                    Insights
-                  </h3>
-                  <div className="grid grid-cols-3 gap-8">
-                    {/* positive insights */}
-                    <ul className="list-disc pl-6 border-l-4 border-[#27C128] text-gray-200 space-y-3">
-                      {(positiveInsights.length > 0
-                        ? positiveInsights
-                        : ["—"]
-                      ).map((text, i) => (
-                        <li key={`pos-${i}`}>{text}</li>
-                      ))}
-                    </ul>
-
-                    {/* neutral insights */}
-                    <ul className="list-disc pl-6 border-l-4 border-[#FFC90A] text-gray-200 space-y-3">
-                      {(neutralInsights.length > 0
-                        ? neutralInsights
-                        : ["—"]
-                      ).map((text, i) => (
-                        <li key={`neu-${i}`}>{text}</li>
-                      ))}
-                    </ul>
-
-                    {/* negative insights */}
-                    <ul className="list-disc pl-6 border-l-4 border-[#FF3B30] text-gray-200 space-y-3">
-                      {(negativeInsights.length > 0
-                        ? negativeInsights
-                        : ["—"]
-                      ).map((text, i) => (
-                        <li key={`neg-${i}`}>{text}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+            {loading && (
+              <div className="py-10 text-center text-gray-300">Loading...</div>
+            )}
+            {!loading && error && (
+              <div className="py-6 text-center text-red-400">
+                {error}
+                <button
+                  className="ml-3 underline"
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      setError("");
+                      const res = await api.get(
+                        `/v1/ideapac/opportunity-cards/${activeTabId}`,
+                        {
+                          params: { studio_id: studioId },
+                        }
+                      );
+                      const data = res?.data?.data || null;
+                      setDetail(data);
+                      if (data?.prd_url) {
+                        setSelectedPdf(data.prd_url);
+                      }
+                    } catch (e) {
+                      setError("Failed to load opportunity details");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  Reload
+                </button>
               </div>
             )}
 
-            {/* GDD Section */}
-            {activeView === "gdd" && (
-              <div className="mt-4">
-                <PDFViewer pdfUrl={selectedPdf} />
-              </div>
+            {!loading && !error && (
+              <>
+                {/* Market Section */}
+                {activeView === "market" && (
+                  <div>
+                    {/* Market */}
+                    <div className="grid grid-cols-12 gap-4">
+                      <div className="col-span-6 bg-[#434343] rounded-[10px] p-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <h2 className="text-white text-[24px] font-bold">
+                            Market Snapshot
+                          </h2>
+                          <p className="bg-[#323232] text-white text-sm rounded-md px-3 py-1">
+                            3 Year Trend
+                          </p>
+                        </div>
+
+                        <div className="flex gap-4 mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="bg-[#FFC90A] text-[12px] px-2 py-0.5 rounded-full font-medium flex items-center">
+                              {downloadsUp ? (
+                                <ArrowUp className="text-black" size={12} />
+                              ) : (
+                                <ArrowDown className="text-black" size={12} />
+                              )}
+                              {typeof yoyDownloads === "number"
+                                ? Math.abs(yoyDownloads)
+                                : 0}
+                              %
+                            </span>
+                            <span className="text-gray-300 text-sm">
+                              Downloads (#)
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="bg-[#45E12A] text-[12px] px-2 py-0.5 rounded-full font-medium flex items-center">
+                              {revenueUp ? (
+                                <ArrowUp className="text-black" size={12} />
+                              ) : (
+                                <ArrowDown className="text-black" size={12} />
+                              )}
+                              {typeof yoyRevenue === "number"
+                                ? Math.abs(yoyRevenue)
+                                : 0}
+                              %
+                            </span>
+                            <span className="text-gray-300 text-sm">
+                              IAP Revenue (USD)
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="h-56 relative w-full">
+                          <Line
+                            className="w-full h-full"
+                            data={chartData}
+                            options={chartOptions}
+                          />
+                        </div>
+
+                        <div className="space-y-2 text-sm pt-6">
+                          <div className="flex items-center gap-2">
+                            <span className="text-white text-[16px] before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
+                              Active User Growth:
+                            </span>
+                            <span className="text-white font-medium ml-1">
+                              {detail?.market_snapshot?.growth || "-"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white text-[16px] before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
+                              Retention:
+                            </span>
+                            <span className="text-white font-medium ml-1">
+                              {detail?.market_snapshot?.retention || "-"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white text-[16px] before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
+                              Monetization:
+                            </span>
+                            <span className="text-white font-medium ml-1">
+                              {detail?.market_snapshot?.monetization || "-"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-span-6 space-y-4">
+                        {/* Fit Score card */}
+                        <div className="bg-[#434343] rounded-[10px] p-6 pb-4">
+                          <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-white text-[24px] font-bold">
+                              Fit Score
+                            </h2>
+                            <div className="relative group">
+                              <div className="w-[20px] h-[20px] rounded-full bg-[#a1a1a1] flex items-center justify-center hover:cursor-pointer">
+                                <div className=" text-white">?</div>
+                              </div>
+                              <div className="absolute right-0 mt-2 w-[320px] p-3 rounded-md bg-black/90 text-white text-xs leading-snug shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-20">
+                                Your Feasibility Score reflects how well your
+                                idea aligns with market trends and your studio’s
+                                capabilities. It’s based on weighted inputs
+                                across Market Fit, Technical Fit, Art Fit plus a
+                                ±5% confidence adjustment.
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-8">
+                            <div className="flex justify-center mb-4">
+                              <CircularProgress score={totalScore} />
+                            </div>
+
+                            <div className="space-y-4 mt-2 w-full">
+                              {fitScoreMetrics.map((metric) => (
+                                <div
+                                  key={metric.name}
+                                  className="flex flex-col"
+                                >
+                                  <span className="text-sm text-[#fff] min-w-[100px]">
+                                    {metric.name}
+                                  </span>
+                                  <div className="w-full flex-1">
+                                    <div
+                                      className="h-1 rounded-full transition-all duration-300"
+                                      style={{
+                                        width: `${metric.score}%`,
+                                        backgroundColor: metric.color,
+                                      }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        {/* Top Games card */}
+                        <div className="bg-[#434343] rounded-[10px] p-6 border-[0.5px] border-[#636363]">
+                          <h3 className="text-white text-xl font-bold mb-2">
+                            Top Games
+                          </h3>
+                          <div className="grid grid-cols-3 gap-4 mt-2 ">
+                            {topItemsToRender.map((app, idx) => (
+                              <a
+                                key={`${app.name}-${idx}`}
+                                href={app.url || "#"}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="block"
+                              >
+                                <div className="rounded-[14px] overflow-hidden border border-white/70 bg-[#1f1f1f] w-full h-[80px] flex items-center justify-center">
+                                  <img
+                                    src={app.iconUrl || gameIcon}
+                                    alt={app.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.src = gameIcon;
+                                    }}
+                                  />
+                                </div>
+                                <div className="text-white text-center mt-2 truncate">
+                                  {app.name}
+                                </div>
+                                <div className="text-gray-200 text-sm text-center truncate">
+                                  {app.publisher}
+                                </div>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Insights */}
+                    <div className="py-6 pl-2 col-span-12">
+                      <h3 className="text-white pl-6 text-xl font-bold mb-4">
+                        Insights
+                      </h3>
+                      <div className="grid grid-cols-3 gap-8">
+                        {/* positive insights */}
+                        <ul className="list-disc pl-6 border-l-4 border-[#27C128] text-gray-200 space-y-3">
+                          {(positiveInsights.length > 0
+                            ? positiveInsights
+                            : ["—"]
+                          ).map((text, i) => (
+                            <li key={`pos-${i}`}>{text}</li>
+                          ))}
+                        </ul>
+
+                        {/* neutral insights */}
+                        <ul className="list-disc pl-6 border-l-4 border-[#FFC90A] text-gray-200 space-y-3">
+                          {(neutralInsights.length > 0
+                            ? neutralInsights
+                            : ["—"]
+                          ).map((text, i) => (
+                            <li key={`neu-${i}`}>{text}</li>
+                          ))}
+                        </ul>
+
+                        {/* negative insights */}
+                        <ul className="list-disc pl-6 border-l-4 border-[#FF3B30] text-gray-200 space-y-3">
+                          {(negativeInsights.length > 0
+                            ? negativeInsights
+                            : ["—"]
+                          ).map((text, i) => (
+                            <li key={`neg-${i}`}>{text}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* GDD Section */}
+                {activeView === "gdd" && (
+                  <div className="mt-4">
+                    <PDFViewer pdfUrl={selectedPdf} />
+                  </div>
+                )}
+              </>
             )}
           </>
         )}

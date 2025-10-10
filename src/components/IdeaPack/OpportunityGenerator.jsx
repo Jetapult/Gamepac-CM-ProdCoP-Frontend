@@ -1,20 +1,35 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import PropTypes from "prop-types";
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import { Info, Sparkles, Loader } from "lucide-react";
 import SelectDropdown from "../SelectDropdown";
 import api from "../../api";
+import { useSelector } from "react-redux";
 
-const OpportunityGenerator = () => {
+const OpportunityGenerator = ({ onGenerated }) => {
+  const [studioId, setStudioId] = useState("");
+
+  const ContextStudioData = useSelector(
+    (state) => state.admin.ContextStudioData
+  );
+
+  useEffect(() => {
+    setStudioId(ContextStudioData.id);
+  }, [ContextStudioData]);
+
+  console.log("studioId", studioId);
+
   const [genre, setGenre] = useState([]);
   const [subGenre, setSubGenre] = useState([]);
   // Countries - custom multi-select dropdown UI
   const [selectedCountries, setSelectedCountries] = useState([]);
-  const [platform, setPlatform] = useState("android");
-  const [gender, setGender] = useState("male");
+  const [platform, setPlatform] = useState(null);
+  const [gender, setGender] = useState(null);
   const [targetAgeGroup, setTargetAgeGroup] = useState([]);
-  const [timeRange, setTimeRange] = useState(3);
+  const [timeRange, setTimeRange] = useState(null);
   const [spend, setSpend] = useState(50); // in K
-  const [monetization, setMonetization] = useState("ads");
+  const [monetization, setMonetization] = useState(null);
   const [countries, setCountries] = useState([]);
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [genres, setGenres] = useState([]);
@@ -79,7 +94,7 @@ const OpportunityGenerator = () => {
     try {
       setIsGenerating(true);
       const payload = {
-        studio_id: 63,
+        studio_id: studioId,
         genre,
         sub_genre: subGenre,
         country: selectedCountries,
@@ -95,8 +110,25 @@ const OpportunityGenerator = () => {
         payload
       );
       console.log("Generated opportunity card:", res?.data);
+
+      const cards = res?.data?.cards;
+      if (Array.isArray(cards) && cards.length > 0) {
+        toast.success("Card created successfully");
+        const firstCardId = cards?.[0]?.id;
+        // notify parent to refresh previous opportunities
+        try {
+          if (typeof onGenerated === "function") {
+            await onGenerated({ cardId: firstCardId });
+          }
+        } catch (_) {
+          // ignore callback errors
+        }
+      } else {
+        toast.error("Not enough data");
+      }
     } catch (e) {
       console.error("Failed to generate opportunity card", e);
+      toast.error("Something went wrong while generating");
     } finally {
       setIsGenerating(false);
     }
@@ -454,18 +486,7 @@ const OpportunityGenerator = () => {
           Array.isArray(genre) &&
           genre.length > 0 &&
           Array.isArray(subGenre) &&
-          subGenre.length > 0 &&
-          Array.isArray(selectedCountries) &&
-          selectedCountries.length > 0 &&
-          Array.isArray(targetAgeGroup) &&
-          targetAgeGroup.length > 0 &&
-          typeof platform === "string" &&
-          platform.length > 0 &&
-          typeof gender === "string" &&
-          gender.length > 0 &&
-          typeof monetization === "string" &&
-          monetization.length > 0 &&
-          (timeRange === 2 || timeRange === 3);
+          subGenre.length > 0;
         const disabled = isGenerating || !isFormValid;
         return (
           <div className="pt-2">
@@ -493,3 +514,7 @@ const OpportunityGenerator = () => {
 };
 
 export default OpportunityGenerator;
+
+OpportunityGenerator.propTypes = {
+  onGenerated: PropTypes.func,
+};
