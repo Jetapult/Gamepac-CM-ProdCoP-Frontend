@@ -83,12 +83,18 @@ CircularProgress.propTypes = {
   size: PropTypes.number,
 };
 
-export default function OpportunityDetails({ studioId }) {
+export default function OpportunityDetails({
+  studioId,
+  activeTabId: propActiveTabId,
+  onActiveTabChange,
+}) {
   const [activeView, setActiveView] = useState("market");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [detail, setDetail] = useState(null);
-  const [activeTabId, setActiveTabId] = useState(null);
+  const [internalActiveTabId, setInternalActiveTabId] = useState(null);
+  const activeTabId = propActiveTabId ?? internalActiveTabId;
+  const setActiveTabId = onActiveTabChange ?? setInternalActiveTabId;
   const [tabs, setTabs] = useState([]);
   const [tabsLoading, setTabsLoading] = useState(false);
   const [tabsError, setTabsError] = useState("");
@@ -105,14 +111,22 @@ export default function OpportunityDetails({ studioId }) {
           params: { studio_id: studioId, page: 1, limit: 5 },
         });
         const items = Array.isArray(res?.data?.data) ? res.data.data : [];
-        const newTabs = items.slice(0, 3).map((item, index) => ({
+        const baseTabs = items.slice(0, 3).map((item, index) => ({
           id: String(item?.id ?? index + 1),
           label: `${item?.genre_name || ""} | ${item?.sub_genre_name || ""}`,
         }));
-        setTabs(newTabs);
-        if (!activeTabId && newTabs[0]?.id) {
-          setActiveTabId(newTabs[0].id);
-        }
+        // Preserve any previously appended extra tab (e.g., a clicked card)
+        setTabs((prev) => {
+          const extra = Array.isArray(prev)
+            ? prev
+                .filter(
+                  (t) => !baseTabs.some((b) => String(b.id) === String(t.id))
+                )
+                .slice(0, 1)
+            : [];
+
+          return extra.length > 0 ? [...baseTabs, extra[0]] : baseTabs;
+        });
       } catch (e) {
         setTabsError("Failed to load tabs");
       } finally {
@@ -121,6 +135,14 @@ export default function OpportunityDetails({ studioId }) {
     };
     loadTabs();
   }, [studioId]);
+
+  // Ensure a default selection after tabs are loaded if none selected yet
+  useEffect(() => {
+    if (!studioId) return;
+    if (!activeTabId && tabs && tabs[0]?.id) {
+      setActiveTabId(tabs[0].id);
+    }
+  }, [studioId, tabs, activeTabId, setActiveTabId]);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -138,6 +160,22 @@ export default function OpportunityDetails({ studioId }) {
         setDetail(data);
         if (data?.prd_url) {
           setSelectedPdf(data.prd_url);
+        }
+        // Ensure the selected card appears as a 4th tab in the nav
+        try {
+          const selectedId = String(activeTabId);
+          const tabLabel = `${data?.genre_name || ""} | ${data?.name || ""}`;
+          setTabs((prev) => {
+            // If already present (including among the first 3), do nothing
+            if (prev.some((t) => String(t.id) === selectedId)) {
+              return prev;
+            }
+            // Keep the first three suggested tabs and append the clicked as the 4th
+            const base = prev.slice(0, 3);
+            return [...base, { id: selectedId, label: tabLabel }];
+          });
+        } catch (_) {
+          // no-op: tabs are non-critical UI hints
         }
       } catch (e) {
         setError("Failed to load opportunity details");
@@ -672,4 +710,6 @@ export default function OpportunityDetails({ studioId }) {
 
 OpportunityDetails.propTypes = {
   studioId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  activeTabId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onActiveTabChange: PropTypes.func,
 };
