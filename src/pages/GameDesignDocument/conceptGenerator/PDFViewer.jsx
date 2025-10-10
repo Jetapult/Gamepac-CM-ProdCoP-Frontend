@@ -51,7 +51,7 @@ export function PDFViewer({
                 Try downloading the PDF directly:
               </p>
               <a
-                href={pdfFile}
+                href={pdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 bg-black text-white rounded-md hover:bg-opacity-80"
