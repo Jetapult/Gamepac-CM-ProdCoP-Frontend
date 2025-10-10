@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { Tooltip as ReactTooltip } from "react-tooltip";
-import { ChevronDownIcon, Info, Sparkles } from "lucide-react";
+import { Info, Sparkles, Loader } from "lucide-react";
+import SelectDropdown from "../SelectDropdown";
 import api from "../../api";
 
 const OpportunityGenerator = () => {
-  const [genre, setGenre] = useState("");
-  const [subGenre, setSubGenre] = useState("");
-  const [country, setCountry] = useState("");
+  const [genre, setGenre] = useState([]);
+  const [subGenre, setSubGenre] = useState([]);
+  // Countries - custom multi-select dropdown UI
+  const [selectedCountries, setSelectedCountries] = useState([]);
   const [platform, setPlatform] = useState("android");
   const [gender, setGender] = useState("male");
-  const [targetAgeGroup, setTargetAgeGroup] = useState("");
+  const [targetAgeGroup, setTargetAgeGroup] = useState([]);
   const [timeRange, setTimeRange] = useState(3);
   const [spend, setSpend] = useState(50); // in K
   const [monetization, setMonetization] = useState("ads");
@@ -17,6 +19,7 @@ const OpportunityGenerator = () => {
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [genres, setGenres] = useState([]);
   const [genresLoading, setGenresLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     let isCancelled = false;
@@ -56,13 +59,47 @@ const OpportunityGenerator = () => {
     };
   }, []);
 
-  const selectedGenre = genres.find((g) => g?.genre_name === genre);
-  const subgenreOptions = Array.isArray(selectedGenre?.subgenres)
-    ? selectedGenre.subgenres
-    : [];
+  // No-op: SelectDropdown handles its own outside-click behavior
+
+  const selectedGenreObjects = genres.filter((g) =>
+    genre.includes(g?.genre_name)
+  );
+  const subgenreOptions = selectedGenreObjects.flatMap((g) =>
+    Array.isArray(g?.subgenres) ? g.subgenres : []
+  );
 
   const valueToPercent = (value, min = 0, max = 90) => {
     return ((value - min) / (max - min)) * 100;
+  };
+
+  // Country selection is handled via SelectDropdown
+
+  const handleGenerate = async () => {
+    if (isGenerating) return;
+    try {
+      setIsGenerating(true);
+      const payload = {
+        studio_id: 63,
+        genre,
+        sub_genre: subGenre,
+        country: selectedCountries,
+        platform,
+        gender,
+        target_age: targetAgeGroup,
+        time_period: timeRange,
+        monetization_focus: monetization,
+        simulate: true,
+      };
+      const res = await api.post(
+        `/v1/ideapac/opportunity-card/generate`,
+        payload
+      );
+      console.log("Generated opportunity card:", res?.data);
+    } catch (e) {
+      console.error("Failed to generate opportunity card", e);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -89,30 +126,21 @@ const OpportunityGenerator = () => {
             content="Broad game category for trend analysis."
           />
         </div>
-        <div className="relative inline-block">
-          <select
-            value={genre}
-            onChange={(e) => {
-              setGenre(e.target.value);
-              setSubGenre("");
-            }}
-            className="appearance-none bg-[#454545] border border-[#3f3f3f] text-gray-200 text-sm rounded-md px-4 py-2 pr-9 focus:outline-none"
-            disabled={genresLoading}
-          >
-            <option value="">Select Genre</option>
-            {genres.map((g) => (
-              <option
-                key={g?.genre_custom_field_id || g?.genre_name}
-                value={g?.genre_name}
-              >
-                {g?.genre_name}
-              </option>
-            ))}
-          </select>
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-200">
-            <ChevronDownIcon className="w-4 h-4" />
-          </span>
-        </div>
+        <SelectDropdown
+          options={genres.map((g) => ({
+            value: g?.genre_name,
+            label: g?.genre_name,
+          }))}
+          value={genre}
+          onChange={(vals) => {
+            setGenre(vals);
+            setSubGenre([]);
+          }}
+          placeholder="Select Genre"
+          disabled={genresLoading}
+          multiple
+          maxSelected={3}
+        />
       </div>
 
       {/* Sub-Genre */}
@@ -133,27 +161,18 @@ const OpportunityGenerator = () => {
             content="Specific gameplay type within a genre."
           />
         </div>
-        <div className="relative inline-block">
-          <select
-            value={subGenre}
-            onChange={(e) => setSubGenre(e.target.value)}
-            className="appearance-none bg-[#454545] border border-[#3f3f3f] text-gray-200 text-sm rounded-md px-4 py-2 pr-9 focus:outline-none"
-            disabled={!genre || genresLoading}
-          >
-            <option value="">Select Sub-genre</option>
-            {subgenreOptions.map((s) => (
-              <option
-                key={s?.subgenre_custom_field_id || s?.subgenre_name}
-                value={s?.subgenre_name}
-              >
-                {s?.subgenre_name}
-              </option>
-            ))}
-          </select>
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-200">
-            <ChevronDownIcon className="w-4 h-4" />
-          </span>
-        </div>
+        <SelectDropdown
+          options={subgenreOptions.map((s) => ({
+            value: s?.subgenre_name,
+            label: s?.subgenre_name,
+          }))}
+          value={subGenre}
+          onChange={(vals) => setSubGenre(vals)}
+          placeholder="Select Sub-genre"
+          disabled={genre.length === 0 || genresLoading}
+          multiple
+          maxSelected={3}
+        />
       </div>
 
       {/* Country */}
@@ -174,24 +193,16 @@ const OpportunityGenerator = () => {
             content="Target market for regional insights."
           />
         </div>
-        <div className="relative inline-block">
-          <select
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            className="appearance-none bg-[#454545] border border-[#3f3f3f] text-gray-200 text-sm rounded-md px-4 py-2 pr-9 focus:outline-none"
-            disabled={countriesLoading}
-          >
-            <option value="">Select Country</option>
-            {countries.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-200">
-            <ChevronDownIcon className="w-4 h-4" />
-          </span>
-        </div>
+        <SelectDropdown
+          options={countries.map((c) => ({ value: c, label: c }))}
+          value={selectedCountries}
+          onChange={(vals) => setSelectedCountries(vals)}
+          placeholder="Select Country"
+          disabled={countriesLoading}
+          multiple
+          maxSelected={3}
+          menuWidth={240}
+        />
       </div>
 
       {/* Platform */}
@@ -290,24 +301,21 @@ const OpportunityGenerator = () => {
             content="Intended player age group."
           />
         </div>
-        <div className="relative inline-block">
-          <select
-            value={targetAgeGroup}
-            onChange={(e) => setTargetAgeGroup(e.target.value)}
-            className="appearance-none bg-[#454545] border border-[#3f3f3f] text-gray-200 text-sm rounded-md px-4 py-2 pr-9 focus:outline-none"
-          >
-            <option value="">Select Age Groups</option>
-            <option value="0-12">0 - 12 Years</option>
-            <option value="12-18">12 - 18 Years</option>
-            <option value="18-25">18 - 25 Years</option>
-            <option value="25-35">25 - 35 Years</option>
-            <option value="35-40">35 - 40 Years</option>
-            <option value="40+">40+ Years</option>
-          </select>
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-200">
-            <ChevronDownIcon className="w-4 h-4" />
-          </span>
-        </div>
+        <SelectDropdown
+          options={[
+            { value: "[0,12]", label: "0 - 12 Years" },
+            { value: "[12,18]", label: "12 - 18 Years" },
+            { value: "[18,25]", label: "18 - 25 Years" },
+            { value: "[25,35]", label: "25 - 35 Years" },
+            { value: "[35,40]", label: "35 - 40 Years" },
+            { value: "[40,100]", label: "40+ Years" },
+          ]}
+          value={targetAgeGroup}
+          onChange={(vals) => setTargetAgeGroup(vals)}
+          placeholder="Select Age Groups"
+          multiple
+          maxSelected={3}
+        />
       </div>
 
       {/* Time Period */}
@@ -441,11 +449,45 @@ const OpportunityGenerator = () => {
       </div>
 
       {/* Generate button */}
-      <div className="pt-2">
-        <button className="w-full bg-white text-black rounded-2xl py-3 text-base font-semibold flex items-center justify-center gap-2">
-          Generate <Sparkles className="w-4 h-4 font-normal" />
-        </button>
-      </div>
+      {(() => {
+        const isFormValid =
+          Array.isArray(genre) &&
+          genre.length > 0 &&
+          Array.isArray(subGenre) &&
+          subGenre.length > 0 &&
+          Array.isArray(selectedCountries) &&
+          selectedCountries.length > 0 &&
+          Array.isArray(targetAgeGroup) &&
+          targetAgeGroup.length > 0 &&
+          typeof platform === "string" &&
+          platform.length > 0 &&
+          typeof gender === "string" &&
+          gender.length > 0 &&
+          typeof monetization === "string" &&
+          monetization.length > 0 &&
+          (timeRange === 2 || timeRange === 3);
+        const disabled = isGenerating || !isFormValid;
+        return (
+          <div className="pt-2">
+            <button
+              onClick={handleGenerate}
+              disabled={disabled}
+              aria-busy={isGenerating}
+              className="w-full bg-white text-black rounded-2xl py-3 text-base font-semibold flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isGenerating ? (
+                <>
+                  Generating... <Loader className="w-4 h-4 animate-spin" />
+                </>
+              ) : (
+                <>
+                  Generate <Sparkles className="w-4 h-4 font-normal" />
+                </>
+              )}
+            </button>
+          </div>
+        );
+      })()}
     </div>
   );
 };

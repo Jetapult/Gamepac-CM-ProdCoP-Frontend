@@ -129,8 +129,8 @@ const IdeaPac = () => {
               {/* Header */}
               <div className="grid grid-cols-12 px-4 py-3 text-gray-300 text-sm ">
                 <div className="col-span-6">Title</div>
+                <div className="col-span-2 text-center">Score</div>
                 <div className="col-span-3 text-center">Date</div>
-                <div className="col-span-2 text-right">Score</div>
                 <div className="col-span-1" />
               </div>
 
@@ -179,7 +179,7 @@ const IdeaPac = () => {
                       }
                       endMessage={
                         <div className="px-4 py-2 text-xs text-center text-gray-400">
-                          End of list
+                         •••
                         </div>
                       }
                       scrollableTarget="prevOppScrollContainer"
@@ -215,11 +215,11 @@ const IdeaPac = () => {
                             <div className="col-span-6 truncate">
                               {item?.genre_name} - {item?.sub_genre_name}
                             </div>
-                            <div className="col-span-3 text-center text-gray-300">
-                              {formattedDate}
-                            </div>
-                            <div className="col-span-2 text-right text-white font-medium">
+                            <div className="col-span-2 text-center text-white font-medium">
                               {score}
+                            </div>
+                            <div className="col-span-3 text-right text-gray-300">
+                              {formattedDate}
                             </div>
                             <div className="col-span-1" />
                           </div>
