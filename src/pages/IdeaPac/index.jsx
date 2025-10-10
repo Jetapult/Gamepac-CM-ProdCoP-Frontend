@@ -100,17 +100,14 @@ const IdeaPac = () => {
   }, [studioId, loadPrevOpps]);
 
   // If a specific cardId is provided via query param, select it in details
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const cardId = params.get("cardId");
-    if (cardId) {
-      setActiveTabId(String(cardId));
-    }
-  }, []);
+  // useEffect(() => {
+  //   const params = new URLSearchParams(window.location.search);
+  //   const cardId = params.get("cardId");
+  //   if (cardId) {
+  //     setActiveTabId(String(cardId));
+  //   }
+  // }, []);
 
-  // Right panel generator moved into its own component
-
-  // Tabs are handled in OpportunityDetails
 
   return (
     <div className="bg-[#404040] h-[100%]">
