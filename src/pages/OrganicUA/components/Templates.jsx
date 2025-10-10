@@ -6,7 +6,7 @@ import ToastMessage from "../../../components/ToastMessage";
 import ConfirmationPopup from "../../../components/ConfirmationPopup";
 import NoData from "../../../components/NoData";
 
-const Templates = ({ studio_slug, templates, setTemplates }) => {
+const Templates = ({ templates, setTemplates, ContextStudioData }) => {
   const [showCreateReplyTemplatePopup, setShowCreateReplyTemplatePopup] =
     useState(false);
   const [toastMessage, setToastMessage] = useState({
@@ -17,16 +17,10 @@ const Templates = ({ studio_slug, templates, setTemplates }) => {
   });
   const [selectedTemplate, setSelectedTemplate] = useState({});
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
-  const studios = useSelector((state) => state.admin.studios);
-  const userData = useSelector((state) => state.user.user);
   const deleteTemplate = async () => {
     try {
       const templatesResponse = await api.delete(
-        `/v1/organic-ua/reply-template/delete/${
-          studio_slug
-            ? studios.filter((x) => x.slug === studio_slug)[0].id
-            : userData.studio_id
-        }/${selectedTemplate.id}`
+        `/v1/organic-ua/reply-template/delete/${ContextStudioData?.id}/${selectedTemplate.id}`
       );
       setTemplates((prev) =>
         prev.filter((x) => {
@@ -59,7 +53,7 @@ const Templates = ({ studio_slug, templates, setTemplates }) => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl mb-4">Reply Templates</h1>
         <button
-          className="bg-[#ff1053] text-white font-bold uppercase text-sm px-6 py-2 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+          className="bg-[#B9FF66] text-[#000] font-bold uppercase text-sm px-6 py-2 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
           type="button"
           onClick={() => {
             setSelectedTemplate({});
@@ -87,7 +81,7 @@ const Templates = ({ studio_slug, templates, setTemplates }) => {
             <p>{template.review_reply}</p>
             <div className="flex justify-end">
               <button
-                className="mr-4 border border-[#ccc] rounded py-1 px-3 mr-2 text-sm"
+                className="mr-4 border border-[#000] rounded py-1 px-3 mr-2 text-sm"
                 onClick={() => {
                   setSelectedTemplate(template);
                   setShowCreateReplyTemplatePopup(
@@ -98,7 +92,7 @@ const Templates = ({ studio_slug, templates, setTemplates }) => {
                 Edit
               </button>
               <button
-                className="border border-[#be261f] text-[#f44337] rounded py-1 px-3 mr-2 text-sm"
+                className="border border-[#000] text-[#000] rounded py-1 px-3 mr-2 text-sm"
                 onClick={() => {
                   setSelectedTemplate(template);
                   setShowConfirmationPopup(!showConfirmationPopup);
@@ -116,9 +110,9 @@ const Templates = ({ studio_slug, templates, setTemplates }) => {
           setShowCreateReplyTemplatePopup={setShowCreateReplyTemplatePopup}
           selectedTemplate={selectedTemplate}
           setSelectedTemplate={setSelectedTemplate}
-          studio_slug={studio_slug}
           setTemplates={setTemplates}
           setToastMessage={setToastMessage}
+          ContextStudioData={ContextStudioData}
         />
       )}
       {toastMessage.show && (

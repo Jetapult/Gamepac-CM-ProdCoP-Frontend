@@ -60,7 +60,7 @@ const Overview = () => {
         <p className="text-lg text-[#092139] pb-2">
           We at{" "}
           <a
-            className="text-[#ff1053]"
+            className="text-black underline underline-offset-1"
             href="https://www.jetapult.me/"
             target="_blank"
             rel="noopener noreferrer"
@@ -116,7 +116,7 @@ const Overview = () => {
         <p className="text-lg text-[#092139] pb-4">
           Once you've signed up, you can start by{" "}
           <a
-            className="text-[#ff1053] cursor-pointer"
+            className="text-black underline underline-offset-1 cursor-pointer"
             onClick={() => navigate("/docs/app-onboarding")}
           >
             onboarding your app
@@ -129,7 +129,7 @@ const Overview = () => {
           onClick={() => navigate("/docs/app-onboarding")}
         >
           <span className="block">Next</span>
-          <p className="text-[#ff1053] text-lg font-black">
+          <p className="text-black text-lg font-black">
             App Onboarding Setup
             <ChevronDoubleRightIcon className="inline w-4 h-4 ml-2" />
           </p>
@@ -142,7 +142,7 @@ const Overview = () => {
               <a
                 className={`block py-2 w-full pl-3 rounded cursor-pointer ${
                   activeSection === "whats-Gamepac"
-                    ? "active bg-[#f7e5e5] text-[#ff1053]"
+                    ? "active bg-[#F3F3F3] text-black"
                     : ""
                 }`}
                 onClick={() => handleClick("whats-Gamepac")}
@@ -154,7 +154,7 @@ const Overview = () => {
               <a
                 className={`block py-2 w-full pl-3 rounded cursor-pointer ${
                   activeSection === "how-can-i-use-gamepac"
-                    ? "active bg-[#f7e5e5] text-[#ff1053]"
+                    ? "active bg-[#F3F3F3] text-black"
                     : ""
                 }`}
                 onClick={() => handleClick("how-can-i-use-gamepac")}
@@ -166,7 +166,7 @@ const Overview = () => {
               <a
                 className={`block py-2 w-full pl-3 rounded cursor-pointer ${
                   activeSection === "next-steps"
-                    ? "active bg-[#f7e5e5] text-[#ff1053]"
+                    ? "active bg-[#F3F3F3] text-black"
                     : ""
                 }`}
                 onClick={() => handleClick("next-steps")}

@@ -41,7 +41,7 @@ const tagDistributionlabels = [
   "Appreciation",
 ];
 
-const tagDistributionlabelData = {
+export const tagDistributionlabelData = {
   "ads concern": "#fb9c00",
   "crashes/ANR": "#8d0934",
   "IAP concern": "#334fde",
@@ -67,7 +67,7 @@ Chart.register(
   CategoryScale
 );
 
-const ReviewInsights = ({ studio_slug, games, setGames }) => {
+const ReviewInsights = ({ games, setGames, ContextStudioData }) => {
   const userData = useSelector((state) => state.user.user);
   const studios = useSelector((state) => state.admin.studios);
   const [pieChartData, setPieChartData] = useState({});
@@ -109,7 +109,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
     const elementIndex = elements[0].index;
     const label = pieChartData.labels[elementIndex];
     navigate(
-      `/organic-ua/smart-feedback${studio_slug ? `/${studio_slug}` : ""}?tags=${label}&gameId=${selectedGame.id}&gameType=${selectedGame.platform}`
+      `/organic-ua/smart-feedback?tags=${label}&gameId=${selectedGame.id}&gameType=${selectedGame.platform}`
     );
   };
 
@@ -222,11 +222,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
   const fetchAllVersions = async () => {
     try {
       const versionResponse = await api.get(
-        `v1/organic-ua/versions/${
-          studio_slug
-            ? studios.filter((x) => x.slug === studio_slug)[0]?.id
-            : userData.studio_id
-        }/${selectedGame.id}`
+        `v1/organic-ua/versions/${ContextStudioData?.id}/${selectedGame.id}`
       );
       const versionsArr = [];
       versionResponse.data.data.filter((x, index) => {
@@ -266,9 +262,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
           ? moment(customDates[0].endDate).format("YYYY-MM-DD")
           : "lifetime",
         game_id: selectedGame.id,
-        studio_id: studio_slug
-          ? studios.filter((x) => x.slug === studio_slug)[0]?.id
-          : userData.studio_id,
+        studio_id: ContextStudioData?.id,
       };
       if (selectedVersions.length) {
         const selectedVersionsArr = [];
@@ -313,9 +307,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
       setLineChart([]);
       const requestbody = {
         game_id: selectedGame.id,
-        studio_id: studio_slug
-          ? studios.filter((x) => x.slug === studio_slug)[0]?.id
-          : userData.studio_id,
+        studio_id: ContextStudioData?.id,
         start_date: customDates[0].startDate ? moment(customDates[0].startDate).format("YYYY-MM-DD") : 'lifetime',
         end_date: customDates[0].endDate ? moment(customDates[0].endDate).format("YYYY-MM-DD") : 'lifetime',
       };
@@ -387,7 +379,6 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
             selectedTab={selectedTab}
             setSelectedTab={setSelectedTab}
             setGames={setGames}
-            studio_slug={studio_slug}
           />
         </div>
         <div className="relative px-4">
@@ -434,7 +425,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
         />
         {selectedGame.id && (
           <button
-            className="border border-[#ff1053] rounded-md mx-4 py-1.5 w-32 text-[#ff1053]"
+            className="border border-[#000] rounded-md mx-4 py-1.5 w-32 text-[#000] hover:bg-[#B9FF66] hover:text-[#000] hover:border-[#B9FF66]"
             onClick={() => {
               getTagsDistrubutionData();
               fetchRatingTrends();
@@ -493,7 +484,7 @@ const ReviewInsights = ({ studio_slug, games, setGames }) => {
                       className="flex border-b border-b-[#f2f2f2]"
                       onClick={() =>
                         navigate(
-                          `/organic-ua/smart-feedback${studio_slug ? `/${studio_slug}` : ""}?tags=${tag.tag}&gameId=${selectedGame.id}&gameType=${selectedGame.platform}`
+                          `/organic-ua/smart-feedback?tags=${tag.tag}&gameId=${selectedGame.id}&gameType=${selectedGame.platform}`
                         )
                       }
                     >

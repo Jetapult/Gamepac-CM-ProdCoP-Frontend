@@ -48,7 +48,7 @@ const Analytics = () => {
       <div className="flex items-center mx-6 border-b border-b-[#e5e5e5] mb-2 sticky top-0 w-full">
         {analytics.map((item) => (
           <p
-            className={`text-xl mr-6 cursor-pointer ${selectedAnalytics.id === item.id ? "text-black border-b-2 border-b-black" : "text-gray-500"}`}
+            className={`text-xl mr-6 cursor-pointer ${selectedAnalytics.id === item.id ? "text-black border-b-2 border-b-black" : "text-gray-500 hover:border-b-2 hover:border-b-gray-500"}`}
             key={item.id}
             onClick={() => setSelectedAnalytics(item)}
           >

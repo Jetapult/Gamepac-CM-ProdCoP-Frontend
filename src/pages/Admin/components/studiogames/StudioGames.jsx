@@ -130,14 +130,14 @@ const StudioGames = ({
           <QuestionMarkCircleIcon className="inline w-4 h-4" />
         </p>
         <button
-          className="bg-[#ff1053] text-white px-4 py-2 rounded-md new-btn"
+          className="bg-[#B9FF66] text-[#000] px-4 py-2 rounded-md new-btn hover:bg-[#000] hover:text-[#B9FF66]"
           onClick={() => setShowAddUserPopup(!showAddUserPopup)}
         >
           <PlusIcon className="h-5 w-5 inline mr-1" /> New
         </button>
       </div>
 
-      <div className="flex border-y-[0.5px] border-[#e5e5e5] py-3 items-center bg-[#f7e5e5] px-3 mt-4">
+      <div className="flex border-y-[0.5px] border-[#e5e5e5] py-3 items-center bg-[#000] text-white px-3 mt-4">
         <div className="w-[5%]">
           <p>No.</p>
         </div>
@@ -220,7 +220,7 @@ const StudioGames = ({
             </div>
             <p className="w-[30%]">
               <button
-                className="bg-[#ff1053] text-white rounded-full px-4 py-1 mr-2"
+                className="bg-[#B9FF66] text-[#000] rounded-full px-4 py-1 mr-2 hover:bg-[#000] hover:text-[#B9FF66]"
                 onClick={() => {
                   setSelectedGame(game);
                   setShowAutoReplyEnablePopup(!showAutoReplyEnablePopup);
@@ -229,7 +229,7 @@ const StudioGames = ({
                 Auto reply
               </button>{" "}
               <button
-                className="bg-[#ff1053] text-white rounded-full px-4 py-1 mr-2"
+                className="bg-[#B9FF66] text-[#000] rounded-full px-4 py-1 mr-2 hover:bg-[#000] hover:text-[#B9FF66]"
                 onClick={() => {
                   setSelectedGame(game);
                   setShowSendReportPopup(!showSendReportPopup);
@@ -281,7 +281,7 @@ const StudioGames = ({
                         </a>
                       )}
                     </Menu.Item>
-                    <Menu.Item>
+                    {/* <Menu.Item>
                       {({ active }) => (
                         <a
                           className={classNames(
@@ -298,7 +298,7 @@ const StudioGames = ({
                           Delete
                         </a>
                       )}
-                    </Menu.Item>
+                    </Menu.Item> */}
                   </div>
                 </Menu.Items>
               </Transition>
@@ -341,6 +341,7 @@ const StudioGames = ({
           setSelectedGame={setSelectedGame}
           setGames={setGames}
           studio_id={studio_id}
+          setToastMessage={setToastMessage}
         />
       )}
       {showConfirmationPopup && (

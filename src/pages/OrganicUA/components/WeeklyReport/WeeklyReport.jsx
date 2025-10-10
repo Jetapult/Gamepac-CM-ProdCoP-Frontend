@@ -6,14 +6,19 @@ import "./weeklyReport.css";
 import moment from "moment";
 import Select from "react-select";
 import NoData from "../../../../components/NoData";
+import { useSearchParams } from "react-router-dom";
 
-const WeeklyReport = ({ games, studio_slug, setGames }) => {
+const WeeklyReport = ({ games, setGames, ContextStudioData }) => {
   const userData = useSelector((state) => state.user.user);
   const studios = useSelector((state) => state.admin.studios);
   const [weeklyReport, setWeeklyReport] = useState([]);
   const [selectedGame, setSelectedGame] = useState({});
   const [selectedDate, setSelectedDate] = useState({});
   const [selectedTab, setSelectedTab] = useState("android");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const gameIdparam = searchParams.get("gameId");
+  const gameTypeparam = searchParams.get("gameType");
+  const dateparam = searchParams.get("date");
 
   const getSundays = (startDate, endDate) => {
     const start = new Date(startDate);
@@ -48,44 +53,44 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
     return content
       .replace(
         /<b>Sentiment Analysis<\/b>/g,
-        '<h1 class="report-heading sentiment-analysis">Sentiment Analysis</h1>'
+        '<h1 className="report-heading sentiment-analysis">Sentiment Analysis</h1>'
       )
       .replace(
         /<b>Trends & Insights<\/b>/g,
-        '<h1 class="report-heading trends-insights">Trends & Insights</h1>'
+        '<h1 className="report-heading trends-insights">Trends & Insights</h1>'
       )
       .replace(
         /<b>Actionable Recommendations<\/b>/g,
-        '<h1 class="report-heading actionable-recommendations">Actionable Recommendations</h1>'
+        '<h1 className="report-heading actionable-recommendations">Actionable Recommendations</h1>'
       )
       .replace(
-        /<h1 class="report-heading actionable-recommendations">Actionable Recommendations<\/h1>([\s\S]*?)$/g,
+        /<h1 className="report-heading actionable-recommendations">Actionable Recommendations<\/h1>([\s\S]*?)$/g,
         (match, p1) => {
           return match.replace(/(\d+\. [^\.]+\.)/g, "<li>$1</li>");
         }
       )
-      .replace(/- Positive: \d+(\.\d+)?%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Neutral: \d+(\.\d+)?%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Negative: \d+(\.\d+)?%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Appreciation: \d+%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Ads Concern: \d+%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Concern: \d+%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Need more info: \d+%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Progress saving: \d+%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- Bug: \d+%/g, '<p class="padding-left-20">$&</p>')
-      .replace(/- IAP Concern: \d+%/g, '<p class="padding-left-20">$&</p>')
+      .replace(/- Positive: \d+(\.\d+)?%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Neutral: \d+(\.\d+)?%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Negative: \d+(\.\d+)?%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Appreciation: \d+%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Ads Concern: \d+%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Concern: \d+%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Need more info: \d+%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Progress saving: \d+%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- Bug: \d+%/g, '<p className="padding-left-20">$&</p>')
+      .replace(/- IAP Concern: \d+%/g, '<p className="padding-left-20">$&</p>')
       .replace(
         /- Crashes\/ANR: \d+(\.\d+)?%/g,
-        '<p class="padding-left-20">$&</p>'
+        '<p className="padding-left-20">$&</p>'
       )
       .replace(
         /- Lag\/Freeze: \d+(\.\d+)?%/g,
-        '<p class="padding-left-20">$&</p>'
+        '<p className="padding-left-20">$&</p>'
       )
       .replace(/(\d+\.\sApp Version - [^:]+: [^\.]+\.)/g, "<li>$1</li>")
       .replace(
         /<b>Negative Feedback<\/b>/g,
-        '<h1 class="report-heading negative-feedback">Negative Feedback</h1>'
+        '<h1 className="report-heading negative-feedback">Negative Feedback</h1>'
       );
   };
 
@@ -95,11 +100,7 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
         ...selectedDate.value,
       };
       const weeklyReportResponse = await api.get(
-        `v1/organic-ua/weekly-reports/${selectedGame.id}/${
-          studio_slug
-            ? studios.filter((x) => x.slug === studio_slug)[0]?.id
-            : userData.studio_id
-        }`,
+        `v1/organic-ua/weekly-reports/${selectedGame.id}/${ContextStudioData?.id}`,
         { params: paramData }
       );
       setWeeklyReport(weeklyReportResponse.data.data);
@@ -123,6 +124,24 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
       setSelectedDate(sundays[0]);
     }
   }, [sundays.length]);
+  useEffect(() => {
+    if (games.length) {
+      if (gameIdparam && gameTypeparam) {
+        const game = games.find((x) => parseInt(x.id) === parseInt(gameIdparam));
+        if (game) {
+          setSelectedGame({ ...game, platform: gameTypeparam });
+        }
+      } else {
+        const gameData = games[0];
+        setSelectedGame({ ...gameData, platform: "android" });
+      }
+    }
+  }, [games.length, gameIdparam, gameTypeparam]);
+  useEffect(() => {
+    if (dateparam) {
+      setSelectedDate(sundays.find((x) => x.value.start_date === dateparam));
+    }
+  }, [dateparam]);
   return (
     <div className="shadow-md bg-white w-full h-full p-4">
       <h1 className="text-2xl">Weekly Review Analysis Report</h1>
@@ -135,7 +154,6 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
             selectedTab={selectedTab}
             setSelectedTab={setSelectedTab}
             setGames={setGames}
-            studio_slug={studio_slug}
           />
         </div>
         <Select
@@ -147,7 +165,7 @@ const WeeklyReport = ({ games, studio_slug, setGames }) => {
         />
         {selectedGame.id && (
           <button
-            className="border border-[#ff1053] rounded-md py-1.5 w-32 text-[#ff1053]"
+            className="border border-[#000] rounded-md py-1.5 w-32 text-[#000] hover:bg-[#B9FF66] hover:text-[#000] hover:border-[#B9FF66]"
             onClick={() => {
               getWeeklyInsightReport();
             }}

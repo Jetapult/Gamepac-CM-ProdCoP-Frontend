@@ -9,12 +9,10 @@ const CreateReplyTemplatePopup = ({
   setShowCreateReplyTemplatePopup,
   selectedTemplate,
   setSelectedTemplate,
-  studio_slug,
   setTemplates,
   setToastMessage,
+  ContextStudioData
 }) => {
-  const studios = useSelector((state) => state.admin.studios);
-  const userData = useSelector((state) => state.user.user);
   const [replyTemplate, setReplyTemplate] = useState({
     review_type: "",
     review_reply: "",
@@ -43,17 +41,12 @@ const CreateReplyTemplatePopup = ({
       const requestbody = {
         review_type: replyTemplate.review_type,
         review_reply: replyTemplate.review_reply,
-        studio_id: studio_slug
-          ? studios.filter((x) => x.slug === studio_slug)[0].id
-          : userData.studio_id,
+        template_type: 'manual',
+        studio_id: ContextStudioData?.id,
       };
       const templatesResponse = selectedTemplate.id
         ? await api.put(
-            `v1/organic-ua/reply-template/${
-              studio_slug
-                ? studios.filter((x) => x.slug === studio_slug)[0].id
-                : userData.studio_id
-            }/${selectedTemplate.id}`,
+            `v1/organic-ua/reply-template/${ContextStudioData?.id}/${selectedTemplate.id}`,
             requestbody
           )
         : await api.post(`v1/organic-ua/reply-template/create`, requestbody);
@@ -68,6 +61,7 @@ const CreateReplyTemplatePopup = ({
               if (x.id === selectedTemplate.id) {
                 x.review_type = templatesResponse.data.data.review_type;
                 x.review_reply = templatesResponse.data.data.review_reply;
+                x.template_type = templatesResponse.data.data.template_type;
               }
               return prev;
             })
@@ -170,7 +164,7 @@ const CreateReplyTemplatePopup = ({
           <div className="flex items-center p-6 border-t border-solid border-blueGray-200 rounded-b">
             {submitLoader ? (
               <button
-                className="bg-[#1174fc] text-white font-bold uppercase text-sm px-6 py-1.5 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                className="bg-[#000] text-[#B9FF66] font-bold uppercase text-sm px-6 py-1.5 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                 type="button"
               >
                 <img src={loadingIcon} alt="loading" className="w-8 h-8" />
@@ -179,7 +173,7 @@ const CreateReplyTemplatePopup = ({
               <>
                 {replyTemplate.review_reply && replyTemplate.review_type ? (
                   <button
-                    className="bg-[#1174fc] text-white font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                    className="bg-[#B9FF66] text-[#000] font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                     type="button"
                     onClick={createTemplate}
                   >
@@ -187,7 +181,7 @@ const CreateReplyTemplatePopup = ({
                   </button>
                 ) : (
                   <button
-                    className="bg-[#1174fc] opacity-40 cursor-not-allowed text-white font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                    className="bg-[#B9FF66] cursor-not-allowed text-[#000] font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                     type="button"
                   >
                     {selectedTemplate?.id ? "Save" : "Add"}

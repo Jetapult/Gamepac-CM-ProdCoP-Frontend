@@ -37,13 +37,32 @@ import WordSearchPuzzleGame from "./pages/HTML5Games/WordSearchPuzzleGame";
 import HTML5Games from "./pages/HTML5Games";
 import Analytics from "./pages/Analytics/Analytics";
 import Signup from "./pages/Login/Signup";
-import { addStudios } from "./store/reducer/adminSlice";
+import { addContextStudioData, addStudios } from "./store/reducer/adminSlice";
 import Docs from "./pages/Docs";
 import OrganicUA from "./pages/OrganicUA";
 import HiddenObjectsGame from "./pages/HTML5Games/HiddenObjectsGame";
 import AINarrations from "./pages/HTML5Games/AINarrations";
 import RagChat from "./pages/GameReviewer/RagChat";
 import HdwPlayable from "./pages/HTML5Games/HdwPlayable";
+import Translate from "./pages/Translate";
+import Playground from "./pages/PlayablePlayground/Playground";
+import MhmPlayable from "./pages/HTML5Games/MhmPlayable";
+import VideoPlayable from "./pages/video-playable";
+import AsoAssistant from "./pages/AsoAssistant";
+// import CreativeAnalyser from "./components/CreativeAnalyser";
+import { AssetGenerator } from "./pages/AssetGenerator";
+import DataVisualization from "./pages/DataVisualization";
+import UAIntelligence from "./pages/UAIntelligence";
+import UACreativeAnalyser from "./pages/UAIntelligence/UACreativeAnalyser";
+import NewGameMarketIntelligence from "./pages/NewGameMarketIntelligence.jsx";
+import GameDesignDocument from "./pages/GameDesignDocument/index.jsx";
+import Collaboration from "./pages/GameDesignDocument/collaboration/Collaboration.jsx";
+import GDDList from "./pages/GameDesignDocument/gdd/index.jsx";
+import NewGDD from "./pages/GameDesignDocument/gdd/NewGDD.jsx";
+import GDDProject from "./pages/GameDesignDocument/gdd/Projects.jsx";
+import TranslatorPage from "./pages/GameDesignDocument/Translator/Translator.jsx";
+import ConceptGenerator from "./pages/GameDesignDocument/conceptGenerator/ConceptGenerator.jsx";
+import IdeaPac from "./pages/IdeaPac/index.jsx";
 
 
 function App() {
@@ -66,23 +85,42 @@ function App() {
             .get("/v1/game-studios")
             .then((res) => {
               dispatch(addStudios(res.data.data));
+              const ContextStudioData = res.data.data.find((studio) =>
+                studioData.data.data.studio_type?.includes("studio_manager")
+                  ? studio.slug?.includes("holy-cow-studio")
+                  : studio.slug?.includes(studioData?.data?.data?.slug)
+              );
+              dispatch(addContextStudioData(ContextStudioData));
             })
             .catch((err) => {
               console.log(err);
             });
+        }
+        else {
+          dispatch(addContextStudioData({
+            "id": studioData.data.data.studio_id,
+            "studio_name": studioData.data.data.studio_name,
+            "contact_email": studioData.data.data.contact_email,
+            "phone": studioData.data.data.phone,
+            "studio_type": studioData.data.data.studio_type,
+            "slug": studioData.data.data.slug,
+            "studio_logo": studioData.data.data.studio_logo
+          }));
         }
       }
     } catch (err) {
       console.log(err, "err");
     }
   };
+
   useEffect(() => {
     if (isAuthenticated()) {
       getStudioData();
     }
   }, []);
+
   return (
-    <div className=" bg-[#f6f6f7] h-[calc(100vh-3.5rem)]">
+    <div className=" bg-[#f6f6f7]">
       <>
         <Router>
           <Navbar />
@@ -286,17 +324,20 @@ function App() {
             <Route path="/organic-ua/review-insights/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
             <Route path="/organic-ua/weekly-report" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
             <Route path="/organic-ua/weekly-report/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/competitor-analysis/:studio_slug" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
+            <Route path="/organic-ua/competitor-analysis" element={<PrivateRoute><OrganicUA /></PrivateRoute>} />
 
             
             <Route path="/aistories" element={<PrivateRoute><Weaver /></PrivateRoute>} />
             <Route path="/storiesHistory" element={<PrivateRoute><WeaverHistory /></PrivateRoute>} />
             <Route path ="/aiStories/:id" element={<PrivateRoute><StoryPage /></PrivateRoute>}/>
-            <Route path ="/html5-games" element={<HTML5Games />}/>
-            <Route path ="/html5-games/match-3" element={<Match3Game />}/>
-            <Route path ="/html5-games/word-search-puzzle" element={<WordSearchPuzzleGame />}/>
-            <Route path ="/html5-games/hidden-objects" element={<HiddenObjectsGame />}/>
-            <Route path ="/html5-games/narration" element={<AINarrations />}/>
-            <Route path ="/html5-games/word-match" element={<HdwPlayable/>}/>
+            <Route path ="/html5-games" element={<PrivateRoute><HTML5Games /></PrivateRoute>}/>
+            <Route path ="/html5-games/match-3" element={<PrivateRoute><Match3Game /></PrivateRoute>}/>
+            <Route path ="/html5-games/word-search-puzzle" element={<PrivateRoute><WordSearchPuzzleGame /></PrivateRoute>}/>
+            <Route path ="/html5-games/hidden-objects" element={<PrivateRoute><HiddenObjectsGame /></PrivateRoute>}/>
+            <Route path ="/html5-games/narration" element={<PrivateRoute><AINarrations /></PrivateRoute>}/>
+            <Route path ="/html5-games/word-match" element={<PrivateRoute><HdwPlayable/></PrivateRoute>}/>
+            <Route path ="/html5-games/home-decor" element={<PrivateRoute><MhmPlayable/></PrivateRoute>}/>
             <Route path="/docs/overview" element={<Docs />} />
             <Route path="/docs/app-onboarding" element={<Docs />} />
             <Route path="/docs/ai-replies" element={<Docs />} />
@@ -304,6 +345,30 @@ function App() {
 
             <Route path="/ai-chat" element={<PrivateRoute><RagChat /></PrivateRoute>} />
             <Route path="/ai-chat/:studio_slug" element={<PrivateRoute><RagChat /></PrivateRoute>} />
+            <Route path="/translate" element={<PrivateRoute><Translate /></PrivateRoute>} />
+            <Route path="/playground" element={<Playground />} />
+            <Route path="/video-editor" element={<PrivateRoute><VideoPlayable /></PrivateRoute>} />
+            <Route path="/aso-assistant" element={<PrivateRoute><AsoAssistant /></PrivateRoute>} />
+            <Route path="/aso-assistant/:studio_slug" element={<PrivateRoute><AsoAssistant /></PrivateRoute>} />
+            {/* <Route path="/creativeAnalyser" element={<PrivateRoute><CreativeAnalyser/></PrivateRoute>} /> */}
+            <Route path ="/asset-generator" element={<PrivateRoute><AssetGenerator/></PrivateRoute>}/>
+            <Route path="/data-visualization" element={<PrivateRoute><DataVisualization /></PrivateRoute>}/>
+            <Route path="/ua-intelligence" element={<PrivateRoute><UAIntelligence /></PrivateRoute>} />
+            <Route path="/ua-intelligence/analyse" element={<PrivateRoute><UACreativeAnalyser /></PrivateRoute>} />
+            <Route path="/ua-intelligence/analyse/:ad_id" element={<PrivateRoute><UACreativeAnalyser /></PrivateRoute>} />
+            <Route path="/ua-intelligence/brief-generator" element={<PrivateRoute><UACreativeAnalyser /></PrivateRoute>} />
+            <Route path="/ua-intelligence/brief-generator/:ad_id" element={<PrivateRoute><UACreativeAnalyser /></PrivateRoute>} />
+            <Route path="/:studio_slug/idea-pac/" element={<PrivateRoute><IdeaPac /></PrivateRoute>} />
+            <Route path="/idea-pac" element={<PrivateRoute><IdeaPac /></PrivateRoute>} />
+            <Route path="/market-intel" element={<PrivateRoute><NewGameMarketIntelligence /></PrivateRoute>} />
+            <Route path="/gdd" element={<PrivateRoute><GameDesignDocument /></PrivateRoute>} />
+            <Route path="/gdd/collaboration" element={<PrivateRoute><Collaboration /></PrivateRoute>} />
+            <Route path="/gdd-editor" element={<PrivateRoute><GDDList /></PrivateRoute>} />
+            <Route path="/gdd/new" element={<PrivateRoute><NewGDD /></PrivateRoute>} />
+            <Route path="/gdd/:projectId" element={<PrivateRoute><GDDProject /></PrivateRoute>} />
+            <Route path="/gdd/translator" element={<PrivateRoute><TranslatorPage /></PrivateRoute>} />
+            <Route path="/gdd/translator/:id" element={<PrivateRoute><TranslatorPage /></PrivateRoute>} />
+            <Route path="/gdd/concept-generator" element={<PrivateRoute><ConceptGenerator /></PrivateRoute>} />
             <Route
               path="*"
               element={<PageNotFound />}

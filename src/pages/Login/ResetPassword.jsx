@@ -90,7 +90,7 @@ const ResetPassword = () => {
             <p className="mb-6">You can now log in with your new password.</p>
             <button
               onClick={handleLoginRedirect}
-              className="bg-[#f58174] py-2 px-4 rounded-md text-white"
+              className="bg-[#B9FF66] text-[#000] py-2 px-4 rounded-md hover:bg-[#000] hover:text-[#B9FF66]"
             >
               Log In
             </button>
@@ -159,7 +159,7 @@ const ResetPassword = () => {
               {validatePassword() ? (
                 <button
                   type="submit"
-                  className="w-full bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring focus:border-gray-400"
+                  className="w-full bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring focus:border-gray-400 cursor-not-allowed"
                   disabled
                 >
                   Change Password
@@ -167,7 +167,7 @@ const ResetPassword = () => {
               ) : (
                 <button
                   type="submit"
-                  className="w-full bg-[#f58174] text-white py-2 px-4 rounded-md focus:outline-none focus:ring focus:border-gray-400"
+                  className="w-full bg-[#B9FF66] text-[#000] py-2 px-4 rounded-md focus:outline-none focus:ring focus:border-gray-400"
                   onClick={handleSubmit}
                 >
                   Change Password

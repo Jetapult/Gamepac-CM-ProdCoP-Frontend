@@ -34,9 +34,8 @@ const GamesDropdown = ({
   selectedTab,
   setSelectedTab,
   setGames,
-  studio_slug,
 }) => {
-  const userData = useSelector((state) => state.user.user);
+  const ContextStudioData = useSelector((state) => state.admin.ContextStudioData);
   const [showGamesDropdown, setShowGamesDropdown] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [refresh, setRefresh] = useState(0);
@@ -75,7 +74,7 @@ const GamesDropdown = ({
       if (response.status === 200) {
         setSelectedGame(game);
         const gamesresponse = await fetchAllgames(
-          studio_slug ? studio_slug : userData.studio_id
+          ContextStudioData?.id
         );
         setGames(gamesresponse);
         setRefresh(refresh ? 0 : 1);
@@ -96,7 +95,7 @@ const GamesDropdown = ({
       const response = await api.delete(`/v1/games/${game.id}/unpin`);
       if (response.status === 200) {
         const gamesresponse = await fetchAllgames(
-          studio_slug ? studio_slug : userData.studio_id
+          ContextStudioData?.id
         );
         setGames(gamesresponse);
         setRefresh(refresh ? 0 : 1);
@@ -232,9 +231,12 @@ const GamesDropdown = ({
             {tabs.map((item, index) => (
               <p
                 className={`px-2 mb-2 w-1/2 cursor-pointer text-center ${
-                  selectedTab === item.name ? "bg-gray-400 text-white" : ""
+                  selectedTab === item.name ? "bg-gray-400 text-white" : "hover:bg-gray-200"
                 } ${
                   selectedTab === "android" ? "rounded-tl-lg" : "rounded-tr-lg"
+                } ${item.name === "android"
+                  ? "rounded-tl-lg hover:rounded-tl-lg hover:rounded-tr-none"
+                  : "rounded-tr-lg hover:rounded-tr-lg hover:rounded-tl-none"
                 }`}
                 key={`${item.name}`}
                 onClick={() => {
@@ -293,7 +295,7 @@ const GamesCard = React.memo(
   ({ game, i, selectedTab, selectedGame, onSelect, pinGame, unpinGame }) => {
     return (
       <div
-        className={`flex game-card items-center rounded-lg px-2 relative mb-2 cursor-pointer mx-2 ${
+        className={`flex game-card items-center rounded-lg px-2 relative mb-2 cursor-pointer mx-2 hover:bg-gray-100 ${
           selectedGame?.platform === "android"
             ? game.package_name === selectedGame.package_name &&
               selectedTab === "android"

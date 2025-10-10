@@ -9,6 +9,7 @@ import { PencilSquareIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import CreateReplyTemplatePopup from "../CreateReplyTemplatePopup";
 import AddTagPopup from "./AddTagPopup";
 import HighlightText from "../../../../components/HighlightText";
+import { tagDistributionlabelData } from "../ReviewInsights/ReviewInsights";
 
 const ratingColor = {
   5: `#62b47b`,
@@ -26,10 +27,10 @@ const ReviewsCard = ({
   limit,
   setReviews,
   selectedGame,
-  studio_slug,
   templates,
   setTemplates,
   searchText,
+  ContextStudioData
 }) => {
   const userData = useSelector((state) => state.user.user);
   const studios = useSelector((state) => state.admin.studios);
@@ -51,13 +52,22 @@ const ReviewsCard = ({
   const [selectedTemplate, setSelectedTemplate] = useState({});
   const [showAddTagPopup, setShowAddTagPopup] = useState(false);
   const [selectedReview, setSelectedReview] = useState({});
+  const [showOtherDetails, setShowOtherDetails] = useState("");
   const wrapperRef = useRef(null);
   const editRef = useRef(null);
+  const reviewDetailsRef = useRef(null);
+  const otherDetailsButtonRefs = useRef({});
   useOutsideAlerter(wrapperRef, () => {
     setShowTemplateDropdown("");
   });
   useOutsideAlerter(editRef, () => {
     closeEditingMode();
+  });
+  useOutsideAlerter(reviewDetailsRef, () => {
+    setShowOtherDetails("");
+  });
+  useOutsideAlerter(otherDetailsButtonRefs, () => {
+    setShowOtherDetails("");
   });
   function useOutsideAlerter(ref, next) {
     useEffect(() => {
@@ -72,6 +82,14 @@ const ReviewsCard = ({
       };
     }, [ref, next]);
   }
+
+  const onShowOtherDetails = (review) => {
+    if (showOtherDetails === review.id) {
+      setShowOtherDetails("");
+    } else {
+      setShowOtherDetails(review.id);
+    }
+  };
 
   const closeEditingMode = () => {
     setReviews((prev) =>
@@ -110,9 +128,7 @@ const ReviewsCard = ({
             : review.responsebody,
         reviewId: review.id,
         gameId: selectedGame.id,
-        studioId: studio_slug
-          ? studios.filter((x) => x.slug === studio_slug)[0].id
-          : userData.studio_id,
+        studioId: ContextStudioData?.id,
         platform: selectedGame.platform,
         contentType:
           selectedGame.platform === "android"
@@ -255,6 +271,7 @@ const ReviewsCard = ({
               ...x,
               originalReply: review.reply,
               reply: translatedReply,
+              totalReplytextCount: translatedReply?.length,
               translatedReply,
             };
           }
@@ -263,6 +280,13 @@ const ReviewsCard = ({
       );
     } catch (error) {
       console.error("Error translating reply:", error);
+      if (error?.response?.data?.message) {
+        setToastMessage({
+          show: true,
+          message: error?.response?.data?.message,
+          type: "error",
+        });
+      }
     } finally {
       setTranslateloader("");
     }
@@ -277,7 +301,10 @@ const ReviewsCard = ({
     }
     try {
       const response = await api.post("/replyAssistant", {
-        comment: selectedGame.platform === "android" ? review.originalLang || review.comment : review.body,
+        comment:
+          selectedGame.platform === "android"
+            ? review.originalLang || review.comment
+            : review.body,
       });
       const reply = response.data.reply;
       setReviews((prev) =>
@@ -336,9 +363,7 @@ const ReviewsCard = ({
           : {
               reviewId: reviewId,
               reply: review.reply,
-              studio_id: studio_slug
-                ? studios.filter((x) => x.slug === studio_slug)[0].id
-                : userData.studio_id,
+              studio_id: ContextStudioData?.id,
             };
       const response = await api.post(url, requestbody);
       if (response.status === 200) {
@@ -395,7 +420,10 @@ const ReviewsCard = ({
   return (
     <>
       {reviews.map((review, index) => (
-        <div className="p-3 border-t-[0.5px] border-y-[#ccc]" key={review?.id}>
+        <div
+          className="p-3 border-t-[0.5px] border-y-[#ccc] relative"
+          key={review?.id}
+        >
           <div
             className={`mb-2 p-3 border-l-[2px] ${
               review?.userRating === 5 || review?.rating === 5
@@ -440,25 +468,33 @@ const ReviewsCard = ({
                 )}
               </p>
               {(review?.reviewerLanguage || review?.territory) && (
-                <p
-                  className="border border-dashed rounded px-2 text-sm ml-2 text-[#d89a28]"
-                >
+                <p className="border border-dashed rounded px-2 text-sm ml-2 text-[#d89a28]">
                   {review?.reviewerLanguage || review?.territory}
                 </p>
               )}
               {review?.appVersionName && (
-                <p
-                  className="border border-dashed rounded px-2 text-sm ml-2 text-[#9450c9]"
-                >
+                <p className="border border-dashed rounded px-2 text-sm ml-2 text-[#9450c9]">
                   {review?.appVersionName}
                 </p>
               )}
               {review?.productName && (
-                <p
-                  className="border border-dashed rounded px-2 text-sm ml-2 text-[#059afd]"
-                >
+                <p className="border border-dashed rounded px-2 text-sm ml-2 text-[#059afd]">
                   {review?.productName}
                 </p>
+              )}
+              <button
+                className="bg-[#e5e5e5] text-[13px] cursor-pointer ml-2 px-2 rounded-md"
+                onClick={() => onShowOtherDetails(review)}
+                ref={(el) => (otherDetailsButtonRefs.current[review.id] = el)}
+              >
+                Other details
+              </button>
+              {showOtherDetails === review.id && (
+                <ReviewDetailsCard 
+                  review={review} 
+                  reviewDetailsRef={reviewDetailsRef} 
+                  otherDetailsButtonRefs={otherDetailsButtonRefs}
+                />
               )}
             </div>
 
@@ -492,7 +528,11 @@ const ReviewsCard = ({
               Tags:{" "}
               {review?.tags?.map((tag, index) => (
                 <span
-                  className={`px-2 py-1 text-sm border border-dashed rounded mx-1 ${getRandomColor()}`}
+                  className={`px-2 py-1 text-sm rounded-full mx-1 capitalize  ${getRandomColor()}`}
+                  style={{
+                    backgroundColor: tagDistributionlabelData[tag] + "33",
+                    color: tagDistributionlabelData[tag],
+                  }}
                   key={`tag${index}`}
                 >
                   {tag}
@@ -631,7 +671,7 @@ const ReviewsCard = ({
                     <div className="flex pr-2 pb-2">
                       {review.isAIReply && (
                         <button
-                          className="border border-[#ccc] rounded py-1 px-3 mr-2 text-sm"
+                          className="border border-[#ccc] rounded py-1 px-3 mr-2 text-sm hover:bg-[#000] hover:text-[#B9FF66] hover:border-none"
                           onClick={() => {
                             setSelectedTemplate({
                               review_type: "",
@@ -648,8 +688,10 @@ const ReviewsCard = ({
                       )}
 
                       <button
-                        className={`bg-[#ff1053] rounded px-3 py-1 mr-2 text-white text-sm ${
-                          generativeAILoader === review?.id ? "opacity-40" : ""
+                        className={`bg-[#B9FF66] rounded px-3 py-1 mr-2 text-[#000] text-sm hover:bg-[#000] hover:text-[#B9FF66] ${
+                          generativeAILoader === review?.id
+                            ? "cursor-not-allowed"
+                            : ""
                         }`}
                         onClick={() => {
                           if (generativeAILoader === "") {
@@ -662,7 +704,7 @@ const ReviewsCard = ({
                       </button>
                       <div className="relative">
                         <button
-                          className="border border-[#ccc] flex justify-between items-center rounded py-1 px-3 mr-2 text-sm w-[150px]"
+                          className="border border-[#ccc] flex justify-between items-center rounded py-1 px-3 mr-2 text-sm w-[170px] hover:bg-[#000] hover:text-[#B9FF66] hover:border-transparent"
                           onClick={() => setShowTemplateDropdown(review.id)}
                         >
                           {review.template_type
@@ -672,12 +714,12 @@ const ReviewsCard = ({
                         </button>
                         {showTemplateDropdown === review.id && (
                           <div
-                            className="absolute bg-white border border-[#ccc] rounded left-0 w-[150px] top-8"
+                            className="absolute bg-white border border-[#ccc] rounded left-0 w-[150px] top-8 z-50"
                             ref={wrapperRef}
                           >
                             {templates.map((template) => (
                               <p
-                                className="p-2 border-b border-b-[#ccc] cursor-pointer hover:bg-gray-200"
+                                className={`p-2 border-b border-b-[#ccc] cursor-pointer hover:bg-gray-200 ${review.template_type === template.review_type ? "bg-gray-200" : ""}`}
                                 key={template.id}
                                 onClick={() => onSelectTemplate(template)}
                               >
@@ -688,8 +730,10 @@ const ReviewsCard = ({
                         )}
                       </div>
                       <button
-                        className={`bg-[#ff1053] rounded px-3 py-1 mr-2 text-white text-sm ${
-                          translateLoader === review.id ? "opacity-40" : ""
+                        className={`bg-[#B9FF66] rounded px-3 py-1 mr-2 text-[#000] text-sm hover:bg-[#000] hover:text-[#B9FF66] ${
+                          translateLoader === review.id
+                            ? "cursor-not-allowed"
+                            : ""
                         }`}
                         onClick={() => {
                           if (translateLoader === "") {
@@ -700,10 +744,10 @@ const ReviewsCard = ({
                         Translate
                       </button>
                       <button
-                        className={`bg-[#ff1053] rounded px-3 py-1  text-white text-sm ${
+                        className={`bg-[#B9FF66] rounded px-3 py-1  text-[#000] text-sm hover:bg-[#000] hover:text-[#B9FF66] ${
                           postLoader ===
                           (review?.reviewId || review?.appstorereviewid)
-                            ? "opacity-40"
+                            ? "cursor-not-allowed"
                             : ""
                         }`}
                         onClick={() => {
@@ -746,9 +790,9 @@ const ReviewsCard = ({
           setShowCreateReplyTemplatePopup={setShowCreateReplyTemplatePopup}
           selectedTemplate={selectedTemplate}
           setSelectedTemplate={setSelectedTemplate}
-          studio_slug={studio_slug}
           setTemplates={setTemplates}
           setToastMessage={setToastMessage}
+          ContextStudioData={ContextStudioData}
         />
       )}
       {showAddTagPopup && (
@@ -760,10 +804,249 @@ const ReviewsCard = ({
           setReviews={setReviews}
           setSelectedReview={setSelectedReview}
           selectedGame={selectedGame}
-          studio_slug={studio_slug}
+          ContextStudioData={ContextStudioData}
         />
       )}
     </>
+  );
+};
+
+const ReviewDetailsCard = ({ review, reviewDetailsRef, otherDetailsButtonRefs }) => {
+  useEffect(() => {
+    if (otherDetailsButtonRefs && reviewDetailsRef.current) {
+      // Calculate triangle position based on button location
+      const buttonRect = otherDetailsButtonRefs.current[review.id].getBoundingClientRect();
+      const cardRect = reviewDetailsRef.current.getBoundingClientRect();
+      
+      // Calculate the distance from the card's right edge to the button center
+      const buttonCenter = buttonRect.left + (buttonRect.width / 2);
+      const cardRight = cardRect.right;
+      const trianglePosition = Math.max(20, cardRight - buttonCenter);
+      
+      // Set the triangle position using CSS custom property
+      reviewDetailsRef.current.style.setProperty('--triangle-right', `${trianglePosition}px`);
+    }
+  }, [otherDetailsButtonRefs]);
+
+  return (
+    <div 
+      ref={reviewDetailsRef} 
+      className="absolute bg-white border border-[#ccc] rounded w-[750px] right-0 top-14 ml-3 z-50 review-details-card"
+    >
+      <div className="grid grid-cols-2 gap-2 p-2">
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">Android Os Version: </p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.androidOsVersion ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {" "}
+            {review?.androidOsVersion || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">App Version Code: </p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.appVersionCode ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.appVersionCode || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">App Version Name: </p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.appVersionName ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.appVersionName || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">CPU Make: </p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.cpuMake ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.cpuMake || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">CPU Model: </p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.cpuModel ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.cpuModel || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">Device: </p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.device ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.device || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">Device Class:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.deviceClass ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.deviceClass || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">GlEs Version:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.glEsVersion ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.glEsVersion || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">Manufacturer:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.manufacturer ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.manufacturer || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">Native Platform:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.nativePlatform ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.nativePlatform || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">original Language:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.originalLang ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.originalLang || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">original Rating:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.originalRating ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.originalRating || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">Posted Date:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.postedDate ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.postedDate || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">Posted Reply:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.postedReply ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.postedReply || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">Product Name:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.productName ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.productName || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">RAM MB:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.ramMb ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.ramMb || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">Screen Density Dpi:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.screenDensityDpi ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.screenDensityDpi || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">Screen Height Px:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.screenHeightPx ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.screenHeightPx || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">Screen Width Px:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.screenWidthPx ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.screenWidthPx || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">Thumbs Down Count:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.thumbsDownCount ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.thumbsDownCount || "N/A"}
+          </p>
+        </div>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-500">Thumbs Up Count:</p>
+          <p
+            className={`text-sm pl-1 ${
+              review?.thumbsUpCount ? "text-black" : "text-gray-500"
+            }`}
+          >
+            {review?.thumbsUpCount || "N/A"}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 };
 export default ReviewsCard;

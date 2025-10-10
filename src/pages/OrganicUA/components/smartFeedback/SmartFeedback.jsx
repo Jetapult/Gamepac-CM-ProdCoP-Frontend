@@ -23,7 +23,7 @@ import NoData from "../../../../components/NoData";
 import DatePicker from "./DatePicker";
 
 const SmartFeedback = ({
-  studio_slug,
+  ContextStudioData,
   templates,
   setTemplates,
   isGameLoading,
@@ -66,6 +66,7 @@ const SmartFeedback = ({
   const querytags = searchParams.get("tags");
   const gameIdparam = searchParams.get("gameId");
   const gameTypeparam = searchParams.get("gameType");
+  const reviewIds = searchParams.get("review_ids")
 
   const orderBy = [
     {
@@ -187,6 +188,9 @@ const SmartFeedback = ({
         selectedTags.filter((x) => tags.push(x.value));
         paramData.tags = tags.join(",");
       }
+      if (reviewIds) {
+        paramData.reviewIds = reviewIds;
+      }
       if (sortBy) {
         const sort_by = sortBy.value.split(" ");
         paramData.sortBy = sort_by[0];
@@ -194,10 +198,8 @@ const SmartFeedback = ({
       }
       const url =
         selectedGame?.platform === "android"
-          ? `/v1/organic-ua/google-reviews/${studio_slug || userData.studio_id}`
-          : `/v1/organic-ua/fetch-app-store-reviews/${
-              studio_slug || userData.studio_id
-            }`;
+          ? `/v1/organic-ua/google-reviews/${ContextStudioData.id}`
+          : `/v1/organic-ua/fetch-app-store-reviews/${ContextStudioData.id}`;
       const reviewsResponse = await api.get(url, { params: paramData });
       setReviews(reviewsResponse.data.data);
       setTotalReviews(reviewsResponse.data.totalReviews);
@@ -240,11 +242,7 @@ const SmartFeedback = ({
   const fetchAllVersions = async () => {
     try {
       const versionResponse = await api.get(
-        `v1/organic-ua/versions/${
-          studio_slug
-            ? studios.filter((x) => x.slug === studio_slug)[0]?.id
-            : userData.studio_id
-        }/${selectedGame.id}`
+        `v1/organic-ua/versions/${ContextStudioData?.id}/${selectedGame.id}`
       );
       const versionsArr = [];
       versionResponse.data.data.filter((x, index) => {
@@ -282,12 +280,11 @@ const SmartFeedback = ({
   useEffect(() => {
     if (
       selectedGame?.id &&
-      selectedGame?.platform === "android" &&
-      (studio_slug ? studios.length : 1)
+      selectedGame?.platform === "android"
     ) {
       fetchAllVersions();
     }
-  }, [selectedGame?.id, selectedGame?.platform, studios?.length]);
+  }, [selectedGame?.id, selectedGame?.platform, ContextStudioData?.id]);
 
   useEffect(() => {
     if (games.length) {
@@ -317,7 +314,6 @@ const SmartFeedback = ({
               selectedTab={selectedTab}
               setSelectedTab={setSelectedTab}
               setGames={setGames}
-              studio_slug={studio_slug}
             />
             <h5 className="font-bold">Period</h5>
             <div className="">
@@ -523,7 +519,7 @@ const SmartFeedback = ({
               onChange={(val) => setSortBy(val)}
             />
             <button
-              className="border border-[#ff1053] rounded-md w-full my-4 py-1 text-[#ff1053]"
+              className="border border-[#000] rounded-md w-full my-4 py-1 text-[#000] hover:bg-[#B9FF66] hover:text-[#000] hover:border-[#B9FF66]"
               onClick={() => fetchReviews(1)}
             >
               Search
@@ -574,13 +570,7 @@ const SmartFeedback = ({
                   <NoData
                     type="reviews"
                     next={() =>
-                      navigate(
-                        `${
-                          studio_slug
-                            ? `/${studio_slug}/dashboard`
-                            : "/dashboard"
-                        }`
-                      )
+                      navigate("/dashboard")
                     }
                   />
                 ) : (
@@ -592,10 +582,10 @@ const SmartFeedback = ({
                     limit={limit}
                     setReviews={setReviews}
                     selectedGame={selectedGame}
-                    studio_slug={studio_slug}
                     templates={templates}
                     setTemplates={setTemplates}
                     searchText={searchText}
+                    ContextStudioData={ContextStudioData}
                   />
                 )}
               </>

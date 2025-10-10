@@ -81,9 +81,9 @@ const Login = () => {
   };
   return (
     <>
-      <div className="flex items-center justify-center pt-10">
-        <div className=" bg-white p-8 rounded-md shadow-md font-['Inter'] w-96">
-          <h2 className="text-2xl font-bold mb-4">
+      <div className="flex items-center justify-center pt-10 mt-10">
+        <div className=" bg-[#F3F3F3] p-8 rounded-[45px] shadow-md font-sf-pro-display w-[500px] h-[200] mt-10 border-2 border-b-8 border-black">
+          <h2 className="text-3xl text-black rounded px-2 border bg-[#B9FF66] w-fit font-bold mb-4">
             {showForgotPassword ? "Forgot password" : "Login"}
           </h2>
           <form>
@@ -92,7 +92,7 @@ const Login = () => {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-800"
               >
-                Email<span className="text-red-500">*</span>
+                Email<span className="text-black">*</span>
               </label>
               <input
                 type="text"
@@ -109,9 +109,9 @@ const Login = () => {
                 <div className="flex justify-between">
                   <label
                     htmlFor="password"
-                    className="block text-sm font-medium text-gray-800"
+                    className="block text-sm font-medium text-gray-800 "
                   >
-                    Password<span className="text-red-500">*</span>
+                    Password<span className="text-black">*</span>
                   </label>
                   <p
                     className="text-sm text-blue-500 cursor-pointer"
@@ -140,20 +140,21 @@ const Login = () => {
               <button
                 type="submit"
                 className={`w-full ${
-                  emailRegex.test(email) ? "bg-[#f58174]" : "bg-gray-500"
-                } text-white py-2 px-4 rounded-md focus:outline-none focus:ring focus:border-gray-400`}
+                  emailRegex.test(email) ? "bg-[#B9FF66] text-[#000]" : "bg-gray-500 text-white"
+                } py-2 px-4 rounded-md focus:outline-none focus:ring focus:border-gray-400`}
                 onClick={handleForgotPassword}
               >
                 Send Email
               </button>
             ) : (
               <>
+              <div className="flex justify-center">
                 {email && password ? (
                   <>
                     {loginLoader ? (
                       <button
                         type="submit"
-                        className="w-full bg-[#f58174] text-white py-2 px-4 rounded-md flex justify-center outline-none"
+                        className="w-[50%] bg-black text-white py-2 px-4 rounded-md flex items-center justify-center outline-none"
                       >
                         <img
                           src={loadingIcon}
@@ -164,7 +165,7 @@ const Login = () => {
                     ) : (
                       <button
                         type="submit"
-                        className="w-full bg-[#f58174] text-white py-2 px-4 rounded-md focus:outline-none focus:ring focus:border-gray-400"
+                        className="w-[50%] bg-black text-white py-2 px-4 rounded-md focus:outline-none focus:ring focus:border-gray-400"
                         onClick={handleLogin}
                       >
                         Login
@@ -174,13 +175,15 @@ const Login = () => {
                 ) : (
                   <button
                     type="submit"
-                    className="w-full bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring focus:border-gray-400"
+                    className="w-[50%] bg-black text-white py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring focus:border-gray-400"
                   >
                     Login
                   </button>
                 )}
+                </div>
               </>
             )}
+            
           </form>
         </div>
       </div>

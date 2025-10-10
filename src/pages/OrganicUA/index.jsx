@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import SmartFeedback from "./components/smartFeedback/SmartFeedback";
 import ReviewInsights from "./components/ReviewInsights/ReviewInsights";
@@ -7,6 +7,7 @@ import Templates from "./components/Templates";
 import api from "../../api";
 import WeeklyReport from "./components/WeeklyReport/WeeklyReport";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import CompetitorAnalysis from "./components/CompetitorAnalysis/CompetitorAnalysis";
 
 const menuItems = [
   {
@@ -16,42 +17,35 @@ const menuItems = [
   },
   { id: "review-insights", label: "Review Insights" },
   { id: "weekly-report", label: "Weekly Report" },
+  { id: "competitor-analysis", label: "Competitor Analysis" },
 ];
 
 const OrganicUA = () => {
-  const studios = useSelector((state) => state.admin.studios);
+  const ContextStudioData = useSelector((state) => state.admin.ContextStudioData);
   const userData = useSelector((state) => state.user.user);
   const [templates, setTemplates] = useState([]);
   const [activeMenu, setActiveMenu] = useState(menuItems[0].id);
   const [games, setGames] = useState([]);
   const [isGameLoading, setIsGameLoading] = useState(true);
   const navigate = useNavigate();
-  const params = useParams();
-  const studio_slug = params.studio_slug;
 
   const handleMenuClick = (id) => {
-    navigate(
-      studio_slug ? `/organic-ua/${id}/${studio_slug}` : `/organic-ua/${id}`
-    );
+    navigate(`/organic-ua/${id}`);
     setActiveMenu(id);
   };
 
-  useEffect(() => {
-    const pathSegments = location.pathname.split("/");
-    const relevantSegment = studio_slug
-      ? pathSegments[pathSegments.length - 2]
-      : pathSegments.pop();
-    setActiveMenu(relevantSegment);
-  }, [studio_slug, location.pathname]);
+  // useEffect(() => {
+  //   const pathSegments = location.pathname.split("/");
+  //   const relevantSegment = studio_slug
+  //     ? pathSegments[pathSegments.length - 2]
+  //     : pathSegments.pop();
+  //   setActiveMenu(relevantSegment);
+  // }, [studio_slug, location.pathname]);
 
   const getAllReplyTemplates = async () => {
     try {
       const templatesResponse = await api.get(
-        `/v1/organic-ua/reply-templates/${
-          studio_slug
-            ? studios.filter((x) => x.slug === studio_slug)[0].id
-            : userData.studio_id
-        }`
+        `/v1/organic-ua/reply-templates/${ContextStudioData.id}?template_type=manual`
       );
       setTemplates(templatesResponse.data.data);
     } catch (err) {
@@ -62,7 +56,7 @@ const OrganicUA = () => {
   const fetchAllgames = async () => {
     try {
       const gamesresponse = await api.get(
-        `/v1/games/platform/${studio_slug ? studio_slug : userData.studio_id}`
+        `/v1/games/platform/${ContextStudioData.id}`
       );
       setGames(gamesresponse.data.data);
     } catch (err) {
@@ -73,11 +67,11 @@ const OrganicUA = () => {
   };
 
   useEffect(() => {
-    if (studio_slug ? studios.length : userData.studio_id) {
+    if (ContextStudioData.id) {
       getAllReplyTemplates();
       fetchAllgames();
     }
-  }, [studios.length, userData?.id]);
+  }, [ContextStudioData.id]);
 
   return (
     <div className="docs-container flex">
@@ -85,9 +79,9 @@ const OrganicUA = () => {
         {menuItems.map((item) => (
           <div key={item.id}>
             <p
-              className={`menu-item p-1.5 pl-5 cursor-pointer rounded ${
+              className={`menu-item p-1.5 pl-5 cursor-pointer rounded hover:bg-[#F3F3F3] ${
                 activeMenu === item.id
-                  ? "active bg-[#f7e5e5] text-[#ff1053]"
+                  ? "active bg-[#000] text-[#B9FF66] hover:bg-[#B9FF66] hover:text-[#000]"
                   : ""
               }`}
               onClick={() => handleMenuClick(item.id)}
@@ -108,9 +102,9 @@ const OrganicUA = () => {
               {item?.subMenu?.map((subItem) => (
                 <p
                   key={subItem.id}
-                  className={`p-1 px-2 pl-8 cursor-pointer rounded ${
+                  className={`p-1 px-2 pl-8 cursor-pointer rounded hover:bg-gray-[#F3F3F3] ${
                     activeMenu === subItem.id
-                      ? "active bg-[#f7e5e5] text-[#ff1053]"
+                      ? "active bg-[#000] text-[#B9FF66]"
                       : ""
                   }`}
                   onClick={() => handleMenuClick(subItem.id)}
@@ -125,31 +119,36 @@ const OrganicUA = () => {
       <div className="content flex-auto sm:w-auto px-6">
         {activeMenu === "smart-feedback" && (
           <SmartFeedback
-            studio_slug={studio_slug}
             templates={templates}
             setTemplates={setTemplates}
             setIsGameLoading={setIsGameLoading}
             isGameLoading={isGameLoading}
             games={games}
             setGames={setGames}
+            ContextStudioData={ContextStudioData}
           />
         )}
         {activeMenu === "templates" && (
           <Templates
-            studio_slug={studio_slug}
             templates={templates}
             setTemplates={setTemplates}
+            ContextStudioData={ContextStudioData}
           />
         )}
         {activeMenu === "review-insights" && (
           <ReviewInsights
-            studio_slug={studio_slug}
             games={games}
             setGames={setGames}
+            ContextStudioData={ContextStudioData}
           />
         )}
         {activeMenu === "weekly-report" && (
-          <WeeklyReport games={games} studio_slug={studio_slug} setGames={setGames} />
+          <WeeklyReport games={games} setGames={setGames} ContextStudioData={ContextStudioData} />
+        )}
+        {activeMenu === "competitor-analysis" && (
+          <CompetitorAnalysis
+            ContextStudioData={ContextStudioData}
+          />
         )}
       </div>
     </div>

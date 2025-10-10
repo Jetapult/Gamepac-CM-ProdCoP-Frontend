@@ -1,8 +1,62 @@
-@import url('https://fonts.googleapis.com/css2?family=League+Spartan&display=swap');
+/* @import url('https://fonts.googleapis.com/css2?family=League+Spartan&display=swap'); */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom range input styling for UA Spend slider */
+.range-input {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 0;
+  accent-color: #ffffff; /* ensure native accent is white on supporting browsers */
+  pointer-events: none !important; /* allow only thumbs to capture events */
+}
+.range-input:focus {
+  outline: none;
+}
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #ffffff !important;
+  border-radius: 9999px;
+  border: 0 none;
+  pointer-events: auto; /* enable dragging the thumb */
+}
+.range-input::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #ffffff !important;
+  border: 0 none;
+  border-radius: 9999px;
+  pointer-events: auto;
+}
+.range-input::-ms-thumb {
+  width: 14px;
+  height: 14px;
+  background: #ffffff !important;
+  border: 0 none;
+  border-radius: 9999px;
+  pointer-events: auto;
+}
+.range-input::-webkit-slider-runnable-track {
+  background: transparent;
+}
+.range-input::-moz-range-track {
+  background: transparent;
+}
+.range-input::-ms-track {
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+/* Hide native filled progress portions */
+.range-input::-moz-range-progress { background: transparent; }
+.range-input::-ms-fill-lower { background: transparent; }
+.range-input::-ms-fill-upper { background: transparent; }
 
 @layer utilities {
   /* Hide scrollbar for Chrome, Safari and Opera */
@@ -16,10 +70,37 @@
 }
 }
 
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./fonts/SF-Pro-Display-Black.otf') format('otf');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./fonts/SF-Pro-Display-Bold.otf') format('otf');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./fonts/SF-Pro-Display-Regular.otf') format('otf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./fonts/SF-Pro-Display-Semibold.otf') format('otf');
+  font-weight: 600;
+  font-style: normal;
+}
 
 
 body {
-  font-family: 'League Spartan', sans-serif;
+  font-family: 'SF Pro Display', sans-serif;
   background-color: #f6f6f7;
   margin-top: 56px;
 }
@@ -71,7 +152,7 @@ textarea{
   margin-left: 5px;
   width: 15px;
   height: 15px;
-  background-color: #ff1053;
+  background-color: #000;
   border-radius: 50%;
   display: inline-block;
   animation: loader-3-bounce 1.4s infinite ease-in-out both;
@@ -89,6 +170,140 @@ textarea{
 .page-wrapper {
   max-width: 100%;
   overflow-x: auto;
+}
+
+.switch {
+   --_switch-clr-bg: #B9FF66;
+  --_switch-clr-txt: rgb(255 255 255);
+  --_switch-clr-outline: rgba(255 255 255 / 0.3);
+  --_switch-clr-txt-checked: rgb(0, 0, 0); 
+
+  --_switch-padding: 4px;
+  --_label-padding: 6px 10px;
+  --_toggle-clr-bg: #000;
+  --_toggle-clr-bg-on: #000;
+  --_toggle-speed: 300ms;
+  --_toggle-easing: cubic-bezier(0.47, 1.64, 0.41, 0.8);
+
+  color: var(--_switch-clr-txt);
+  background-color: var(--_switch-clr-bg);
+  position: relative;
+  cursor: pointer;
+  border-radius: 2px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  isolation: isolate;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.3), 0 1px rgba(255, 255, 255, 0.1);
+  transition: outline 300ms ease-in-out;
+  outline: 1px dashed transparent;
+}
+.switch.rounded {
+  border-radius: 9999px;
+}
+.switch span{
+  font-size: 14px;
+}
+.switch:has(input:focus-visible) {
+  outline: 1px dashed var(--_switch-clr-outline);
+  outline-offset: 4px;
+}
+
+.switch input[type="checkbox"] {
+  appearance: none;
+  border: none;
+  outline: none;
+  position: absolute;
+  border-radius: inherit;
+  background-color: var(--_toggle-clr-bg);
+  transform-origin: left;
+  inset: var(--_switch-padding) calc(50% + var(--_switch-padding))  var(--_switch-padding) var(--_switch-padding);
+  transition: background-color var(--_toggle-speed) var(--_toggle-easing),
+    scale var(--_toggle-speed) var(--_toggle-easing);
+  z-index: -1;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.3), 0 1px rgba(255, 255, 255, 0.3);
+  animation: toggle-off var(--_toggle-speed) linear forwards;
+}
+.switch:hover > input[type="checkbox"] {
+  scale: 1.1 1;
+}
+/* checked - move slider to right */
+.switch input[type="checkbox"]:checked {
+  transform-origin: right;
+  animation: toggle-on var(--_toggle-speed) linear forwards;
+  background-color: var(--_toggle-clr-bg-on);
+}
+
+/* labels */
+.switch > span {
+/*  outline: 1px dashed white;*/
+  display: grid;
+  place-content: center;
+  transition: opacity 300ms ease-in-out;
+  padding: var(--_label-padding);
+}
+
+/* checked - set opacity */
+.switch > span:last-of-type,
+.switch > input:checked + span:first-of-type {
+  /* opacity: 0.5; */
+  color: var(--_switch-clr-txt);
+}
+.switch > input:checked ~ span:last-of-type,
+.switch:hover span {
+  opacity: 1;
+}
+.file-detail {
+  position: relative;
+}
+
+.file-details .file-detail:not(:last-child)::after {
+  content: "•";
+  position: absolute;
+  right: -8px;
+  color: #a0b1b5;
+  margin-right: 1px;
+}
+.queryPacTheme{
+  color: #000 !important;
+}
+canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  margin: auto;
+}
+@keyframes toggle-on {
+  /*0%{  inset: var(--_switch-padding) 45% var(--_switch-padding) var(--_switch-padding);}*/
+  50% {
+    inset: var(--_switch-padding) var(--_switch-padding) var(--_switch-padding)
+      65%;
+  }
+  80% {
+    inset: var(--_switch-padding) var(--_switch-padding) var(--_switch-padding)
+      50%;
+  }
+  100% {
+    inset: var(--_switch-padding) var(--_switch-padding) var(--_switch-padding)
+      calc(50% + var(--_switch-padding));
+  }
+}
+@keyframes toggle-off {
+  0% {
+    inset: var(--_switch-padding) var(--_switch-padding) var(--_switch-padding)
+      calc(50% + var(--_switch-padding));
+  }
+  50% {
+    inset: var(--_switch-padding) 65% var(--_switch-padding)
+      var(--_switch-padding);
+  }
+  80% {
+    inset: var(--_switch-padding) 50% var(--_switch-padding)
+      var(--_switch-padding);
+  }
+  100% {
+    inset: var(--_switch-padding) calc(50% + var(--_switch-padding)) var(--_switch-padding)
+      var(--_switch-padding);
+  }
 }
 
 @keyframes loader-3-bounce {

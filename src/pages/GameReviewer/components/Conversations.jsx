@@ -77,6 +77,7 @@ const Conversations = ({
         setSearch={setSearch}
         fetchConversations={fetchConversations}
         currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
       />
       <div id="scrollableDiv" className="h-[calc(100vh-100px)] overflow-y-auto">
         <InfiniteScroll
@@ -180,11 +181,13 @@ const SearchConversation = ({
   setSearch,
   fetchConversations,
   currentPage,
+  setCurrentPage
 }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (search.length > 2) {
         fetchConversations(1, search);
+        setCurrentPage(1);
       }
     }, 500);
     return () => {
@@ -202,6 +205,7 @@ const SearchConversation = ({
         onChange={(e) => {
           if (e.target.value.length === 0) {
             fetchConversations(1, "");
+            setCurrentPage(1);
           }
           setSearch(e.target.value);
         }}

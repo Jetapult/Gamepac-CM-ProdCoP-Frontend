@@ -32,8 +32,8 @@ const Docs = () => {
         {menuItems.map((item) => (
           <div
             key={item.id}
-            className={`menu-item p-1.5 pl-5 cursor-pointer rounded ${
-              activeMenu === item.id ? "active bg-[#f7e5e5] text-[#ff1053]" : ""
+            className={`menu-item p-1.5 pl-5 cursor-pointer rounded hover:bg-black hover:text-[#B9FF66] mb-1 ${
+              activeMenu === item.id ? "active bg-black text-[#B9FF66]" : ""
             }`}
             onClick={() => handleMenuClick(item.id)}
           >

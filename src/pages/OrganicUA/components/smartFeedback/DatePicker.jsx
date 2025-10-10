@@ -65,7 +65,7 @@ const DatePicker = ({
       />
       <button
         onClick={() => isCustomBtnAction()}
-        className={`z-50 absolute right-[-620px] mt-2 bg-[#ff1053] text-white font-bold py-1 px-4 rounded ${page === "reviewInsights" ? "bottom-[-460px]" : "bottom-[10px]"}`}
+        className={`z-50 absolute right-[-600px] mt-2 bg-[#B9FF66] text-[#000] hover:bg-[#000] hover:text-[#B9FF66] font-bold py-1 px-4 rounded ${page === "reviewInsights" ? "bottom-[-460px]" : "bottom-[10px]"}`}
       >
         Apply
       </button>
