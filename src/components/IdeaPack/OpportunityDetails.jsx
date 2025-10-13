@@ -99,7 +99,7 @@ export default function OpportunityDetails({
   onActiveTabChange,
 }) {
   const [activeView, setActiveView] = useState("market");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [detail, setDetail] = useState(null);
   const [internalActiveTabId, setInternalActiveTabId] = useState(null);
@@ -584,69 +584,6 @@ export default function OpportunityDetails({
           </div>
         ) : (
           <>
-            {/* Header */}
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <h1 className="text-4xl font-bold text-white leading-tight ">
-                  {title}
-                </h1>
-                <p className="text-gray-300 -mt-1">{subtitle}</p>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <div className="flex items-center gap-2">
-                  {activeView === "market" ? (
-                    <button
-                      onClick={() => {
-                        setActiveView("gdd");
-                        console.log("selectedPdf", selectedPdf);
-                      }}
-                      className="bg-[#27C128] text-white rounded-2xl py-[9px] px-[14px] text-sm font-medium flex items-center gap-1 hover:cursor-pointer "
-                      disabled={!selectedPdf}
-                    >
-                      View GDD <FileText size={16} />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setActiveView("market")}
-                      className="bg-[#27C128] text-white rounded-2xl py-[9px] px-[14px] text-sm font-medium flex items-center gap-1 hover:cursor-pointer"
-                    >
-                      View Market <ChartNoAxesColumn size={16} />
-                    </button>
-                  )}
-                </div>
-                {activeView === "market" && (
-                  <div className="flex items-center gap-4">
-                    <span className="text-gray-300 text-sm">
-                      Confidence Level
-                    </span>
-                    <div className="w-[220px] h-3 bg-white rounded-full p-[2px]">
-                      <div className="w-full h-full flex gap-[2px]">
-                        {segmentGradients.map((bg, i) => (
-                          <div
-                            key={i}
-                            className="relative flex-1 h-full bg-white rounded-full overflow-hidden"
-                          >
-                            <div
-                              className="h-full"
-                              style={{
-                                width: `${segmentFillPercents[i]}%`,
-                                background: bg,
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    {typeof confidenceLevel === "number" && (
-                      <span className="text-gray-300 text-sm">
-                        {Math.round(confidenceLevel)}%
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
             {loading && <OpportunityDetailsSkeleton />}
             {!loading && error && (
               <div className="py-6 text-center text-red-400">
@@ -679,6 +616,71 @@ export default function OpportunityDetails({
                 >
                   Reload
                 </button>
+              </div>
+            )}
+
+            {/* Header */}
+            {!loading && (
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h1 className="text-4xl font-bold text-white leading-tight ">
+                    {title}
+                  </h1>
+                  <p className="text-gray-300 -mt-1">{subtitle}</p>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-2">
+                    {activeView === "market" ? (
+                      <button
+                        onClick={() => {
+                          setActiveView("gdd");
+                          console.log("selectedPdf", selectedPdf);
+                        }}
+                        className="bg-[#27C128] text-white rounded-2xl py-[9px] px-[14px] text-sm font-medium flex items-center gap-1 hover:cursor-pointer "
+                        disabled={!selectedPdf}
+                      >
+                        View GDD <FileText size={16} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setActiveView("market")}
+                        className="bg-[#27C128] text-white rounded-2xl py-[9px] px-[14px] text-sm font-medium flex items-center gap-1 hover:cursor-pointer"
+                      >
+                        View Market <ChartNoAxesColumn size={16} />
+                      </button>
+                    )}
+                  </div>
+                  {activeView === "market" && (
+                    <div className="flex items-center gap-4">
+                      <span className="text-gray-300 text-sm">
+                        Confidence Level
+                      </span>
+                      <div className="w-[220px] h-3 bg-white rounded-full p-[2px]">
+                        <div className="w-full h-full flex gap-[2px]">
+                          {segmentGradients.map((bg, i) => (
+                            <div
+                              key={i}
+                              className="relative flex-1 h-full bg-white rounded-full overflow-hidden"
+                            >
+                              <div
+                                className="h-full"
+                                style={{
+                                  width: `${segmentFillPercents[i]}%`,
+                                  background: bg,
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {typeof confidenceLevel === "number" && (
+                        <span className="text-gray-300 text-sm">
+                          {Math.round(confidenceLevel)}%
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
