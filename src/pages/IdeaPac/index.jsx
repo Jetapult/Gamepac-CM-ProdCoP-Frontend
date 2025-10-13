@@ -111,9 +111,9 @@ const IdeaPac = () => {
 
   return (
     <div className="bg-[#404040] h-[100%]">
-      <div className="grid grid-cols-12 gap-4 max-w-[1400px] mx-auto">
+      <div className="grid grid-cols-12 gap-6 max-w-[1440px] mx-auto py-6">
         {/* Left Content */}
-        <div className="col-span-8 p-4 pr-2">
+        <div className="col-span-9">
           {/* Opportunity Details Section with Tabs in child */}
           <div>
             <OpportunityDetails
@@ -125,7 +125,7 @@ const IdeaPac = () => {
         </div>
 
         {/* Right Section */}
-        <div className="col-span-4 p-4 pt-[58px] pl-[10px]">
+        <div className="col-span-3 pt-[42px]">
           {/* Previous Opportunities */}
           <div className="bg-[#0F0F0F4D] rounded-[10px] p-6 border-[0.5px] border-[#303030]">
             <h3 className="text-white text-xl font-bold mb-4">
