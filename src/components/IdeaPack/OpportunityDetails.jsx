@@ -118,6 +118,8 @@ export default function OpportunityDetails({
     hasAttemptedAutoGenerateRef.current = false;
   }, [studioId]);
 
+  console.log("activeTabId", activeTabId, "selectedPdf->", selectedPdf);
+
   // Define helpers BEFORE effects that depend on them
   const reloadTabs = useCallback(async () => {
     try {
@@ -161,6 +163,25 @@ export default function OpportunityDetails({
       autoGenInFlightRef.current = false;
     }
   }, [reloadTabs, studioId]);
+
+  const fetchOrGeneratePdfUrl = useCallback(
+    async (cardId) => {
+      if (!cardId || !studioId) return null;
+      try {
+        const res = await api.get(`/v1/ideapac/gdd/${cardId}`, {
+          params: { studio_id: studioId },
+        });
+        const prdUrl = res?.data?.data?.prd_url || res?.data?.prd_url || null;
+        if (prdUrl) {
+          setSelectedPdf(prdUrl);
+        }
+        return prdUrl;
+      } catch (_) {
+        return null;
+      }
+    },
+    [studioId]
+  );
 
   useEffect(() => {
     const loadTabs = async () => {
@@ -214,13 +235,13 @@ export default function OpportunityDetails({
       setActiveTabId(tabs[0].id);
     }
   }, [studioId, tabs, activeTabId, setActiveTabId]);
-
   useEffect(() => {
     const fetchDetail = async () => {
       if (!activeTabId || !studioId) return;
       try {
         setLoading(true);
         setError("");
+        setSelectedPdf(null);
         const res = await api.get(
           `/v1/ideapac/opportunity-cards/${activeTabId}`,
           {
@@ -231,6 +252,8 @@ export default function OpportunityDetails({
         setDetail(data);
         if (data?.prd_url) {
           setSelectedPdf(data.prd_url);
+        } else {
+          fetchOrGeneratePdfUrl(activeTabId);
         }
         // Ensure the selected card appears as a 4th tab in the nav
         try {
@@ -255,7 +278,7 @@ export default function OpportunityDetails({
       }
     };
     fetchDetail();
-  }, [activeTabId, studioId]);
+  }, [activeTabId, studioId, fetchOrGeneratePdfUrl]);
 
   // Derived values with safe fallbacks
   const title =
@@ -614,6 +637,8 @@ export default function OpportunityDetails({
                       setDetail(data);
                       if (data?.prd_url) {
                         setSelectedPdf(data.prd_url);
+                      } else {
+                        fetchOrGeneratePdfUrl(activeTabId);
                       }
                     } catch (e) {
                       setError("Failed to load opportunity details");
