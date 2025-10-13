@@ -8,6 +8,7 @@ import api from "../../api";
 import InfiniteScroll from "react-infinite-scroll-component";
 import OpportunityDetails from "../../components/IdeaPack/OpportunityDetails";
 import OpportunityGenerator from "../../components/IdeaPack/OpportunityGenerator";
+import moment from "moment";
 
 const IdeaPac = () => {
   // Using Redux state if needed for future functionality
@@ -108,10 +109,9 @@ const IdeaPac = () => {
   //   }
   // }, []);
 
-
   return (
     <div className="bg-[#404040] h-[100%]">
-      <div className="grid grid-cols-12 gap-6 max-w-[1440px] mx-auto py-6">
+      <div className="grid grid-cols-12 gap-6 max-w-[1440px] mx-auto py-6 px-4">
         {/* Left Content */}
         <div className="col-span-9">
           {/* Opportunity Details Section with Tabs in child */}
@@ -133,11 +133,11 @@ const IdeaPac = () => {
             </h3>
             <div className="rounded-[14px] overflow-hidden">
               {/* Header */}
-              <div className="grid grid-cols-12 px-4 py-3 text-gray-300 text-sm ">
+              <div className="grid grid-cols-12 py-3  text-sm font-medium text-white ">
                 <div className="col-span-6">Title</div>
                 <div className="col-span-2 text-center">Score</div>
                 <div className="col-span-3 text-center">Date</div>
-                <div className="col-span-1" />
+                {/* <div className="col-span-1" /> */}
               </div>
 
               {/* Rows */}
@@ -191,17 +191,8 @@ const IdeaPac = () => {
                       scrollableTarget="prevOppScrollContainer"
                     >
                       {previousOpportunities.map((item, idx) => {
-                        const createdDate = item?.created_at
-                          ? new Date(item.created_at)
-                          : null;
-                        const formattedDate = createdDate
-                          ? `${String(createdDate.getDate()).padStart(
-                              2,
-                              "0"
-                            )} | ${String(createdDate.getMonth() + 1).padStart(
-                              2,
-                              "0"
-                            )} | ${String(createdDate.getFullYear()).slice(-2)}`
+                        const formattedDate = item?.created_at
+                          ? moment(item.created_at).fromNow()
                           : "--";
                         const score =
                           typeof item?.fit_score_total === "string" ||
@@ -211,23 +202,23 @@ const IdeaPac = () => {
                         return (
                           <div
                             key={`${item.id || idx}`}
-                            className="grid grid-cols-12 items-center px-4 py-3 text-sm border-t border-[#3f3f3f] text-gray-200 hover:bg-[#2a2a2a] cursor-pointer"
+                            className="grid grid-cols-12 items-center py-3 text-sm border-t border-[#3f3f3f] text-gray-200 hover:bg-[#2a2a2a] cursor-pointer"
                             onClick={() => {
                               if (item?.id != null) {
                                 setActiveTabId(String(item.id));
                               }
                             }}
                           >
-                            <div className="col-span-6 truncate">
+                            <div className="col-span-6 truncate text-white font-normal">
                               {item?.genre_name} - {item?.sub_genre_name}
                             </div>
-                            <div className="col-span-2 text-center text-white font-medium">
+                            <div className="col-span-2 text-center text-white font-normal">
                               {score}
                             </div>
-                            <div className="col-span-3 text-right text-gray-300">
+                            <div className="col-span-3  text-white font-normal">
                               {formattedDate}
                             </div>
-                            <div className="col-span-1" />
+                            {/* <div className="col-span-1" /> */}
                           </div>
                         );
                       })}

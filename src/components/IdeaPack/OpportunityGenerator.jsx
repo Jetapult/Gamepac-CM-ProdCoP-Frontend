@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import PropTypes from "prop-types";
 import { Tooltip as ReactTooltip } from "react-tooltip";
-import { Info, Sparkles, Loader } from "lucide-react";
+import { Sparkles, Loader } from "lucide-react";
 import SelectDropdown from "../SelectDropdown";
 import api from "../../api";
 import { useSelector } from "react-redux";
@@ -23,37 +23,37 @@ const OpportunityGenerator = ({ onGenerated }) => {
   const [genre, setGenre] = useState("");
   const [subGenre, setSubGenre] = useState("");
   // Countries - custom multi-select dropdown UI
-  const [selectedCountries, setSelectedCountries] = useState([]);
+  //   const [selectedCountries, setSelectedCountries] = useState([]);
   const [platform, setPlatform] = useState(null);
-  const [gender, setGender] = useState(null);
-  const [targetAgeGroup, setTargetAgeGroup] = useState([]);
+  //   const [gender, setGender] = useState(null);
+  //   const [targetAgeGroup, setTargetAgeGroup] = useState([]);
   const [timeRange, setTimeRange] = useState(null);
   const [spend, setSpend] = useState(50); // in K
   const [monetization, setMonetization] = useState(null);
-  const [countries, setCountries] = useState([]);
-  const [countriesLoading, setCountriesLoading] = useState(false);
+//   const [countries, setCountries] = useState([]);
+//   const [countriesLoading, setCountriesLoading] = useState(false);
   const [genres, setGenres] = useState([]);
   const [genresLoading, setGenresLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     let isCancelled = false;
-    const fetchCountries = async () => {
-      try {
-        setCountriesLoading(true);
-        const res = await api.get(`/v1/ideapac/countries`);
-        if (isCancelled) return;
-        const list = Array.isArray(res?.data?.data) ? res.data.data : [];
-        setCountries(list);
-      } catch (e) {
-        if (!isCancelled) {
-          // Keep UI resilient if fetch fails
-          setCountries([]);
-        }
-      } finally {
-        if (!isCancelled) setCountriesLoading(false);
-      }
-    };
+    // const fetchCountries = async () => {
+    //   try {
+    //     setCountriesLoading(true);
+    //     const res = await api.get(`/v1/ideapac/countries`);
+    //     if (isCancelled) return;
+    //     const list = Array.isArray(res?.data?.data) ? res.data.data : [];
+    //     setCountries(list);
+    //   } catch (e) {
+    //     if (!isCancelled) {
+    //       // Keep UI resilient if fetch fails
+    //       setCountries([]);
+    //     }
+    //   } finally {
+    //     if (!isCancelled) setCountriesLoading(false);
+    //   }
+    // };
     const fetchGenres = async () => {
       try {
         setGenresLoading(true);
@@ -67,7 +67,7 @@ const OpportunityGenerator = ({ onGenerated }) => {
         if (!isCancelled) setGenresLoading(false);
       }
     };
-    fetchCountries();
+    // fetchCountries();
     fetchGenres();
     return () => {
       isCancelled = true;
@@ -76,9 +76,7 @@ const OpportunityGenerator = ({ onGenerated }) => {
 
   // No-op: SelectDropdown handles its own outside-click behavior
 
-  const selectedGenreObjects = genres.filter((g) =>
-    g?.genre_name === genre
-  );
+  const selectedGenreObjects = genres.filter((g) => g?.genre_name === genre);
   const subgenreOptions = selectedGenreObjects.flatMap((g) =>
     Array.isArray(g?.subgenres) ? g.subgenres : []
   );
@@ -143,19 +141,18 @@ const OpportunityGenerator = ({ onGenerated }) => {
       {/* Genre */}
       <div className="mb-5 flex items-center gap-4">
         <div className="text-gray-300 text-sm mb-2 flex items-center gap-1">
-          Genre
-          <button
-            type="button"
-            aria-label="Genre info"
-            data-tooltip-id="tip-genre"
-            className="text-gray-400 hover:text-gray-200"
-          >
-            <Info className="w-4 h-4" />
-          </button>
+          <span data-tooltip-id="tip-genre">Genre</span>
           <ReactTooltip
             id="tip-genre"
             place="top"
             content="Broad game category for trend analysis."
+             style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
           />
         </div>
         <SelectDropdown
@@ -176,19 +173,18 @@ const OpportunityGenerator = ({ onGenerated }) => {
       {/* Sub-Genre */}
       <div className="mb-5 flex items-center gap-4">
         <div className="text-gray-300 text-sm mb-2 flex items-center gap-1">
-          Sub-Genre
-          <button
-            type="button"
-            aria-label="Sub-Genre info"
-            data-tooltip-id="tip-subgenre"
-            className="text-gray-400 hover:text-gray-200"
-          >
-            <Info className="w-4 h-4" />
-          </button>
+          <span data-tooltip-id="tip-subgenre">Sub-Genre</span>
           <ReactTooltip
             id="tip-subgenre"
             place="top"
             content="Specific gameplay type within a genre."
+             style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
           />
         </div>
         <SelectDropdown
@@ -219,6 +215,13 @@ const OpportunityGenerator = ({ onGenerated }) => {
             id="tip-country"
             place="top"
             content="Target market for regional insights."
+             style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
           />
         </div>
         <SelectDropdown
@@ -236,19 +239,18 @@ const OpportunityGenerator = ({ onGenerated }) => {
       {/* Platform */}
       <div className="mb-5 flex items-center gap-4">
         <div className="text-gray-300 text-sm mb-2 flex items-center gap-1">
-          Platform
-          <button
-            type="button"
-            aria-label="Platform info"
-            data-tooltip-id="tip-platform"
-            className="text-gray-400 hover:text-gray-200"
-          >
-            <Info className="w-4 h-4" />
-          </button>
+          <span data-tooltip-id="tip-platform">Platform</span>
           <ReactTooltip
             id="tip-platform"
             place="top"
             content="Operating system or store segment."
+             style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
           />
         </div>
         <div className="flex gap-3">
@@ -260,7 +262,7 @@ const OpportunityGenerator = ({ onGenerated }) => {
             <button
               key={p.id}
               onClick={() => setPlatform(p.id)}
-              className={`px-4 py-2 rounded-md text-sm  ${
+              className={`px-4 py-2 rounded-2xl text-sm  ${
                 platform === p.id
                   ? "bg-white text-black "
                   : "bg-[#454545] text-gray-200 "
@@ -288,6 +290,13 @@ const OpportunityGenerator = ({ onGenerated }) => {
             id="tip-gender"
             place="top"
             content="Primary audience by gender segment."
+             style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
           />
         </div>
         <div className="flex gap-3">
@@ -299,7 +308,7 @@ const OpportunityGenerator = ({ onGenerated }) => {
             <button
               key={g.id}
               onClick={() => setGender(g.id)}
-              className={`px-4 py-2 rounded-md text-sm  ${
+              className={`px-4 py-2 rounded-2xl text-sm  ${
                 gender === g.id
                   ? "bg-white text-black "
                   : "bg-[#454545] text-gray-200 "
@@ -327,6 +336,13 @@ const OpportunityGenerator = ({ onGenerated }) => {
             id="tip-age"
             place="top"
             content="Intended player age group."
+             style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
           />
         </div>
         <SelectDropdown
@@ -349,19 +365,18 @@ const OpportunityGenerator = ({ onGenerated }) => {
       {/* Time Period */}
       <div className="mb-[42px] flex items-center gap-4">
         <div className="text-gray-300 text-sm mb-2 flex items-center gap-1">
-          Time Period
-          <button
-            type="button"
-            aria-label="Time Period info"
-            data-tooltip-id="tip-time"
-            className="text-gray-400 hover:text-gray-200"
-          >
-            <Info className="w-4 h-4" />
-          </button>
+          <span data-tooltip-id="tip-time">Time Period</span>
           <ReactTooltip
             id="tip-time"
             place="top"
             content="Historical window for analysis."
+            style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
           />
         </div>
         <div className="flex gap-3">
@@ -369,7 +384,7 @@ const OpportunityGenerator = ({ onGenerated }) => {
             <button
               key={yr}
               onClick={() => setTimeRange(yr)}
-              className={`px-4 py-2 rounded-md text-sm  ${
+              className={`px-4 py-2 rounded-2xl text-sm  ${
                 timeRange === yr
                   ? "bg-white text-black "
                   : "bg-[#454545] text-gray-200 "
@@ -385,19 +400,18 @@ const OpportunityGenerator = ({ onGenerated }) => {
       <div className="mb-5 ">
         <div className="flex items-center gap-4">
           <div className="text-gray-300 text-sm whitespace-nowrap flex items-center gap-1">
-            UA Spend
-            <button
-              type="button"
-              aria-label="UA Spend info"
-              data-tooltip-id="tip-spend"
-              className="text-gray-400 hover:text-gray-200"
-            >
-              <Info className="w-4 h-4" />
-            </button>
+            <span data-tooltip-id="tip-spend">UA Spend</span>
             <ReactTooltip
               id="tip-spend"
               place="top"
               content="Max UA budget or spend intent."
+              style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
             />
           </div>
           <div className="flex-1">
@@ -440,19 +454,18 @@ const OpportunityGenerator = ({ onGenerated }) => {
       {/* Monetization Focus */}
       <div className="mb-7 flex items-center gap-4">
         <div className="text-gray-300 text-sm mb-2 flex items-center gap-1">
-          Monetization Focus
-          <button
-            type="button"
-            aria-label="Monetization Focus info"
-            data-tooltip-id="tip-monetization"
-            className="text-gray-400 hover:text-gray-200"
-          >
-            <Info className="w-4 h-4" />
-          </button>
+          <span data-tooltip-id="tip-monetization">Monetization Focus</span>
           <ReactTooltip
             id="tip-monetization"
             place="top"
             content="Core revenue model—Ads, IAP, or Hybrid."
+            style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
           />
         </div>
         <div className="flex gap-3">
@@ -464,7 +477,7 @@ const OpportunityGenerator = ({ onGenerated }) => {
             <button
               key={m.id}
               onClick={() => setMonetization(m.id)}
-              className={`px-4 py-2 rounded-md text-sm  ${
+              className={`px-4 py-2 rounded-2xl text-sm  ${
                 monetization === m.id
                   ? "bg-white text-black "
                   : "bg-[#454545] text-gray-200 "
@@ -478,9 +491,7 @@ const OpportunityGenerator = ({ onGenerated }) => {
 
       {/* Generate button */}
       {(() => {
-        const isFormValid =
-          genre && 
-          subGenre;
+        const isFormValid = genre && subGenre;
         const disabled = isGenerating || !isFormValid;
         return (
           <div className="pt-2">

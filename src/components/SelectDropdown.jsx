@@ -98,7 +98,7 @@ const SelectDropdown = ({
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className={`appearance-none bg-[#454545] border border-[#3f3f3f] text-gray-200 text-sm rounded-md px-4 py-2 pr-9 focus:outline-none min-w-[180px] text-left relative ${buttonClassName}`}
+        className={`appearance-none bg-[#454545] border border-[#3f3f3f] text-gray-200 text-sm rounded-2xl px-4 py-2 pr-9 focus:outline-none min-w-[180px] text-left relative ${buttonClassName}`}
       >
         {labelText}
         <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-200">
@@ -107,7 +107,7 @@ const SelectDropdown = ({
       </button>
       {isOpen && (
         <div
-          className="absolute z-20 mt-2 bg-[#454545] border border-[#3f3f3f] rounded-xl shadow-lg p-2"
+          className="absolute z-20 mt-2 bg-[#454545] border border-[#3f3f3f] rounded-2xl shadow-lg p-2"
           style={{ width: menuWidth }}
         >
           <ul className="max-h-60 overflow-y-auto pr-1" role="listbox">
