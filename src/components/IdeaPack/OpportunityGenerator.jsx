@@ -20,8 +20,8 @@ const OpportunityGenerator = ({ onGenerated }) => {
 
   console.log("studioId", studioId);
 
-  const [genre, setGenre] = useState([]);
-  const [subGenre, setSubGenre] = useState([]);
+  const [genre, setGenre] = useState("");
+  const [subGenre, setSubGenre] = useState("");
   // Countries - custom multi-select dropdown UI
   const [selectedCountries, setSelectedCountries] = useState([]);
   const [platform, setPlatform] = useState(null);
@@ -77,7 +77,7 @@ const OpportunityGenerator = ({ onGenerated }) => {
   // No-op: SelectDropdown handles its own outside-click behavior
 
   const selectedGenreObjects = genres.filter((g) =>
-    genre.includes(g?.genre_name)
+    g?.genre_name === genre
   );
   const subgenreOptions = selectedGenreObjects.flatMap((g) =>
     Array.isArray(g?.subgenres) ? g.subgenres : []
@@ -95,12 +95,12 @@ const OpportunityGenerator = ({ onGenerated }) => {
       setIsGenerating(true);
       const payload = {
         studio_id: studioId,
-        genre,
-        sub_genre: subGenre,
-        country: selectedCountries,
+        genre: genre ? [genre] : [],
+        sub_genre: subGenre ? [subGenre] : [],
+        country: null,
         platform,
-        gender,
-        target_age: targetAgeGroup,
+        gender: null,
+        target_age: null,
         time_period: timeRange,
         monetization_focus: monetization,
         simulate: true,
@@ -164,14 +164,12 @@ const OpportunityGenerator = ({ onGenerated }) => {
             label: g?.genre_name,
           }))}
           value={genre}
-          onChange={(vals) => {
-            setGenre(vals);
-            setSubGenre([]);
+          onChange={(val) => {
+            setGenre(val);
+            setSubGenre("");
           }}
           placeholder="Select Genre"
           disabled={genresLoading}
-          multiple
-          maxSelected={3}
         />
       </div>
 
@@ -199,16 +197,14 @@ const OpportunityGenerator = ({ onGenerated }) => {
             label: s?.subgenre_name,
           }))}
           value={subGenre}
-          onChange={(vals) => setSubGenre(vals)}
+          onChange={(val) => setSubGenre(val)}
           placeholder="Select Sub-genre"
-          disabled={genre.length === 0 || genresLoading}
-          multiple
-          maxSelected={3}
+          disabled={!genre || genresLoading}
         />
       </div>
 
       {/* Country */}
-      <div className="mb-5 flex items-center gap-4">
+      {/* <div className="mb-5 flex items-center gap-4">
         <div className="text-gray-300 text-sm mb-2 flex items-center gap-1">
           Region / Country
           <button
@@ -235,7 +231,7 @@ const OpportunityGenerator = ({ onGenerated }) => {
           maxSelected={3}
           menuWidth={240}
         />
-      </div>
+      </div> */}
 
       {/* Platform */}
       <div className="mb-5 flex items-center gap-4">
@@ -277,7 +273,7 @@ const OpportunityGenerator = ({ onGenerated }) => {
       </div>
 
       {/* Gender */}
-      <div className="mb-5 flex items-center gap-4">
+      {/* <div className="mb-5 flex items-center gap-4">
         <div className="text-gray-300 text-sm mb-2 flex items-center gap-1">
           Gender
           <button
@@ -313,10 +309,10 @@ const OpportunityGenerator = ({ onGenerated }) => {
             </button>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* Target Age */}
-      <div className="mb-5 flex items-center gap-4">
+      {/* <div className="mb-5 flex items-center gap-4">
         <div className="text-gray-300 text-sm mb-2 flex items-center gap-1">
           Target Age
           <button
@@ -348,7 +344,7 @@ const OpportunityGenerator = ({ onGenerated }) => {
           multiple
           maxSelected={3}
         />
-      </div>
+      </div> */}
 
       {/* Time Period */}
       <div className="mb-[42px] flex items-center gap-4">
@@ -483,10 +479,8 @@ const OpportunityGenerator = ({ onGenerated }) => {
       {/* Generate button */}
       {(() => {
         const isFormValid =
-          Array.isArray(genre) &&
-          genre.length > 0 &&
-          Array.isArray(subGenre) &&
-          subGenre.length > 0;
+          genre && 
+          subGenre;
         const disabled = isGenerating || !isFormValid;
         return (
           <div className="pt-2">
