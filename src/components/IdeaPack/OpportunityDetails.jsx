@@ -97,6 +97,7 @@ export default function OpportunityDetails({
   studioId,
   activeTabId: propActiveTabId,
   onActiveTabChange,
+  onAfterAutoGenerate,
 }) {
   const [activeView, setActiveView] = useState("market");
   const [loading, setLoading] = useState(true);
@@ -158,13 +159,17 @@ export default function OpportunityDetails({
       });
       // After successful generation, reload list and show details
       await reloadTabs();
+      // Notify parent to refresh Previous Opportunities list
+      if (typeof onAfterAutoGenerate === "function") {
+        await onAfterAutoGenerate();
+      }
     } catch (e) {
       setAutoGenError("Failed to generate opportunity. Please retry.");
     } finally {
       setAutoGenerating(false);
       autoGenInFlightRef.current = false;
     }
-  }, [reloadTabs, studioId]);
+  }, [reloadTabs, studioId, onAfterAutoGenerate]);
 
   const fetchOrGeneratePdfUrl = useCallback(
     async (cardId) => {
@@ -822,7 +827,7 @@ export default function OpportunityDetails({
                                   </span>
                                   <div className="w-full flex-1">
                                     <div
-                                      className="h-1 rounded-full transition-all duration-300 bg-[#808080]"
+                                      className="h-[5px] rounded-full transition-all duration-300 bg-[#808080]"
                                       style={{
                                         width: `${metric.score}%`,
                                         // backgroundColor: metric.color,
@@ -959,4 +964,5 @@ OpportunityDetails.propTypes = {
   studioId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   activeTabId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onActiveTabChange: PropTypes.func,
+  onAfterAutoGenerate: PropTypes.func,
 };

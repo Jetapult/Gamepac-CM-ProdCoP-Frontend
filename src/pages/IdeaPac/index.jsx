@@ -121,6 +121,7 @@ const IdeaPac = () => {
               studioId={studioId}
               activeTabId={activeTabId}
               onActiveTabChange={setActiveTabId}
+              onAfterAutoGenerate={handleReloadPrevOpps}
             />
           </div>
         </div>
