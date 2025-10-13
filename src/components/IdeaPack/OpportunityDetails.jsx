@@ -21,6 +21,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { PDFViewer } from "../../pages/GameDesignDocument/conceptGenerator/PDFViewer";
+import OpportunityDetailsSkeleton from "./OpportunityDetailsSkeleton";
 import api from "../../api";
 import PropTypes from "prop-types";
 import gameIcon from "../../assets/game-icon.png";
@@ -646,9 +647,7 @@ export default function OpportunityDetails({
               </div>
             </div>
 
-            {loading && (
-              <div className="py-10 text-center text-gray-300">Loading...</div>
-            )}
+            {loading && <OpportunityDetailsSkeleton />}
             {!loading && error && (
               <div className="py-6 text-center text-red-400">
                 {error}
