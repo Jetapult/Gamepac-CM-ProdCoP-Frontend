@@ -482,7 +482,7 @@ export default function OpportunityDetails({
       {/* Top Nav Tabs moved here */}
       <div className="mb-0">
         <div className="flex items-center">
-          <div className="bg-gray-300 py-1 px-2 rounded-md text-xs max-w-[100px] ml-3">
+          <div className="bg-white py-1 px-2 rounded-md text-xs max-w-[100px] mx-6 ml-8">
             Suggested
           </div>
           {/* Tabs */}
