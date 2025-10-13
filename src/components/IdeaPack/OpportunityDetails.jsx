@@ -292,14 +292,29 @@ export default function OpportunityDetails({
       : null;
   const confPct = Math.max(0, Math.min(100, Number(confidenceLevel ?? 0)));
   //   const confPct = 50;
-  const confidenceFillBackground =
-    confPct < 25
-      ? "#FF3B30"
-      : confPct < 50
-      ? "#FF9500"
-      : confPct < 75
-      ? "#FFD60A"
-      : "#34C759";
+
+  // Confidence bar: 7 segments with specified gradients
+  const segmentGradients = [
+    "linear-gradient(90deg, #FF0000 63.27%, #E7CB2A 135.66%)",
+    "linear-gradient(90deg, #FF0000 21.52%, #E7CB2A 135.66%)",
+    "linear-gradient(90deg, #FF0000 -41.07%, #E7CB2A 49.95%)",
+    "linear-gradient(90deg, #E7CB2A 54.79%, #9DFF00 135.67%)",
+    "linear-gradient(90deg, #FFEA00 0%, #48F04B 135.67%)",
+    "linear-gradient(90deg, #B8F048 0%, #47DA08 135.67%)",
+    "linear-gradient(90deg, #47DA08 0%, #0BD900 135.67%)",
+  ];
+  const SEGMENT_COUNT = 7;
+  const segmentStep = 100 / SEGMENT_COUNT;
+  const filledCount = Math.floor(confPct / segmentStep);
+  const partialWidthPct = Math.max(
+    0,
+    Math.min(100, ((confPct - filledCount * segmentStep) / segmentStep) * 100)
+  );
+  const segmentFillPercents = Array.from({ length: SEGMENT_COUNT }, (_, i) => {
+    if (i < filledCount) return 100;
+    if (i === filledCount) return partialWidthPct;
+    return 0;
+  });
 
   const fitScores = detail?.fit_scores || {};
   const totalScore = Math.max(
@@ -492,7 +507,7 @@ export default function OpportunityDetails({
       {/* Top Nav Tabs moved here */}
       <div className="mb-0">
         <div className="flex items-center">
-          <div className="bg-white py-1 px-2 rounded-md text-xs max-w-[100px] mx-6 ml-8">
+          <div className="bg-white py-1 px-2 rounded-md text-xs font-bold max-w-[100px] mx-6 ml-8">
             Suggested
           </div>
           {/* Tabs */}
@@ -603,17 +618,23 @@ export default function OpportunityDetails({
                     <span className="text-gray-300 text-sm">
                       Confidence Level
                     </span>
-                    <div className="w-[220px] h-3 relative rounded-full bg-[#1f1f1f] overflow-hidden">
-                      <div
-                        className="h-3 rounded-full"
-                        style={{
-                          width: `${confPct}%`,
-                          background:
-                            confPct < 20
-                              ? confidenceFillBackground
-                              : "linear-gradient(90deg, #FF3B30 0%, #FF9500 25%, #FFD60A 50%, #34C759 100%)",
-                        }}
-                      />
+                    <div className="w-[220px] h-3 bg-white rounded-full p-[2px]">
+                      <div className="w-full h-full flex gap-[2px]">
+                        {segmentGradients.map((bg, i) => (
+                          <div
+                            key={i}
+                            className="relative flex-1 h-full bg-white rounded-full overflow-hidden"
+                          >
+                            <div
+                              className="h-full"
+                              style={{
+                                width: `${segmentFillPercents[i]}%`,
+                                background: bg,
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     {typeof confidenceLevel === "number" && (
                       <span className="text-gray-300 text-sm">
@@ -814,7 +835,7 @@ export default function OpportunityDetails({
                         </div>
                         {/* Top Games card */}
                         <div className="bg-[#434343] rounded-[10px] p-6 border-[0.5px] border-[#636363]">
-                          <h3 className="text-white text-xl font-bold mb-4">
+                          <h3 className="text-white text-2xl font-bold mb-4">
                             Top Games
                           </h3>
                           <div className="grid grid-cols-3 gap-4 mt-2 ">

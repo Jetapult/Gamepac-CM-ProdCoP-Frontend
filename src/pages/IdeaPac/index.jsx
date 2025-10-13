@@ -9,6 +9,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import OpportunityDetails from "../../components/IdeaPack/OpportunityDetails";
 import OpportunityGenerator from "../../components/IdeaPack/OpportunityGenerator";
 import moment from "moment";
+import styles from "./IdeaPac.module.css";
 
 const IdeaPac = () => {
   // Using Redux state if needed for future functionality
@@ -110,7 +111,7 @@ const IdeaPac = () => {
   // }, []);
 
   return (
-    <div className="bg-[#404040] h-[100%]">
+    <div className={`${styles.ideapacFont} bg-[#404040] h-[100%]`}>
       <div className="grid grid-cols-12 gap-6 max-w-[1440px] mx-auto py-6 px-4">
         {/* Left Content */}
         <div className="col-span-9">
@@ -133,10 +134,10 @@ const IdeaPac = () => {
             </h3>
             <div className="rounded-[14px] overflow-hidden">
               {/* Header */}
-              <div className="grid grid-cols-12 py-3  text-sm font-medium text-white ">
+              <div className="grid grid-cols-12 py-3  text-sm font-bold text-white ">
                 <div className="col-span-6">Title</div>
                 <div className="col-span-2 text-center">Score</div>
-                <div className="col-span-3 text-center">Date</div>
+                <div className="col-span-4 text-center">Date</div>
                 {/* <div className="col-span-1" /> */}
               </div>
 
@@ -202,7 +203,7 @@ const IdeaPac = () => {
                         return (
                           <div
                             key={`${item.id || idx}`}
-                            className="grid grid-cols-12 items-center py-3 text-sm border-t border-[#3f3f3f] text-gray-200 hover:bg-[#2a2a2a] cursor-pointer"
+                            className="grid grid-cols-12 items-center py-3 text-sm border-t border-[#3f3f3f] text-white hover:bg-[#2a2a2a] cursor-pointer"
                             onClick={() => {
                               if (item?.id != null) {
                                 setActiveTabId(String(item.id));
@@ -215,7 +216,7 @@ const IdeaPac = () => {
                             <div className="col-span-2 text-center text-white font-normal">
                               {score}
                             </div>
-                            <div className="col-span-3  text-white font-normal">
+                            <div className="col-span-4 text-center text-white font-normal">
                               {formattedDate}
                             </div>
                             {/* <div className="col-span-1" /> */}
