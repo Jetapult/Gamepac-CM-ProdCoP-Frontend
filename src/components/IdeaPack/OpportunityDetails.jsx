@@ -21,11 +21,13 @@ import {
   Loader2,
 } from "lucide-react";
 import { PDFViewer } from "../../pages/GameDesignDocument/conceptGenerator/PDFViewer";
+import OpportunityDetailsSkeleton from "./OpportunityDetailsSkeleton";
 import api from "../../api";
 import PropTypes from "prop-types";
 import gameIcon from "../../assets/game-icon.png";
 import playableShowcase from "../../assets/playable-showcase.png";
 import smileGame from "../../assets/smiley.png";
+import { Tooltip as ReactTooltip } from "react-tooltip";
 
 ChartJS.register(
   CategoryScale,
@@ -95,9 +97,10 @@ export default function OpportunityDetails({
   studioId,
   activeTabId: propActiveTabId,
   onActiveTabChange,
+  onAfterAutoGenerate,
 }) {
   const [activeView, setActiveView] = useState("market");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [detail, setDetail] = useState(null);
   const [internalActiveTabId, setInternalActiveTabId] = useState(null);
@@ -156,13 +159,17 @@ export default function OpportunityDetails({
       });
       // After successful generation, reload list and show details
       await reloadTabs();
+      // Notify parent to refresh Previous Opportunities list
+      if (typeof onAfterAutoGenerate === "function") {
+        await onAfterAutoGenerate();
+      }
     } catch (e) {
       setAutoGenError("Failed to generate opportunity. Please retry.");
     } finally {
       setAutoGenerating(false);
       autoGenInFlightRef.current = false;
     }
-  }, [reloadTabs, studioId]);
+  }, [reloadTabs, studioId, onAfterAutoGenerate]);
 
   const fetchOrGeneratePdfUrl = useCallback(
     async (cardId) => {
@@ -291,14 +298,29 @@ export default function OpportunityDetails({
       : null;
   const confPct = Math.max(0, Math.min(100, Number(confidenceLevel ?? 0)));
   //   const confPct = 50;
-  const confidenceFillBackground =
-    confPct < 25
-      ? "#FF3B30"
-      : confPct < 50
-      ? "#FF9500"
-      : confPct < 75
-      ? "#FFD60A"
-      : "#34C759";
+
+  // Confidence bar: 7 segments with specified gradients
+  const segmentGradients = [
+    "linear-gradient(90deg, #FF0000 63.27%, #E7CB2A 135.66%)",
+    "linear-gradient(90deg, #FF0000 21.52%, #E7CB2A 135.66%)",
+    "linear-gradient(90deg, #FF0000 -41.07%, #E7CB2A 49.95%)",
+    "linear-gradient(90deg, #E7CB2A 54.79%, #9DFF00 135.67%)",
+    "linear-gradient(90deg, #FFEA00 0%, #48F04B 135.67%)",
+    "linear-gradient(90deg, #B8F048 0%, #47DA08 135.67%)",
+    "linear-gradient(90deg, #47DA08 0%, #0BD900 135.67%)",
+  ];
+  const SEGMENT_COUNT = 7;
+  const segmentStep = 100 / SEGMENT_COUNT;
+  const filledCount = Math.floor(confPct / segmentStep);
+  const partialWidthPct = Math.max(
+    0,
+    Math.min(100, ((confPct - filledCount * segmentStep) / segmentStep) * 100)
+  );
+  const segmentFillPercents = Array.from({ length: SEGMENT_COUNT }, (_, i) => {
+    if (i < filledCount) return 100;
+    if (i === filledCount) return partialWidthPct;
+    return 0;
+  });
 
   const fitScores = detail?.fit_scores || {};
   const totalScore = Math.max(
@@ -409,10 +431,19 @@ export default function OpportunityDetails({
     },
     scales: {
       y: {
-        display: false,
+        // Show only dotted horizontal grid lines; no ticks or axis border
+        display: true,
         border: { display: false },
         ticks: { display: false },
-        grid: { display: false },
+        grid: {
+          display: true,
+          drawBorder: false,
+          drawOnChartArea: true,
+          drawTicks: false,
+          color: "rgba(148, 163, 184, 0.25)", // slate-400 at low opacity
+          lineWidth: 1,
+          borderDash: [6, 6],
+        },
       },
       x: {
         display: true,
@@ -482,7 +513,7 @@ export default function OpportunityDetails({
       {/* Top Nav Tabs moved here */}
       <div className="mb-0">
         <div className="flex items-center">
-          <div className="bg-white py-1 px-2 rounded-md text-xs max-w-[100px] mx-6 ml-8">
+          <div className="bg-white py-1 px-2 rounded-md text-xs font-bold max-w-[100px] mx-6 ml-8">
             Suggested
           </div>
           {/* Tabs */}
@@ -558,66 +589,7 @@ export default function OpportunityDetails({
           </div>
         ) : (
           <>
-            {/* Header */}
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <h1 className="text-4xl font-bold text-white leading-tight">
-                  {title}
-                </h1>
-                <p className="text-gray-300 -mt-1">{subtitle}</p>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <div className="flex items-center gap-2">
-                  {activeView === "market" ? (
-                    <button
-                      onClick={() => {
-                        setActiveView("gdd");
-                        console.log("selectedPdf", selectedPdf);
-                      }}
-                      className="bg-[#27C128] text-white rounded-2xl px-4 py-2 text-sm font-medium flex items-center gap-1 hover:cursor-pointer "
-                      disabled={!selectedPdf}
-                    >
-                      View GDD <FileText size={16} />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setActiveView("market")}
-                      className="bg-[#27C128] text-white rounded-2xl px-4 py-2 text-sm font-medium flex items-center gap-1 hover:cursor-pointer"
-                    >
-                      View Market <ChartNoAxesColumn size={16} />
-                    </button>
-                  )}
-                </div>
-                {activeView === "market" && (
-                  <div className="flex items-center gap-4">
-                    <span className="text-gray-300 text-sm">
-                      Confidence Level
-                    </span>
-                    <div className="w-[220px] h-3 relative rounded-full bg-[#1f1f1f] overflow-hidden">
-                      <div
-                        className="h-3 rounded-full"
-                        style={{
-                          width: `${confPct}%`,
-                          background:
-                            confPct < 20
-                              ? confidenceFillBackground
-                              : "linear-gradient(90deg, #FF3B30 0%, #FF9500 25%, #FFD60A 50%, #34C759 100%)",
-                        }}
-                      />
-                    </div>
-                    {typeof confidenceLevel === "number" && (
-                      <span className="text-gray-300 text-sm">
-                        {Math.round(confidenceLevel)}%
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {loading && (
-              <div className="py-10 text-center text-gray-300">Loading...</div>
-            )}
+            {loading && <OpportunityDetailsSkeleton />}
             {!loading && error && (
               <div className="py-6 text-center text-red-400">
                 {error}
@@ -652,6 +624,71 @@ export default function OpportunityDetails({
               </div>
             )}
 
+            {/* Header */}
+            {!loading && (
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h1 className="text-4xl font-bold text-white leading-tight ">
+                    {title}
+                  </h1>
+                  <p className="text-gray-300 -mt-1">{subtitle}</p>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-2">
+                    {activeView === "market" ? (
+                      <button
+                        onClick={() => {
+                          setActiveView("gdd");
+                          console.log("selectedPdf", selectedPdf);
+                        }}
+                        className="bg-[#27C128] text-white rounded-2xl py-[9px] px-[14px] text-sm font-medium flex items-center gap-1 hover:cursor-pointer "
+                        disabled={!selectedPdf}
+                      >
+                        View GDD <FileText size={16} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setActiveView("market")}
+                        className="bg-[#27C128] text-white rounded-2xl py-[9px] px-[14px] text-sm font-medium flex items-center gap-1 hover:cursor-pointer"
+                      >
+                        View Market <ChartNoAxesColumn size={16} />
+                      </button>
+                    )}
+                  </div>
+                  {activeView === "market" && (
+                    <div className="flex items-center gap-4">
+                      <span className="text-gray-300 text-sm">
+                        Confidence Level
+                      </span>
+                      <div className="w-[220px] h-3 bg-white rounded-full p-[2px]">
+                        <div className="w-full h-full flex gap-[2px]">
+                          {segmentGradients.map((bg, i) => (
+                            <div
+                              key={i}
+                              className="relative flex-1 h-full bg-white rounded-full overflow-hidden"
+                            >
+                              <div
+                                className="h-full"
+                                style={{
+                                  width: `${segmentFillPercents[i]}%`,
+                                  background: bg,
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {typeof confidenceLevel === "number" && (
+                        <span className="text-gray-300 text-sm">
+                          {Math.round(confidenceLevel)}%
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {!loading && !error && (
               <>
                 {/* Market Section */}
@@ -660,16 +697,16 @@ export default function OpportunityDetails({
                     {/* Market */}
                     <div className="grid grid-cols-12 gap-4">
                       <div className="col-span-6 bg-[#434343] rounded-[10px] p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <h2 className="text-white text-[24px] font-bold">
+                        <div className="flex justify-between items-center mb-4">
+                          <h2 className="text-white text-[24px] font-bold ">
                             Market Snapshot
                           </h2>
-                          <p className="bg-[#323232] text-white text-sm rounded-md px-3 py-1">
+                          {/* <p className="bg-[#323232] text-white text-sm rounded-md px-3 py-1">
                             3 Year Trend
-                          </p>
+                          </p> */}
                         </div>
 
-                        <div className="flex gap-4 mb-2">
+                        <div className="flex gap-4 mb-4">
                           <div className="flex items-center gap-2">
                             <span className="bg-[#FFC90A] text-[12px] px-2 py-0.5 rounded-full font-medium flex items-center">
                               {downloadsUp ? (
@@ -712,28 +749,28 @@ export default function OpportunityDetails({
                           />
                         </div>
 
-                        <div className="space-y-2 text-sm pt-6">
+                        <div className="space-y-2 text-sm pt-8">
                           <div className="flex items-center gap-2">
-                            <span className="text-white text-[16px] before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
+                            <span className="text-white font-bold text-lg before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
                               Active User Growth:
                             </span>
-                            <span className="text-white font-medium ml-1">
+                            <span className="text-white font-normal text-lg ml-1 capitalize">
                               {detail?.market_snapshot?.growth || "-"}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-white text-[16px] before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
+                            <span className="text-white font-bold text-lg before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
                               Retention:
                             </span>
-                            <span className="text-white font-medium ml-1">
+                            <span className="text-white font-normal text-lg ml-1 capitalize">
                               {detail?.market_snapshot?.retention || "-"}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-white text-[16px] before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
+                            <span className="text-white font-bold text-lg before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
                               Monetization:
                             </span>
-                            <span className="text-white font-medium ml-1">
+                            <span className="text-white font-normal text-lg ml-1 capitalize">
                               {detail?.market_snapshot?.monetization || "-"}
                             </span>
                           </div>
@@ -747,16 +784,30 @@ export default function OpportunityDetails({
                               Fit Score
                             </h2>
                             <div className="relative group">
-                              <div className="w-[20px] h-[20px] rounded-full bg-[#a1a1a1] flex items-center justify-center hover:cursor-pointer">
+                              <div
+                                data-tooltip-id="tip"
+                                className="w-[20px] h-[20px] rounded-full bg-[#a1a1a1] flex items-center justify-center hover:cursor-pointer"
+                              >
                                 <div className=" text-white">?</div>
                               </div>
-                              <div className="absolute right-0 mt-2 w-[320px] p-3 rounded-md bg-black/90 text-white text-xs leading-snug shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-20">
-                                Your Feasibility Score reflects how well your
+
+                              <ReactTooltip
+                                id="tip"
+                                place="top"
+                                content="Your Feasibility Score reflects how well your
                                 idea aligns with market trends and your studio’s
                                 capabilities. It’s based on weighted inputs
                                 across Market Fit, Technical Fit, Art Fit plus a
-                                ±5% confidence adjustment.
-                              </div>
+                                ±5% confidence adjustment."
+                                style={{
+                                  backgroundColor: "#000",
+                                  color: "#fff",
+                                  border: "12px solid #FFFFFF",
+                                  borderRadius: "2px",
+                                  padding: "8px 12px",
+                                  maxWidth: "320px",
+                                }}
+                              />
                             </div>
                           </div>
 
@@ -771,15 +822,15 @@ export default function OpportunityDetails({
                                   key={metric.name}
                                   className="flex flex-col"
                                 >
-                                  <span className="text-sm text-[#fff] min-w-[100px]">
+                                  <span className="text-sm text-[#fff] min-w-[100px] mb-1">
                                     {metric.name}
                                   </span>
                                   <div className="w-full flex-1">
                                     <div
-                                      className="h-1 rounded-full transition-all duration-300"
+                                      className="h-[5px] rounded-full transition-all duration-300 bg-[#808080]"
                                       style={{
                                         width: `${metric.score}%`,
-                                        backgroundColor: metric.color,
+                                        // backgroundColor: metric.color,
                                       }}
                                     ></div>
                                   </div>
@@ -790,7 +841,7 @@ export default function OpportunityDetails({
                         </div>
                         {/* Top Games card */}
                         <div className="bg-[#434343] rounded-[10px] p-6 border-[0.5px] border-[#636363]">
-                          <h3 className="text-white text-xl font-bold mb-2">
+                          <h3 className="text-white text-2xl font-bold mb-4">
                             Top Games
                           </h3>
                           <div className="grid grid-cols-3 gap-4 mt-2 ">
@@ -800,9 +851,9 @@ export default function OpportunityDetails({
                                 href={app.url || "#"}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="block"
+                                className="flex items-center flex-col w-full min-w-0"
                               >
-                                <div className="rounded-[14px] overflow-hidden border border-white/70 bg-[#1f1f1f] w-full h-[80px] flex items-center justify-center">
+                                <div className="rounded-[14px] overflow-hidden border border-white/70 bg-[#1f1f1f] w-[70px] h-[70px] flex items-center justify-center">
                                   <img
                                     src={app.iconUrl || gameIcon}
                                     alt={app.name}
@@ -812,12 +863,42 @@ export default function OpportunityDetails({
                                     }}
                                   />
                                 </div>
-                                <div className="text-white text-center mt-2 truncate">
+                                <div
+                                  className="text-white text-center mt-2 truncate w-full"
+                                  data-tooltip-id={`top-game-name-${idx}`}
+                                  data-tooltip-content={app.name}
+                                >
                                   {app.name}
                                 </div>
-                                <div className="text-gray-200 text-sm text-center truncate">
+                                <ReactTooltip
+                                  id={`top-game-name-${idx}`}
+                                  place="top"
+                                  style={{
+                                    backgroundColor: "#000",
+                                    color: "#fff",
+                                    border: "6px solid #FFFFFF",
+                                    borderRadius: "2px",
+                                    padding: "8px 12px",
+                                  }}
+                                />
+                                <div
+                                  className="text-gray-200 text-sm text-center truncate w-full"
+                                  data-tooltip-id={`top-game-pub-${idx}`}
+                                  data-tooltip-content={app.publisher}
+                                >
                                   {app.publisher}
                                 </div>
+                                {/* <ReactTooltip
+                                  id={`top-game-pub-${idx}`}
+                                  place="top"
+                                  style={{
+                                    backgroundColor: "#000",
+                                    color: "#fff",
+                                    border: "1px solid rgba(255,255,255,0.25)",
+                                    borderRadius: "8px",
+                                    padding: "8px 12px",
+                                  }}
+                                /> */}
                               </a>
                             ))}
                           </div>
@@ -831,7 +912,7 @@ export default function OpportunityDetails({
                       </h3>
                       <div className="grid grid-cols-3 gap-8">
                         {/* positive insights */}
-                        <ul className="list-disc pl-6 border-l-4 border-[#27C128] text-gray-200 space-y-3">
+                        <ul className="list-disc pl-6 border-l-4 h-fit border-[#27C128] text-gray-200 space-y-3">
                           {(positiveInsights.length > 0
                             ? positiveInsights
                             : ["—"]
@@ -841,7 +922,7 @@ export default function OpportunityDetails({
                         </ul>
 
                         {/* neutral insights */}
-                        <ul className="list-disc pl-6 border-l-4 border-[#FFC90A] text-gray-200 space-y-3">
+                        <ul className="list-disc pl-6 border-l-4 h-fit border-[#FFC90A] text-gray-200 space-y-3">
                           {(neutralInsights.length > 0
                             ? neutralInsights
                             : ["—"]
@@ -851,7 +932,7 @@ export default function OpportunityDetails({
                         </ul>
 
                         {/* negative insights */}
-                        <ul className="list-disc pl-6 border-l-4 border-[#FF3B30] text-gray-200 space-y-3">
+                        <ul className="list-disc pl-6 border-l-4 h-fit border-[#FF3B30] text-gray-200 space-y-3">
                           {(negativeInsights.length > 0
                             ? negativeInsights
                             : ["—"]
@@ -883,4 +964,5 @@ OpportunityDetails.propTypes = {
   studioId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   activeTabId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onActiveTabChange: PropTypes.func,
+  onAfterAutoGenerate: PropTypes.func,
 };

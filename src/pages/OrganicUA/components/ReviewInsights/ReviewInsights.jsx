@@ -217,6 +217,27 @@ const ReviewInsights = ({ games, setGames, ContextStudioData }) => {
         top: 30,
       },
     },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+          drawBorder: false,
+          drawTicks: false,
+        },
+      },
+      y: {
+        ticks: { display: false },
+        border: { display: false },
+        grid: {
+          display: true,
+          drawBorder: false,
+          drawTicks: false,
+          color: "rgba(148, 163, 184, 0.25)",
+          lineWidth: 1,
+          borderDash: [6, 6],
+        },
+      },
+    },
   };
 
   const fetchAllVersions = async () => {
@@ -308,8 +329,12 @@ const ReviewInsights = ({ games, setGames, ContextStudioData }) => {
       const requestbody = {
         game_id: selectedGame.id,
         studio_id: ContextStudioData?.id,
-        start_date: customDates[0].startDate ? moment(customDates[0].startDate).format("YYYY-MM-DD") : 'lifetime',
-        end_date: customDates[0].endDate ? moment(customDates[0].endDate).format("YYYY-MM-DD") : 'lifetime',
+        start_date: customDates[0].startDate
+          ? moment(customDates[0].startDate).format("YYYY-MM-DD")
+          : "lifetime",
+        end_date: customDates[0].endDate
+          ? moment(customDates[0].endDate).format("YYYY-MM-DD")
+          : "lifetime",
       };
       if (selectedVersions.length) {
         const selectedVersionsArr = [];
