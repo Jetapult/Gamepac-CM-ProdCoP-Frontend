@@ -28,7 +28,7 @@ const OpportunityGenerator = ({ onGenerated }) => {
   //   const [gender, setGender] = useState(null);
   //   const [targetAgeGroup, setTargetAgeGroup] = useState([]);
   const [timeRange, setTimeRange] = useState(null);
-  const [spend, setSpend] = useState(50); // in K
+  const [spend, setSpend] = useState(0); // in K
   const [monetization, setMonetization] = useState(null);
 //   const [countries, setCountries] = useState([]);
 //   const [countriesLoading, setCountriesLoading] = useState(false);
@@ -102,6 +102,7 @@ const OpportunityGenerator = ({ onGenerated }) => {
         time_period: timeRange,
         monetization_focus: monetization,
         simulate: true,
+        ua_spend: spend * 1000,
       };
       const res = await api.post(
         `/v1/ideapac/opportunity-card/generate`,
