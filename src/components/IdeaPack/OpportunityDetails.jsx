@@ -242,9 +242,14 @@ export default function OpportunityDetails({
       setActiveTabId(tabs[0].id);
     }
   }, [studioId, tabs, activeTabId, setActiveTabId]);
+
   useEffect(() => {
     const fetchDetail = async () => {
       if (!activeTabId || !studioId) return;
+
+      // Reset to market view when switching tabs
+      setActiveView("market");
+
       try {
         setLoading(true);
         setError("");
