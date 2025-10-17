@@ -16,9 +16,7 @@ import {
   ArrowDown,
   FileText,
   ChartNoAxesColumn,
-  CheckCircle,
-  Circle,
-  Loader2,
+  Download,
 } from "lucide-react";
 import { PDFViewer } from "../../pages/GameDesignDocument/conceptGenerator/PDFViewer";
 import OpportunityDetailsSkeleton from "./OpportunityDetailsSkeleton";
@@ -28,6 +26,8 @@ import gameIcon from "../../assets/game-icon.png";
 import playableShowcase from "../../assets/playable-showcase.png";
 import smileGame from "../../assets/smiley.png";
 import { Tooltip as ReactTooltip } from "react-tooltip";
+import Generating from "./Generating";
+import { toast } from "sonner";
 
 ChartJS.register(
   CategoryScale,
@@ -98,6 +98,7 @@ export default function OpportunityDetails({
   activeTabId: propActiveTabId,
   onActiveTabChange,
   onAfterAutoGenerate,
+  isGeneratingFromGenerator = false,
 }) {
   const [activeView, setActiveView] = useState("market");
   const [loading, setLoading] = useState(true);
@@ -113,6 +114,7 @@ export default function OpportunityDetails({
   const [autoGenError, setAutoGenError] = useState("");
 
   const [selectedPdf, setSelectedPdf] = useState(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const hasAttemptedAutoGenerateRef = useRef(false);
   const autoGenInFlightRef = useRef(false);
 
@@ -175,6 +177,7 @@ export default function OpportunityDetails({
     async (cardId) => {
       if (!cardId || !studioId) return null;
       try {
+        setPdfLoading(true);
         const res = await api.get(`/v1/ideapac/gdd/${cardId}`, {
           params: { studio_id: studioId },
         });
@@ -183,8 +186,17 @@ export default function OpportunityDetails({
           setSelectedPdf(prdUrl);
         }
         return prdUrl;
-      } catch (_) {
+      } catch (error) {
+        toast.error("Failed to load GDD", {
+          action: {
+            label: "Retry",
+            onClick: () => fetchOrGeneratePdfUrl(cardId),
+          },
+          duration: 5000,
+        });
         return null;
+      } finally {
+        setPdfLoading(false);
       }
     },
     [studioId]
@@ -242,9 +254,14 @@ export default function OpportunityDetails({
       setActiveTabId(tabs[0].id);
     }
   }, [studioId, tabs, activeTabId, setActiveTabId]);
+
   useEffect(() => {
     const fetchDetail = async () => {
       if (!activeTabId || !studioId) return;
+
+      // Reset to market view when switching tabs
+      setActiveView("market");
+
       try {
         setLoading(true);
         setError("");
@@ -279,7 +296,15 @@ export default function OpportunityDetails({
           // no-op: tabs are non-critical UI hints
         }
       } catch (e) {
-        setError("Failed to load opportunity details");
+        const errorMessage = "Failed to load opportunity details";
+        setError(errorMessage);
+        toast.error(errorMessage, {
+          action: {
+            label: "Retry",
+            onClick: () => fetchDetail(),
+          },
+          duration: 5000,
+        });
       } finally {
         setLoading(false);
       }
@@ -549,46 +574,14 @@ export default function OpportunityDetails({
         </div>
       </div>
 
-      <div className="bg-[#303030] rounded-[10px] p-6  -mt-1">
-        {autoGenerating ? (
-          <div className="min-h-[440px] flex items-center justify-center">
-            <div className="text-center max-w-[520px] mx-auto">
-              <h2 className="text-white text-2xl font-bold mb-6">
-                Finding the right Opportunity for you…
-              </h2>
-              <div className="space-y-4 text-left inline-block">
-                <div className="flex items-center gap-3 text-gray-200">
-                  <CheckCircle className="text-[#27C128]" size={20} />
-                  <span>Creating a Market Snapshot</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-200">
-                  <CheckCircle className="text-[#27C128]" size={20} />
-                  <span>Determining Fit Score</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-200">
-                  <Loader2 className="animate-spin text-white" size={20} />
-                  <span>Identifying Top Games</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-400">
-                  <Circle size={20} />
-                  <span>Generating Insights</span>
-                </div>
-              </div>
-              {autoGenError && (
-                <div className="mt-6 text-red-400">
-                  {autoGenError}
-                  <button
-                    onClick={triggerAutoGenerate}
-                    className="ml-3 underline text-white"
-                  >
-                    Retry
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+      <div className="bg-[#303030] rounded-[10px] -mt-1">
+        {autoGenerating || isGeneratingFromGenerator ? (
+          <Generating
+            generateError={autoGenError}
+            onRetry={triggerAutoGenerate}
+          />
         ) : (
-          <>
+          <div className="p-6">
             {loading && <OpportunityDetailsSkeleton />}
             {!loading && error && (
               <div className="py-6 text-center text-red-400">
@@ -625,26 +618,40 @@ export default function OpportunityDetails({
             )}
 
             {/* Header */}
-            {!loading && (
+            {!loading && !error && (
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h1 className="text-4xl font-bold text-white leading-tight ">
+                  <h1 className="text-[42px] font-bold text-white leading-tight ">
                     {title}
                   </h1>
-                  <p className="text-gray-300 -mt-1">{subtitle}</p>
+                  <p className="text-white font-light text-[28px] -mt-1">
+                    {subtitle}
+                  </p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <div className="flex items-center gap-2">
                     {activeView === "market" ? (
                       <button
                         onClick={() => {
+                          if (!selectedPdf) {
+                            toast.error("Failed to load GDD", {
+                              action: {
+                                label: "Retry",
+                                onClick: () =>
+                                  fetchOrGeneratePdfUrl(activeTabId),
+                              },
+                              duration: 5000,
+                            });
+                            return;
+                          }
                           setActiveView("gdd");
                           console.log("selectedPdf", selectedPdf);
                         }}
                         className="bg-[#27C128] text-white rounded-2xl py-[9px] px-[14px] text-sm font-medium flex items-center gap-1 hover:cursor-pointer "
-                        disabled={!selectedPdf}
+                        disabled={pdfLoading}
                       >
-                        View GDD <FileText size={16} />
+                        {pdfLoading ? "Loading..." : "View GDD"}{" "}
+                        <FileText size={16} />
                       </button>
                     ) : (
                       <button
@@ -656,7 +663,7 @@ export default function OpportunityDetails({
                     )}
                   </div>
                   {activeView === "market" && (
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 mt-3">
                       <span className="text-gray-300 text-sm">
                         Confidence Level
                       </span>
@@ -683,6 +690,19 @@ export default function OpportunityDetails({
                           {Math.round(confidenceLevel)}%
                         </span>
                       )}
+                    </div>
+                  )}
+
+                  {activeView === "gdd" && (
+                    <div className="flex items-end justify-end mb-4">
+                      <a
+                        href={selectedPdf}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-white text-black rounded-2xl py-[9px] px-[14px] text-sm font-medium flex items-center gap-1 hover:cursor-pointer "
+                      >
+                        Download <Download size={16} />
+                      </a>
                     </div>
                   )}
                 </div>
@@ -754,24 +774,64 @@ export default function OpportunityDetails({
                             <span className="text-white font-bold text-lg before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
                               Active User Growth:
                             </span>
-                            <span className="text-white font-normal text-lg ml-1 capitalize">
-                              {detail?.market_snapshot?.growth || "-"}
+                            <span className="flex items-center  ml-1">
+                              {detail?.market_snapshot?.dau_cagr ? (
+                                <>
+                                  {String(
+                                    detail?.market_snapshot?.dau_cagr
+                                  ).includes("-") ? (
+                                    <ArrowDown
+                                      size={18}
+                                      className="text-white"
+                                    />
+                                  ) : (
+                                    <ArrowUp size={18} className="text-white" />
+                                  )}
+                                  <span className="text-white font-normal text-lg capitalize">
+                                    {detail?.market_snapshot?.dau_cagr + "%"}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-white font-normal text-lg">
+                                  -
+                                </span>
+                              )}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-white font-bold text-lg before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
-                              Retention:
+                              Demographic:
                             </span>
                             <span className="text-white font-normal text-lg ml-1 capitalize">
-                              {detail?.market_snapshot?.retention || "-"}
+                              {detail?.market_snapshot?.demographic || "-"}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-white font-bold text-lg before:content-['|'] before:mr-2 before:text-[20px] before:text-white">
                               Monetization:
                             </span>
-                            <span className="text-white font-normal text-lg ml-1 capitalize">
-                              {detail?.market_snapshot?.monetization || "-"}
+                            <span className="flex items-center  ml-1">
+                              {detail?.market_snapshot?.arpdau_cagr ? (
+                                <>
+                                  {String(
+                                    detail?.market_snapshot?.arpdau_cagr
+                                  ).includes("-") ? (
+                                    <ArrowDown
+                                      size={18}
+                                      className="text-white"
+                                    />
+                                  ) : (
+                                    <ArrowUp size={18} className="text-white" />
+                                  )}
+                                  <span className="text-white font-normal text-lg capitalize">
+                                    {detail?.market_snapshot?.arpdau_cagr + "%"}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-white font-normal text-lg">
+                                  -
+                                </span>
+                              )}
                             </span>
                           </div>
                         </div>
@@ -947,13 +1007,13 @@ export default function OpportunityDetails({
 
                 {/* GDD Section */}
                 {activeView === "gdd" && (
-                  <div className="mt-4">
+                  <div className="mt-2">
                     <PDFViewer pdfUrl={selectedPdf} />
                   </div>
                 )}
               </>
             )}
-          </>
+          </div>
         )}
       </div>
     </>
@@ -965,4 +1025,5 @@ OpportunityDetails.propTypes = {
   activeTabId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onActiveTabChange: PropTypes.func,
   onAfterAutoGenerate: PropTypes.func,
+  isGeneratingFromGenerator: PropTypes.bool,
 };

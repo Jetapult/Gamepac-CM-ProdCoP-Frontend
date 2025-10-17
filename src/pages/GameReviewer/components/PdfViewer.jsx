@@ -338,7 +338,10 @@ const PdfViewer = ({
           )}
         </div>
         <div className="flex items-center">
-          <button className="mr-2 cursor-pointer bg-white rounded-md px-2 py-1.5" onClick={handleDownload}>
+          <button
+            className="mr-2 cursor-pointer bg-white rounded-md px-2 py-1.5"
+            onClick={handleDownload}
+          >
             <ArrowDownTrayIcon className="w-5 h-5" />
           </button>
           <span className="bg-white rounded px-2 py-1 flex items-center">
