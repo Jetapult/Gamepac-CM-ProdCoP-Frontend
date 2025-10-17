@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Loader2 } from "lucide-react";
+import PropTypes from "prop-types";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import "react-pdf/dist/esm/Page/TextLayer.css";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+// pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export function PDFViewer({
   pdfUrl,
@@ -12,6 +16,19 @@ export function PDFViewer({
   const [numPages, setNumPages] = useState(null);
   const [pdfError, setPdfError] = useState(null);
   const [isLoadingPdf, setIsLoadingPdf] = useState(true);
+
+  // Memoize options to prevent unnecessary reloads
+  const documentOptions = useMemo(
+    () => ({
+      cMapUrl: "https://unpkg.com/pdfjs-dist@3.11.174/cmaps/",
+      cMapPacked: true,
+      withCredentials: false,
+      disableAutoFetch: false,
+      disableStream: false,
+      disableRange: false,
+    }),
+    []
+  );
 
   function onDocumentLoadSuccess({ numPages }) {
     setNumPages(numPages);
@@ -45,7 +62,7 @@ export function PDFViewer({
           {pdfError ? (
             <div className="text-center py-8">
               <p className="text-red-500 mb-4">
-                Failed to load PDF due to CORS restrictions.
+                Failed to load PDF due to CORS restrictions or worker error.
               </p>
               <p className="text-sm text-muted-foreground mb-4">
                 Try downloading the PDF directly:
@@ -61,28 +78,27 @@ export function PDFViewer({
             </div>
           ) : (
             <div className="pdf-scroll-container max-h-[70vh] overflow-y-auto border shadow-sm w-full">
-              <Document
-                file={pdfUrl}
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={onDocumentLoadError}
-                options={{
-                  cMapUrl: "https://unpkg.com/pdfjs-dist@3.4.120/cmaps/",
-                  cMapPacked: true,
-                  withCredentials: false,
-                }}
-                loading={null}
-              >
-                {Array.from(new Array(numPages), (el, index) => (
-                  <Page
-                    key={`page_${index + 1}`}
-                    pageNumber={index + 1}
-                    renderTextLayer={false}
-                    renderAnnotationLayer={false}
-                    width={450}
-                    className="mb-4"
-                  />
-                ))}
-              </Document>
+              {pdfUrl && (
+                <Document
+                  file={pdfUrl}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  onLoadError={onDocumentLoadError}
+                  options={documentOptions}
+                  loading={null}
+                >
+                  {numPages &&
+                    Array.from(new Array(numPages), (el, index) => (
+                      <Page
+                        key={`page_${index + 1}`}
+                        pageNumber={index + 1}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                        width={450}
+                        className="mb-4"
+                      />
+                    ))}
+                </Document>
+              )}
             </div>
           )}
         </div>
@@ -90,3 +106,7 @@ export function PDFViewer({
     </div>
   );
 }
+
+PDFViewer.propTypes = {
+  pdfUrl: PropTypes.string.isRequired,
+};
