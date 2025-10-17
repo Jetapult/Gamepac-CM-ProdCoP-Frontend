@@ -7,7 +7,7 @@ import SelectDropdown from "../SelectDropdown";
 import api from "../../api";
 import { useSelector } from "react-redux";
 
-const OpportunityGenerator = ({ onGenerated, onIsGeneratingChange }) => {
+const OpportunityGenerator = ({ onGenerated }) => {
   const [studioId, setStudioId] = useState("");
 
   const ContextStudioData = useSelector(
@@ -30,8 +30,8 @@ const OpportunityGenerator = ({ onGenerated, onIsGeneratingChange }) => {
   const [timeRange, setTimeRange] = useState(null);
   const [spend, setSpend] = useState(0); // in K
   const [monetization, setMonetization] = useState(null);
-  //   const [countries, setCountries] = useState([]);
-  //   const [countriesLoading, setCountriesLoading] = useState(false);
+//   const [countries, setCountries] = useState([]);
+//   const [countriesLoading, setCountriesLoading] = useState(false);
   const [genres, setGenres] = useState([]);
   const [genresLoading, setGenresLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -73,12 +73,6 @@ const OpportunityGenerator = ({ onGenerated, onIsGeneratingChange }) => {
       isCancelled = true;
     };
   }, []);
-
-  useEffect(() => {
-    if (typeof onIsGeneratingChange === "function") {
-      onIsGeneratingChange(isGenerating);
-    }
-  }, [isGenerating, onIsGeneratingChange]);
 
   // No-op: SelectDropdown handles its own outside-click behavior
 
@@ -153,13 +147,13 @@ const OpportunityGenerator = ({ onGenerated, onIsGeneratingChange }) => {
             id="tip-genre"
             place="top"
             content="Broad game category for trend analysis."
-            style={{
-              backgroundColor: "#000",
-              color: "#fff",
-              border: "12px solid #FFFFFF",
-              borderRadius: "2px",
-              padding: "8px 12px",
-            }}
+             style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
           />
         </div>
         <SelectDropdown
@@ -185,13 +179,13 @@ const OpportunityGenerator = ({ onGenerated, onIsGeneratingChange }) => {
             id="tip-subgenre"
             place="top"
             content="Specific gameplay type within a genre."
-            style={{
-              backgroundColor: "#000",
-              color: "#fff",
-              border: "12px solid #FFFFFF",
-              borderRadius: "2px",
-              padding: "8px 12px",
-            }}
+             style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
           />
         </div>
         <SelectDropdown
@@ -251,13 +245,13 @@ const OpportunityGenerator = ({ onGenerated, onIsGeneratingChange }) => {
             id="tip-platform"
             place="top"
             content="Operating system or store segment."
-            style={{
-              backgroundColor: "#000",
-              color: "#fff",
-              border: "12px solid #FFFFFF",
-              borderRadius: "2px",
-              padding: "8px 12px",
-            }}
+             style={{
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
           />
         </div>
         <div className="flex gap-3">
@@ -378,12 +372,12 @@ const OpportunityGenerator = ({ onGenerated, onIsGeneratingChange }) => {
             place="top"
             content="Historical window for analysis."
             style={{
-              backgroundColor: "#000",
-              color: "#fff",
-              border: "12px solid #FFFFFF",
-              borderRadius: "2px",
-              padding: "8px 12px",
-            }}
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
           />
         </div>
         <div className="flex gap-3">
@@ -467,12 +461,12 @@ const OpportunityGenerator = ({ onGenerated, onIsGeneratingChange }) => {
             place="top"
             content="Core revenue model—Ads, IAP, or Hybrid."
             style={{
-              backgroundColor: "#000",
-              color: "#fff",
-              border: "12px solid #FFFFFF",
-              borderRadius: "2px",
-              padding: "8px 12px",
-            }}
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "12px solid #FFFFFF",
+                borderRadius: "2px",
+                padding: "8px 12px",
+              }}
           />
         </div>
         <div className="flex gap-3">
@@ -529,5 +523,4 @@ export default OpportunityGenerator;
 
 OpportunityGenerator.propTypes = {
   onGenerated: PropTypes.func,
-  onIsGeneratingChange: PropTypes.func,
 };

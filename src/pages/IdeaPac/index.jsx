@@ -35,7 +35,6 @@ const IdeaPac = () => {
   const prevOppLimit = 5;
   const [prevOppHasMore, setPrevOppHasMore] = useState(true);
   const [activeTabId, setActiveTabId] = useState(null);
-  const [generatorIsGenerating, setGeneratorIsGenerating] = useState(false);
 
   const loadPrevOpps = useCallback(
     async ({ page, append }) => {
@@ -123,7 +122,6 @@ const IdeaPac = () => {
               activeTabId={activeTabId}
               onActiveTabChange={setActiveTabId}
               onAfterAutoGenerate={handleReloadPrevOpps}
-              isGeneratingFromGenerator={generatorIsGenerating}
             />
           </div>
         </div>
@@ -241,7 +239,6 @@ const IdeaPac = () => {
               // Refresh the previous opportunities list to get the latest
               await handleReloadPrevOpps();
             }}
-            onIsGeneratingChange={setGeneratorIsGenerating}
           />
         </div>
       </div>
