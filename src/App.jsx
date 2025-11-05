@@ -63,6 +63,8 @@ import GDDProject from "./pages/GameDesignDocument/gdd/Projects.jsx";
 import TranslatorPage from "./pages/GameDesignDocument/Translator/Translator.jsx";
 import ConceptGenerator from "./pages/GameDesignDocument/conceptGenerator/ConceptGenerator.jsx";
 import IdeaPac from "./pages/IdeaPac/index.jsx";
+import SuperAgent from "./pages/SuperAgent/SuperAgent.jsx";
+import Fragments from "./pages/SuperAgent/Fragments.jsx";
 
 
 function App() {
@@ -369,6 +371,9 @@ function App() {
             <Route path="/gdd/translator" element={<PrivateRoute><TranslatorPage /></PrivateRoute>} />
             <Route path="/gdd/translator/:id" element={<PrivateRoute><TranslatorPage /></PrivateRoute>} />
             <Route path="/gdd/concept-generator" element={<PrivateRoute><ConceptGenerator /></PrivateRoute>} />
+            <Route path="/super-agent" element={<PrivateRoute><SuperAgent /></PrivateRoute>} />
+            <Route path="/super-agent/fragments" element={<PrivateRoute><Fragments /></PrivateRoute>} />
+            <Route path="/super-agent/ai-drive" element={<PrivateRoute><SuperAgent /></PrivateRoute>} />
             <Route
               path="*"
               element={<PageNotFound />}
