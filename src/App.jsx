@@ -63,6 +63,7 @@ import GDDProject from "./pages/GameDesignDocument/gdd/Projects.jsx";
 import TranslatorPage from "./pages/GameDesignDocument/Translator/Translator.jsx";
 import ConceptGenerator from "./pages/GameDesignDocument/conceptGenerator/ConceptGenerator.jsx";
 import IdeaPac from "./pages/IdeaPac/index.jsx";
+import ExternalTools from "./pages/externalTools/index.jsx";
 
 
 function App() {
@@ -369,6 +370,7 @@ function App() {
             <Route path="/gdd/translator" element={<PrivateRoute><TranslatorPage /></PrivateRoute>} />
             <Route path="/gdd/translator/:id" element={<PrivateRoute><TranslatorPage /></PrivateRoute>} />
             <Route path="/gdd/concept-generator" element={<PrivateRoute><ConceptGenerator /></PrivateRoute>} />
+            <Route path="/external-tools" element={<PrivateRoute><ExternalTools /></PrivateRoute>} />
             <Route
               path="*"
               element={<PageNotFound />}
