@@ -65,6 +65,7 @@ import ConceptGenerator from "./pages/GameDesignDocument/conceptGenerator/Concep
 import IdeaPac from "./pages/IdeaPac/index.jsx";
 import SuperAgent from "./pages/SuperAgent/SuperAgent.jsx";
 import Fragments from "./pages/SuperAgent/Fragments.jsx";
+import SampleRLAgent from "./pages/Agents/SampleRLAgent.jsx";
 
 
 function App() {
@@ -374,6 +375,7 @@ function App() {
             <Route path="/super-agent" element={<PrivateRoute><SuperAgent /></PrivateRoute>} />
             <Route path="/super-agent/fragments" element={<PrivateRoute><Fragments /></PrivateRoute>} />
             <Route path="/super-agent/ai-drive" element={<PrivateRoute><SuperAgent /></PrivateRoute>} />
+            <Route path="/agent" element={<><SampleRLAgent /></>} />
             <Route
               path="*"
               element={<PageNotFound />}
