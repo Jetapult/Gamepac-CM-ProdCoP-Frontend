@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import Landing from "./components/Landing";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./components/Home";
 import History from "./components/History";
@@ -63,13 +63,10 @@ import GDDProject from "./pages/GameDesignDocument/gdd/Projects.jsx";
 import TranslatorPage from "./pages/GameDesignDocument/Translator/Translator.jsx";
 import ConceptGenerator from "./pages/GameDesignDocument/conceptGenerator/ConceptGenerator.jsx";
 import IdeaPac from "./pages/IdeaPac/index.jsx";
-import SuperAgent from "./pages/SuperAgent/SuperAgent.jsx";
-import Fragments from "./pages/SuperAgent/Fragments.jsx";
 import SampleRLAgent from "./pages/Agents/SampleRLAgent.jsx";
 
 
 function AppContent() {
-  const location = useLocation();
   const userTokenData = localStorage.getItem("jwt");
   const dispatch = useDispatch();
 
@@ -123,15 +120,10 @@ function AppContent() {
     }
   }, []);
 
-  // Check if current path should hide navbar
-  const shouldHideNavbar = location.pathname === '/super-agent' ||
-                           location.pathname === '/super-agent/fragments' ||
-                           location.pathname === '/super-agent/ai-drive';
-
   return (
-    <div className={`${shouldHideNavbar ? '' : 'body-margin-top'} bg-[#f6f6f7]`}>
+    <div className="body-margin-top bg-[#f6f6f7]">
       <>
-          {!shouldHideNavbar && <Navbar />}
+          <Navbar />
           <Routes>
             <Route
               exact
@@ -377,9 +369,6 @@ function AppContent() {
             <Route path="/gdd/translator" element={<PrivateRoute><TranslatorPage /></PrivateRoute>} />
             <Route path="/gdd/translator/:id" element={<PrivateRoute><TranslatorPage /></PrivateRoute>} />
             <Route path="/gdd/concept-generator" element={<PrivateRoute><ConceptGenerator /></PrivateRoute>} />
-            <Route path="/super-agent" element={<PrivateRoute><SuperAgent /></PrivateRoute>} />
-            <Route path="/super-agent/fragments" element={<PrivateRoute><Fragments /></PrivateRoute>} />
-            <Route path="/super-agent/ai-drive" element={<PrivateRoute><SuperAgent /></PrivateRoute>} />
             <Route path="/agent" element={<><SampleRLAgent /></>} />
             <Route
               path="*"
