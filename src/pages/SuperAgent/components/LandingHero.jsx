@@ -166,67 +166,187 @@ export function LandingHero() {
   };
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="flex flex-col">
+    <>
+    <Sidebar />
+    <div className="flex ml-[64px] bg-white min-h-screen">
+      <div className="flex flex-col w-full">
         <Header />
-        <div className="w-full min-w-screen flex flex-col items-center justify-center py-40">
-          <h1 className="text-3xl font-bold flex items-center gap-2 mb-10">
-            Gamepac Super Agent{' '}
-            <CircleArrowRight size={16} className="animate-pulse" />
+        <div className="w-full flex flex-col items-center justify-center py-20 px-6">
+          {/* Hero Title */}
+          <h1
+            className="sa-heading-1 flex items-center gap-3 mb-4"
+            style={{
+              fontFamily: 'var(--sa-font-primary)',
+              color: 'var(--sa-primary-dark)',
+              fontSize: 'var(--sa-text-5xl)',
+              fontWeight: 'var(--sa-weight-semibold)'
+            }}
+          >
+            Ask GamePac to trigger in-game events
           </h1>
+
+          {/* Subtitle */}
+          <p
+            className="sa-body-large mb-12"
+            style={{
+              fontFamily: 'var(--sa-font-primary)',
+              color: 'var(--sa-gray-500)',
+              fontSize: 'var(--sa-text-lg)',
+              fontWeight: 'var(--sa-weight-regular)'
+            }}
+          >
+            where Ideas come to reality
+          </p>
+
+          {/* Chat/Feed Toggle */}
+          <div className="flex gap-3 mb-12">
+            <button
+              className="px-6 py-3 rounded-full flex items-center gap-2 transition-all"
+              style={{
+                backgroundColor: 'var(--sa-primary-dark)',
+                color: 'var(--sa-white)',
+                fontFamily: 'var(--sa-font-primary)',
+                fontWeight: 'var(--sa-weight-medium)',
+                fontSize: 'var(--sa-text-base)'
+              }}
+            >
+              <MessageSquare size={18} />
+              Chat
+            </button>
+            <button
+              className="px-6 py-3 rounded-full flex items-center gap-2 transition-all"
+              style={{
+                backgroundColor: 'var(--sa-gray-100)',
+                color: 'var(--sa-gray-700)',
+                fontFamily: 'var(--sa-font-primary)',
+                fontWeight: 'var(--sa-weight-medium)',
+                fontSize: 'var(--sa-text-base)'
+              }}
+            >
+              <FileText size={18} />
+              Feed
+            </button>
+          </div>
+
+          {/* Search Input */}
           <form
             onSubmit={handleSubmit}
-            className="w-full max-w-3xl animate-fade-in-delay-2"
+            className="w-full max-w-3xl mb-12"
           >
             <div className="relative group">
-              <div className="relative bg-background border-2 border-border group-hover:border-primary/50 rounded-3xl shadow-2xl transition-all duration-300 pb-10">
+              <div
+                className="relative rounded-3xl transition-all duration-300 pb-12 shadow-lg"
+                style={{
+                  backgroundColor: 'var(--sa-white)',
+                  border: '2px solid var(--sa-gray-200)'
+                }}
+              >
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Ask anything, create anything"
-                  className="flex-1 p-4 text-base bg-transparent border-0 focus:outline-none focus:ring-0 placeholder:text-muted-foreground resize-none w-full"
+                  placeholder="Generate a professional sentiment analysis report"
+                  className="flex-1 p-6 text-base bg-transparent border-0 focus:outline-none focus:ring-0 resize-none w-full"
+                  style={{
+                    fontFamily: 'var(--sa-font-primary)',
+                    color: 'var(--sa-gray-900)',
+                    fontSize: 'var(--sa-text-base)'
+                  }}
                   autoFocus
+                  rows={2}
                 />
-                <button
-                  type="submit"
-                  className="absolute bottom-0 right-0 m-4 bg-white rounded-xl p-2"
-                  disabled={!prompt.trim()}
-                >
-                  <CornerDownLeft className="w-5 h-5 text-black" />
-                </button>
+                <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between">
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                      style={{ color: 'var(--sa-gray-600)' }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                      style={{ color: 'var(--sa-gray-600)' }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <button
+                    type="submit"
+                    className="rounded-lg p-2.5 transition-all"
+                    style={{
+                      backgroundColor: prompt.trim() ? 'var(--sa-primary-dark)' : 'var(--sa-gray-300)',
+                      color: 'var(--sa-white)'
+                    }}
+                    disabled={!prompt.trim()}
+                  >
+                    <CornerDownLeft className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </form>
-          <div className="flex flex-wrap gap-4 my-10">
+
+          {/* Feature Quick Actions */}
+          <div className="flex flex-wrap justify-center gap-6 mb-16 max-w-4xl">
             {features.map((feature) => (
-              <div
+              <button
                 key={feature.label}
                 onClick={() =>
                   handleFeatureClick(feature.template, feature.label)
                 }
-                className="flex flex-col items-center gap-2 cursor-pointer hover:scale-105 transition-transform"
+                className="flex items-center gap-3 px-5 py-3 rounded-xl transition-all hover:shadow-md"
+                style={{
+                  backgroundColor: 'var(--sa-gray-50)',
+                  border: '1px solid var(--sa-gray-200)',
+                  fontFamily: 'var(--sa-font-primary)',
+                  fontSize: 'var(--sa-text-sm)',
+                  fontWeight: 'var(--sa-weight-medium)',
+                  color: 'var(--sa-gray-700)'
+                }}
               >
-                <div className="rounded-full bg-primary/10 hover:bg-primary/20 p-2 w-[50px] h-[50px] flex items-center justify-center transition-colors">
-                  <feature.icon className="w-5 h-5" />
+                <div
+                  className="rounded-lg p-2"
+                  style={{ backgroundColor: 'var(--sa-white)' }}
+                >
+                  <feature.icon className="w-4 h-4" style={{ color: 'var(--sa-primary-dark)' }} />
                 </div>
-                <p className="text-[13px] font-normal w-[100px] text-center">
-                  {feature.label}
-                </p>
-              </div>
+                {feature.label}
+              </button>
             ))}
           </div>
 
-          <div className="w-full mt-20 px-4">
-            <div className="flex items-center justify-center mb-6">
-              <hr className="w-[200px] border-border mr-5 border-muted-foreground" />
-              <div className="px-10 py-[2px] bg-white rounded-full border border-border">
-                <span className="text-sm font-medium text-black">For You</span>
+          {/* For You Section - Removed divider, cleaner look */}
+          <div className="w-full max-w-7xl mt-8">
+            <div className="flex items-center justify-center mb-8">
+              <div
+                className="px-8 py-2 rounded-full"
+                style={{
+                  backgroundColor: 'var(--sa-gray-100)',
+                  border: '1px solid var(--sa-gray-200)'
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--sa-font-primary)',
+                    fontSize: 'var(--sa-text-sm)',
+                    fontWeight: 'var(--sa-weight-medium)',
+                    color: 'var(--sa-gray-700)'
+                  }}
+                >
+                  Recommended for you
+                </span>
               </div>
-              <hr className="w-[200px] border-border ml-5 border-muted-foreground" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-              {showcaseItems.map((item, index) => (
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {showcaseItems.slice(0, 8).map((item, index) => (
                 <button
                   key={index}
                   onClick={() =>
@@ -234,22 +354,53 @@ export function LandingHero() {
                       `/super-agent/fragments?prompt=${encodeURIComponent(item.prompt)}&template=${item.template}`
                     )
                   }
-                  className="group relative overflow-hidden rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:scale-105 cursor-pointer"
+                  className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-xl cursor-pointer text-left"
+                  style={{
+                    backgroundColor: 'var(--sa-white)',
+                    border: '1px solid var(--sa-gray-200)'
+                  }}
                 >
-                  <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/10 to-purple-500/10">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <item.icon className="w-20 h-20 text-primary/30" />
+                  <div
+                    className="relative h-40 overflow-hidden"
+                    style={{
+                      background: `linear-gradient(135deg, var(--sa-primary-light) 0%, var(--sa-primary-medium) 100%)`
+                    }}
+                  >
+                    <div className="absolute inset-0 flex items-center justify-center opacity-30">
+                      <item.icon className="w-16 h-16" style={{ color: 'var(--sa-primary-dark)' }} />
                     </div>
                     {item.badge && (
-                      <div className="absolute top-3 left-3 px-3 py-1 bg-background/90 backdrop-blur-sm rounded-full border border-border">
-                        <span className="text-xs font-medium">
+                      <div
+                        className="absolute top-3 left-3 px-3 py-1 rounded-full backdrop-blur-sm"
+                        style={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                          border: '1px solid var(--sa-gray-200)'
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: 'var(--sa-font-primary)',
+                            fontSize: 'var(--sa-text-xs)',
+                            fontWeight: 'var(--sa-weight-medium)',
+                            color: 'var(--sa-primary-dark)'
+                          }}
+                        >
                           {item.badge}
                         </span>
                       </div>
                     )}
                   </div>
-                  <div className="p-4">
-                    <h3 className="text-sm font-semibold text-left line-clamp-2 group-hover:text-primary transition-colors">
+                  <div className="p-5">
+                    <h3
+                      className="line-clamp-2 group-hover:text-primary transition-colors"
+                      style={{
+                        fontFamily: 'var(--sa-font-primary)',
+                        fontSize: 'var(--sa-text-base)',
+                        fontWeight: 'var(--sa-weight-semibold)',
+                        color: 'var(--sa-black)',
+                        lineHeight: '1.4'
+                      }}
+                    >
                       {item.title}
                     </h3>
                   </div>
@@ -260,5 +411,6 @@ export function LandingHero() {
         </div>
       </div>
     </div>
+    </>
   );
 }

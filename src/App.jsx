@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import Landing from "./components/Landing";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./components/Home";
 import History from "./components/History";
@@ -68,7 +68,8 @@ import Fragments from "./pages/SuperAgent/Fragments.jsx";
 import SampleRLAgent from "./pages/Agents/SampleRLAgent.jsx";
 
 
-function App() {
+function AppContent() {
+  const location = useLocation();
   const userTokenData = localStorage.getItem("jwt");
   const dispatch = useDispatch();
 
@@ -122,11 +123,15 @@ function App() {
     }
   }, []);
 
+  // Check if current path should hide navbar
+  const shouldHideNavbar = location.pathname === '/super-agent' ||
+                           location.pathname === '/super-agent/fragments' ||
+                           location.pathname === '/super-agent/ai-drive';
+
   return (
-    <div className=" bg-[#f6f6f7]">
+    <div className={`${shouldHideNavbar ? '' : 'body-margin-top'} bg-[#f6f6f7]`}>
       <>
-        <Router>
-          <Navbar />
+          {!shouldHideNavbar && <Navbar />}
           <Routes>
             <Route
               exact
@@ -381,9 +386,16 @@ function App() {
               element={<PageNotFound />}
             />
           </Routes>
-        </Router>
       </>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 

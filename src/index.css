@@ -1,8 +1,328 @@
 /* @import url('https://fonts.googleapis.com/css2?family=League+Spartan&display=swap'); */
 
+/* Import Gilroy font from CDN (fallback if local files not available) */
+@import url('https://fonts.cdnfonts.com/css/gilroy-bold');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ========================================
+   SUPER AGENT DESIGN SYSTEM
+   ======================================== */
+
+:root {
+  /* Primary Colors */
+  --sa-primary-dark: #2E6C62;
+  --sa-primary-medium: #68AFA6;
+  --sa-primary-light: #A5D3CC;
+
+  /* Accent Colors */
+  --sa-accent-yellow: #D4F64D;
+  --sa-accent-yellow-light: #E6FFA3;
+
+  /* Neutral Colors */
+  --sa-black: #1A1A1A;
+  --sa-white: #FFFFFF;
+  --sa-gray-50: #F9FAFB;
+  --sa-gray-100: #F3F4F6;
+  --sa-gray-200: #E5E7EB;
+  --sa-gray-300: #D1D5DB;
+  --sa-gray-400: #9CA3AF;
+  --sa-gray-500: #6B7280;
+  --sa-gray-600: #4B5563;
+  --sa-gray-700: #374151;
+  --sa-gray-800: #1F2937;
+  --sa-gray-900: #111827;
+
+  /* Semantic Colors */
+  --sa-success: #10B981;
+  --sa-success-light: #D1FAE5;
+  --sa-error: #EF4444;
+  --sa-error-light: #FEE2E2;
+  --sa-warning: #F59E0B;
+  --sa-warning-light: #FEF3C7;
+  --sa-info: #3B82F6;
+  --sa-info-light: #DBEAFE;
+
+  /* Typography - Font Families */
+  --sa-font-primary: 'Gilroy', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+  --sa-font-mono: 'SF Mono', 'Monaco', 'Courier New', monospace;
+
+  /* Typography - Font Sizes */
+  --sa-text-xs: 0.75rem;      /* 12px */
+  --sa-text-sm: 0.875rem;     /* 14px */
+  --sa-text-base: 1rem;       /* 16px */
+  --sa-text-lg: 1.125rem;     /* 18px */
+  --sa-text-xl: 1.25rem;      /* 20px */
+  --sa-text-2xl: 1.5rem;      /* 24px */
+  --sa-text-3xl: 1.875rem;    /* 30px */
+  --sa-text-4xl: 2.25rem;     /* 36px */
+  --sa-text-5xl: 3rem;        /* 48px */
+  --sa-text-6xl: 3.75rem;     /* 60px */
+
+  /* Typography - Font Weights */
+  --sa-weight-regular: 400;
+  --sa-weight-medium: 500;
+  --sa-weight-semibold: 600;
+  --sa-weight-bold: 700;
+
+  /* Typography - Line Heights */
+  --sa-leading-tight: 1.25;
+  --sa-leading-snug: 1.375;
+  --sa-leading-normal: 1.5;
+  --sa-leading-relaxed: 1.625;
+  --sa-leading-loose: 2;
+
+  /* Spacing Scale */
+  --sa-space-1: 0.25rem;   /* 4px */
+  --sa-space-2: 0.5rem;    /* 8px */
+  --sa-space-3: 0.75rem;   /* 12px */
+  --sa-space-4: 1rem;      /* 16px */
+  --sa-space-5: 1.25rem;   /* 20px */
+  --sa-space-6: 1.5rem;    /* 24px */
+  --sa-space-8: 2rem;      /* 32px */
+  --sa-space-10: 2.5rem;   /* 40px */
+  --sa-space-12: 3rem;     /* 48px */
+  --sa-space-16: 4rem;     /* 64px */
+  --sa-space-20: 5rem;     /* 80px */
+  --sa-space-24: 6rem;     /* 96px */
+
+  /* Border Radius */
+  --sa-radius-sm: 0.125rem;   /* 2px */
+  --sa-radius-base: 0.25rem;  /* 4px */
+  --sa-radius-md: 0.375rem;   /* 6px */
+  --sa-radius-lg: 0.5rem;     /* 8px */
+  --sa-radius-xl: 0.75rem;    /* 12px */
+  --sa-radius-2xl: 1rem;      /* 16px */
+  --sa-radius-3xl: 1.5rem;    /* 24px */
+  --sa-radius-full: 9999px;
+
+  /* Shadows */
+  --sa-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --sa-shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --sa-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --sa-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --sa-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --sa-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* Transitions */
+  --sa-transition-fast: 150ms ease-in-out;
+  --sa-transition-base: 250ms ease-in-out;
+  --sa-transition-slow: 350ms ease-in-out;
+
+  /* Z-Index Scale */
+  --sa-z-dropdown: 1000;
+  --sa-z-sticky: 1020;
+  --sa-z-fixed: 1030;
+  --sa-z-modal-backdrop: 1040;
+  --sa-z-modal: 1050;
+  --sa-z-popover: 1060;
+  --sa-z-tooltip: 1070;
+}
+
+/* ========================================
+   SUPER AGENT UTILITY CLASSES
+   ======================================== */
+
+/* Typography Utilities */
+.sa-text-primary { color: var(--sa-primary-dark); }
+.sa-text-primary-medium { color: var(--sa-primary-medium); }
+.sa-text-primary-light { color: var(--sa-primary-light); }
+.sa-text-accent { color: var(--sa-accent-yellow); }
+.sa-text-black { color: var(--sa-black); }
+.sa-text-white { color: var(--sa-white); }
+
+/* Background Utilities */
+.sa-bg-primary { background-color: var(--sa-primary-dark); }
+.sa-bg-primary-medium { background-color: var(--sa-primary-medium); }
+.sa-bg-primary-light { background-color: var(--sa-primary-light); }
+.sa-bg-accent { background-color: var(--sa-accent-yellow); }
+.sa-bg-black { background-color: var(--sa-black); }
+.sa-bg-white { background-color: var(--sa-white); }
+
+/* Button Base Styles */
+.sa-btn {
+  font-family: var(--sa-font-primary);
+  font-weight: var(--sa-weight-medium);
+  padding: var(--sa-space-3) var(--sa-space-6);
+  border-radius: var(--sa-radius-lg);
+  transition: all var(--sa-transition-base);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sa-space-2);
+  border: none;
+  text-decoration: none;
+}
+
+.sa-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--sa-shadow-md);
+}
+
+.sa-btn:active {
+  transform: translateY(0);
+}
+
+/* Button Variants */
+.sa-btn-primary {
+  background-color: var(--sa-primary-dark);
+  color: var(--sa-white);
+}
+
+.sa-btn-primary:hover {
+  background-color: #245650;
+}
+
+.sa-btn-accent {
+  background-color: var(--sa-accent-yellow);
+  color: var(--sa-black);
+}
+
+.sa-btn-accent:hover {
+  background-color: #c5e63d;
+}
+
+.sa-btn-outline {
+  background-color: transparent;
+  border: 2px solid var(--sa-primary-dark);
+  color: var(--sa-primary-dark);
+}
+
+.sa-btn-outline:hover {
+  background-color: var(--sa-primary-dark);
+  color: var(--sa-white);
+}
+
+/* Card Styles */
+.sa-card {
+  background-color: var(--sa-white);
+  border-radius: var(--sa-radius-xl);
+  box-shadow: var(--sa-shadow-base);
+  padding: var(--sa-space-6);
+  transition: box-shadow var(--sa-transition-base);
+}
+
+.sa-card:hover {
+  box-shadow: var(--sa-shadow-lg);
+}
+
+/* Container */
+.sa-container {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--sa-space-6);
+  padding-right: var(--sa-space-6);
+}
+
+/* Section Spacing */
+.sa-section {
+  padding-top: var(--sa-space-16);
+  padding-bottom: var(--sa-space-16);
+}
+
+/* Headings */
+.sa-heading-1 {
+  font-family: var(--sa-font-primary);
+  font-size: var(--sa-text-5xl);
+  font-weight: var(--sa-weight-semibold);
+  line-height: var(--sa-leading-tight);
+  color: var(--sa-black);
+}
+
+.sa-heading-2 {
+  font-family: var(--sa-font-primary);
+  font-size: var(--sa-text-4xl);
+  font-weight: var(--sa-weight-semibold);
+  line-height: var(--sa-leading-tight);
+  color: var(--sa-black);
+}
+
+.sa-heading-3 {
+  font-family: var(--sa-font-primary);
+  font-size: var(--sa-text-3xl);
+  font-weight: var(--sa-weight-semibold);
+  line-height: var(--sa-leading-snug);
+  color: var(--sa-black);
+}
+
+.sa-heading-4 {
+  font-family: var(--sa-font-primary);
+  font-size: var(--sa-text-2xl);
+  font-weight: var(--sa-weight-medium);
+  line-height: var(--sa-leading-snug);
+  color: var(--sa-black);
+}
+
+/* Body Text */
+.sa-body {
+  font-family: var(--sa-font-primary);
+  font-size: var(--sa-text-base);
+  font-weight: var(--sa-weight-regular);
+  line-height: var(--sa-leading-relaxed);
+  color: var(--sa-gray-700);
+}
+
+.sa-body-large {
+  font-size: var(--sa-text-lg);
+  line-height: var(--sa-leading-relaxed);
+}
+
+.sa-body-small {
+  font-size: var(--sa-text-sm);
+  line-height: var(--sa-leading-normal);
+}
+
+/* Input Styles */
+.sa-input {
+  font-family: var(--sa-font-primary);
+  font-size: var(--sa-text-base);
+  padding: var(--sa-space-3) var(--sa-space-4);
+  border: 2px solid var(--sa-gray-300);
+  border-radius: var(--sa-radius-lg);
+  background-color: var(--sa-white);
+  color: var(--sa-black);
+  transition: all var(--sa-transition-base);
+  width: 100%;
+}
+
+.sa-input:focus {
+  outline: none;
+  border-color: var(--sa-primary-dark);
+  box-shadow: 0 0 0 3px rgba(46, 108, 98, 0.1);
+}
+
+.sa-input::placeholder {
+  color: var(--sa-gray-400);
+}
+
+/* Badge */
+.sa-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sa-space-1) var(--sa-space-3);
+  border-radius: var(--sa-radius-full);
+  font-size: var(--sa-text-sm);
+  font-weight: var(--sa-weight-medium);
+  background-color: var(--sa-primary-light);
+  color: var(--sa-primary-dark);
+}
+
+/* Divider */
+.sa-divider {
+  border: none;
+  height: 1px;
+  background-color: var(--sa-gray-200);
+  margin: var(--sa-space-6) 0;
+}
+
+/* ========================================
+   END SUPER AGENT DESIGN SYSTEM
+   ======================================== */
 
 /* Custom range input styling for UA Spend slider */
 .range-input {
@@ -102,6 +422,8 @@
 body {
   font-family: 'SF Pro Display', sans-serif;
   background-color: #f6f6f7;
+}
+.body-margin-top {
   margin-top: 56px;
 }
 .rdrInputRanges {
