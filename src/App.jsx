@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import Landing from "./components/Landing";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./components/Home";
 import History from "./components/History";
@@ -64,11 +65,18 @@ import TranslatorPage from "./pages/GameDesignDocument/Translator/Translator.jsx
 import ConceptGenerator from "./pages/GameDesignDocument/conceptGenerator/ConceptGenerator.jsx";
 import IdeaPac from "./pages/IdeaPac/index.jsx";
 import SampleRLAgent from "./pages/Agents/SampleRLAgent.jsx";
+import SuperAgent from "./SuperAgent/index.jsx";
+import Library from "./SuperAgent/pages/Library.jsx";
+import Chat from "./SuperAgent/pages/Chat.jsx";
 
 
 function AppContent() {
   const userTokenData = localStorage.getItem("jwt");
   const dispatch = useDispatch();
+  const location = useLocation();
+
+  // Check if current route is super-agent page
+  const isOnSuperAgentPage = location.pathname.startsWith("/super-agent");
 
   const getStudioData = async () => {
     const parsedTokenData = JSON.parse(userTokenData);
@@ -121,9 +129,9 @@ function AppContent() {
   }, []);
 
   return (
-    <div className="body-margin-top bg-[#f6f6f7]">
+    <div className={isOnSuperAgentPage ? "" : "body-margin-top bg-[#f6f6f7]"}>
       <>
-          <Navbar />
+          {!isOnSuperAgentPage && <Navbar />}
           <Routes>
             <Route
               exact
@@ -370,6 +378,9 @@ function AppContent() {
             <Route path="/gdd/translator/:id" element={<PrivateRoute><TranslatorPage /></PrivateRoute>} />
             <Route path="/gdd/concept-generator" element={<PrivateRoute><ConceptGenerator /></PrivateRoute>} />
             <Route path="/agent" element={<><SampleRLAgent /></>} />
+            <Route path="/super-agent" element={<PrivateRoute><SuperAgent /></PrivateRoute>} />
+            <Route path="/super-agent/library" element={<PrivateRoute><Library /></PrivateRoute>} />
+            <Route path="/super-agent/chat" element={<PrivateRoute><Chat /></PrivateRoute>} />
             <Route
               path="*"
               element={<PageNotFound />}
