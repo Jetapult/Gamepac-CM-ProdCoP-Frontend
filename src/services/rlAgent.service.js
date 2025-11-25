@@ -1,6 +1,6 @@
-import api from '../api';
+import api from "../api";
 
-const API_PREFIX = '/v1/rl-agent';
+const API_PREFIX = "/v1/rl-agent";
 
 export const rlAgentAPI = {
   /**
@@ -11,18 +11,26 @@ export const rlAgentAPI = {
    */
   createConversation: async (userName, initialMessage) => {
     try {
-      const response = await api.post(`${API_PREFIX}/conversations`, {
-        userName,
-        ...(initialMessage && { initialMessage }),
-      });
+      const response = await api.post(
+        `${API_PREFIX}/conversations`,
+        {
+          userName,
+          ...(initialMessage && { initialMessage }),
+        },
+        {
+          timeout: 1800000, // 30 minutes
+        }
+      );
 
       if (response.data.success) {
         return response.data.data;
       } else {
-        throw new Error(response.data.message || 'Failed to create conversation');
+        throw new Error(
+          response.data.message || "Failed to create conversation"
+        );
       }
     } catch (error) {
-      console.error('Error creating conversation:', error);
+      console.error("Error creating conversation:", error);
       throw error;
     }
   },
@@ -37,19 +45,21 @@ export const rlAgentAPI = {
   listConversations: async (userName, limit = 20, offset = 0) => {
     try {
       const params = new URLSearchParams();
-      if (userName) params.append('userName', userName);
-      params.append('limit', limit.toString());
-      params.append('offset', offset.toString());
+      if (userName) params.append("userName", userName);
+      params.append("limit", limit.toString());
+      params.append("offset", offset.toString());
 
       const response = await api.get(`${API_PREFIX}/conversations?${params}`);
 
       if (response.data.success) {
         return response.data.data;
       } else {
-        throw new Error(response.data.message || 'Failed to list conversations');
+        throw new Error(
+          response.data.message || "Failed to list conversations"
+        );
       }
     } catch (error) {
-      console.error('Error listing conversations:', error);
+      console.error("Error listing conversations:", error);
       throw error;
     }
   },
@@ -61,15 +71,17 @@ export const rlAgentAPI = {
    */
   getConversation: async (conversationId) => {
     try {
-      const response = await api.get(`${API_PREFIX}/conversations/${conversationId}`);
+      const response = await api.get(
+        `${API_PREFIX}/conversations/${conversationId}`
+      );
 
       if (response.data.success) {
         return response.data.data;
       } else {
-        throw new Error(response.data.message || 'Failed to get conversation');
+        throw new Error(response.data.message || "Failed to get conversation");
       }
     } catch (error) {
-      console.error('Error getting conversation:', error);
+      console.error("Error getting conversation:", error);
       throw error;
     }
   },
@@ -84,16 +96,19 @@ export const rlAgentAPI = {
     try {
       const response = await api.post(
         `${API_PREFIX}/conversations/${conversationId}/messages`,
-        { message }
+        { message },
+        {
+          timeout: 1800000, // 30 minutes
+        }
       );
 
       if (response.data.success) {
         return response.data.data;
       } else {
-        throw new Error(response.data.message || 'Failed to send message');
+        throw new Error(response.data.message || "Failed to send message");
       }
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
       throw error;
     }
   },
@@ -119,10 +134,10 @@ export const rlAgentAPI = {
       if (response.data.success) {
         return response.data.data;
       } else {
-        throw new Error(response.data.message || 'Failed to provide feedback');
+        throw new Error(response.data.message || "Failed to provide feedback");
       }
     } catch (error) {
-      console.error('Error providing feedback:', error);
+      console.error("Error providing feedback:", error);
       throw error;
     }
   },
@@ -134,15 +149,17 @@ export const rlAgentAPI = {
    */
   getConversationFeedback: async (conversationId) => {
     try {
-      const response = await api.get(`${API_PREFIX}/conversations/${conversationId}/feedback`);
+      const response = await api.get(
+        `${API_PREFIX}/conversations/${conversationId}/feedback`
+      );
 
       if (response.data.success) {
         return response.data.data;
       } else {
-        throw new Error(response.data.message || 'Failed to get feedback');
+        throw new Error(response.data.message || "Failed to get feedback");
       }
     } catch (error) {
-      console.error('Error getting feedback:', error);
+      console.error("Error getting feedback:", error);
       throw error;
     }
   },
@@ -154,15 +171,19 @@ export const rlAgentAPI = {
    */
   deleteConversation: async (conversationId) => {
     try {
-      const response = await api.delete(`${API_PREFIX}/conversations/${conversationId}`);
+      const response = await api.delete(
+        `${API_PREFIX}/conversations/${conversationId}`
+      );
 
       if (response.data.success) {
         return response.data;
       } else {
-        throw new Error(response.data.message || 'Failed to delete conversation');
+        throw new Error(
+          response.data.message || "Failed to delete conversation"
+        );
       }
     } catch (error) {
-      console.error('Error deleting conversation:', error);
+      console.error("Error deleting conversation:", error);
       throw error;
     }
   },
