@@ -5,8 +5,8 @@ const ChatInput = ({
   placeholder = "Generate a professional sentiment analysis report",
 }) => {
   return (
-    <div className="bg-[#f6f6f6] border-t border-[#f6f6f6] p-3">
-      <div className="relative">
+    <div className="p-3">
+      <div className="bg-[#f6f6f6] border border-[#f6f6f6] rounded-2xl p-3 relative">
         <input
           type="text"
           placeholder={placeholder}

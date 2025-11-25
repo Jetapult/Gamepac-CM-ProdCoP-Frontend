@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, FileSpreadsheet } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  FileSpreadsheet,
+  Eye,
+  Code,
+  Edit3,
+} from "lucide-react";
 import gamepacLogo from "../../assets/super-agents/gamepac-logo.svg";
 import ChatInput from "./ChatInput";
 
@@ -17,35 +24,35 @@ const ConversationPanel = () => {
   const actions = [
     {
       id: 1,
-      icon: "file",
+      type: "reading",
       text: "Reading file",
       detail: "Mobile Review Spreadsheet.csv",
       status: "completed",
     },
     {
       id: 2,
-      icon: "terminal",
+      type: "executing",
       text: "Executing command",
       detail: "pip3 install pandas",
       status: "completed",
     },
     {
       id: 3,
-      icon: "edit",
+      type: "creating",
       text: "Creating file",
       detail: "sentiment_analysis_detailed.py",
       status: "completed",
     },
     {
       id: 4,
-      icon: "file",
+      type: "reading",
       text: "Reading file",
       detail: "Mobile Review Spreadsheet.csv",
       status: "completed",
     },
     {
       id: 5,
-      icon: "file",
+      type: "reading",
       text: "Reading file",
       detail: "Mobile Review Spreadsheet.csv",
       status: "in-progress",
@@ -160,7 +167,7 @@ const ConversationPanel = () => {
                       : ""
                   }`}
                 >
-                  <ActionIcon type={action.icon} status={action.status} />
+                  <ActionIcon type={action.type} status={action.status} />
                   <p
                     className="text-sm"
                     style={{
@@ -188,72 +195,24 @@ const ConversationPanel = () => {
 const ActionIcon = ({ type, status }) => {
   const getIcon = () => {
     switch (type) {
-      case "file":
-        return (
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <circle
-              cx="10"
-              cy="10"
-              r="8"
-              stroke={status === "completed" ? "#1f6744" : "#6d6d6d"}
-              strokeWidth="1.5"
-            />
-            {status === "completed" && (
-              <path
-                d="M7 10L9 12L13 8"
-                stroke="#1f6744"
-                strokeWidth="1.5"
-                fill="none"
-              />
-            )}
-          </svg>
-        );
-      case "terminal":
-        return (
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <circle
-              cx="10"
-              cy="10"
-              r="8"
-              stroke={status === "completed" ? "#1f6744" : "#6d6d6d"}
-              strokeWidth="1.5"
-            />
-            {status === "completed" && (
-              <path
-                d="M7 10L9 12L13 8"
-                stroke="#1f6744"
-                strokeWidth="1.5"
-                fill="none"
-              />
-            )}
-          </svg>
-        );
-      case "edit":
-        return (
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path
-              d="M14 6L8 12L6 14L8 12"
-              stroke={status === "completed" ? "#1f6744" : "#6d6d6d"}
-              strokeWidth="1.5"
-              fill="none"
-            />
-            <circle
-              cx="10"
-              cy="10"
-              r="8"
-              stroke={status === "completed" ? "#1f6744" : "#6d6d6d"}
-              strokeWidth="1.5"
-            />
-          </svg>
-        );
+      case "reading":
+        return Eye;
+      case "executing":
+        return Code;
+      case "creating":
+        return Edit3;
       default:
-        return null;
+        return Eye;
     }
   };
 
+  const Icon = getIcon();
+  const iconColor =
+    status === "completed" ? "text-[#1f6744]" : "text-[#6d6d6d]";
+
   return (
-    <div className="w-5 h-5 flex items-center justify-center shrink-0">
-      {getIcon()}
+    <div className="w-5 h-5 flex items-center justify-center shrink-0 rounded bg-[#F1FCF6]">
+      <Icon size={12} className={iconColor} strokeWidth={2} />
     </div>
   );
 };
