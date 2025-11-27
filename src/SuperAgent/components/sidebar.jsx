@@ -14,33 +14,77 @@ import sidebarCloseIcon from "../../assets/super-agents/side-drawer-close-icon.s
 import newChatIcon from "../../assets/super-agents/add-square.svg";
 import libraryIcon from "../../assets/super-agents/library-icon.svg";
 import MegaphoneIcon from "../../assets/super-agents/megaphone-icon.svg";
+import ActiveMegaphoneIcon from "../../assets/super-agents/megaphone-active.svg";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { setIsSiderbarOpen } from "../../store/reducer/superAgent";
+
+const actionButtons = [
+  {
+    icon: (
+      <img src={MegaphoneIcon} alt="Megaphone Icon" className="size-[24px]" />
+    ),
+    activeIcon: (
+      <img
+        src={ActiveMegaphoneIcon}
+        alt="Active Megaphone Icon"
+        className="size-[24px]"
+      />
+    ),
+    label: "CommPac",
+    slug: "commpac",
+  },
+  {
+    icon: <Lightbulb weight={"Linear"} className="size-[24px]" />,
+    label: "IdeaPac",
+    slug: "ideapac",
+  },
+  {
+    icon: <Gamepad weight={"Linear"} className="size-[24px]" />,
+    label: "DevPac",
+    slug: "devpac",
+  },
+  {
+    icon: <Notebook2 weight={"Linear"} className="size-[24px]" />,
+    label: "StoryPac",
+    slug: "storypac",
+  },
+  {
+    icon: <GraphUp weight={"Linear"} className="w-6 h-6" />,
+    label: "ScalePac",
+    slug: "scalepac",
+  },
+];
 
 const Sidebar = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const dispatch = useDispatch();
+  const isSiderbarOpen = useSelector(
+    (state) => state.superAgent.isSiderbarOpen
+  );
   const [isLogoHovered, setIsLogoHovered] = useState(false);
+  const [activeAction, setActiveAction] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   const toggleSidebar = () => {
-    setIsExpanded(!isExpanded);
+    dispatch(setIsSiderbarOpen(!isSiderbarOpen));
   };
 
   return (
     <div
-      className={`fixed left-0 top-0 h-full bg-white border-r border-[#f6f6f6] flex flex-col z-50 transition-all duration-300 ${
-        isExpanded ? "w-[290px]" : "w-[64px]"
+      className={`fixed left-0 top-0 lg:sticky h-screen bg-white border-r border-[#f6f6f6] flex flex-col z-50 transition-all duration-300 ${
+        isSiderbarOpen ? "w-[290px]" : "w-[64px]"
       }`}
     >
       <div
         className={`flex flex-col h-full py-5 overflow-hidden ${
-          isExpanded ? "px-4" : "items-center"
+          isSiderbarOpen ? "px-4" : "items-center"
         }`}
       >
         {/* Header with Logo and Toggle */}
         <div
           className={`flex items-center mb-8 shrink-0 ${
-            isExpanded ? "justify-between w-full" : ""
+            isSiderbarOpen ? "justify-between w-full" : ""
           }`}
           onMouseLeave={() => setIsLogoHovered(false)}
         >
@@ -48,11 +92,11 @@ const Sidebar = () => {
             className="flex items-center justify-center gap-2 overflow-hidden"
             onMouseEnter={() => setIsLogoHovered(true)}
           >
-            {isLogoHovered && !isExpanded ? (
+            {isLogoHovered && !isSiderbarOpen ? (
               <div className="cursor-pointer size-[30px] m-1 text-[#6d6d6d] flex items-center justify-center bg-[#F1FCF6] rounded-[5px]">
                 <Siderbar
                   color="#6d6d6d"
-                  onClick={() => setIsExpanded(true)}
+                  onClick={() => dispatch(setIsSiderbarOpen(true))}
                   className="cursor-pointer size-[24px]"
                 />
               </div>
@@ -61,10 +105,10 @@ const Sidebar = () => {
                 src={gamepacLogo}
                 alt="GamePac Logo"
                 className="size-[38px] shrink-0 cursor-pointer"
-                onClick={() => !isExpanded && setIsExpanded(true)}
+                onClick={() => !isSiderbarOpen && dispatch(setIsSiderbarOpen(true))}
               />
             )}
-            {isExpanded && (
+            {isSiderbarOpen && (
               <span
                 className="font-urbanist font-medium text-[16px] text-[#141414] whitespace-nowrap cursor-pointer"
                 onClick={() => navigate("/super-agent")}
@@ -73,7 +117,7 @@ const Sidebar = () => {
               </span>
             )}
           </div>
-          {isExpanded && (
+          {isSiderbarOpen && (
             <button
               onClick={toggleSidebar}
               className="size-[24px] flex items-center justify-center text-[#6d6d6d] hover:text-[#1f6744] transition-colors shrink-0 cursor-pointer"
@@ -89,7 +133,7 @@ const Sidebar = () => {
         </div>
 
         {/* New Chat Button */}
-        <div className={`mb-7 shrink-0 ${isExpanded ? "w-full" : ""}`}>
+        <div className={`mb-7 shrink-0 ${isSiderbarOpen ? "w-full" : ""}`}>
           <button
             className="flex items-center gap-2 text-[#1f6744] cursor-pointer"
             onClick={() => navigate("/super-agent")}
@@ -99,7 +143,7 @@ const Sidebar = () => {
               alt="New Chat Icon"
               className="size-[32px]"
             />
-            {isExpanded && (
+            {isSiderbarOpen && (
               <span className="font-urbanist font-medium text-[16px] whitespace-nowrap">
                 New Chat
               </span>
@@ -108,41 +152,21 @@ const Sidebar = () => {
         </div>
 
         {/* Action Buttons Grid - Only when expanded */}
-        {isExpanded && (
+        {isSiderbarOpen && (
           <div className="mb-10 shrink-0 w-full">
-            <div className="flex items-center gap-4 mb-4">
-              <ActionButton
-                icon={
-                  <img
-                    src={MegaphoneIcon}
-                    alt="Megaphone Icon"
-                    className="w-6 h-6"
-                  />
-                }
-                label="CommPac"
-              />
-              <ActionButton
-                icon={
-                  <Lightbulb weight={"Linear"} className="w-6 h-6 #6D6D6D" />
-                }
-                label="IdeaPac"
-              />
-              <ActionButton
-                icon={<Gamepad weight={"Linear"} className="w-6 h-6 #6D6D6D" />}
-                label="DevPac"
-              />
-            </div>
-            <div className="flex items-center gap-4">
-              <ActionButton
-                icon={
-                  <Notebook2 weight={"Linear"} className="w-6 h-6 #6D6D6D" />
-                }
-                label="StoryPac"
-              />
-              <ActionButton
-                icon={<GraphUp weight={"Linear"} className="w-6 h-6 #6D6D6D" />}
-                label="ScalePac"
-              />
+            <div className="grid grid-cols-3 gap-4">
+              {actionButtons.map((button) => (
+                <ActionButton
+                  key={button.label}
+                  icon={button.icon}
+                  activeIcon={
+                    button.activeIcon ? button.activeIcon : button.icon
+                  }
+                  label={button.label}
+                  onClick={() => setActiveAction(button.slug)}
+                  selected={activeAction === button.slug}
+                />
+              ))}
             </div>
           </div>
         )}
@@ -156,14 +180,14 @@ const Sidebar = () => {
             onClick={() => navigate("/super-agent/library")}
           >
             <img src={libraryIcon} alt="Library Icon" className="w-6 h-6" />
-            {isExpanded && (
+            {isSiderbarOpen && (
               <span className="font-urbanist text-sm">Library</span>
             )}
           </button>
         </div>
 
         {/* Task List - Only when expanded */}
-        {isExpanded && (
+        {isSiderbarOpen && (
           <div className="flex-1 overflow-y-auto w-full">
             <div className="flex items-center gap-[5px] mb-2">
               <span className="font-urbanist text-[13px] text-[#b0b0b0]">
@@ -194,23 +218,23 @@ const Sidebar = () => {
         )}
 
         {/* Spacer for collapsed state */}
-        {!isExpanded && <div className="flex-1" />}
+        {!isSiderbarOpen && <div className="flex-1" />}
 
         {/* Account Section at Bottom */}
         <div
           className={`shrink-0 mt-auto ${
-            isExpanded ? "w-full border-t border-[#f6f6f6] pt-4" : "pt-4"
+            isSiderbarOpen ? "w-full border-t border-[#f6f6f6] pt-4" : "pt-4"
           }`}
         >
           <button
             className={`flex items-center gap-2 text-[#141414] hover:opacity-80 transition-opacity ${
-              isExpanded ? "" : "justify-center"
+              isSiderbarOpen ? "" : "justify-center"
             }`}
           >
             <div className="w-6 h-6 flex items-center justify-center shrink-0">
               <UserRounded weight={"Linear"} className="w-6 h-6 #1C274C" />
             </div>
-            {isExpanded && (
+            {isSiderbarOpen && (
               <span className="font-urbanist font-medium text-[16px] whitespace-nowrap">
                 Account
               </span>
@@ -223,13 +247,18 @@ const Sidebar = () => {
 };
 
 // Action Button Component
-const ActionButton = ({ icon, label }) => {
+const ActionButton = ({ icon, activeIcon, label, onClick, selected }) => {
   return (
-    <button className="bg-white border border-[#e6e6e6] rounded-[6px] px-1.5 py-2 flex flex-col items-center justify-between h-[60px] w-[79px] hover:border-[#1f6744] transition-colors">
-      <div className="text-[#6d6d6d]">{icon}</div>
-      <span className="font-urbanist text-[11px] text-[#6d6d6d] text-center">
-        {label}
-      </span>
+    <button
+      className={`bg-white border border-[#e6e6e6] rounded-[6px] px-1.5 py-2 flex flex-col items-center justify-between h-[60px] w-[79px] transition-colors ${
+        selected
+          ? "border-[#1F6744] bg-[#F1FCF6] text-[#1F6744]"
+          : "hover:bg-[#F6F6F6] text-[#6d6d6d]"
+      }`}
+      onClick={onClick}
+    >
+      <div className="">{selected ? activeIcon : icon}</div>
+      <span className="font-urbanist text-[11px] text-center">{label}</span>
     </button>
   );
 };
