@@ -1,42 +1,33 @@
 import React from "react";
-import { Share2, MoreHorizontal } from "lucide-react";
+import { Pen, MenuDots, ForwardRight } from "@solar-icons/react";
 
 const ChatHeader = ({ chatTitle, onEditClick }) => {
   return (
-    <div className="h-16 border-b border-[#f6f6f6] flex items-center justify-between px-5 w-full">
+    <div className="border-b border-[#f6f6f6] flex items-center justify-between pl-[19px] pr-5 py-[15px] w-full">
       <div className="flex items-center gap-2">
         <h1
           className="text-lg font-semibold text-[#141414]"
-          style={{ fontFamily: "Urbanist, sans-serif" }}
+          style={{ fontFamily: "Gilroy-SemiBold, sans-serif" }}
         >
           {chatTitle}
         </h1>
         <button
-          className="text-[#6d6d6d] hover:text-[#1f6744]"
+          className="text-[#6d6d6d] hover:text-[#1f6744] transition-colors"
           onClick={onEditClick}
         >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-          </svg>
+          <Pen size={24} />
         </button>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-[17px]">
         <button className="w-8 h-8 flex items-center justify-center border border-[#e6e6e6] rounded-lg hover:border-[#1f6744] transition-colors">
-          <MoreHorizontal size={20} className="text-[#6d6d6d]" />
+          <MenuDots size={20} className="text-[#6d6d6d]" />
         </button>
-        <button className="h-8 px-3 flex items-center gap-2 border border-[#e6e6e6] rounded-lg hover:border-[#1f6744] transition-colors">
-          <Share2 size={16} className="text-[#6d6d6d]" />
+        <button className="h-8 px-2 flex items-center gap-[6px] border border-[#e6e6e6] rounded-lg hover:border-[#1f6744] transition-colors min-w-[110px] justify-center">
+          <ForwardRight size={20} className="text-[#6d6d6d]" />
           <span
             className="text-base text-[#141414]"
-            style={{ fontFamily: "Urbanist, sans-serif" }}
+            style={{ fontFamily: "Gilroy-Medium, sans-serif" }}
           >
             Share
           </span>
