@@ -70,7 +70,7 @@ const SuperAgent = () => {
   };
 
   return (
-    <div className="relative flex  min-h-screen bg-white bg-no-repeat 2xl:bg-cover 2xl:bg-center bg-[url('/src/assets/super-agents/super-agent-bg.svg')]">
+    <div className="relative flex min-h-screen bg-white bg-no-repeat 2xl:bg-cover 2xl:bg-center bg-[url('/src/assets/super-agents/super-agent-bg.svg')]">
       {/* <Header /> */}
       <Sidebar />
       <div className="absolute left-0 bottom-0 w-full h-[180px] z-10">

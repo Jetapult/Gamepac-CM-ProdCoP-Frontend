@@ -96,7 +96,7 @@ const Sidebar = () => {
               <div className="cursor-pointer size-[30px] m-1 text-[#6d6d6d] flex items-center justify-center bg-[#F1FCF6] rounded-[5px]">
                 <Siderbar
                   color="#6d6d6d"
-                  onClick={() => dispatch(setIsSiderbarOpen(true))}
+                  onClick={toggleSidebar}
                   className="cursor-pointer size-[24px]"
                 />
               </div>
@@ -105,7 +105,7 @@ const Sidebar = () => {
                 src={gamepacLogo}
                 alt="GamePac Logo"
                 className="size-[38px] shrink-0 cursor-pointer"
-                onClick={() => !isSiderbarOpen && dispatch(setIsSiderbarOpen(true))}
+                onClick={toggleSidebar}
               />
             )}
             {isSiderbarOpen && (
@@ -136,7 +136,7 @@ const Sidebar = () => {
         <div className={`mb-7 shrink-0 ${isSiderbarOpen ? "w-full" : ""}`}>
           <button
             className="flex items-center gap-2 text-[#1f6744] cursor-pointer"
-            onClick={() => navigate("/super-agent")}
+            onClick={toggleSidebar}
           >
             <img
               src={newChatIcon}
