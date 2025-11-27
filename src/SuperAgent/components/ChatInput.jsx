@@ -30,7 +30,7 @@ const ChatInput = ({ handleStartChat }) => {
   }, [showAttachmentDropdown]);
 
   return (
-    <div className="w-full bg-[#f6f6f6] border border-[#f6f6f6] rounded-2xl p-2 px-4 pt-3 mb-5 relative max-h-[190px]">
+    <div className="w-full bg-[#f6f6f6] border border-[#f6f6f6] rounded-2xl p-2 px-4 pt-3 relative max-h-[190px]">
       <div className="flex items-center justify-between mb-1">
         <textarea
           value={inputValue}

@@ -92,7 +92,9 @@ const ConversationPanel = () => {
       </div>
 
       {/* Input Area */}
-      <ChatInput />
+      <div className="px-4 pb-4">
+        <ChatInput />
+      </div>
     </div>
   );
 };
