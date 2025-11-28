@@ -1,0 +1,137 @@
+import React, { useState } from "react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  Code,
+  Edit3,
+  CornerDownLeft,
+} from "lucide-react";
+
+const TaskMessage = ({ task, isLatest = false, onSendMessage }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  return (
+    <div className="max-w-[551px]">
+      {/* Task Header */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-3 mb-2 group"
+      >
+        <div className="w-5 h-5 flex items-center justify-center">
+          {isExpanded ? (
+            <ChevronUp size={16} className="text-[#6d6d6d]" />
+          ) : (
+            <ChevronDown size={16} className="text-[#6d6d6d]" />
+          )}
+        </div>
+        <span
+          className="text-base font-medium text-black group-hover:text-[#1f6744]"
+          style={{ fontFamily: "Urbanist, sans-serif" }}
+        >
+          {task.title}
+        </span>
+      </button>
+
+      {/* Task Description */}
+      {task.description && (
+        <p
+          className="text-sm text-[#b0b0b0] mb-3 ml-8"
+          style={{ fontFamily: "Urbanist, sans-serif", lineHeight: "21px" }}
+        >
+          {task.description}
+        </p>
+      )}
+
+      {/* Actions List */}
+      {isExpanded && task.actions && task.actions.length > 0 && (
+        <div className="border border-[#f6f6f6] rounded-lg ml-8">
+          {task.actions.map((action, index) => (
+            <div
+              key={action.id}
+              className={`flex items-center gap-2 px-3 py-2.5 ${
+                index !== task.actions.length - 1
+                  ? "border-b border-[#f6f6f6]"
+                  : ""
+              }`}
+            >
+              <ActionIcon type={action.type} status={action.status} />
+              <p
+                className="text-sm"
+                style={{
+                  fontFamily: "Urbanist, sans-serif",
+                  lineHeight: "21px",
+                }}
+              >
+                <span className="text-[#141414]">{action.text}</span>{" "}
+                <span className="text-[#b0b0b0]">{action.detail}</span>
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Related Actions - Only show for latest message */}
+      {isLatest && task.relatedActions && task.relatedActions.length > 0 && (
+        <div className="flex flex-col w-full mt-4">
+          <p
+            className="text-[18px] font-semibold text-[#141414] leading-[32px]"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            Related
+          </p>
+          <div className="flex flex-col">
+            {task.relatedActions.map((action, index) => (
+              <button
+                key={index}
+                onClick={() => onSendMessage && onSendMessage(action)}
+                className="flex items-center gap-[10px] px-2 py-[10px] border-b border-[#f6f6f6] hover:bg-[#f6f6f6] transition-colors rounded-[8px] cursor-pointer -mx-2"
+              >
+                <div className="rotate-180">
+                  <CornerDownLeft size={20} color="#141414" />
+                </div>
+                <span
+                  className="text-base font-medium text-[#141414]"
+                  style={{
+                    fontFamily: "Urbanist, sans-serif",
+                    lineHeight: "32px",
+                  }}
+                >
+                  {action}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Action Icon Component
+const ActionIcon = ({ type, status }) => {
+  const getIcon = () => {
+    switch (type) {
+      case "reading":
+        return Eye;
+      case "executing":
+        return Code;
+      case "creating":
+        return Edit3;
+      default:
+        return Eye;
+    }
+  };
+
+  const Icon = getIcon();
+  const iconColor =
+    status === "completed" ? "text-[#1f6744]" : "text-[#6d6d6d]";
+
+  return (
+    <div className="w-5 h-5 flex items-center justify-center shrink-0 rounded bg-[#F1FCF6]">
+      <Icon size={12} className={iconColor} strokeWidth={2} />
+    </div>
+  );
+};
+
+export default TaskMessage;
