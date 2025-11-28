@@ -380,7 +380,8 @@ function AppContent() {
             <Route path="/agent" element={<><SampleRLAgent /></>} />
             <Route path="/super-agent" element={<PrivateRoute><SuperAgent /></PrivateRoute>} />
             <Route path="/super-agent/library" element={<PrivateRoute><Library /></PrivateRoute>} />
-            <Route path="/super-agent/chat" element={<PrivateRoute><Chat /></PrivateRoute>} />
+            <Route path="/super-agent/chat/:slug" element={<PrivateRoute><Chat /></PrivateRoute>} />
+            <Route path="/super-agent/:slug" element={<PrivateRoute><SuperAgent /></PrivateRoute>} />
             <Route
               path="*"
               element={<PageNotFound />}

@@ -1,26 +1,25 @@
 import React from "react";
-import FeedCard from "./FeedCard";
-import { Notebook2, SmileCircle, Refresh } from "@solar-icons/react";
+import TemplateCard from "./TemplateCard";
+import { Notebook2, SmileCircle } from "@solar-icons/react";
+import { useDispatch, useSelector } from "react-redux";
+import { setSelectedTemplate } from "../../store/reducer/superAgent";
 
 const placeholderImages = {
   marketOpportunity:
-    "https://via.placeholder.com/244x126/e0e0e0/757575?text=Market+Analysis",
-  narrative: "https://via.placeholder.com/244x126/e0e0e0/757575?text=Narrative",
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop&q=80",
+  narrative:
+    "https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?w=600&h=400&fit=crop&q=80",
   artLevel:
-    "https://via.placeholder.com/244x126/e0e0e0/757575?text=Art+%26+Level",
-  community: "https://via.placeholder.com/244x126/e0e0e0/757575?text=Community",
+    "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&h=400&fit=crop&q=80",
+  community:
+    "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&h=400&fit=crop&q=80",
 };
 
 const TemplateSection = ({ activeFilter, setActiveFilter }) => {
-  const filters = [
-    "Game Director Report",
-    "ComPac",
-    "ScalePac",
-    "LiveOps",
-    "UA Playbook",
-    "Financial Reporting",
-  ];
-
+  const dispatch = useDispatch();
+  const isSiderbarOpen = useSelector(
+    (state) => state.superAgent.isSiderbarOpen
+  );
   const useCases = [
     {
       id: 1,
@@ -60,45 +59,39 @@ const TemplateSection = ({ activeFilter, setActiveFilter }) => {
     },
   ];
   return (
-    <div className="mt-6 w-full max-w-[1300px] mx-auto z-20">
-      {/* Filters Section */}
-      <div className="flex gap-3 flex-wrap items-center justify-center mb-6">
-        {/* Recommended Filter with Refresh Icon */}
-        <button
-          onClick={() => setActiveFilter("recommended")}
-          className={`flex items-center gap-2.5 px-2.5 py-1 rounded-[10px] transition-all ${
-            activeFilter === "recommended"
-              ? "bg-[#1f6744] text-white"
-              : "bg-[#f1f1f1] text-[#a6a6a6] border border-[#dfdfdf]"
-          }`}
-          style={{ fontFamily: "Urbanist, sans-serif", fontSize: "16px" }}
-        >
-          <span>Recommended</span>
-          <div className="h-6 w-px bg-white/30" />
-          <Refresh weight={"Linear"} size={20} />
-        </button>
-
-        {/* Other Filters */}
-        {filters.map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setActiveFilter(filter)}
-            className={`px-2.5 py-1 rounded-[10px] transition-all ${
-              activeFilter === filter
-                ? "bg-[#1f6744] text-white"
-                : "bg-[#f1f1f1] text-[#a6a6a6] border border-[#dfdfdf]"
-            }`}
-            style={{ fontFamily: "Urbanist, sans-serif", fontSize: "16px" }}
-          >
-            {filter}
-          </button>
-        ))}
+    <div
+      className={`mt-4 w-full mx-auto z-20 ${
+        isSiderbarOpen ? "max-w-[1000px] 2xl:max-w-[1180px]" : "max-w-[1180px]"
+      }`}
+    >
+      <div className="flex items-center justify-center">
+        <hr className="w-[128px]" />
+        <h2 className="text-[24px] font-semibold font-urbanist text-lg sa-text-primary text-center my-6 mx-4">
+          {" "}
+          Sample Templates
+        </h2>
+        <hr className="w-[128px]" />
       </div>
-
-      {/* Use Cases Grid */}
-      <div className="grid grid-cols-4 gap-5">
+      <div
+        className={`grid ${
+          isSiderbarOpen ? "grid-cols-3" : "grid-cols-4"
+        } gap-5`}
+      >
         {useCases.map((useCase) => (
-          <FeedCard key={useCase.id} {...useCase} />
+          <TemplateCard
+            key={useCase.id}
+            {...useCase}
+            onClick={() =>
+              dispatch(
+                setSelectedTemplate({
+                  id: useCase.id,
+                  title: useCase.title,
+                  description: useCase.description,
+                  image: useCase.image,
+                })
+              )
+            }
+          />
         ))}
       </div>
     </div>

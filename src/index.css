@@ -27,6 +27,7 @@
   /* Neutral Colors */
   --sa-black: #1A1A1A;
   --sa-white: #FFFFFF;
+  --sa-gray: #f6f6f6;
   --sa-gray-50: #F9FAFB;
   --sa-gray-100: #F3F4F6;
   --sa-gray-200: #E5E7EB;
@@ -63,6 +64,9 @@
   --sa-text-4xl: 2.25rem;     /* 36px */
   --sa-text-5xl: 3rem;        /* 48px */
   --sa-text-6xl: 3.75rem;     /* 60px */
+
+  /* Typography - color */
+  --sa-text-primary: #141414;
 
   /* Typography - Font Weights */
   --sa-weight-regular: 400;
@@ -129,7 +133,7 @@
    ======================================== */
 
 /* Typography Utilities */
-.sa-text-primary { color: var(--sa-primary-dark); }
+.sa-text-primary { color: var(--sa-text-primary); }
 .sa-text-primary-medium { color: var(--sa-primary-medium); }
 .sa-text-primary-light { color: var(--sa-primary-light); }
 .sa-text-accent { color: var(--sa-accent-yellow); }
@@ -143,7 +147,7 @@
 .sa-bg-accent { background-color: var(--sa-accent-yellow); }
 .sa-bg-black { background-color: var(--sa-black); }
 .sa-bg-white { background-color: var(--sa-white); }
-
+.sa-bg-gray { background-color: var(--sa-gray); }
 /* Button Base Styles */
 .sa-btn {
   font-family: var(--sa-font-primary);

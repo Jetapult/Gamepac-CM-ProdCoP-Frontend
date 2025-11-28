@@ -1,8 +1,8 @@
 import React from "react";
 
-const FeedCard = ({ icon, title, description, image, iconBg }) => {
+const TemplateCard = ({ icon, title, description, image, iconBg, onClick }) => {
   return (
-    <div className="bg-[#f1f1f1] border border-[#e6e6e6] rounded-[12px] hover:shadow-md transition-shadow cursor-pointer">
+    <div className="bg-[#f1f1f1] border border-[#e6e6e6] rounded-[12px] hover:shadow-md transition-shadow cursor-pointer" onClick={onClick}>
       <div className="p-4">
         {/* Icon */}
         <div className="mb-3.5 inline-flex">
@@ -15,7 +15,7 @@ const FeedCard = ({ icon, title, description, image, iconBg }) => {
         </div>
 
         {/* Title and Description */}
-        <div className="mb-3.5">
+        <div className="mb-3.5 min-h-[100px] max-h-[100px]">
           <h3
             className="text-[14px] text-[#575757] mb-2"
             style={{
@@ -41,7 +41,7 @@ const FeedCard = ({ icon, title, description, image, iconBg }) => {
           <img
             src={image}
             alt={title}
-            className="w-full h-[126px] object-cover"
+            className="w-full h-[126px] object-cover rounded-[12px]"
           />
         </div>
       </div>
@@ -49,4 +49,4 @@ const FeedCard = ({ icon, title, description, image, iconBg }) => {
   );
 };
 
-export default FeedCard;
+export default TemplateCard;

@@ -1,23 +1,33 @@
 import React, { useState } from "react";
 import Sidebar from "../components/sidebar";
+import LibraryCard from "../components/LibraryCard";
 import {
   Notebook2,
+  GraphUp,
   SmileCircle,
-  Refresh
+  Lightbulb,
+  Refresh,
+  Book2,
 } from "@solar-icons/react";
-import FeedCard from "../components/FeedCard";
+import { useSelector } from "react-redux";
 
 // Placeholder images - these should be replaced with actual assets
 const placeholderImages = {
-  marketOpportunity: "https://via.placeholder.com/244x126/e0e0e0/757575?text=Market+Analysis",
-  narrative: "https://via.placeholder.com/244x126/e0e0e0/757575?text=Narrative",
-  artLevel: "https://via.placeholder.com/244x126/e0e0e0/757575?text=Art+%26+Level",
-  community: "https://via.placeholder.com/244x126/e0e0e0/757575?text=Community",
-  rapidArt: "https://via.placeholder.com/244x126/e0e0e0/757575?text=Rapid+Art"
+  report1:
+    "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop",
+  report2:
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop",
+  analytics:
+    "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop",
+  financial:
+    "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&h=400&fit=crop",
 };
 
 const Library = () => {
   const [activeFilter, setActiveFilter] = useState("recommended");
+  const isSiderbarOpen = useSelector(
+    (state) => state.superAgent.isSiderbarOpen
+  );
 
   const filters = [
     "Game Director Report",
@@ -25,142 +35,193 @@ const Library = () => {
     "ScalePac",
     "LiveOps",
     "UA Playbook",
-    "Financial Reporting"
+    "Financial Reporting",
   ];
 
-  const useCases = [
+  const libraryItems = [
     {
       id: 1,
-      icon: <Notebook2 weight={"Linear"} className="size-[16px] #6D6D6D" />,
-      title: "Market Opportunity Finder",
-      description: "Turn market signals into clear, high-signal opportunity cards. IdeaPac synthesizes competitor moves, emerging trends, and genre gaps into concise, decision-ready concept seeds.",
-      image: placeholderImages.marketOpportunity,
-      iconBg: "#1f6744"
+      image: placeholderImages.report1,
+      icon: (
+        <Notebook2 weight="Linear" className="size-[24px] text-[#f6f6f6]" />
+      ),
+      duration: "2 mins",
+      authorName: "Arjun Mehta",
+      authorRole: "Game Director",
+      date: "Sep 12, 2025",
+      title:
+        "Game Director Report for 10-11-25 Retention dropped by X%, Spend Increased from last week.",
+      summary:
+        "This Game Director Report analyzes key shifts observed on 10–11–25. Retention dropped by X%, signaling potential friction in early user flow.",
     },
     {
       id: 2,
-      icon: <Notebook2 weight={"Linear"} className="size-[16px] #6D6D6D" />,
-      title: "Concept Narrative Companion",
-      description: "Generate fast, expressive story hooks and emotional beats that bring your concepts to life. Perfect for defining tone, player motivation, and early experience arcs.",
-      image: placeholderImages.narrative,
-      iconBg: "#1f6744"
+      image: placeholderImages.report2,
+      icon: (
+        <SmileCircle weight="Linear" className="size-[24px] text-[#f6f6f6]" />
+      ),
+      duration: "5 mins",
+      authorName: "Deku",
+      authorRole: "Game Director",
+      date: "Sep 12, 2025",
+      title:
+        "Critical bugs down by 18%, UI issues up by 22%.User sentiment stable but trending negative.",
+      summary:
+        "This report synthesizes app-store reviews into actionable insights for 10–11–25. Most users highlighted menu freezes, button misfires, and purchase flow delays.",
     },
     {
       id: 3,
-      icon: <SmileCircle weight={"Linear"} className="size-[16px] #6D6D6D" />,
-      title: "Art & Level Generator",
-      description: "From concept to playable in hours—not weeks. DevPac produces concept art, levels, and lightweight demos that clarify direction and speed up decision-making.",
-      image: placeholderImages.artLevel,
-      iconBg: "#1f6744"
+      image: placeholderImages.analytics,
+      icon: (
+        <Lightbulb weight="Linear" className="size-[24px] text-[#f6f6f6]" />
+      ),
+      duration: "5 mins",
+      authorName: "Deku",
+      authorRole: "Game Director",
+      date: "Sep 12, 2025",
+      title:
+        "Download intent increased to 78%. Visual clarity issues surfaced across two scenes.",
+      summary:
+        "This breakdown captures how users reacted to key creative elements. Download intent was strong overall, but pacing issues and visual overload reduced clarity.",
     },
     {
       id: 4,
-      icon: <SmileCircle weight={"Linear"} className="size-[16px] #6D6D6D" />,
-      title: "Community Communications Suite",
-      description: "Draft release notes, community updates, FAQs, and internal summaries—all aligned to your prototype or feature test.",
-      image: placeholderImages.community,
-      iconBg: "#1f6744"
+      image: placeholderImages.financial,
+      icon: <GraphUp weight="Linear" className="size-[24px] text-[#f6f6f6]" />,
+      duration: "5 mins",
+      authorName: "Deku",
+      authorRole: "Game Director",
+      date: "Sep 12, 2025",
+      title:
+        "CPI increased by 14%, ROAS improved by 6%.Two campaigns flagged for optimization.",
+      summary:
+        "This report synthesizes financial and operational performance into a clear investor-ready format. MRR rose by 9% week-over-week, while CAC increased by 6%, driven by seasonal ad volatility.",
     },
     {
       id: 5,
-      icon: <Notebook2 weight={"Linear"} className="size-[16px] #6D6D6D" />,
-      title: "Opportunity Analysis Tool",
-      description: "Identify key opportunities by analyzing market trends. IdeaPac delivers actionable insights by synthesizing competitor strategies and identifying untapped niches.",
-      image: placeholderImages.marketOpportunity,
-      iconBg: "#1f6744"
+      image: placeholderImages.financial,
+      icon: <Book2 weight="Linear" className="size-[24px] text-[#f6f6f6]" />,
+      duration: "5 mins",
+      authorName: "Deku",
+      authorRole: "Game Director",
+      date: "Sep 12, 2025",
+      title:
+        "Revenue up, but user acquisition costs trending higher. Team efficiencies improved across two key functions.",
+      summary:
+        "This report synthesizes financial and operational performance into a clear investor-ready format. MRR rose by 9% week-over-week, while CAC increased by 6%, driven by seasonal ad volatility.",
     },
     {
       id: 6,
-      icon: <Notebook2 weight={"Linear"} className="size-[16px] #6D6D6D" />,
-      title: "Narrative Design Assistant",
-      description: "Quickly generate compelling story elements and emotional cues. Perfect for defining tone, player motivation, and early game experiences.",
-      image: placeholderImages.narrative,
-      iconBg: "#1f6744"
+      image: placeholderImages.financial,
+      icon: <GraphUp weight="Linear" className="size-[24px] text-[#f6f6f6]" />,
+      duration: "5 mins",
+      authorName: "Deku",
+      authorRole: "Game Director",
+      date: "Sep 12, 2025",
+      title:
+        "CPI increased by 14%, ROAS improved by 6%.Two campaigns flagged for optimization.",
+      summary:
+        "This report synthesizes financial and operational performance into a clear investor-ready format. MRR rose by 9% week-over-week, while CAC increased by 6%, driven by seasonal ad volatility.",
     },
     {
       id: 7,
-      icon: <SmileCircle weight={"Linear"} className="size-[16px] #6D6D6D" />,
-      title: "Rapid Art & Level Prototyper",
-      description: "Go from concept to playable prototype in hours. DevPac generates concept art, levels, and demos, accelerating decision-making.",
-      image: placeholderImages.rapidArt,
-      iconBg: "#1f6744"
+      image: placeholderImages.analytics,
+      icon: (
+        <Lightbulb weight="Linear" className="size-[24px] text-[#f6f6f6]" />
+      ),
+      duration: "5 mins",
+      authorName: "Deku",
+      authorRole: "Game Director",
+      date: "Sep 12, 2025",
+      title:
+        "Download intent increased to 78%. Visual clarity issues surfaced across two scenes.",
+      summary:
+        "This breakdown captures how users reacted to key creative elements. Download intent was strong overall, but pacing issues and visual overload reduced clarity.",
     },
     {
       id: 8,
-      icon: <SmileCircle weight={"Linear"} className="size-[16px] #6D6D6D" />,
-      title: "Community Engagement Toolkit",
-      description: "Generate drafts for release notes, community updates, FAQs, and internal summaries, all tailored to your prototype or feature test.",
-      image: placeholderImages.community,
-      iconBg: "#1f6744"
-    }
+      image: placeholderImages.report2,
+      icon: (
+        <SmileCircle weight="Linear" className="size-[24px] text-[#f6f6f6]" />
+      ),
+      duration: "5 mins",
+      authorName: "Deku",
+      authorRole: "Game Director",
+      date: "Sep 12, 2025",
+      title:
+        "Critical bugs down by 18%, UI issues up by 22%.User sentiment stable but trending negative.",
+      summary:
+        "This report synthesizes app-store reviews into actionable insights for 10–11–25. Most users highlighted menu freezes, button misfires, and purchase flow delays.",
+    },
   ];
 
   return (
-    <div className="relative w-full h-screen bg-white overflow-hidden">
+    <div className="relative flex w-full h-screen bg-white overflow-hidden">
       {/* <Header /> */}
       <Sidebar />
 
       {/* Main Content */}
-      <div className="ml-[64px] h-full overflow-y-auto">
-        {/* Header Section */}
-        <div className="flex flex-col items-center py-10 px-8">
-          <p
-            className="text-[20px] text-[#898989] mb-6 text-center"
-            style={{ fontFamily: 'Urbanist, sans-serif' }}
-          >
-            Library
-          </p>
-          <h1
-            className="text-[36px] font-semibold text-[#1f6744] mb-4 text-center max-w-[760px]"
-            style={{ fontFamily: 'Urbanist, sans-serif' }}
-          >
-            Explore different use cases from our collection
-          </h1>
-          <p
-            className="text-[16px] text-[#898989] text-center max-w-[760px]"
-            style={{ fontFamily: 'Urbanist, sans-serif', lineHeight: '24px' }}
-          >
-            Learn how GamePac handles real-world tasks through step-by-step replays
-          </p>
-        </div>
+      <div className="h-full overflow-y-auto w-full">
+        <div className={`${isSiderbarOpen ? "max-w-[1100px] 2xl:max-w-[1300px]" : "max-w-[1300px]"} mx-auto px-8`}>
+          {/* Header Section */}
+          <div className="flex flex-col items-center pt-[66px] pb-[24px]">
+            <p className="font-urbanist text-[20px] text-[#898989] mb-6 text-center">
+              Library
+            </p>
+            <h1 className="font-urbanist font-semibold text-[36px] text-[#1f6744] mb-3 text-center">
+              Explore Your Studio's Generated Artefacts
+            </h1>
+            <p className="font-urbanist text-[16px] text-[#898989] text-center leading-[24px]">
+              A central place to review reports, narratives, analyses, and
+              outputs created by your team.
+            </p>
+          </div>
 
-        <div className="flex flex-col items-center px-8 mb-10">
-          <div className="flex gap-4 flex-wrap items-center justify-center max-w-[1034px]">
+          {/* Filter Tabs */}
+          <div className="flex gap-4 flex-wrap items-center my-10 justify-center">
             <button
               onClick={() => setActiveFilter("recommended")}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-[10px] transition-all ${
+              className={`flex items-center gap-2.5 px-3 h-[34px] rounded-[10px] transition-all ${
                 activeFilter === "recommended"
                   ? "bg-[#103f28] text-white"
-                  : "bg-[#f1f1f1] text-[#a6a6a6] border border-[#dfdfdf]"
+                  : "bg-neutral-100 text-[#a6a6a6] border border-[#dfdfdf]"
               }`}
-              style={{ fontFamily: 'Urbanist, sans-serif', fontSize: '16px' }}
             >
-              <span>Recommended</span>
+              <span className="font-urbanist font-medium text-[16px]">
+                Recommended
+              </span>
               <div className="h-6 w-px bg-white/30" />
-              <Refresh weight={"Linear"} size={20} />
+              <Refresh weight="Linear" size={20} />
             </button>
 
             {filters.map((filter) => (
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-2.5 py-2 rounded-[10px] transition-all ${
+                className={`px-2.5 h-[34px] rounded-[10px] transition-all ${
                   activeFilter === filter
                     ? "bg-[#103f28] text-white"
-                    : "bg-[#f1f1f1] text-[#a6a6a6] border border-[#dfdfdf]"
+                    : "bg-neutral-100 text-[#a6a6a6] border border-[#dfdfdf]"
                 }`}
-                style={{ fontFamily: 'Urbanist, sans-serif', fontSize: '16px' }}
               >
-                {filter}
+                <span className="font-urbanist font-medium text-[16px]">
+                  {filter}
+                </span>
               </button>
             ))}
           </div>
-        </div>
 
-        <div className="px-[140px] pb-20">
-          <div className="grid grid-cols-4 gap-5 max-w-[1172px] mx-auto">
-            {useCases.map((useCase) => (
-              <FeedCard key={useCase.id} {...useCase} />
+          {/* Library Cards Grid */}
+          <div
+            className={`grid ${
+              isSiderbarOpen ? "grid-cols-3" : "grid-cols-4"
+            } gap-5`}
+          >
+            {libraryItems.map((libraryItem) => (
+              <LibraryCard
+                key={libraryItem.id}
+                {...libraryItem}
+              />
             ))}
           </div>
         </div>

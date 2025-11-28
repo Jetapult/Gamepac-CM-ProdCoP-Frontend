@@ -21,6 +21,7 @@ export default {
         'sa-primary': '#00554a',
         'sa-accent': '#e4fe05',
         'sa-bg': '#f6f8f6',
+        'sa-bg-gray': '#f6f6f6',
         'sa-border': '#e2e9e2',
         'sa-text-gray': '#828282',
       },
