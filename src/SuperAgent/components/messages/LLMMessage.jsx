@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import ReactDOM from "react-dom";
-import { Like, Dislike, Copy, Restart } from "@solar-icons/react";
+import { Like, Dislike, Copy, Restart, Unread } from "@solar-icons/react";
 import { CornerDownLeft } from "lucide-react";
 import gamepacLogo from "../../../assets/super-agents/gamepac-logo.svg";
 
@@ -179,9 +179,17 @@ const LLMMessage = ({
         <Tooltip text={copiedTooltip ? "Copied!" : "Copy to clipboard"}>
           <button
             onClick={handleCopy}
-            className="p-[4px] text-[#6d6d6d] hover:bg-[#f6f6f6] rounded-[8px] transition-all"
+            className={`p-[4px] rounded-[8px] transition-all ${
+              copiedTooltip
+                ? "text-[#1f6744]"
+                : "text-[#6d6d6d] hover:bg-[#f6f6f6]"
+            }`}
           >
-            <Copy weight="Linear" size={20} />
+            {copiedTooltip ? (
+              <Unread weight="Linear" size={20} />
+            ) : (
+              <Copy weight="Linear" size={20} />
+            )}
           </button>
         </Tooltip>
         <ActionIcon icon={Restart} tooltip="Regenerate" onClick={() => {}} />
