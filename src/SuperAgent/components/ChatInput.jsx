@@ -154,6 +154,7 @@ const IntegrationDropdown = ({
 };
 
 const ChatInput = ({ onSendMessage, isThinking = false }) => {
+  const dispatch = useDispatch();
   const [inputValue, setInputValue] = useState("");
   const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
   const [showIntegrationDropdown, setShowIntegrationDropdown] = useState(false);
