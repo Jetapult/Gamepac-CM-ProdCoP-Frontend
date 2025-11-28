@@ -3,7 +3,7 @@ import Message from "./messages/Message";
 import ChatInput from "./ChatInput";
 import thinkingSphere from "../../assets/thinking_sphere.gif";
 
-const ConversationPanel = ({ onTaskUpdate }) => {
+const ConversationPanel = ({ onTaskUpdate, onThinkingChange }) => {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -78,6 +78,7 @@ const ConversationPanel = ({ onTaskUpdate }) => {
             status: "in-progress",
           },
         ],
+        relatedActions: ["balancing problems", "technical bugs"],
       },
     },
   ]);
@@ -121,6 +122,7 @@ const ConversationPanel = ({ onTaskUpdate }) => {
 
   const simulateAIResponse = async (userMessage) => {
     setIsThinking(true);
+    if (onThinkingChange) onThinkingChange(true);
     setElapsedTime(0);
 
     // Wait 2 seconds before starting tasks (simulating LLM response time)
@@ -138,7 +140,7 @@ const ConversationPanel = ({ onTaskUpdate }) => {
       }
 
       // Wait 5 seconds per task
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
     }
 
     // Clear task state
@@ -146,6 +148,7 @@ const ConversationPanel = ({ onTaskUpdate }) => {
     setCurrentTaskIndex(0);
     setElapsedTime(0);
     setIsThinking(false);
+    if (onThinkingChange) onThinkingChange(false);
 
     // Notify parent that tasks are complete
     if (onTaskUpdate) {
@@ -160,6 +163,7 @@ const ConversationPanel = ({ onTaskUpdate }) => {
       data: {
         content: `I understand you want me to: "${userMessage}". I've completed the analysis and here are the findings.`,
         agentName: "GamePac",
+        relatedActions: ["balancing problems", "technical bugs"],
       },
     };
 
@@ -202,14 +206,18 @@ const ConversationPanel = ({ onTaskUpdate }) => {
 
           const isLatestUserMessage =
             message.sender === "user" && index === lastUserMessageIndex;
+          // Don't mark as latest LLM if thinking (so related actions hide)
           const isLatestLLMMessage =
-            message.sender === "llm" && index === lastLLMMessageIndex;
+            !isThinking &&
+            message.sender === "llm" &&
+            index === lastLLMMessageIndex;
 
           return (
             <Message
               key={message.id}
               message={message}
               isLatest={isLatestUserMessage || isLatestLLMMessage}
+              onSendMessage={handleSendMessage}
             />
           );
         })}

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import ReactDOM from "react-dom";
 import { Like, Dislike, Copy, Restart } from "@solar-icons/react";
+import { CornerDownLeft } from "lucide-react";
 import gamepacLogo from "../../../assets/super-agents/gamepac-logo.svg";
 
 const Tooltip = ({ children, text }) => {
@@ -46,7 +47,13 @@ const Tooltip = ({ children, text }) => {
   );
 };
 
-const LLMMessage = ({ content, agentName = "GamePac", isLatest = false }) => {
+const LLMMessage = ({
+  content,
+  agentName = "GamePac",
+  isLatest = false,
+  relatedActions = [],
+  onSendMessage,
+}) => {
   const [copiedTooltip, setCopiedTooltip] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [feedback, setFeedback] = useState(null); // 'liked' | 'disliked' | null
@@ -104,6 +111,40 @@ const LLMMessage = ({ content, agentName = "GamePac", isLatest = false }) => {
       >
         {content}
       </p>
+
+      {/* Related Actions - Only show for latest LLM message */}
+      {isLatest && relatedActions.length > 0 && (
+        <div className="flex flex-col w-full mt-4">
+          <p
+            className="text-[18px] font-semibold text-[#141414] leading-[32px]"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            Related
+          </p>
+          <div className="flex flex-col">
+            {relatedActions.map((action, index) => (
+              <button
+                key={index}
+                onClick={() => onSendMessage && onSendMessage(action)}
+                className="flex items-center gap-[10px] px-2 py-[10px] border-b border-[#f6f6f6] hover:bg-[#f6f6f6] transition-colors rounded-[8px] cursor-pointer -mx-2"
+              >
+                <div className="rotate-180">
+                  <CornerDownLeft size={20} color="#141414" />
+                </div>
+                <span
+                  className="text-base font-medium text-[#141414]"
+                  style={{
+                    fontFamily: "Urbanist, sans-serif",
+                    lineHeight: "32px",
+                  }}
+                >
+                  {action}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Action Icons - Always visible for latest, hover for others */}
       <div

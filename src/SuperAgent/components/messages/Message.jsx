@@ -15,7 +15,7 @@ import TaskMessage from "./TaskMessage";
  *   data: object // varies based on type
  * }
  */
-const Message = ({ message, isLatest }) => {
+const Message = ({ message, isLatest, onSendMessage }) => {
   const { sender, type, data } = message;
 
   switch (type) {
@@ -28,6 +28,8 @@ const Message = ({ message, isLatest }) => {
             content={data.content}
             agentName={data.agentName}
             isLatest={isLatest}
+            relatedActions={data.relatedActions || []}
+            onSendMessage={onSendMessage}
           />
         );
       }
@@ -37,7 +39,13 @@ const Message = ({ message, isLatest }) => {
       return <AttachmentMessage attachment={data} sender={sender} />;
 
     case "task":
-      return <TaskMessage task={data} />;
+      return (
+        <TaskMessage
+          task={data}
+          isLatest={isLatest}
+          onSendMessage={onSendMessage}
+        />
+      );
 
     // Add more message types here as needed
     case "artifact":

@@ -12,6 +12,7 @@ const ChatScreen = () => {
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [allTasks, setAllTasks] = useState([]);
+  const [isThinking, setIsThinking] = useState(false);
 
   const handleTitleChange = (newTitle) => {
     setChatTitle(newTitle);
@@ -34,6 +35,7 @@ const ChatScreen = () => {
               setAllTasks(tasks);
             }
           }}
+          onThinkingChange={setIsThinking}
         />
 
         {/* Right Side - Preview */}
@@ -42,6 +44,7 @@ const ChatScreen = () => {
           currentTaskIndex={currentTaskIndex}
           elapsedTime={elapsedTime}
           allTasks={allTasks}
+          isThinking={isThinking}
         />
       </div>
     </div>
