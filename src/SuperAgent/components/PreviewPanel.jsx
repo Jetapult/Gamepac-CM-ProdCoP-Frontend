@@ -1,9 +1,14 @@
 import React from "react";
 import TaskProgress from "./TaskProgress";
 
-const PreviewPanel = ({ taskProgress }) => {
+const PreviewPanel = ({
+  currentTask,
+  currentTaskIndex,
+  elapsedTime,
+  allTasks = [],
+}) => {
   return (
-    <div className="flex-1 bg-[#f8f8f7] border-l border-[#f6f6f6] flex flex-col">
+    <div className="flex-1 bg-[#f8f8f7] border-l border-[#f6f6f6] flex flex-col relative">
       {/* Zero State / Building State */}
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
@@ -26,8 +31,16 @@ const PreviewPanel = ({ taskProgress }) => {
         </div>
       </div>
 
-      {/* Task Progress Footer */}
-      <TaskProgress taskProgress={taskProgress} />
+      {/* Task Progress Footer - Overlay */}
+      <div className="absolute bottom-0 left-0 right-0">
+        <TaskProgress
+          currentTask={currentTask}
+          currentTaskIndex={currentTaskIndex}
+          totalTasks={allTasks.length || 5}
+          elapsedTime={elapsedTime}
+          allTasks={allTasks}
+        />
+      </div>
     </div>
   );
 };

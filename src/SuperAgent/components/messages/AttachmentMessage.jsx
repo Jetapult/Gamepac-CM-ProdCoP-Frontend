@@ -18,10 +18,13 @@ const AttachmentMessage = ({ attachment, sender = "user" }) => {
   };
 
   const alignmentClass = sender === "user" ? "ml-auto" : "";
+  const bgColor = sender === "user" ? "bg-[#f6f6f6]" : "bg-white";
 
   return (
     <div className={`flex flex-col gap-4 max-w-[400px] ${alignmentClass}`}>
-      <div className="bg-white border border-[#e6e6e6] rounded-lg p-4 flex items-center gap-3">
+      <div
+        className={`${bgColor} border border-[#e6e6e6] rounded-lg p-4 flex items-center gap-3`}
+      >
         <div className="w-[50px] h-[56px] bg-green-100 rounded-md flex items-center justify-center">
           {getAttachmentIcon(attachment.type)}
         </div>

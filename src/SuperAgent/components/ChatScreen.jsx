@@ -1,30 +1,48 @@
-import React from "react";
+import React, { useState } from "react";
 import ChatHeader from "./ChatHeader";
 import ConversationPanel from "./ConversationPanel";
 import PreviewPanel from "./PreviewPanel";
 
 const ChatScreen = () => {
-  // Sample data - replace with actual data from props/state
-  const chatTitle = "CommPac Report Analysis";
-  const taskProgress = { current: 1, total: 5 };
+  // Chat title state
+  const [chatTitle, setChatTitle] = useState("CommPac Report Analysis");
 
-  const handleEditClick = () => {
-    // Handle edit click
-    console.log("Edit clicked");
+  // Task progress state
+  const [currentTask, setCurrentTask] = useState(null);
+  const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [allTasks, setAllTasks] = useState([]);
+
+  const handleTitleChange = (newTitle) => {
+    setChatTitle(newTitle);
   };
 
   return (
     <div className="flex-1 flex flex-col">
       {/* Header - Full Width */}
-      <ChatHeader chatTitle={chatTitle} onEditClick={handleEditClick} />
+      <ChatHeader chatTitle={chatTitle} onTitleChange={handleTitleChange} />
 
       {/* Main Content - Left and Right Panels */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side - Conversation */}
-        <ConversationPanel />
+        <ConversationPanel
+          onTaskUpdate={(task, index, time, tasks) => {
+            setCurrentTask(task);
+            setCurrentTaskIndex(index);
+            setElapsedTime(time);
+            if (tasks) {
+              setAllTasks(tasks);
+            }
+          }}
+        />
 
         {/* Right Side - Preview */}
-        <PreviewPanel taskProgress={taskProgress} />
+        <PreviewPanel
+          currentTask={currentTask}
+          currentTaskIndex={currentTaskIndex}
+          elapsedTime={elapsedTime}
+          allTasks={allTasks}
+        />
       </div>
     </div>
   );

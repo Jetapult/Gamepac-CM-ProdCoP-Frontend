@@ -15,15 +15,21 @@ import TaskMessage from "./TaskMessage";
  *   data: object // varies based on type
  * }
  */
-const Message = ({ message }) => {
+const Message = ({ message, isLatest }) => {
   const { sender, type, data } = message;
 
   switch (type) {
     case "text":
       if (sender === "user") {
-        return <UserMessage content={data.content} />;
+        return <UserMessage content={data.content} isLatest={isLatest} />;
       } else if (sender === "llm") {
-        return <LLMMessage content={data.content} agentName={data.agentName} />;
+        return (
+          <LLMMessage
+            content={data.content}
+            agentName={data.agentName}
+            isLatest={isLatest}
+          />
+        );
       }
       return null;
 
