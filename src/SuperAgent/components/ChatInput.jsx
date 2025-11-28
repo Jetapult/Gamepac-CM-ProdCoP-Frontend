@@ -153,8 +153,7 @@ const IntegrationDropdown = ({
   );
 };
 
-const ChatInput = ({ handleStartChat }) => {
-  const dispatch = useDispatch();
+const ChatInput = ({ onSendMessage, isThinking = false }) => {
   const [inputValue, setInputValue] = useState("");
   const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
   const [showIntegrationDropdown, setShowIntegrationDropdown] = useState(false);
@@ -203,6 +202,20 @@ const ChatInput = ({ handleStartChat }) => {
     setSelectedIntegration(integration);
     setShowAddConnectorsModal(false);
     setShowConnectorModal(true);
+  };
+
+  const handleSend = () => {
+    if (inputValue.trim() && onSendMessage && !isThinking) {
+      onSendMessage(inputValue);
+      setInputValue("");
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   useEffect(() => {
@@ -260,7 +273,7 @@ const ChatInput = ({ handleStartChat }) => {
       <textarea
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleStartChat()}
+        onKeyDown={(e) => e.key === "Enter" && onSendMessage()}
         placeholder="Generate a professional sentiment analysis report"
         className="w-full bg-transparent border-none outline-none text-lg text-[#141414] placeholder:text-[#b0b0b0] font-urbanist "
         rows={selectedTemplate.id ? 2 : 4}
@@ -345,18 +358,18 @@ const ChatInput = ({ handleStartChat }) => {
         </div>
 
         <button
-          onClick={handleStartChat}
+          onClick={handleSend}
           className={`w-9 h-9 rounded-[8px] flex items-center justify-center transition-all relative overflow-hidden cursor-pointer disabled:cursor-not-allowed border border-[rgba(255,255,255,0.3)] ${
-            !inputValue.trim()
+            !inputValue.trim() || isThinking
               ? "bg-[#E6E6E6]"
               : "bg-[linear-gradient(333deg,#11A85F_13.46%,#1F6744_103.63%)]"
           }`}
-          disabled={!inputValue.trim()}
+          disabled={!inputValue.trim() || isThinking}
         >
           <Plain
             weight={"Linear"}
             size={20}
-            color={!inputValue.trim() ? "#B0B0B0" : "#FFFFFF"}
+            color={!inputValue.trim() || isThinking ? "#B0B0B0" : "#FFFFFF"}
           />
         </button>
       </div>

@@ -212,7 +212,10 @@ const Sidebar = () => {
                     text={task.title}
                     active={selectedTask?.id === task?.id}
                     slug={task.agentSlug}
-                    onClick={() => dispatch(setSelectedTask(task))}
+                    onClick={() => {
+                      dispatch(setSelectedTask(task));
+                      navigate(`/super-agent/chat/id-slug-of-the-chat`);
+                    }}
                   />
                 ))}
               </div>

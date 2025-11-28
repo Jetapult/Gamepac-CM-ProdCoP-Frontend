@@ -1,7 +1,14 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, Eye, Code, Edit3 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  Code,
+  Edit3,
+  CornerDownLeft,
+} from "lucide-react";
 
-const TaskMessage = ({ task }) => {
+const TaskMessage = ({ task, isLatest = false, onSendMessage }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
@@ -61,6 +68,40 @@ const TaskMessage = ({ task }) => {
               </p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Related Actions - Only show for latest message */}
+      {isLatest && task.relatedActions && task.relatedActions.length > 0 && (
+        <div className="flex flex-col w-full mt-4">
+          <p
+            className="text-[18px] font-semibold text-[#141414] leading-[32px]"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            Related
+          </p>
+          <div className="flex flex-col">
+            {task.relatedActions.map((action, index) => (
+              <button
+                key={index}
+                onClick={() => onSendMessage && onSendMessage(action)}
+                className="flex items-center gap-[10px] px-2 py-[10px] border-b border-[#f6f6f6] hover:bg-[#f6f6f6] transition-colors rounded-[8px] cursor-pointer -mx-2"
+              >
+                <div className="rotate-180">
+                  <CornerDownLeft size={20} color="#141414" />
+                </div>
+                <span
+                  className="text-base font-medium text-[#141414]"
+                  style={{
+                    fontFamily: "Urbanist, sans-serif",
+                    lineHeight: "32px",
+                  }}
+                >
+                  {action}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -104,7 +104,7 @@ const SuperAgent = () => {
   const [activeFilter, setActiveFilter] = useState("recommended");
   const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
 
-  const handleStartChat = () => {
+  const onSendMessage = () => {
     dispatch(setSelectedTemplate({}));
     navigate(`/super-agent/chat/xyz`);
   };
@@ -162,7 +162,7 @@ const SuperAgent = () => {
 
         {/* Chat Input Area */}
         <div className="flex flex-col items-center px-8 w-full max-w-[800px] mx-auto w-full">
-          <ChatInput handleStartChat={handleStartChat} />
+          <ChatInput onSendMessage={onSendMessage} />
         </div>
         {/* Quick Action Buttons */}
         <div className="flex flex-wrap gap-5 justify-center">
