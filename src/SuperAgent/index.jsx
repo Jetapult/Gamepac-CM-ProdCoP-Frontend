@@ -16,7 +16,7 @@ import ChatInput from "./components/ChatInput";
 import { useDispatch, useSelector } from "react-redux";
 import MegaphoneIcon from "../assets/super-agents/megaphone-icon.svg";
 import ActiveMegaphoneIcon from "../assets/super-agents/megaphone-active.svg";
-import { setSelectedAgent } from "../store/reducer/superAgent";
+import { setSelectedAgent, setSelectedTemplate } from "../store/reducer/superAgent";
 
 export const agents = [
   {
@@ -105,6 +105,7 @@ const SuperAgent = () => {
   const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
 
   const handleStartChat = () => {
+    dispatch(setSelectedTemplate({}));
     navigate(`/super-agent/chat/xyz`);
   };
 
