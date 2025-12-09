@@ -155,62 +155,242 @@ const SampleRLAgent = () => {
       metadata: {},
     };
 
-    // Update UI immediately with user message
+    // Create a temporary streaming assistant message
+    const tempAssistantMessage = {
+      id: "temp-assistant-" + Date.now(),
+      role: "assistant",
+      content: "",
+      timestamp: new Date().toISOString(),
+      toolsUsed: [],
+      metadata: {},
+      isStreaming: true,
+      streamingData: {
+        thinking: "",
+        response: "",
+        tools: [],
+        currentIteration: 0
+      }
+    };
+
+    // Update UI immediately with user message and empty assistant message
     setCurrentConversation({
       ...currentConversation,
-      messages: [...currentConversation.messages, tempUserMessage],
+      messages: [...currentConversation.messages, tempUserMessage, tempAssistantMessage],
     });
 
     setLoading(true);
 
     try {
-      const result = await rlAgentAPI.sendMessage(
+      let thinkingContent = "";
+      let responseContent = "";
+      let toolsUsed = [];
+      let currentIteration = 0;
+
+      await rlAgentAPI.sendMessageStream(
         currentConversation.id,
-        messageText
-      );
+        messageText,
+        {
+          onIterationStart: (data) => {
+            console.log('🔄 Iteration started:', data);
+            currentIteration = data.iteration || (currentIteration + 1);
 
-      // Replace temp message with real messages from API
-      const messagesWithoutTemp = currentConversation.messages.filter(
-        (msg) => msg.id !== tempUserMessage.id
-      );
-      setCurrentConversation({
-        ...currentConversation,
-        messages: [
-          ...messagesWithoutTemp,
-          result.userMessage,
-          result.assistantMessage,
-        ],
-      });
+            // Update streaming data
+            setCurrentConversation((prev) => ({
+              ...prev,
+              messages: prev.messages.map((msg) =>
+                msg.id === tempAssistantMessage.id
+                  ? {
+                      ...msg,
+                      streamingData: {
+                        ...msg.streamingData,
+                        currentIteration
+                      }
+                    }
+                  : msg
+              ),
+            }));
+          },
+          onThinkingToken: (token) => {
+            console.log('🧠 Thinking token received:', token);
+            thinkingContent += token;
 
-      // Update conversation in the list
-      const updatedConversations = conversations.map((conv) =>
-        conv.id === currentConversation.id
-          ? {
-              ...conv,
-              messages: [
-                ...conv.messages,
-                result.userMessage,
-                result.assistantMessage,
-              ],
-              updatedAt: new Date().toISOString(),
+            // Try to parse the JSON and extract just the reasoning
+            let displayThinking = thinkingContent;
+            try {
+              // If it looks like complete JSON, parse it
+              if (thinkingContent.trim().startsWith('{') && thinkingContent.trim().endsWith('}')) {
+                const parsed = JSON.parse(thinkingContent);
+                displayThinking = parsed.reasoning || thinkingContent;
+              }
+            } catch (e) {
+              // If parsing fails, just show the raw content
+              displayThinking = thinkingContent;
             }
-          : conv
+
+            // Update display in real-time
+            setCurrentConversation((prev) => ({
+              ...prev,
+              messages: prev.messages.map((msg) =>
+                msg.id === tempAssistantMessage.id
+                  ? {
+                      ...msg,
+                      streamingData: {
+                        ...msg.streamingData,
+                        thinking: displayThinking,
+                        rawThinking: thinkingContent
+                      }
+                    }
+                  : msg
+              ),
+            }));
+          },
+          onThinkingComplete: () => {
+            console.log('✅ Thinking complete');
+          },
+          onResponseToken: (token) => {
+            console.log('📝 Response token received:', token);
+            responseContent += token;
+
+            // Update the streaming message with response content
+            setCurrentConversation((prev) => ({
+              ...prev,
+              messages: prev.messages.map((msg) =>
+                msg.id === tempAssistantMessage.id
+                  ? {
+                      ...msg,
+                      streamingData: {
+                        ...msg.streamingData,
+                        response: responseContent
+                      }
+                    }
+                  : msg
+              ),
+            }));
+          },
+          onToolUse: (toolData) => {
+            console.log('🔧 Tool used:', toolData);
+            toolsUsed.push(toolData);
+
+            // Update tools in streaming data
+            setCurrentConversation((prev) => ({
+              ...prev,
+              messages: prev.messages.map((msg) =>
+                msg.id === tempAssistantMessage.id
+                  ? {
+                      ...msg,
+                      streamingData: {
+                        ...msg.streamingData,
+                        tools: [...toolsUsed]
+                      }
+                    }
+                  : msg
+              ),
+            }));
+          },
+          onToolResult: (toolData) => {
+            console.log('🔧 Tool result received:', toolData);
+          },
+          onComplete: async (data) => {
+            console.log('=== onComplete called ===');
+            console.log('Response content accumulated:', responseContent);
+            console.log('Trajectory data:', data.trajectory);
+
+            // Extract all reasoning from thinking content
+            let allReasoning = [];
+            const thinkingLines = thinkingContent.split('}{');
+            thinkingLines.forEach((line, idx) => {
+              try {
+                let jsonStr = line;
+                if (idx > 0) jsonStr = '{' + jsonStr;
+                if (idx < thinkingLines.length - 1) jsonStr = jsonStr + '}';
+
+                const parsed = JSON.parse(jsonStr);
+                if (parsed.reasoning) {
+                  allReasoning.push(parsed.reasoning);
+                }
+              } catch (e) {
+                // Skip invalid JSON
+              }
+            });
+
+            const displayThinking = allReasoning.length > 0
+              ? allReasoning.join('\n\n---\n\n')
+              : thinkingContent;
+
+            // Mark the streaming message as complete
+            setCurrentConversation((prev) => {
+              const updatedMessages = prev.messages.map((msg) =>
+                msg.id === tempAssistantMessage.id
+                  ? {
+                      ...msg,
+                      isStreaming: false,
+                      content: responseContent,
+                      streamingData: undefined,
+                      metadata: {
+                        ...msg.metadata,
+                        trajectory: data.trajectory,
+                        thinking: displayThinking,
+                        toolsUsed: toolsUsed
+                      }
+                    }
+                  : msg
+              );
+
+              return {
+                ...prev,
+                messages: updatedMessages,
+                updatedAt: new Date().toISOString()
+              };
+            });
+
+            // Update conversation in the list
+            setConversations((prevConvs) =>
+              prevConvs.map((conv) =>
+                conv.id === currentConversation.id
+                  ? {
+                      ...conv,
+                      updatedAt: new Date().toISOString(),
+                      lastMessage: responseContent.substring(0, 100)
+                    }
+                  : conv
+              )
+            );
+
+            setLoading(false);
+          },
+          onError: (errorData) => {
+            console.error("Streaming error:", errorData);
+
+            // Extract error message from the error data
+            const errorMessage = errorData?.error || errorData?.message ||
+              "Failed to send message. The RL agent might be taking longer than expected. Please try again or check back later.";
+
+            alert(errorMessage);
+
+            // Remove the temp messages on error
+            setCurrentConversation({
+              ...currentConversation,
+              messages: currentConversation.messages.filter(
+                (msg) => msg.id !== tempUserMessage.id && msg.id !== tempAssistantMessage.id
+              ),
+            });
+            setLoading(false);
+          },
+        }
       );
-      setConversations(updatedConversations);
     } catch (error) {
       console.error("Error sending message:", error);
       alert(
         "Failed to send message. The RL agent might be taking longer than expected. Please try again or check back later."
       );
 
-      // Remove the temp message on error
+      // Remove the temp messages on error
       setCurrentConversation({
         ...currentConversation,
         messages: currentConversation.messages.filter(
           (msg) => msg.id !== tempUserMessage.id
         ),
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -273,6 +453,9 @@ const SampleRLAgent = () => {
       const freshConversation = await rlAgentAPI.getConversation(
         conversationId
       );
+
+      // Just use the conversation as-is from the backend
+      // The content field already contains everything formatted correctly
       setCurrentConversation(freshConversation);
       setSelectedConversationId(freshConversation.id);
     } catch (error) {
@@ -297,16 +480,6 @@ const SampleRLAgent = () => {
     return date.toLocaleDateString();
   };
 
-  const renderMessageContent = (content) => {
-    // Simple markdown rendering for bold text
-    const parts = content.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, index) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={index}>{part.slice(2, -2)}</strong>;
-      }
-      return <span key={index}>{part}</span>;
-    });
-  };
 
   return (
     <div className="sample-rl-agent">
@@ -456,14 +629,213 @@ const SampleRLAgent = () => {
                       : "AI"}
                   </div>
                   <div className="message-content-wrapper">
-                    <div className="message-content">
-                      {(typeof msg?.content === "string" ? msg.content : "")
-                        .split("\n")
-                        .map((line, i) => (
-                          <div key={i}>{renderMessageContent(line)}</div>
-                        ))}
-                    </div>
-                    {msg.role === "assistant" && (
+                    {/* Show streaming content for assistant */}
+                    {msg.role === "assistant" && msg.isStreaming && msg.streamingData && (
+                      <>
+                        {/* Show thinking if available */}
+                        {msg.streamingData.thinking && (
+                          <div className="thinking-section">
+                            <div className="thinking-header">
+                              <span className="thinking-icon">🧠</span>
+                              <span className="thinking-label">Analyzing & Planning</span>
+                            </div>
+                            <div className="thinking-content">
+                              <p className="thinking-text">{msg.streamingData.thinking}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Show tools being used */}
+                        {msg.streamingData.tools && msg.streamingData.tools.length > 0 && (
+                          <div className="tools-section">
+                            <div className="tools-header">
+                              <span className="tools-icon">🔧</span>
+                              <span className="tools-label">Tools Used</span>
+                            </div>
+                            <div className="tools-list">
+                              {msg.streamingData.tools.map((tool, idx) => (
+                                <div key={idx} className="tool-item">
+                                  <div className="tool-name">{tool.tool_name || tool.name}</div>
+                                  {tool.tool_args && (
+                                    <div className="tool-args">
+                                      {typeof tool.tool_args === 'string'
+                                        ? tool.tool_args
+                                        : JSON.stringify(tool.tool_args, null, 2)}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Show response as it streams */}
+                        {msg.streamingData.response && (
+                          <div className="response-section">
+                            <div className="response-header">
+                              <span className="response-icon">✨</span>
+                              <span className="response-label">Final Answer</span>
+                            </div>
+                            <div className="message-content">
+                              <p className="response-text">{msg.streamingData.response}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Show typing indicator if no content yet */}
+                        {!msg.streamingData.thinking && !msg.streamingData.response && !msg.streamingData.tools?.length && (
+                          <div className="loading-state">
+                            <div className="typing-indicator">
+                              <span></span>
+                              <span></span>
+                              <span></span>
+                            </div>
+                            <span className="loading-text">Processing your request...</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Show completed message content */}
+                    {msg.role === "assistant" && !msg.isStreaming && (
+                      <>
+                        {/* Show thinking if available in metadata - SAME AS STREAMING */}
+                        {msg.metadata?.thinking && (
+                          <div className="thinking-section">
+                            <div className="thinking-header">
+                              <span className="thinking-icon">🧠</span>
+                              <span className="thinking-label">Analyzing & Planning</span>
+                            </div>
+                            <div className="thinking-content">
+                              {msg.metadata.thinking.split('\n\n---\n\n').map((reasoning, idx) => (
+                                <div key={idx} className="reasoning-step">
+                                  {idx > 0 && <div className="step-divider"></div>}
+                                  <p className="thinking-text">{reasoning}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Show tools used if available - SAME AS STREAMING */}
+                        {msg.metadata?.toolsUsed && msg.metadata.toolsUsed.length > 0 && (
+                          <div className="tools-section">
+                            <div className="tools-header">
+                              <span className="tools-icon">🔧</span>
+                              <span className="tools-label">Tools Used</span>
+                            </div>
+                            <div className="tools-list">
+                              {msg.metadata.toolsUsed.map((tool, idx) => (
+                                <div key={idx} className="tool-item">
+                                  <div className="tool-name">{tool.tool_name || tool.name}</div>
+                                  {tool.tool_args && (
+                                    <div className="tool-args">
+                                      {typeof tool.tool_args === 'string'
+                                        ? tool.tool_args
+                                        : JSON.stringify(tool.tool_args, null, 2)}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Show final response - SAME AS STREAMING */}
+                        {msg.content && (
+                          <div className="response-section">
+                            <div className="response-header">
+                              <span className="response-icon">✨</span>
+                              <span className="response-label">Final Answer</span>
+                            </div>
+                            <div className="message-content">
+                              <p className="response-text">{msg.content}</p>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Show user message content */}
+                    {msg.role === "user" && (
+                      <div className="message-content">
+                        <pre>{msg.content}</pre>
+                      </div>
+                    )}
+
+                    {/* Display Trajectory Analysis if available */}
+                    {(() => {
+                      // Get trajectory from either metadata.trajectory or metadata.complete.trajectory
+                      const trajectory = msg.metadata?.trajectory || msg.metadata?.complete?.trajectory;
+
+                      if (msg.role === "assistant" && !msg.isStreaming && trajectory) {
+                        return (
+                          <div className="trajectory-details-open">
+                            <div className="trajectory-header">
+                              🔍 Analysis & Research Steps
+                            </div>
+                            <div className="trajectory-content">
+                              {/* Analysis Summary */}
+                              {trajectory.final?.analysis && (
+                                <div className="trajectory-section">
+                                  <h4>📊 Analysis Summary</h4>
+                                  <p>{trajectory.final.analysis.summary}</p>
+
+                                  {/* Key Findings */}
+                                  {trajectory.final.analysis.key_findings && (
+                                    <div className="key-findings">
+                                      <h5>Key Findings:</h5>
+                                      {trajectory.final.analysis.key_findings.map((finding, idx) => (
+                                        <div key={idx} className="finding-item">
+                                          <strong>Claim:</strong> {finding.claim}
+                                          <br />
+                                          <em>Evidence:</em> {finding.evidence}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Risk Flags */}
+                                  {trajectory.final.analysis.risk_flags && trajectory.final.analysis.risk_flags.length > 0 && (
+                                    <div className="risk-flags">
+                                      <h5>⚠️ Risk Flags:</h5>
+                                      <ul>
+                                        {trajectory.final.analysis.risk_flags.map((flag, idx) => (
+                                          <li key={idx}>{flag}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Research Steps */}
+                              {trajectory.steps && (
+                                <div className="trajectory-section">
+                                  <h4>🔬 Research Steps ({trajectory.steps.length})</h4>
+                                  {trajectory.steps.map((step, idx) => (
+                                    <div key={idx} className="step-item">
+                                      <div className="step-header">
+                                        <span className="step-number">Step {step.iteration}</span>
+                                        <span className="step-tool">{step.tool_name}</span>
+                                      </div>
+                                      {step.tool_args && (
+                                        <div className="step-args">
+                                          <strong>Query:</strong> {step.tool_args.query || JSON.stringify(step.tool_args)}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+
+                    {msg.role === "assistant" && !msg.isStreaming && (
                       <div className="message-actions" data-message-id={msg.id}>
                         <div className="feedback-buttons">
                           <button
@@ -505,23 +877,6 @@ const SampleRLAgent = () => {
                   </div>
                 </div>
               ))}
-              {loading && (
-                <div className="message assistant">
-                  <div className="message-avatar">AI</div>
-                  <div className="message-content-wrapper">
-                    <div className="loading-message-container">
-                      <div className="typing-indicator">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                      </div>
-                      <div className="">
-                        Analyzing your query...
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
               <div ref={messagesEndRef} />
             </div>
           </>
