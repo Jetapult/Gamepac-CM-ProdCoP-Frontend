@@ -363,9 +363,13 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
         {isThinking ? (
           <button
             onClick={onStop}
-            className="w-9 h-9 rounded-[8px] flex items-center justify-center transition-all cursor-pointer bg-transparent"
+            className="w-9 h-9 rounded-[8px] flex items-center justify-center transition-all cursor-pointer border border-[rgba(255,255,255,0.3)]"
+            style={{
+              background:
+                "linear-gradient(0deg, #E6E6E6 0%, #E6E6E6 100%), radial-gradient(50% 50% at 50% 50%, rgba(255, 255, 255, 0.00) 12%, rgba(255, 255, 255, 0.20) 24%)",
+            }}
           >
-            <StopCircle weight={"Bold"} size={36} color="#0f4159" />
+            <StopCircle weight={"Bold"} size={20} color="#0f4159" />
           </button>
         ) : (
           <button
