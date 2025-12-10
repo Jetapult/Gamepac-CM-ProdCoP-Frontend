@@ -16,7 +16,11 @@ import ChatInput from "./components/ChatInput";
 import { useDispatch, useSelector } from "react-redux";
 import MegaphoneIcon from "../assets/super-agents/megaphone-icon.svg";
 import ActiveMegaphoneIcon from "../assets/super-agents/megaphone-active.svg";
-import { setSelectedAgent, setSelectedTemplate } from "../store/reducer/superAgent";
+import {
+  setSelectedAgent,
+  setSelectedTemplate,
+} from "../store/reducer/superAgent";
+import api from "../api";
 
 export const agents = [
   {
@@ -104,9 +108,19 @@ const SuperAgent = () => {
   const [activeFilter, setActiveFilter] = useState("recommended");
   const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
 
-  const onSendMessage = () => {
-    dispatch(setSelectedTemplate({}));
-    navigate(`/super-agent/chat/xyz`);
+  const onSendMessage = async (query) => {
+    try {
+      const title = query?.trim().slice(0, 50) || "";
+      const response = await api.post("/v1/superagent/chats", { title });
+      if (response.data?.success && response.data?.data?.id) {
+        dispatch(setSelectedTemplate({}));
+        navigate(`/super-agent/chat/${response.data.data.id}`, {
+          state: { initialQuery: query },
+        });
+      }
+    } catch (error) {
+      console.error("Failed to create chat:", error);
+    }
   };
 
   return (
@@ -174,7 +188,15 @@ const SuperAgent = () => {
                   ? "border-[#1f6744] bg-[#F1FCF6] text-[#1f6744]"
                   : "text-[#6d6d6d] border-[#e6e6e6] hover:border-[#1f6744] bg-white"
               }`}
-              onClick={() => dispatch(setSelectedAgent({id:action.id, name:action.name, slug:action.slug}))}
+              onClick={() =>
+                dispatch(
+                  setSelectedAgent({
+                    id: action.id,
+                    name: action.name,
+                    slug: action.slug,
+                  })
+                )
+              }
             >
               {action.activeIcon && selectedAgent.id === action.id
                 ? action.activeIcon

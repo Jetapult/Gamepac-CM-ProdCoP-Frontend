@@ -3,7 +3,7 @@ import ChatHeader from "./ChatHeader";
 import ConversationPanel from "./ConversationPanel";
 import PreviewPanel from "./PreviewPanel";
 
-const ChatScreen = () => {
+const ChatScreen = ({ initialQuery = "" }) => {
   // Chat title state
   const [chatTitle, setChatTitle] = useState("CommPac Report Analysis");
 

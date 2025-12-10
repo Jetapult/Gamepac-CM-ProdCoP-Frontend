@@ -59,7 +59,7 @@ const IntegrationDropdown = ({
   onIntegrationClick,
   connectedIntegrations,
   onToggleConnection,
-  onAddConnectors
+  onAddConnectors,
 }) => {
   const handleConnect = (integration) => {
     const isConnected = connectedIntegrations.includes(integration.slug);
@@ -274,7 +274,7 @@ const ChatInput = ({ onSendMessage, isThinking = false }) => {
       <textarea
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && onSendMessage()}
+        onKeyDown={handleKeyDown}
         placeholder="Generate a professional sentiment analysis report"
         className="w-full bg-transparent border-none outline-none text-lg text-[#141414] placeholder:text-[#b0b0b0] font-urbanist "
         rows={selectedTemplate.id ? 2 : 4}
