@@ -4,84 +4,7 @@ import ChatInput from "./ChatInput";
 import thinkingSphere from "../../assets/thinking_sphere.gif";
 
 const ConversationPanel = ({ onTaskUpdate, onThinkingChange }) => {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: "user",
-      type: "attachment",
-      data: {
-        name: "Mobile Review Spreadsheet...",
-        type: "Spreadsheet",
-        size: "9.16 Mb",
-      },
-    },
-    {
-      id: 2,
-      sender: "user",
-      type: "text",
-      data: {
-        content: "Generate a professional sentiment analysis report",
-      },
-    },
-    {
-      id: 3,
-      sender: "llm",
-      type: "text",
-      data: {
-        content:
-          "Understood, I will analyze the sentiment data in the provided CSV file and create a summary of the major sentiment analysis of different games.",
-        agentName: "GamePac",
-      },
-    },
-    {
-      id: 4,
-      sender: "llm",
-      type: "task",
-      data: {
-        title: "Load and explore the sentiment data",
-        description:
-          "I understand the task is to analyze sentiment data from the CSV file. Next, I will load and explore the dataset to identify patterns and issues across different games.",
-        actions: [
-          {
-            id: 1,
-            type: "reading",
-            text: "Reading file",
-            detail: "Mobile Review Spreadsheet.csv",
-            status: "completed",
-          },
-          {
-            id: 2,
-            type: "executing",
-            text: "Executing command",
-            detail: "pip3 install pandas",
-            status: "completed",
-          },
-          {
-            id: 3,
-            type: "creating",
-            text: "Creating file",
-            detail: "sentiment_analysis_detailed.py",
-            status: "completed",
-          },
-          {
-            id: 4,
-            type: "reading",
-            text: "Reading file",
-            detail: "Mobile Review Spreadsheet.csv",
-            status: "completed",
-          },
-          {
-            id: 5,
-            type: "reading",
-            text: "Reading file",
-            detail: "Mobile Review Spreadsheet.csv",
-            status: "in-progress",
-          },
-        ],
-        relatedActions: ["balancing problems", "technical bugs"],
-      },
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
   const [currentTask, setCurrentTask] = useState(null);
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
@@ -89,13 +12,7 @@ const ConversationPanel = ({ onTaskUpdate, onThinkingChange }) => {
   const messagesEndRef = useRef(null);
 
   // Task simulation
-  const tasks = [
-    "Investigate Game Preferences and Genres",
-    "Analyze Social and Community Aspects",
-    "Synthesize findings and create comprehensive report",
-    "Deliver the research summary to the user",
-    "Finalizing document structure",
-  ];
+  const tasks = [];
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {

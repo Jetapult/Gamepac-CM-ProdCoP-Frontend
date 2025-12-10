@@ -5,7 +5,7 @@ import PreviewPanel from "./PreviewPanel";
 
 const ChatScreen = ({ initialQuery = "" }) => {
   // Chat title state
-  const [chatTitle, setChatTitle] = useState("CommPac Report Analysis");
+  const [chatTitle, setChatTitle] = useState("");
 
   // Task progress state
   const [currentTask, setCurrentTask] = useState(null);
