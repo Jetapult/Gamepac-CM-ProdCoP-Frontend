@@ -3,7 +3,7 @@ import ChatHeader from "./ChatHeader";
 import ConversationPanel from "./ConversationPanel";
 import PreviewPanel from "./PreviewPanel";
 
-const ChatScreen = ({ initialQuery = "" }) => {
+const ChatScreen = ({ chatId, initialQuery = "" }) => {
   // Chat title state
   const [chatTitle, setChatTitle] = useState("");
 
@@ -27,6 +27,8 @@ const ChatScreen = ({ initialQuery = "" }) => {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side - Conversation */}
         <ConversationPanel
+          chatId={chatId}
+          initialQuery={initialQuery}
           onTaskUpdate={(task, index, time, tasks) => {
             setCurrentTask(task);
             setCurrentTaskIndex(index);

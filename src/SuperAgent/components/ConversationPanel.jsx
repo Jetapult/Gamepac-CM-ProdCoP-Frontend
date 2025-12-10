@@ -1,108 +1,137 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import Message from "./messages/Message";
 import ChatInput from "./ChatInput";
 import thinkingSphere from "../../assets/thinking_sphere.gif";
+import { getAuthToken } from "../../utils";
 
-const ConversationPanel = ({ onTaskUpdate, onThinkingChange }) => {
+const API_BASE_URL = "http://localhost:3000";
+
+const ConversationPanel = ({
+  chatId,
+  initialQuery,
+  onTaskUpdate,
+  onThinkingChange,
+}) => {
   const [messages, setMessages] = useState([]);
+  const [streamingResponse, setStreamingResponse] = useState("");
   const [isThinking, setIsThinking] = useState(false);
-  const [currentTask, setCurrentTask] = useState(null);
-  const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
-  const [elapsedTime, setElapsedTime] = useState(0);
   const messagesEndRef = useRef(null);
+  const initialQuerySentRef = useRef(false);
+  const abortControllerRef = useRef(null);
 
-  // Task simulation
-  const tasks = [];
+  const stopRequest = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsThinking(false);
+    if (onThinkingChange) onThinkingChange(false);
+  }, [onThinkingChange]);
+
+  const sendMessage = useCallback(
+    async (content) => {
+      if (!content.trim() || !chatId) return;
+
+      // Add user message to UI
+      const userMessage = {
+        id: Date.now(),
+        sender: "user",
+        type: "text",
+        data: {
+          content: content.trim(),
+        },
+      };
+      setMessages((prev) => [...prev, userMessage]);
+
+      // Start streaming
+      setIsThinking(true);
+      if (onThinkingChange) onThinkingChange(true);
+      setStreamingResponse("");
+
+      // Create abort controller for this request
+      abortControllerRef.current = new AbortController();
+
+      try {
+        const token = getAuthToken()?.token;
+        const response = await fetch(
+          `${API_BASE_URL}/v1/superagent/chats/${chatId}/messages/stream`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ message: content.trim() }),
+            signal: abortControllerRef.current.signal,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.trim()) {
+              setStreamingResponse((prev) => prev + line + "\n");
+            }
+          }
+        }
+
+        // Process any remaining buffer
+        if (buffer.trim()) {
+          setStreamingResponse((prev) => prev + buffer + "\n");
+        }
+      } catch (error) {
+        if (error.name === "AbortError") {
+          console.log("Request aborted by user");
+        } else {
+          console.error("Failed to send message:", error);
+          setStreamingResponse((prev) => prev + `\nError: ${error.message}`);
+        }
+      } finally {
+        abortControllerRef.current = null;
+        setIsThinking(false);
+        if (onThinkingChange) onThinkingChange(false);
+      }
+    },
+    [chatId, onThinkingChange]
+  );
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isThinking]);
+  }, [messages, isThinking, streamingResponse]);
 
-  // Timer for task progress
+  // Send initial query on mount if present
   useEffect(() => {
-    let timer;
-    if (isThinking && currentTask) {
-      timer = setInterval(() => {
-        setElapsedTime((prev) => {
-          const newTime = prev + 1;
-          // Notify parent of time update
-          if (onTaskUpdate) {
-            onTaskUpdate(currentTask, currentTaskIndex, newTime, tasks);
-          }
-          return newTime;
-        });
-      }, 1000);
+    console.log(
+      "ConversationPanel useEffect - initialQuery:",
+      initialQuery,
+      "chatId:",
+      chatId,
+      "alreadySent:",
+      initialQuerySentRef.current
+    );
+    if (initialQuery && chatId && !initialQuerySentRef.current) {
+      initialQuerySentRef.current = true;
+      sendMessage(initialQuery);
     }
-    return () => clearInterval(timer);
-  }, [isThinking, currentTask, currentTaskIndex, onTaskUpdate]);
-
-  const simulateAIResponse = async (userMessage) => {
-    setIsThinking(true);
-    if (onThinkingChange) onThinkingChange(true);
-    setElapsedTime(0);
-
-    // Wait 2 seconds before starting tasks (simulating LLM response time)
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // Execute tasks one by one
-    for (let i = 0; i < tasks.length; i++) {
-      setCurrentTask(tasks[i]);
-      setCurrentTaskIndex(i + 1);
-      setElapsedTime(0);
-
-      // Notify parent component with all tasks
-      if (onTaskUpdate) {
-        onTaskUpdate(tasks[i], i + 1, 0, tasks);
-      }
-
-      // Wait 5 seconds per task
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-    }
-
-    // Clear task state
-    setCurrentTask(null);
-    setCurrentTaskIndex(0);
-    setElapsedTime(0);
-    setIsThinking(false);
-    if (onThinkingChange) onThinkingChange(false);
-
-    // Notify parent that tasks are complete
-    if (onTaskUpdate) {
-      onTaskUpdate(null, 0, 0, []);
-    }
-
-    // Add AI response
-    const aiResponse = {
-      id: Date.now(),
-      sender: "llm",
-      type: "text",
-      data: {
-        content: `I understand you want me to: "${userMessage}". I've completed the analysis and here are the findings.`,
-        agentName: "GamePac",
-        relatedActions: ["balancing problems", "technical bugs"],
-      },
-    };
-
-    setMessages((prev) => [...prev, aiResponse]);
-  };
+  }, [initialQuery, chatId, sendMessage]);
 
   const handleSendMessage = (content) => {
-    if (!content.trim()) return;
-
-    const newMessage = {
-      id: Date.now(),
-      sender: "user",
-      type: "text",
-      data: {
-        content: content.trim(),
-      },
-    };
-
-    setMessages([...messages, newMessage]);
-
-    // Trigger AI response simulation
-    simulateAIResponse(content.trim());
+    sendMessage(content);
   };
 
   return (
@@ -139,8 +168,15 @@ const ConversationPanel = ({ onTaskUpdate, onThinkingChange }) => {
           );
         })}
 
+        {/* Streaming Response */}
+        {streamingResponse && (
+          <div className="bg-gray-100 rounded-lg p-4 font-mono text-sm whitespace-pre-wrap overflow-x-auto">
+            {streamingResponse}
+          </div>
+        )}
+
         {/* Thinking Indicator */}
-        {isThinking && (
+        {isThinking && !streamingResponse && (
           <div className="flex items-center gap-[9px]">
             <div className="w-4 h-4 shrink-0">
               <img
@@ -164,7 +200,11 @@ const ConversationPanel = ({ onTaskUpdate, onThinkingChange }) => {
 
       {/* Input Area */}
       <div className="px-4 pb-4">
-        <ChatInput onSendMessage={handleSendMessage} isThinking={isThinking} />
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          isThinking={isThinking}
+          onStop={stopRequest}
+        />
       </div>
     </div>
   );

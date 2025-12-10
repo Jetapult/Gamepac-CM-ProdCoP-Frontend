@@ -6,6 +6,7 @@ import {
   Plain,
   PlugCircle,
   SsdRound,
+  StopCircle,
 } from "@solar-icons/react";
 import { useSelector, useDispatch } from "react-redux";
 import { setSelectedTemplate } from "../../store/reducer/superAgent";
@@ -153,7 +154,7 @@ const IntegrationDropdown = ({
   );
 };
 
-const ChatInput = ({ onSendMessage, isThinking = false }) => {
+const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
   const dispatch = useDispatch();
   const [inputValue, setInputValue] = useState("");
   const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
@@ -332,6 +333,7 @@ const ChatInput = ({ onSendMessage, isThinking = false }) => {
                 <>
                   {connectedIntegrations.map((integration) => (
                     <img
+                      key={integration}
                       src={getIntegrationBySlug(integration).icon}
                       alt={integration}
                       className="size-[16px] object-contain"
@@ -358,21 +360,30 @@ const ChatInput = ({ onSendMessage, isThinking = false }) => {
           </div>
         </div>
 
-        <button
-          onClick={handleSend}
-          className={`w-9 h-9 rounded-[8px] flex items-center justify-center transition-all relative overflow-hidden cursor-pointer disabled:cursor-not-allowed border border-[rgba(255,255,255,0.3)] ${
-            !inputValue.trim() || isThinking
-              ? "bg-[#E6E6E6]"
-              : "bg-[linear-gradient(333deg,#11A85F_13.46%,#1F6744_103.63%)]"
-          }`}
-          disabled={!inputValue.trim() || isThinking}
-        >
-          <Plain
-            weight={"Linear"}
-            size={20}
-            color={!inputValue.trim() || isThinking ? "#B0B0B0" : "#FFFFFF"}
-          />
-        </button>
+        {isThinking ? (
+          <button
+            onClick={onStop}
+            className="w-9 h-9 rounded-[8px] flex items-center justify-center transition-all cursor-pointer bg-transparent"
+          >
+            <StopCircle weight={"Bold"} size={36} color="#0f4159" />
+          </button>
+        ) : (
+          <button
+            onClick={handleSend}
+            className={`w-9 h-9 rounded-[8px] flex items-center justify-center transition-all relative overflow-hidden cursor-pointer disabled:cursor-not-allowed border border-[rgba(255,255,255,0.3)] ${
+              !inputValue.trim()
+                ? "bg-[#E6E6E6]"
+                : "bg-[linear-gradient(333deg,#11A85F_13.46%,#1F6744_103.63%)]"
+            }`}
+            disabled={!inputValue.trim()}
+          >
+            <Plain
+              weight={"Linear"}
+              size={20}
+              color={!inputValue.trim() ? "#B0B0B0" : "#FFFFFF"}
+            />
+          </button>
+        )}
       </div>
 
       {/* Connector Modal */}
