@@ -112,12 +112,18 @@ const SuperAgent = () => {
     try {
       const title = query?.trim().slice(0, 50) || "";
       const response = await api.post("/v1/superagent/chats", {
-        title,
-        agent_slug: selectedAgent.slug,
+        data: {
+          agent_slug: selectedAgent.slug,
+        },
       });
       if (response.data?.success && response.data?.data?.id) {
+        const chatId = response.data.data.id;
+        // Update chat title via PATCH
+        if (title) {
+          await api.patch(`/v1/superagent/chats/${chatId}`, { title });
+        }
         dispatch(setSelectedTemplate({}));
-        navigate(`/super-agent/chat/${response.data.data.id}`, {
+        navigate(`/super-agent/chat/${chatId}`, {
           state: { initialQuery: query, agentSlug: selectedAgent.slug },
         });
       }

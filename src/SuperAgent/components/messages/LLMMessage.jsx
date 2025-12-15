@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import ReactDOM from "react-dom";
+import ReactMarkdown from "react-markdown";
 import { Like, Dislike, Copy, Restart, Unread } from "@solar-icons/react";
 import { CornerDownLeft } from "lucide-react";
 import gamepacLogo from "../../../assets/super-agents/gamepac-logo.svg";
@@ -49,7 +50,6 @@ const Tooltip = ({ children, text }) => {
 
 const LLMMessage = ({
   content,
-  agentName = "GamePac",
   isLatest = false,
   relatedActions = [],
   onSendMessage,
@@ -89,28 +89,17 @@ const LLMMessage = ({
 
   return (
     <div
-      className="flex flex-col gap-3 max-w-[551px] group"
+      className="flex flex-col gap-3 max-w-[551px] group ml-8"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Agent Header */}
-      <div className="flex items-center gap-2">
-        <img src={gamepacLogo} alt={agentName} className="w-6 h-6" />
-        <span
-          className="text-base font-medium text-black"
-          style={{ fontFamily: "Urbanist, sans-serif" }}
-        >
-          {agentName}
-        </span>
-      </div>
-
       {/* Response Text */}
-      <p
-        className="text-base text-black"
+      <div
+        className="text-base text-black prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-strong:font-semibold"
         style={{ fontFamily: "Urbanist, sans-serif", lineHeight: "24px" }}
       >
-        {content}
-      </p>
+        <ReactMarkdown>{content}</ReactMarkdown>
+      </div>
 
       {/* Related Actions - Only show for latest LLM message */}
       {isLatest && relatedActions.length > 0 && (

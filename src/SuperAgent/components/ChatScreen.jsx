@@ -47,6 +47,7 @@ const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
           }}
           onThinkingChange={setIsThinking}
           onArtifactUpdate={setArtifactContent}
+          onTitleUpdate={handleTitleChange}
         />
 
         {/* Right Side - Preview */}

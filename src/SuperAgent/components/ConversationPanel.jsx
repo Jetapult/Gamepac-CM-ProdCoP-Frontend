@@ -4,6 +4,10 @@ import TaskMessage from "./messages/TaskMessage";
 import ChatInput from "./ChatInput";
 import thinkingSphere from "../../assets/thinking_sphere.gif";
 import { getAuthToken } from "../../utils";
+import {
+  processEvent as processEventHandler,
+  shouldStopThinking,
+} from "../utils/eventHandlers";
 
 const API_BASE_URL = "http://localhost:3000";
 
@@ -14,12 +18,16 @@ const ConversationPanel = ({
   onTaskUpdate,
   onThinkingChange,
   onArtifactUpdate,
+  onTitleUpdate,
 }) => {
   const [messages, setMessages] = useState([]);
   const [streamingTask, setStreamingTask] = useState(null);
   const [isThinking, setIsThinking] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [error, setError] = useState(null);
   const [fetchedAgentSlug, setFetchedAgentSlug] = useState("");
+  const [needsClarification, setNeedsClarification] = useState(false);
+  const [previousUserQuery, setPreviousUserQuery] = useState("");
   const messagesEndRef = useRef(null);
   const initialQuerySentRef = useRef(false);
   const abortControllerRef = useRef(null);
@@ -54,8 +62,13 @@ const ConversationPanel = ({
 
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.data?.agent_slug) {
-          setFetchedAgentSlug(result.data.agent_slug);
+        if (result.success && result.data) {
+          if (result.data.data?.agent_slug) {
+            setFetchedAgentSlug(result.data.data.agent_slug);
+          }
+          if (result.data.title && onTitleUpdate) {
+            onTitleUpdate(result.data.title);
+          }
         }
       }
     } catch (error) {
@@ -98,20 +111,27 @@ const ConversationPanel = ({
                 },
               };
             } else if (msg.sender === "agent") {
-              // For agent messages, we need to process raw_events to extract content
-              // For now, create a task message from the events
+              // For agent messages, process raw_events using the same handlers as streaming
               const rawEvents = msg.data?.raw_events || [];
-              const task = processRawEventsToTask(rawEvents);
-              return {
-                id: msg.id,
-                sender: "llm",
-                type: "task",
-                data: task,
-              };
+              const processedMessages = [];
+
+              for (const event of rawEvents) {
+                const message = processEventHandler(event, {});
+                if (message) {
+                  processedMessages.push({
+                    ...message,
+                    id: `${msg.id}-${processedMessages.length}`,
+                  });
+                }
+              }
+
+              // Return array of messages (will be flattened later)
+              return processedMessages.length > 0 ? processedMessages : null;
             }
             return null;
           })
-          .filter(Boolean);
+          .filter(Boolean)
+          .flat(); // Flatten arrays from agent messages
 
         setMessages(transformedMessages);
         historyFetchedRef.current = true;
@@ -128,61 +148,56 @@ const ConversationPanel = ({
     let description = "";
     const actions = [];
 
+    const toolLabels = {
+      market_search: "Executing market research",
+      synthesize: "Synthesizing findings",
+      jira_validate: "Validating Jira ticket",
+      jira_create: "Creating Jira ticket",
+      request_clarification: "Requesting clarification",
+      finish: "Completing workflow",
+    };
+    const toolTypes = {
+      market_search: "reading",
+      synthesize: "executing",
+      jira_validate: "creating",
+      jira_create: "creating",
+      request_clarification: "executing",
+      finish: "executing",
+    };
+
     for (const event of rawEvents) {
-      const { type, data } = event;
+      // API uses 'event' field
+      const eventType = event.event;
 
-      // Extract reasoning from thinking_complete
-      if (type === "thinking_complete") {
-        try {
-          const parsed = JSON.parse(data?.full_text || "{}");
-          if (parsed?.reasoning) {
-            description = parsed.reasoning;
-          }
-        } catch {
-          // ignore parse errors
-        }
+      // Handle 'reason' event - contains reasoning directly
+      if (eventType === "reason" && event.reasoning) {
+        description = event.reasoning;
       }
 
-      // Extract summary from synthesis events (look for tool_result of synthesize)
-      if (
-        type === "tool_result" &&
-        data?.tool === "synthesize" &&
-        data?.has_data
-      ) {
-        // Summary would be in the synthesis tokens, but we can use data_preview as fallback
-      }
-
-      // Add tool calls as actions - skip duplicates
-      if (type === "tool_call") {
-        const toolName = data?.tool || "action";
-        // Check if this tool already exists in actions
+      // Handle 'action' event - contains tool_name directly
+      if (eventType === "action") {
+        const toolName = event.tool_name || "action";
         const existingAction = actions.find(
           (action) => action.toolName === toolName
         );
         if (!existingAction) {
-          const toolLabels = {
-            market_search: "Executing market research",
-            synthesize: "Synthesizing findings",
-            jira_validate: "Validating Jira ticket",
-            jira_create: "Creating Jira ticket",
-            finish: "Completing workflow",
-          };
-          const toolTypes = {
-            market_search: "reading",
-            synthesize: "executing",
-            jira_validate: "creating",
-            jira_create: "creating",
-            finish: "executing",
-          };
           actions.push({
             id: `action-${actions.length}`,
             toolName: toolName,
             type: toolTypes[toolName] || "executing",
-            text: toolLabels[toolName] || `Executing ${toolName}`,
+            text:
+              event.formatted_message ||
+              toolLabels[toolName] ||
+              `Executing ${toolName}`,
             detail: "",
-            status: "completed", // Historical actions are completed
+            status: "completed",
           });
         }
+      }
+
+      // Handle 'complete' event - contains report with summary
+      if (eventType === "complete" && event.report?.summary) {
+        description = event.report.summary;
       }
     }
 
@@ -204,13 +219,25 @@ const ConversationPanel = ({
     async (content) => {
       if (!content.trim() || !chatId) return;
 
-      // Add user message to UI
+      const trimmedContent = content.trim();
+
+      // Build message content with previous context if clarification was needed
+      let messageToSend = trimmedContent;
+      if (needsClarification && previousUserQuery) {
+        messageToSend = `Previous Context: ${previousUserQuery}\n\n${trimmedContent}`;
+        setNeedsClarification(false);
+      }
+
+      // Store current query for potential future clarification
+      setPreviousUserQuery(trimmedContent);
+
+      // Add user message to UI (show modified content with previous context if applicable)
       const userMessage = {
         id: Date.now(),
         sender: "user",
         type: "text",
         data: {
-          content: content.trim(),
+          content: messageToSend,
         },
       };
       setMessages((prev) => [...prev, userMessage]);
@@ -241,6 +268,7 @@ const ConversationPanel = ({
           synthesize: "Synthesizing findings",
           jira_validate: "Validating Jira ticket",
           jira_create: "Creating Jira ticket",
+          request_clarification: "Requesting clarification",
           finish: "Completing workflow",
         };
         return labels[toolName] || `Executing ${toolName}`;
@@ -253,244 +281,30 @@ const ConversationPanel = ({
           synthesize: "executing",
           jira_validate: "creating",
           jira_create: "creating",
+          request_clarification: "executing",
           finish: "executing",
         };
         return types[toolName] || "executing";
       };
 
-      const processEvent = (event) => {
-        const { type, data } = event;
+      const processEvent = (eventData) => {
+        const message = processEventHandler(eventData, {
+          setMessages,
+          setStreamingTask,
+          setIsThinking,
+          setError,
+          setNeedsClarification,
+          onThinkingChange,
+          onArtifactUpdate,
+        });
 
-        // Stream thinking tokens - parse to extract only reasoning content
-        if (type === "thinking_token") {
-          const content = data?.content || "";
-          reasoningBuffer += content;
-
-          // Check if we've hit the start of reasoning value
-          if (!insideReasoning && reasoningBuffer.includes('"reasoning": "')) {
-            insideReasoning = true;
-            // Extract everything after "reasoning": "
-            const startIdx = reasoningBuffer.indexOf('"reasoning": "') + 14;
-            reasoningBuffer = reasoningBuffer.substring(startIdx);
-          }
-
-          // If inside reasoning, stream the content
-          if (insideReasoning) {
-            // Check if reasoning has ended (unescaped quote followed by comma or newline)
-            const endMatch = reasoningBuffer.match(/([^\\])"/);
-            if (endMatch) {
-              // Reasoning ended - extract final part and stop
-              const endIdx = endMatch.index + 1;
-              const finalContent = reasoningBuffer
-                .substring(0, endIdx)
-                .replace(/\\"/g, '"')
-                .replace(/\\n/g, "\n");
-              setStreamingTask((prev) => ({
-                ...prev,
-                description: finalContent,
-              }));
-              insideReasoning = false;
-              reasoningBuffer = "";
-            } else {
-              // Still streaming reasoning - update description
-              const displayContent = reasoningBuffer
-                .replace(/\\"/g, '"')
-                .replace(/\\n/g, "\n");
-              setStreamingTask((prev) => ({
-                ...prev,
-                description: displayContent,
-              }));
-            }
-          }
-          return;
+        if (message) {
+          setMessages((prev) => [...prev, message]);
         }
 
-        // On thinking_complete, reset for next iteration
-        if (type === "thinking_complete") {
-          insideReasoning = false;
-          reasoningBuffer = "";
-          return;
-        }
-
-        // Stream synthesis tokens - parse to extract only summary content
-        if (type === "synthesis_token") {
-          const content = data?.content || "";
-          summaryBuffer += content;
-
-          // Check if we've hit the start of summary value
-          if (!insideSummary && summaryBuffer.includes('"summary": "')) {
-            insideSummary = true;
-            const startIdx = summaryBuffer.indexOf('"summary": "') + 12;
-            summaryBuffer = summaryBuffer.substring(startIdx);
-          }
-
-          // If inside summary, stream the content
-          if (insideSummary) {
-            const endMatch = summaryBuffer.match(/([^\\])"/);
-            if (endMatch) {
-              const endIdx = endMatch.index + 1;
-              const finalContent = summaryBuffer
-                .substring(0, endIdx)
-                .replace(/\\"/g, '"')
-                .replace(/\\n/g, "\n");
-              setStreamingTask((prev) => ({
-                ...prev,
-                description:
-                  prev.description +
-                  (prev.description ? "\n\n" : "") +
-                  finalContent,
-              }));
-              insideSummary = false;
-              summaryBuffer = "";
-            } else {
-              const displayContent = summaryBuffer
-                .replace(/\\"/g, '"')
-                .replace(/\\n/g, "\n");
-              setStreamingTask((prev) => ({
-                ...prev,
-                description:
-                  prev.description.split("\n\n")[0] +
-                  (prev.description ? "\n\n" : "") +
-                  displayContent,
-              }));
-            }
-          }
-          return;
-        }
-
-        // Reset synthesis buffer on synthesis start
-        if (type === "synthesis_start") {
-          insideSummary = false;
-          summaryBuffer = "";
-          return;
-        }
-
-        // Reset jira buffer on jira start
-        if (type === "jira_start") {
-          jiraBuffer = "";
-          return;
-        }
-
-        // Stream jira tokens - append directly to description
-        if (type === "jira_token") {
-          const content = data?.content || "";
-          jiraBuffer += content;
-          // Display jira content as it streams (it's markdown-like content)
-          const displayContent = jiraBuffer
-            .replace(/\\n/g, "\n")
-            .replace(/\\"/g, '"');
-          setStreamingTask((prev) => {
-            // Find where jira content starts (after previous content)
-            const baseDescription = prev.description.split(
-              "\n\n**Jira Ticket:**"
-            )[0];
-            return {
-              ...prev,
-              description:
-                baseDescription +
-                (baseDescription ? "\n\n" : "") +
-                "**Jira Ticket:**\n" +
-                displayContent,
-            };
-          });
-          return;
-        }
-
-        // Add tool_call as a new action (pending) - skip if duplicate
-        if (type === "tool_call") {
-          const toolName = data?.tool || "action";
-          setStreamingTask((prev) => {
-            // Check if this tool already exists in actions
-            const existingAction = prev.actions.find(
-              (action) => action.toolName === toolName
-            );
-            if (existingAction) {
-              // Skip duplicate tool call
-              return prev;
-            }
-            const actionId = `action-${Date.now()}`;
-            return {
-              ...prev,
-              actions: [
-                ...prev.actions,
-                {
-                  id: actionId,
-                  toolName: toolName,
-                  type: getToolType(toolName),
-                  text: getToolLabel(toolName),
-                  detail: "",
-                  status: "pending",
-                },
-              ],
-            };
-          });
-          return;
-        }
-
-        // Mark action as completed on tool_result
-        if (type === "tool_result") {
-          const toolName = data?.tool || "";
-          setStreamingTask((prev) => ({
-            ...prev,
-            actions: prev.actions.map((action) =>
-              action.toolName === toolName && action.status === "pending"
-                ? { ...action, status: "completed" }
-                : action
-            ),
-          }));
-          return;
-        }
-
-        // Handle complete event - extract final analysis and add as LLM message
-        if (type === "complete") {
-          const final = data?.trajectory?.final;
-          if (final) {
-            // Build a formatted summary from the analysis
-            const analysis = final.analysis;
-            const jiraTicket = final.jira_ticket;
-
-            let content = "";
-
-            // Add analysis summary
-            if (analysis?.summary) {
-              content += `**Summary**\n${analysis.summary}\n\n`;
-            }
-
-            // Add key findings
-            if (analysis?.key_findings?.length > 0) {
-              content += `**Key Findings**\n`;
-              analysis.key_findings.forEach((finding, i) => {
-                content += `${i + 1}. ${finding.claim}\n   - Evidence: ${
-                  finding.evidence
-                }\n   - Source: ${finding.source_id}\n\n`;
-              });
-            }
-
-            // Add risk flags
-            if (analysis?.risk_flags?.length > 0) {
-              content += `**Risks**\n`;
-              analysis.risk_flags.forEach((risk) => {
-                content += `- ${risk}\n`;
-              });
-              content += "\n";
-            }
-
-            // Add Jira ticket info
-            if (jiraTicket) {
-              content += `**Jira Ticket Created**\n`;
-              content += `- Title: ${jiraTicket.title}\n`;
-              content += `- Project: ${jiraTicket.project_key}\n`;
-              content += `- Assignee: ${jiraTicket.assignee}\n`;
-              content += `- Story Points: ${jiraTicket.story_points}\n`;
-            }
-
-            // Send markdown content to preview panel (not as a message)
-            if (content && onArtifactUpdate) {
-              onArtifactUpdate(content.trim());
-            }
-          }
-
-          // Keep streaming task visible, just stop thinking
+        // Stop thinking on complete or error
+        if (shouldStopThinking(eventData.event)) {
+          setStreamingTask(null);
           setIsThinking(false);
           if (onThinkingChange) onThinkingChange(false);
         }
@@ -510,15 +324,25 @@ const ConversationPanel = ({
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
             body: JSON.stringify({
-              message: content.trim(),
+              message: messageToSend,
               agent_slug: agentSlug,
+              game_id: 1,
             }),
             signal: abortControllerRef.current.signal,
           }
         );
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          // Handle 401 unauthorized - clear token and redirect to login
+          if (response.status === 401) {
+            localStorage.removeItem("jwt");
+            window.location.href = "/login";
+            return;
+          }
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.message || `Request failed. Please try again.`
+          );
         }
 
         const reader = response.body.getReader();
@@ -559,6 +383,9 @@ const ConversationPanel = ({
           console.log("Request aborted by user");
         } else {
           console.error("Failed to send message:", error);
+          setError(
+            error.message || "Failed to send message. Please try again."
+          );
         }
         setIsThinking(false);
         if (onThinkingChange) onThinkingChange(false);
@@ -566,7 +393,7 @@ const ConversationPanel = ({
         abortControllerRef.current = null;
       }
     },
-    [chatId, agentSlug, onThinkingChange]
+    [chatId, agentSlug, onThinkingChange, needsClarification, previousUserQuery]
   );
 
   // Auto-scroll to bottom when messages change
@@ -593,13 +420,14 @@ const ConversationPanel = ({
   }, [initialQuery, chatId, agentSlug, sendMessage]);
 
   const handleSendMessage = (content) => {
+    setError(null);
     sendMessage(content);
   };
 
   return (
     <div className="flex-1 flex flex-col">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-6">
+      <div className="flex-1 overflow-y-auto p-5 space-y-4">
         {messages.map((message, index) => {
           // Find the last user message index
           const lastUserMessageIndex = messages
@@ -620,23 +448,55 @@ const ConversationPanel = ({
             message.sender === "llm" &&
             index === lastLLMMessageIndex;
 
+          // Check if this is the first LLM text message after a user message
+          // Look backwards to find if there's a user message before any other text message
+          let isFirstLLMAfterUser = false;
+          if (message.sender === "llm" && message.type === "text") {
+            isFirstLLMAfterUser = true;
+            // Check if there's another LLM text message before this one (after the last user message)
+            for (let i = index - 1; i >= 0; i--) {
+              if (messages[i].sender === "user") {
+                break; // Found user message, this is the first LLM text after it
+              }
+              if (messages[i].sender === "llm" && messages[i].type === "text") {
+                isFirstLLMAfterUser = false; // Found another LLM text message before
+                break;
+              }
+            }
+          }
+
           return (
             <Message
               key={message.id}
               message={message}
               isLatest={isLatestUserMessage || isLatestLLMMessage}
+              isFirstLLMAfterUser={isFirstLLMAfterUser}
               onSendMessage={handleSendMessage}
             />
           );
         })}
 
         {/* Streaming Task Display */}
-        {streamingTask && (
-          <TaskMessage
-            task={streamingTask}
-            isLatest={false}
-            onSendMessage={handleSendMessage}
-          />
+        {streamingTask &&
+          (streamingTask.description || streamingTask.actions?.length > 0) && (
+            <TaskMessage
+              task={streamingTask}
+              isLatest={false}
+              onSendMessage={handleSendMessage}
+            />
+          )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <span className="text-red-600 text-sm">{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="ml-auto text-red-400 hover:text-red-600"
+            >
+              ✕
+            </button>
+          </div>
         )}
 
         {/* Thinking Indicator */}
