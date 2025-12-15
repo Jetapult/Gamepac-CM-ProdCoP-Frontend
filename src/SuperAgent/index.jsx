@@ -41,7 +41,7 @@ export const agents = [
   {
     id: "2",
     name: "Game Director Report",
-    slug: "game-director-report",
+    slug: "toyagent",
     icon: <Notebook2 weight={"Linear"} className="size-[24px]" />,
   },
   {
@@ -111,11 +111,14 @@ const SuperAgent = () => {
   const onSendMessage = async (query) => {
     try {
       const title = query?.trim().slice(0, 50) || "";
-      const response = await api.post("/v1/superagent/chats", { title });
+      const response = await api.post("/v1/superagent/chats", {
+        title,
+        agent_slug: selectedAgent.slug,
+      });
       if (response.data?.success && response.data?.data?.id) {
         dispatch(setSelectedTemplate({}));
         navigate(`/super-agent/chat/${response.data.data.id}`, {
-          state: { initialQuery: query },
+          state: { initialQuery: query, agentSlug: selectedAgent.slug },
         });
       }
     } catch (error) {

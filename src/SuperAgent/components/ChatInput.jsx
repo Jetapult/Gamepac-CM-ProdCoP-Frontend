@@ -166,6 +166,7 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
   const selectedTemplate = useSelector(
     (state) => state.superAgent.selectedTemplate
   );
+  const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
   const userRef = useRef(null);
   const dropdownRef = useRef(null);
   const integrationDropdownRef = useRef(null);
@@ -207,7 +208,12 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
   };
 
   const handleSend = () => {
-    if (inputValue.trim() && onSendMessage && !isThinking) {
+    if (
+      inputValue.trim() &&
+      onSendMessage &&
+      !isThinking &&
+      selectedAgent?.id
+    ) {
       onSendMessage(inputValue);
       setInputValue("");
     }
@@ -375,16 +381,18 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
           <button
             onClick={handleSend}
             className={`w-9 h-9 rounded-[8px] flex items-center justify-center transition-all relative overflow-hidden cursor-pointer disabled:cursor-not-allowed border border-[rgba(255,255,255,0.3)] ${
-              !inputValue.trim()
+              !inputValue.trim() || !selectedAgent?.id
                 ? "bg-[#E6E6E6]"
                 : "bg-[linear-gradient(333deg,#11A85F_13.46%,#1F6744_103.63%)]"
             }`}
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || !selectedAgent?.id}
           >
             <Plain
               weight={"Linear"}
               size={20}
-              color={!inputValue.trim() ? "#B0B0B0" : "#FFFFFF"}
+              color={
+                !inputValue.trim() || !selectedAgent?.id ? "#B0B0B0" : "#FFFFFF"
+              }
             />
           </button>
         )}

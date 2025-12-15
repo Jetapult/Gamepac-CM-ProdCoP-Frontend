@@ -45,19 +45,23 @@ const TaskMessage = ({ task, isLatest = false, onSendMessage }) => {
 
       {/* Actions List */}
       {isExpanded && task.actions && task.actions.length > 0 && (
-        <div className="border border-[#f6f6f6] rounded-lg ml-8">
+        <div className="border border-[#f6f6f6] rounded-lg ml-8 overflow-hidden">
           {task.actions.map((action, index) => (
             <div
               key={action.id}
-              className={`flex items-center gap-2 px-3 py-2.5 ${
-                index !== task.actions.length - 1
-                  ? "border-b border-[#f6f6f6]"
-                  : ""
-              }`}
+              className="flex items-center gap-[9px] p-[10px]"
+              style={{
+                backgroundColor:
+                  action.status === "pending" ? "#F1FCF6" : "transparent",
+                borderBottom:
+                  index !== task.actions.length - 1
+                    ? "1px solid #F6F6F6"
+                    : "none",
+              }}
             >
               <ActionIcon type={action.type} status={action.status} />
               <p
-                className="text-sm"
+                className="text-[14px]"
                 style={{
                   fontFamily: "Urbanist, sans-serif",
                   lineHeight: "21px",
@@ -125,10 +129,14 @@ const ActionIcon = ({ type, status }) => {
 
   const Icon = getIcon();
   const iconColor =
-    status === "completed" ? "text-[#1f6744]" : "text-[#6d6d6d]";
+    status === "completed" ? "text-[#1f6744]" : "text-[#1f6744]";
+  // Only show background when completed, pending rows already have green background
+  const bgColor = status === "completed" ? "bg-[#F1FCF6]" : "bg-transparent";
 
   return (
-    <div className="w-5 h-5 flex items-center justify-center shrink-0 rounded bg-[#F1FCF6]">
+    <div
+      className={`w-5 h-5 flex items-center justify-center shrink-0 rounded ${bgColor}`}
+    >
       <Icon size={12} className={iconColor} strokeWidth={2} />
     </div>
   );

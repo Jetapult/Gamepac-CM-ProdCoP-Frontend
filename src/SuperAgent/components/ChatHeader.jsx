@@ -6,11 +6,13 @@ import {
   Star,
   TrashBinMinimalistic,
 } from "@solar-icons/react";
+import api from "../../api";
 
-const ChatHeader = ({ chatTitle, onTitleChange }) => {
+const ChatHeader = ({ chatId, chatTitle, onTitleChange }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(chatTitle);
+  const [isSaving, setIsSaving] = useState(false);
   const menuRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -37,14 +39,41 @@ const ChatHeader = ({ chatTitle, onTitleChange }) => {
     }
   }, [isEditing]);
 
+  // Sync local title with prop when it changes externally
+  useEffect(() => {
+    setTitle(chatTitle);
+  }, [chatTitle]);
+
   const handleEditClick = () => {
     setIsEditing(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsEditing(false);
-    if (onTitleChange && title.trim()) {
-      onTitleChange(title.trim());
+    const newTitle = title.trim();
+
+    if (!newTitle || newTitle === chatTitle) return;
+
+    // Update local state immediately
+    if (onTitleChange) {
+      onTitleChange(newTitle);
+    }
+
+    // Call API to persist the change
+    if (chatId) {
+      setIsSaving(true);
+      try {
+        await api.patch(`/v1/superagent/chats/${chatId}`, { title: newTitle });
+      } catch (error) {
+        console.error("Failed to update chat title:", error);
+        // Revert on error
+        setTitle(chatTitle);
+        if (onTitleChange) {
+          onTitleChange(chatTitle);
+        }
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 

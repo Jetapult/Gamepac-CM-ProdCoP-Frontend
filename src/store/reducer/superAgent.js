@@ -2,9 +2,13 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   isSiderbarOpen: false,
-  selectedAgent: {},
+  selectedAgent: {
+    id: "1",
+    name: "CommPac",
+    slug: "commpac",
+  },
   selectedTemplate: {},
-  selectedTask: {}
+  selectedTask: {},
 };
 
 const superAgentSlice = createSlice({
@@ -22,9 +26,14 @@ const superAgentSlice = createSlice({
     },
     setSelectedTask: (state, action) => {
       state.selectedTask = action.payload;
-    }
+    },
   },
 });
 
-export const { setIsSiderbarOpen, setSelectedAgent, setSelectedTemplate, setSelectedTask } = superAgentSlice.actions;
+export const {
+  setIsSiderbarOpen,
+  setSelectedAgent,
+  setSelectedTemplate,
+  setSelectedTask,
+} = superAgentSlice.actions;
 export default superAgentSlice.reducer;

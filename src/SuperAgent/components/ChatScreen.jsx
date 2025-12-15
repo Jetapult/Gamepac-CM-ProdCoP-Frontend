@@ -3,7 +3,7 @@ import ChatHeader from "./ChatHeader";
 import ConversationPanel from "./ConversationPanel";
 import PreviewPanel from "./PreviewPanel";
 
-const ChatScreen = ({ chatId, initialQuery = "" }) => {
+const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
   // Chat title state
   const [chatTitle, setChatTitle] = useState("");
 
@@ -14,6 +14,9 @@ const ChatScreen = ({ chatId, initialQuery = "" }) => {
   const [allTasks, setAllTasks] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
 
+  // Artifact content for preview panel
+  const [artifactContent, setArtifactContent] = useState(null);
+
   const handleTitleChange = (newTitle) => {
     setChatTitle(newTitle);
   };
@@ -21,7 +24,11 @@ const ChatScreen = ({ chatId, initialQuery = "" }) => {
   return (
     <div className="flex-1 flex flex-col">
       {/* Header - Full Width */}
-      <ChatHeader chatTitle={chatTitle} onTitleChange={handleTitleChange} />
+      <ChatHeader
+        chatId={chatId}
+        chatTitle={chatTitle}
+        onTitleChange={handleTitleChange}
+      />
 
       {/* Main Content - Left and Right Panels */}
       <div className="flex-1 flex overflow-hidden">
@@ -29,6 +36,7 @@ const ChatScreen = ({ chatId, initialQuery = "" }) => {
         <ConversationPanel
           chatId={chatId}
           initialQuery={initialQuery}
+          agentSlug={agentSlug}
           onTaskUpdate={(task, index, time, tasks) => {
             setCurrentTask(task);
             setCurrentTaskIndex(index);
@@ -38,6 +46,7 @@ const ChatScreen = ({ chatId, initialQuery = "" }) => {
             }
           }}
           onThinkingChange={setIsThinking}
+          onArtifactUpdate={setArtifactContent}
         />
 
         {/* Right Side - Preview */}
@@ -47,6 +56,7 @@ const ChatScreen = ({ chatId, initialQuery = "" }) => {
           elapsedTime={elapsedTime}
           allTasks={allTasks}
           isThinking={isThinking}
+          artifactContent={artifactContent}
         />
       </div>
     </div>
