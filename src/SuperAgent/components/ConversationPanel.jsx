@@ -7,6 +7,7 @@ import { getAuthToken } from "../../utils";
 import {
   processEvent as processEventHandler,
   shouldStopThinking,
+  getAgentDisplayName,
 } from "../utils/eventHandlers";
 
 const API_BASE_URL = "http://localhost:3000";
@@ -116,7 +117,7 @@ const ConversationPanel = ({
               const processedMessages = [];
 
               for (const event of rawEvents) {
-                const message = processEventHandler(event, {});
+                const message = processEventHandler(event, { agentSlug });
                 if (message) {
                   processedMessages.push({
                     ...message,
@@ -141,7 +142,7 @@ const ConversationPanel = ({
     } finally {
       setIsLoadingHistory(false);
     }
-  }, [chatId]);
+  }, [chatId, agentSlug]);
 
   // Helper to process raw_events into a task structure
   const processRawEventsToTask = (rawEvents) => {
@@ -296,6 +297,7 @@ const ConversationPanel = ({
           setNeedsClarification,
           onThinkingChange,
           onArtifactUpdate,
+          agentSlug,
         });
 
         if (message) {
@@ -513,7 +515,7 @@ const ConversationPanel = ({
               className="text-base text-black"
               style={{ fontFamily: "Urbanist, sans-serif" }}
             >
-              Gamepac is thinking...
+              {getAgentDisplayName(agentSlug)} is thinking...
             </span>
           </div>
         )}

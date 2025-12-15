@@ -3,19 +3,34 @@
  * Each event type has its own handler function
  */
 
+// Agent name mapping from slug
+const agentNameMap = {
+  gamepac: "GamePac",
+  commpac: "CommPac",
+};
+
+// Helper to get agent display name
+export const getAgentDisplayName = (agentSlug) => {
+  return agentNameMap[agentSlug] || agentSlug || "Agent";
+};
+
 // Handler for 'start' event - shows agent header
 export const handleStartEvent = (eventData, context) => {
+  const agentName = getAgentDisplayName(context.agentSlug);
   return {
     id: Date.now(),
     sender: "llm",
     type: "agent_header",
-    data: {},
+    data: {
+      agentName,
+    },
   };
 };
 
 // Handler for 'reason' event
 export const handleReasonEvent = (eventData, context) => {
   const reasoning = eventData.reasoning || "";
+  const agentName = getAgentDisplayName(context.agentSlug);
 
   // Only show if there's reasoning content
   if (!reasoning) {
@@ -27,7 +42,7 @@ export const handleReasonEvent = (eventData, context) => {
     sender: "llm",
     type: "task",
     data: {
-      title: "Thinking",
+      title: `${agentName} is thinking`,
       description: reasoning,
       actions: [],
       relatedActions: [],
