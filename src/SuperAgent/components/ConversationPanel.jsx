@@ -213,7 +213,22 @@ const ConversationPanel = ({
     };
   };
 
-  // Fetch chat details and history on mount
+  // Reset state when chatId changes
+  useEffect(() => {
+    // Reset all state for new chat
+    setMessages([]);
+    setStreamingTask(null);
+    setIsThinking(false);
+    setError(null);
+    setFetchedAgentSlug("");
+    setNeedsClarification(false);
+    setPreviousUserQuery("");
+    setChatNotFound(false);
+    historyFetchedRef.current = false;
+    initialQuerySentRef.current = false;
+  }, [chatId]);
+
+  // Fetch chat details and history on mount or chatId change
   useEffect(() => {
     fetchChatDetails();
     fetchChatHistory();
