@@ -29,6 +29,7 @@ const ConversationPanel = ({
   const [fetchedAgentSlug, setFetchedAgentSlug] = useState("");
   const [needsClarification, setNeedsClarification] = useState(false);
   const [previousUserQuery, setPreviousUserQuery] = useState("");
+  const [chatNotFound, setChatNotFound] = useState(false);
   const messagesEndRef = useRef(null);
   const initialQuerySentRef = useRef(false);
   const abortControllerRef = useRef(null);
@@ -71,6 +72,8 @@ const ConversationPanel = ({
             onTitleUpdate(result.data.title);
           }
         }
+      } else if (response.status === 404) {
+        setChatNotFound(true);
       }
     } catch (error) {
       console.error("Failed to fetch chat details:", error);
@@ -425,6 +428,28 @@ const ConversationPanel = ({
     setError(null);
     sendMessage(content);
   };
+
+  // Show chat not found message
+  if (chatNotFound) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center">
+        <div className="text-center">
+          <h2
+            className="text-xl font-medium text-[#141414] mb-2"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            Chat not found
+          </h2>
+          <p
+            className="text-[#6d6d6d]"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            This chat may have been deleted or doesn't exist.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col">

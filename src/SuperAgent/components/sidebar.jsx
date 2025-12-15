@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   AltArrowDown,
   Copy,
@@ -22,27 +22,9 @@ import {
   setSelectedTask,
 } from "../../store/reducer/superAgent";
 import { agents, getAgentById, getAgentBySlug } from "../index";
+import { getAuthToken } from "../../utils";
 
-const tasks = [
-  {
-    id: 1,
-    title: "Build a Tic Tac Toe Game on Web",
-    description: "Build a Tic Tac Toe Game on Web",
-    agentSlug: "liveops",
-  },
-  {
-    id: 2,
-    title: "Give me idea for a women specific game options",
-    description: "Give me idea for a women specific game options",
-    agentSlug: "ua-playbook",
-  },
-  {
-    id: 3,
-    title: "Suggest me some game mechanics for a Tower Defense game",
-    description: "Suggest me some game mechanics for a Tower Defense game",
-    agentSlug: "game-director-report",
-  },
-];
+const API_BASE_URL = "http://localhost:3000";
 
 const Sidebar = () => {
   const dispatch = useDispatch();
@@ -50,10 +32,46 @@ const Sidebar = () => {
     (state) => state.superAgent.isSiderbarOpen
   );
   const [isLogoHovered, setIsLogoHovered] = useState(false);
+  const [chats, setChats] = useState([]);
+  const [isLoadingChats, setIsLoadingChats] = useState(false);
   const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
   const selectedTask = useSelector((state) => state.superAgent.selectedTask);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Fetch chats from API
+  const fetchChats = useCallback(async () => {
+    setIsLoadingChats(true);
+    try {
+      const token = getAuthToken()?.token;
+      const response = await fetch(
+        `${API_BASE_URL}/v1/superagent/chats?limit=10&offset=0`,
+        {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        setChats(result.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch chats:", error);
+    } finally {
+      setIsLoadingChats(false);
+    }
+  }, []);
+
+  // Fetch chats on mount
+  useEffect(() => {
+    fetchChats();
+  }, [fetchChats]);
 
   const toggleSidebar = () => {
     dispatch(setIsSiderbarOpen(!isSiderbarOpen));
@@ -191,42 +209,51 @@ const Sidebar = () => {
           </button>
         </div>
 
-        {/* Task List - Only when expanded */}
-        {tasks.length > 0 &&
-          (isSiderbarOpen ? (
-            <div className="flex-1 overflow-y-auto w-full">
-              <div className="flex items-center gap-[5px] mb-2">
-                <span className="font-urbanist text-[13px] text-[#b0b0b0]">
-                  All tasks
-                </span>
-                <AltArrowDown
-                  weight={"Linear"}
-                  className="w-4 h-4 text-[#6D6D6D]"
-                />
-              </div>
+        {/* Chat List - Only when expanded */}
+        {isSiderbarOpen ? (
+          <div className="flex-1 overflow-y-auto w-full">
+            <div className="flex items-center gap-[5px] mb-2">
+              <span className="font-urbanist text-[13px] text-[#b0b0b0]">
+                Recent chats
+              </span>
+              <AltArrowDown
+                weight={"Linear"}
+                className="w-4 h-4 text-[#6D6D6D]"
+              />
+            </div>
 
+            {isLoadingChats ? (
+              <div className="text-center py-4 text-[#b0b0b0] text-sm">
+                Loading...
+              </div>
+            ) : chats.length > 0 ? (
               <div className="space-y-2">
-                {tasks.map((task) => (
+                {chats.map((chat) => (
                   <TaskItem
-                    key={task.id}
-                    text={task.title}
-                    active={selectedTask?.id === task?.id}
-                    slug={task.agentSlug}
+                    key={chat.id}
+                    text={chat.title || "Untitled Chat"}
+                    active={selectedTask?.id === chat.id}
+                    slug={chat.data?.agent_slug}
                     onClick={() => {
-                      dispatch(setSelectedTask(task));
-                      navigate(`/super-agent/chat/id-slug-of-the-chat`);
+                      dispatch(setSelectedTask({ id: chat.id, ...chat }));
+                      navigate(`/super-agent/chat/${chat.id}`);
                     }}
                   />
                 ))}
               </div>
-            </div>
-          ) : (
-            <Dialog
-              weight={"Linear"}
-              className="size-[24px] text-[#6d6d6d] cursor-pointer"
-              onClick={toggleSidebar}
-            />
-          ))}
+            ) : (
+              <div className="text-center py-4 text-[#b0b0b0] text-sm">
+                No chats yet
+              </div>
+            )}
+          </div>
+        ) : (
+          <Dialog
+            weight={"Linear"}
+            className="size-[24px] text-[#6d6d6d] cursor-pointer"
+            onClick={toggleSidebar}
+          />
+        )}
 
         {/* Account Section at Bottom */}
         <div
