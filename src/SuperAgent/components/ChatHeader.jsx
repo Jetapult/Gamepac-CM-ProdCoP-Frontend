@@ -7,12 +7,20 @@ import {
   TrashBinMinimalistic,
 } from "@solar-icons/react";
 import api from "../../api";
+import ShareChatModal from "./ShareChatModal";
 
-const ChatHeader = ({ chatId, chatTitle, onTitleChange }) => {
+const ChatHeader = ({
+  chatId,
+  chatTitle,
+  onTitleChange,
+  isPublic = false,
+  onPublicChange,
+}) => {
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(chatTitle);
   const [isSaving, setIsSaving] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const menuRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -165,7 +173,10 @@ const ChatHeader = ({ chatId, chatTitle, onTitleChange }) => {
             </div>
           )}
         </div>
-        <button className="h-8 px-2 flex items-center gap-[6px] border border-[#e6e6e6] rounded-lg hover:border-[#1f6744] transition-colors min-w-[110px] justify-center">
+        <button
+          className="h-8 px-2 flex items-center gap-[6px] border border-[#e6e6e6] rounded-lg hover:border-[#1f6744] transition-colors min-w-[110px] justify-center"
+          onClick={() => setShowShareModal(true)}
+        >
           <ForwardRight weight="Linear" size={20} color="#6d6d6d" />
           <span
             className="text-[16px] text-[#141414] font-medium"
@@ -175,6 +186,15 @@ const ChatHeader = ({ chatId, chatTitle, onTitleChange }) => {
           </span>
         </button>
       </div>
+
+      {/* Share Modal */}
+      <ShareChatModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        chatId={chatId}
+        isPublic={isPublic}
+        onAccessChange={onPublicChange}
+      />
     </div>
   );
 };

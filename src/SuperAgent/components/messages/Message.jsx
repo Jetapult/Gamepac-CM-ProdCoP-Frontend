@@ -17,7 +17,14 @@ import AgentHeader from "./AgentHeader";
  *   data: object // varies based on type
  * }
  */
-const Message = ({ message, isLatest, isFirstLLMAfterUser, onSendMessage }) => {
+const Message = ({
+  message,
+  isLatest,
+  isFirstLLMAfterUser,
+  onSendMessage,
+  onRegenerate,
+  versionInfo,
+}) => {
   const { sender, type, data } = message;
 
   switch (type) {
@@ -31,6 +38,11 @@ const Message = ({ message, isLatest, isFirstLLMAfterUser, onSendMessage }) => {
             isLatest={isLatest}
             relatedActions={data.relatedActions || []}
             onSendMessage={onSendMessage}
+            onRegenerate={() =>
+              onRegenerate && onRegenerate(message.apiMessageId)
+            }
+            versionInfo={versionInfo}
+            canRegenerate={!!message.apiMessageId}
           />
         );
       }

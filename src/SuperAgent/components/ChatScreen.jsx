@@ -17,9 +17,37 @@ const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
   // Artifact content for preview panel
   const [artifactContent, setArtifactContent] = useState(null);
 
+  // Chat public/private state
+  const [isPublic, setIsPublic] = useState(false);
+
+  // Access denied state
+  const [accessDenied, setAccessDenied] = useState(false);
+
   const handleTitleChange = (newTitle) => {
     setChatTitle(newTitle);
   };
+
+  // Show access denied message for the whole page
+  if (accessDenied) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center">
+        <div className="text-center">
+          <h2
+            className="text-xl font-medium text-[#141414] mb-2"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            Access Denied
+          </h2>
+          <p
+            className="text-[#6d6d6d]"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            You don't have permission to view this chat.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col">
@@ -28,6 +56,8 @@ const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
         chatId={chatId}
         chatTitle={chatTitle}
         onTitleChange={handleTitleChange}
+        isPublic={isPublic}
+        onPublicChange={setIsPublic}
       />
 
       {/* Main Content - Left and Right Panels */}
@@ -48,6 +78,8 @@ const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
           onThinkingChange={setIsThinking}
           onArtifactUpdate={setArtifactContent}
           onTitleUpdate={handleTitleChange}
+          onPublicUpdate={setIsPublic}
+          onAccessDenied={() => setAccessDenied(true)}
         />
 
         {/* Right Side - Preview */}

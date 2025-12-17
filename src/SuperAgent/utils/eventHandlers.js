@@ -138,6 +138,7 @@ export const handleCompleteEvent = (eventData, context) => {
   const report = eventData.report || {};
   const summary = report.summary || "";
   const status = report.status || "";
+  const messageId = eventData.message_id || null; // API message UUID if provided
 
   // Track if clarification is needed for next message
   if (status === "needs_clarification" && context.setNeedsClarification) {
@@ -154,6 +155,7 @@ export const handleCompleteEvent = (eventData, context) => {
     id: Date.now(),
     sender: "llm",
     type: "text",
+    apiMessageId: messageId, // Store API message ID for regenerate (null if not provided)
     data: {
       content: summary,
     },

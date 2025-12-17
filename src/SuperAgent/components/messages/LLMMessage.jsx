@@ -1,7 +1,15 @@
 import React, { useState, useRef } from "react";
 import ReactDOM from "react-dom";
 import ReactMarkdown from "react-markdown";
-import { Like, Dislike, Copy, Restart, Unread } from "@solar-icons/react";
+import {
+  Like,
+  Dislike,
+  Copy,
+  Restart,
+  Unread,
+  AltArrowLeft,
+  AltArrowRight,
+} from "@solar-icons/react";
 import { CornerDownLeft } from "lucide-react";
 import gamepacLogo from "../../../assets/super-agents/gamepac-logo.svg";
 
@@ -53,6 +61,9 @@ const LLMMessage = ({
   isLatest = false,
   relatedActions = [],
   onSendMessage,
+  onRegenerate,
+  versionInfo,
+  canRegenerate = true,
 }) => {
   const [copiedTooltip, setCopiedTooltip] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -181,7 +192,46 @@ const LLMMessage = ({
             )}
           </button>
         </Tooltip>
-        <ActionIcon icon={Restart} tooltip="Regenerate" onClick={() => {}} />
+        {/* Version Navigation */}
+        {versionInfo && versionInfo.total > 1 && (
+          <div className="flex items-center gap-1 mr-1">
+            <button
+              onClick={versionInfo.onPrevious}
+              disabled={versionInfo.current === 1}
+              className={`p-[4px] rounded-[8px] transition-all ${
+                versionInfo.current === 1
+                  ? "text-[#d0d0d0] cursor-not-allowed"
+                  : "text-[#6d6d6d] hover:bg-[#f6f6f6]"
+              }`}
+            >
+              <AltArrowLeft weight="Linear" size={16} />
+            </button>
+            <span
+              className="text-xs text-[#6d6d6d] min-w-[32px] text-center"
+              style={{ fontFamily: "Urbanist, sans-serif" }}
+            >
+              {versionInfo.current}/{versionInfo.total}
+            </span>
+            <button
+              onClick={versionInfo.onNext}
+              disabled={versionInfo.current === versionInfo.total}
+              className={`p-[4px] rounded-[8px] transition-all ${
+                versionInfo.current === versionInfo.total
+                  ? "text-[#d0d0d0] cursor-not-allowed"
+                  : "text-[#6d6d6d] hover:bg-[#f6f6f6]"
+              }`}
+            >
+              <AltArrowRight weight="Linear" size={16} />
+            </button>
+          </div>
+        )}
+        {canRegenerate && (
+          <ActionIcon
+            icon={Restart}
+            tooltip="Regenerate"
+            onClick={onRegenerate}
+          />
+        )}
       </div>
     </div>
   );

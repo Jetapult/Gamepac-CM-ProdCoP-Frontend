@@ -20,6 +20,8 @@ const ConversationPanel = ({
   onThinkingChange,
   onArtifactUpdate,
   onTitleUpdate,
+  onPublicUpdate,
+  onAccessDenied,
 }) => {
   const [messages, setMessages] = useState([]);
   const [streamingTask, setStreamingTask] = useState(null);
@@ -28,8 +30,9 @@ const ConversationPanel = ({
   const [error, setError] = useState(null);
   const [fetchedAgentSlug, setFetchedAgentSlug] = useState("");
   const [needsClarification, setNeedsClarification] = useState(false);
-  const [previousUserQuery, setPreviousUserQuery] = useState("");
   const [chatNotFound, setChatNotFound] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [messageVersions, setMessageVersions] = useState({}); // { parentId: { versions: [msg1, msg2], activeIndex: 1 } }
   const messagesEndRef = useRef(null);
   const initialQuerySentRef = useRef(false);
   const abortControllerRef = useRef(null);
@@ -71,9 +74,14 @@ const ConversationPanel = ({
           if (result.data.title && onTitleUpdate) {
             onTitleUpdate(result.data.title);
           }
+          if (onPublicUpdate) {
+            onPublicUpdate(result.data.is_public || false);
+          }
         }
       } else if (response.status === 404) {
         setChatNotFound(true);
+      } else if (response.status === 403) {
+        if (onAccessDenied) onAccessDenied();
       }
     } catch (error) {
       console.error("Failed to fetch chat details:", error);
@@ -97,6 +105,10 @@ const ConversationPanel = ({
       );
 
       if (!response.ok) {
+        if (response.status === 403) {
+          if (onAccessDenied) onAccessDenied();
+          return;
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -125,6 +137,7 @@ const ConversationPanel = ({
                   processedMessages.push({
                     ...message,
                     id: `${msg.id}-${processedMessages.length}`,
+                    apiMessageId: msg.id, // Store original API message ID for regenerate
                   });
                 }
               }
@@ -222,8 +235,9 @@ const ConversationPanel = ({
     setError(null);
     setFetchedAgentSlug("");
     setNeedsClarification(false);
-    setPreviousUserQuery("");
     setChatNotFound(false);
+    setAccessDenied(false);
+    setMessageVersions({});
     historyFetchedRef.current = false;
     initialQuerySentRef.current = false;
   }, [chatId]);
@@ -239,16 +253,7 @@ const ConversationPanel = ({
       if (!content.trim() || !chatId) return;
 
       const trimmedContent = content.trim();
-
-      // Build message content with previous context if clarification was needed
-      let messageToSend = trimmedContent;
-      if (needsClarification && previousUserQuery) {
-        messageToSend = `Previous Context: ${previousUserQuery}\n\n${trimmedContent}`;
-        setNeedsClarification(false);
-      }
-
-      // Store current query for potential future clarification
-      setPreviousUserQuery(trimmedContent);
+      const messageToSend = trimmedContent;
 
       // Add user message to UI (show modified content with previous context if applicable)
       const userMessage = {
@@ -413,7 +418,146 @@ const ConversationPanel = ({
         abortControllerRef.current = null;
       }
     },
-    [chatId, agentSlug, onThinkingChange, needsClarification, previousUserQuery]
+    [chatId, agentSlug, onThinkingChange]
+  );
+
+  // Regenerate a message
+  const regenerateMessage = useCallback(
+    async (messageId) => {
+      if (!messageId || isThinking) return;
+
+      // Start streaming
+      setIsThinking(true);
+      if (onThinkingChange) onThinkingChange(true);
+
+      // Initialize streaming task state
+      setStreamingTask({
+        title: "Regenerating response",
+        description: "",
+        actions: [],
+        relatedActions: [],
+      });
+
+      const processEvent = (eventData) => {
+        const message = processEventHandler(eventData, {
+          setMessages,
+          setStreamingTask,
+          setIsThinking,
+          setError,
+          setNeedsClarification,
+          onThinkingChange,
+          onArtifactUpdate,
+          agentSlug,
+        });
+
+        if (message) {
+          setMessages((prev) => [...prev, message]);
+        }
+
+        // Stop thinking on complete or error
+        if (shouldStopThinking(eventData.event)) {
+          setStreamingTask(null);
+          setIsThinking(false);
+          if (onThinkingChange) onThinkingChange(false);
+        }
+      };
+
+      // Create abort controller for this request
+      abortControllerRef.current = new AbortController();
+
+      try {
+        const token = getAuthToken()?.token;
+        const response = await fetch(
+          `${API_BASE_URL}/v1/superagent/messages/${messageId}/regenerate`,
+          {
+            method: "POST",
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            signal: abortControllerRef.current.signal,
+          }
+        );
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            localStorage.removeItem("jwt");
+            window.location.href = "/login";
+            return;
+          }
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.message || `Regenerate failed. Please try again.`
+          );
+        }
+
+        // Remove all messages after the user message that triggered this LLM response
+        // Find the message being regenerated and remove it and all subsequent messages
+        setMessages((prev) => {
+          const messageIndex = prev.findIndex((m) => m.id === messageId);
+          if (messageIndex === -1) return prev;
+
+          // Find the user message before this LLM message
+          let userMessageIndex = messageIndex - 1;
+          while (
+            userMessageIndex >= 0 &&
+            prev[userMessageIndex].sender !== "user"
+          ) {
+            userMessageIndex--;
+          }
+
+          // Keep messages up to and including the user message
+          return prev.slice(0, userMessageIndex + 1);
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.trim()) {
+              try {
+                const event = JSON.parse(line);
+                processEvent(event);
+              } catch (e) {
+                console.warn("Failed to parse event:", line);
+              }
+            }
+          }
+        }
+
+        // Process any remaining buffer
+        if (buffer.trim()) {
+          try {
+            const event = JSON.parse(buffer);
+            processEvent(event);
+          } catch (e) {
+            console.warn("Failed to parse final buffer:", buffer);
+          }
+        }
+      } catch (error) {
+        if (error.name === "AbortError") {
+          console.log("Regenerate request aborted by user");
+        } else {
+          console.error("Failed to regenerate message:", error);
+          setError(
+            error.message || "Failed to regenerate message. Please try again."
+          );
+        }
+        setIsThinking(false);
+        if (onThinkingChange) onThinkingChange(false);
+      } finally {
+        abortControllerRef.current = null;
+      }
+    },
+    [agentSlug, isThinking, onThinkingChange, onArtifactUpdate]
   );
 
   // Auto-scroll to bottom when messages change
@@ -514,6 +658,7 @@ const ConversationPanel = ({
               isLatest={isLatestUserMessage || isLatestLLMMessage}
               isFirstLLMAfterUser={isFirstLLMAfterUser}
               onSendMessage={handleSendMessage}
+              onRegenerate={regenerateMessage}
             />
           );
         })}
