@@ -139,8 +139,8 @@ const ChatHeader = ({
         {/* Studio Name Tag */}
         <StudioTag />
 
-        {/* Game Dropdown */}
-        <GameDropdown />
+        {/* Game Dropdown - disabled in chat view */}
+        <GameDropdown disabled={true} />
       </div>
 
       <div className="flex items-center gap-[17px]">

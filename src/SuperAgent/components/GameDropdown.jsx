@@ -7,7 +7,7 @@ import {
 } from "../../store/reducer/superAgent";
 import { fetchAllgames } from "../../services/games.service";
 
-const GameDropdown = () => {
+const GameDropdown = ({ disabled = false }) => {
   const dispatch = useDispatch();
   const selectedGame = useSelector((state) => state.superAgent.selectedGame);
   const games = useSelector((state) => state.superAgent.games);
@@ -23,11 +23,12 @@ const GameDropdown = () => {
   // Fetch games using existing service when studio data is available
   useEffect(() => {
     const loadGames = async () => {
-      if (games.length > 0 || !ContextStudioData?.id) return; // Already fetched or no studio
+      const studioSlug = ContextStudioData?.slug;
+      if (games.length > 0 || !studioSlug) return; // Already fetched or no studio
 
       setIsLoading(true);
       try {
-        const gamesData = await fetchAllgames(ContextStudioData.id);
+        const gamesData = await fetchAllgames(studioSlug);
         if (gamesData && gamesData.length > 0) {
           dispatch(setGamesAction(gamesData));
           // Auto-select first game if none selected
@@ -43,7 +44,7 @@ const GameDropdown = () => {
     };
 
     loadGames();
-  }, [ContextStudioData?.id, dispatch, selectedGame, games.length]);
+  }, [ContextStudioData?.slug, dispatch, selectedGame, games.length]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -95,9 +96,13 @@ const GameDropdown = () => {
     <div className="relative" ref={dropdownRef}>
       {/* Dropdown Trigger */}
       <button
-        className="h-8 px-3 flex items-center gap-2 border border-[#e6e6e6] rounded-lg hover:border-[#1f6744] transition-colors bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-        onClick={() => games.length > 0 && setShowDropdown(!showDropdown)}
-        disabled={games.length === 0}
+        className={`h-8 px-3 flex items-center gap-2 border border-[#e6e6e6] rounded-lg transition-colors bg-white disabled:opacity-50 disabled:cursor-not-allowed ${
+          !disabled ? "hover:border-[#1f6744]" : ""
+        }`}
+        onClick={() =>
+          !disabled && games.length > 0 && setShowDropdown(!showDropdown)
+        }
+        disabled={disabled || games.length === 0}
       >
         {selectedGame?.play_store_icon || selectedGame?.app_store_icon ? (
           <img

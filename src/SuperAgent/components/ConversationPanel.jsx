@@ -36,6 +36,9 @@ const ConversationPanel = ({
   const [messageVersions, setMessageVersions] = useState({}); // { parentId: { versions: [msg1, msg2], activeIndex: 1 } }
   const messagesEndRef = useRef(null);
   const selectedGame = useSelector((state) => state.superAgent.selectedGame);
+  const ContextStudioData = useSelector(
+    (state) => state.admin.ContextStudioData
+  );
   const initialQuerySentRef = useRef(false);
   const abortControllerRef = useRef(null);
   const historyFetchedRef = useRef(false);
@@ -363,6 +366,7 @@ const ConversationPanel = ({
               message: messageToSend,
               agent_slug: agentSlug,
               game_id: selectedGame?.id || null,
+              studio_slug: ContextStudioData?.slug || null,
             }),
             signal: abortControllerRef.current.signal,
           }
@@ -429,7 +433,7 @@ const ConversationPanel = ({
         abortControllerRef.current = null;
       }
     },
-    [chatId, agentSlug, onThinkingChange]
+    [chatId, agentSlug, onThinkingChange, selectedGame, ContextStudioData?.slug]
   );
 
   // Regenerate a message
@@ -577,23 +581,26 @@ const ConversationPanel = ({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isThinking, streamingTask]);
 
+  // Keep sendMessage ref up to date
+  const sendMessageRef = useRef(sendMessage);
+  useEffect(() => {
+    sendMessageRef.current = sendMessage;
+  }, [sendMessage]);
+
   // Send initial query on mount if present (wait for agentSlug)
   useEffect(() => {
-    console.log(
-      "ConversationPanel useEffect - initialQuery:",
-      initialQuery,
-      "chatId:",
-      chatId,
-      "agentSlug:",
-      agentSlug,
-      "alreadySent:",
-      initialQuerySentRef.current
-    );
-    if (initialQuery && chatId && agentSlug && !initialQuerySentRef.current) {
-      initialQuerySentRef.current = true;
-      sendMessage(initialQuery);
-    }
-  }, [initialQuery, chatId, agentSlug, sendMessage]);
+    if (!initialQuery || !chatId || !agentSlug) return;
+    if (initialQuerySentRef.current) return;
+
+    initialQuerySentRef.current = true;
+
+    // Use setTimeout to defer execution and prevent StrictMode double-send
+    const timer = setTimeout(() => {
+      sendMessageRef.current(initialQuery);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [initialQuery, chatId, agentSlug]);
 
   const handleSendMessage = (content) => {
     setError(null);
