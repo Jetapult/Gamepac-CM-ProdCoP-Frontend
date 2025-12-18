@@ -3,65 +3,47 @@ import { AltArrowDown } from "@solar-icons/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setSelectedGame,
-  setStudio,
   setGames as setGamesAction,
 } from "../../store/reducer/superAgent";
-import { getAuthToken } from "../../utils";
-
-const API_BASE_URL = "http://localhost:3000";
+import { fetchAllgames } from "../../services/games.service";
 
 const GameDropdown = () => {
   const dispatch = useDispatch();
   const selectedGame = useSelector((state) => state.superAgent.selectedGame);
   const games = useSelector((state) => state.superAgent.games);
+  const ContextStudioData = useSelector(
+    (state) => state.admin.ContextStudioData
+  );
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef(null);
 
-  // Fetch user data (studio & games) from /v1/auth/me
+  // Fetch games using existing service when studio data is available
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (games.length > 0) return; // Already fetched
+    const loadGames = async () => {
+      if (games.length > 0 || !ContextStudioData?.id) return; // Already fetched or no studio
 
       setIsLoading(true);
       try {
-        const token = getAuthToken()?.token;
-        const response = await fetch(`${API_BASE_URL}/v1/auth/me`, {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        if (result.data) {
-          // Store studio data
-          if (result.data.studio) {
-            dispatch(setStudio(result.data.studio));
-          }
-          // Store games data
-          if (result.data.games && result.data.games.length > 0) {
-            dispatch(setGamesAction(result.data.games));
-            // Auto-select first game if none selected
-            if (!selectedGame) {
-              dispatch(setSelectedGame(result.data.games[0]));
-            }
+        const gamesData = await fetchAllgames(ContextStudioData.id);
+        if (gamesData && gamesData.length > 0) {
+          dispatch(setGamesAction(gamesData));
+          // Auto-select first game if none selected
+          if (!selectedGame) {
+            dispatch(setSelectedGame(gamesData[0]));
           }
         }
       } catch (error) {
-        console.error("Failed to fetch user data:", error);
+        console.error("Failed to fetch games:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchUserData();
-  }, [dispatch, selectedGame, games.length]);
+    loadGames();
+  }, [ContextStudioData?.id, dispatch, selectedGame, games.length]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -92,8 +74,8 @@ const GameDropdown = () => {
 
   const filteredGames = games.filter(
     (game) =>
-      game.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      game.package_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      game.game_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      game.short_names?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading && !selectedGame) {
@@ -117,9 +99,9 @@ const GameDropdown = () => {
         onClick={() => games.length > 0 && setShowDropdown(!showDropdown)}
         disabled={games.length === 0}
       >
-        {selectedGame?.icon ? (
+        {selectedGame?.play_store_icon || selectedGame?.app_store_icon ? (
           <img
-            src={selectedGame.icon}
+            src={selectedGame?.play_store_icon || selectedGame?.app_store_icon}
             alt=""
             className="w-5 h-5 rounded object-cover"
             onError={(e) => {
@@ -130,7 +112,12 @@ const GameDropdown = () => {
         ) : null}
         <div
           className="w-5 h-5 rounded bg-[#e6e6e6] flex items-center justify-center"
-          style={{ display: selectedGame?.icon ? "none" : "flex" }}
+          style={{
+            display:
+              selectedGame?.play_store_icon || selectedGame?.app_store_icon
+                ? "none"
+                : "flex",
+          }}
         >
           <span className="text-[10px] text-[#6d6d6d]">🎮</span>
         </div>
@@ -140,7 +127,7 @@ const GameDropdown = () => {
         >
           {games.length === 0
             ? "You don't have any games"
-            : selectedGame?.name || "Select Game"}
+            : selectedGame?.game_name || "Select Game"}
         </span>
         <AltArrowDown
           weight="Linear"
@@ -176,9 +163,9 @@ const GameDropdown = () => {
                   }`}
                   onClick={() => handleSelectGame(game)}
                 >
-                  {game.icon ? (
+                  {game.play_store_icon || game.app_store_icon ? (
                     <img
-                      src={game.icon}
+                      src={game.play_store_icon || game.app_store_icon}
                       alt=""
                       className="w-8 h-8 rounded object-cover"
                       onError={(e) => {
@@ -189,7 +176,12 @@ const GameDropdown = () => {
                   ) : null}
                   <div
                     className="w-8 h-8 rounded bg-[#e6e6e6] flex items-center justify-center shrink-0"
-                    style={{ display: game.icon ? "none" : "flex" }}
+                    style={{
+                      display:
+                        game.play_store_icon || game.app_store_icon
+                          ? "none"
+                          : "flex",
+                    }}
                   >
                     <span className="text-[10px] text-[#6d6d6d]">🎮</span>
                   </div>
@@ -198,14 +190,14 @@ const GameDropdown = () => {
                       className="text-[14px] text-[#141414] font-medium truncate"
                       style={{ fontFamily: "Urbanist, sans-serif" }}
                     >
-                      {game.name}
+                      {game.game_name}
                     </p>
-                    {game.package_name && (
+                    {game.short_names && (
                       <p
                         className="text-[12px] text-[#6d6d6d] truncate"
                         style={{ fontFamily: "Urbanist, sans-serif" }}
                       >
-                        {game.package_name}
+                        {game.short_names}
                       </p>
                     )}
                   </div>
