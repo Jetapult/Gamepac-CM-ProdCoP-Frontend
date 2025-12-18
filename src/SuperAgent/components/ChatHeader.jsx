@@ -8,6 +8,7 @@ import {
 } from "@solar-icons/react";
 import api from "../../api";
 import ShareChatModal from "./ShareChatModal";
+import DeleteChatModal from "./DeleteChatModal";
 
 const ChatHeader = ({
   chatId,
@@ -15,12 +16,14 @@ const ChatHeader = ({
   onTitleChange,
   isPublic = false,
   onPublicChange,
+  onDelete,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(chatTitle);
   const [isSaving, setIsSaving] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const menuRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -144,17 +147,14 @@ const ChatHeader = ({
                 }}
               >
                 <Star weight="Linear" size={20} color="#6d6d6d" />
-                <span
-                  className="text-[14px] text-[#141414] font-medium"
-                  style={{ fontFamily: "Urbanist, sans-serif" }}
-                >
+                <span className="text-[14px] text-[#141414] font-medium font-urbanist">
                   Favourite
                 </span>
               </button>
               <button
                 className="w-full flex items-center gap-3 px-4 py-2 hover:bg-[#f6f7f8] transition-colors"
                 onClick={() => {
-                  // Handle delete
+                  setShowDeleteModal(true);
                   setShowMenu(false);
                 }}
               >
@@ -163,10 +163,7 @@ const ChatHeader = ({
                   size={20}
                   color="#dc2626"
                 />
-                <span
-                  className="text-[14px] text-[#dc2626] font-medium"
-                  style={{ fontFamily: "Urbanist, sans-serif" }}
-                >
+                <span className="text-[14px] text-[#dc2626] font-medium font-urbanist">
                   Delete
                 </span>
               </button>
@@ -194,6 +191,14 @@ const ChatHeader = ({
         chatId={chatId}
         isPublic={isPublic}
         onAccessChange={onPublicChange}
+      />
+
+      {/* Delete Modal */}
+      <DeleteChatModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        chatId={chatId}
+        onDelete={onDelete}
       />
     </div>
   );

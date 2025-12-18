@@ -1,9 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ChatHeader from "./ChatHeader";
 import ConversationPanel from "./ConversationPanel";
 import PreviewPanel from "./PreviewPanel";
 
 const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
+  const navigate = useNavigate();
+
   // Chat title state
   const [chatTitle, setChatTitle] = useState("");
 
@@ -58,6 +61,14 @@ const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
         onTitleChange={handleTitleChange}
         isPublic={isPublic}
         onPublicChange={setIsPublic}
+        onDelete={() => {
+          // Dispatch event to refresh sidebar
+          window.dispatchEvent(
+            new CustomEvent("chat-deleted", { detail: { chatId } })
+          );
+          // Navigate to dashboard
+          navigate("/super-agent");
+        }}
       />
 
       {/* Main Content - Left and Right Panels */}
