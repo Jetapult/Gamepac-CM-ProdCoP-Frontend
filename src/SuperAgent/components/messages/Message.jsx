@@ -68,6 +68,13 @@ const Message = ({
     case "agent_header":
       return <AgentHeader agentName={data.agentName} />;
 
+    case "error":
+      return (
+        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <span className="text-red-600 text-sm">{data.content}</span>
+        </div>
+      );
+
     // Add more message types here as needed
     case "artifact":
       // TODO: Implement artifact message component

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useSelector } from "react-redux";
 import {
   Pen2,
   MenuDots,
@@ -9,6 +10,36 @@ import {
 import api from "../../api";
 import ShareChatModal from "./ShareChatModal";
 import DeleteChatModal from "./DeleteChatModal";
+import GameDropdown from "./GameDropdown";
+
+const StudioTag = () => {
+  const studio = useSelector((state) => state.superAgent.studio);
+
+  if (!studio?.name) return null;
+
+  return (
+    <div className="flex items-center gap-2">
+      {studio.logo ? (
+        <div className="w-8 h-8 rounded-[5px] border border-[#f6f6f6] bg-white overflow-hidden flex items-center justify-center">
+          <img
+            src={studio.logo}
+            alt=""
+            className="w-[26px] h-[23px] object-contain"
+            onError={(e) => {
+              e.target.style.display = "none";
+            }}
+          />
+        </div>
+      ) : null}
+      <span
+        className="text-[14px] text-[#141414] font-medium leading-6"
+        style={{ fontFamily: "Urbanist, sans-serif" }}
+      >
+        {studio.name}
+      </span>
+    </div>
+  );
+};
 
 const ChatHeader = ({
   chatId,
@@ -99,32 +130,12 @@ const ChatHeader = ({
 
   return (
     <div className="border-b border-[#f6f6f6] flex items-center justify-between pl-[19px] pr-5 py-[15px] w-full">
-      <div className="flex items-center gap-2">
-        {isEditing ? (
-          <input
-            ref={inputRef}
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={handleSave}
-            onKeyDown={handleKeyDown}
-            className="text-[18px] text-[#141414] leading-normal font-semibold bg-transparent border-b-2 border-[#1f6744] outline-none"
-            style={{ fontFamily: "Urbanist, sans-serif" }}
-          />
-        ) : (
-          <h1
-            className="text-[18px] text-[#141414] leading-normal font-semibold"
-            style={{ fontFamily: "Urbanist, sans-serif" }}
-          >
-            {title}
-          </h1>
-        )}
-        <button
-          className="text-[#6d6d6d] hover:text-[#1f6744] transition-colors"
-          onClick={handleEditClick}
-        >
-          <Pen2 weight="Linear" size={16} color="#6d6d6d" />
-        </button>
+      <div className="flex items-center gap-[17px]">
+        {/* Studio Name Tag */}
+        <StudioTag />
+
+        {/* Game Dropdown */}
+        <GameDropdown />
       </div>
 
       <div className="flex items-center gap-[17px]">

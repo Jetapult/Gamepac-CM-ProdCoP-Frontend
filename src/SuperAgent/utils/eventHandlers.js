@@ -164,13 +164,15 @@ export const handleCompleteEvent = (eventData, context) => {
 
 // Handler for 'error' event
 export const handleErrorEvent = (eventData, context) => {
-  // Show as raw JSON for now
+  const errorMessage =
+    eventData.message || eventData.error || "An error occurred";
+
   return {
     id: Date.now(),
     sender: "llm",
-    type: "text",
+    type: "error",
     data: {
-      content: "```json\n" + JSON.stringify(eventData, null, 2) + "\n```",
+      content: errorMessage,
     },
   };
 };

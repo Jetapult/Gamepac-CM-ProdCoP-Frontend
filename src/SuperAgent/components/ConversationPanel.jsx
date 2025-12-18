@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useSelector } from "react-redux";
 import Message from "./messages/Message";
 import TaskMessage from "./messages/TaskMessage";
 import ChatInput from "./ChatInput";
@@ -34,6 +35,7 @@ const ConversationPanel = ({
   const [accessDenied, setAccessDenied] = useState(false);
   const [messageVersions, setMessageVersions] = useState({}); // { parentId: { versions: [msg1, msg2], activeIndex: 1 } }
   const messagesEndRef = useRef(null);
+  const selectedGame = useSelector((state) => state.superAgent.selectedGame);
   const initialQuerySentRef = useRef(false);
   const abortControllerRef = useRef(null);
   const historyFetchedRef = useRef(false);
@@ -252,6 +254,11 @@ const ConversationPanel = ({
     async (content) => {
       if (!content.trim() || !chatId) return;
 
+      if (!selectedGame) {
+        setError("Please select a game to continue.");
+        return;
+      }
+
       const trimmedContent = content.trim();
       const messageToSend = trimmedContent;
 
@@ -351,7 +358,7 @@ const ConversationPanel = ({
             body: JSON.stringify({
               message: messageToSend,
               agent_slug: agentSlug,
-              game_id: 1,
+              game_id: selectedGame?.id || null,
             }),
             signal: abortControllerRef.current.signal,
           }

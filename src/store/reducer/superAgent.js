@@ -9,6 +9,9 @@ const initialState = {
   },
   selectedTemplate: {},
   selectedTask: {},
+  selectedGame: null,
+  studio: null,
+  games: [],
 };
 
 const superAgentSlice = createSlice({
@@ -27,6 +30,15 @@ const superAgentSlice = createSlice({
     setSelectedTask: (state, action) => {
       state.selectedTask = action.payload;
     },
+    setSelectedGame: (state, action) => {
+      state.selectedGame = action.payload;
+    },
+    setStudio: (state, action) => {
+      state.studio = action.payload;
+    },
+    setGames: (state, action) => {
+      state.games = action.payload;
+    },
   },
 });
 
@@ -35,5 +47,8 @@ export const {
   setSelectedAgent,
   setSelectedTemplate,
   setSelectedTask,
+  setSelectedGame,
+  setStudio,
+  setGames,
 } = superAgentSlice.actions;
 export default superAgentSlice.reducer;
