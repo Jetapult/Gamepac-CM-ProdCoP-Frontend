@@ -319,6 +319,8 @@ const ConversationPanel = ({
       };
 
       const processEvent = (eventData) => {
+        console.log("Processing event:", eventData.event, eventData);
+
         const message = processEventHandler(eventData, {
           setMessages,
           setStreamingTask,
@@ -334,8 +336,10 @@ const ConversationPanel = ({
           setMessages((prev) => [...prev, message]);
         }
 
-        // Stop thinking on complete or error
-        if (shouldStopThinking(eventData.event)) {
+        // Stop thinking on complete or error (check both 'event' and 'type' fields)
+        const eventType = eventData.event || eventData.type;
+        if (shouldStopThinking(eventType)) {
+          console.log("Stopping thinking for event:", eventType);
           setStreamingTask(null);
           setIsThinking(false);
           if (onThinkingChange) onThinkingChange(false);
@@ -461,8 +465,9 @@ const ConversationPanel = ({
           setMessages((prev) => [...prev, message]);
         }
 
-        // Stop thinking on complete or error
-        if (shouldStopThinking(eventData.event)) {
+        // Stop thinking on complete or error (check both 'event' and 'type' fields)
+        const eventType = eventData.event || eventData.type;
+        if (shouldStopThinking(eventType)) {
           setStreamingTask(null);
           setIsThinking(false);
           if (onThinkingChange) onThinkingChange(false);

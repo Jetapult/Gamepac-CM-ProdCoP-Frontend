@@ -164,8 +164,12 @@ export const handleCompleteEvent = (eventData, context) => {
 
 // Handler for 'error' event
 export const handleErrorEvent = (eventData, context) => {
+  // Handle both formats: {event: "error", message: "..."} and {type: "error", data: {message: "..."}}
   const errorMessage =
-    eventData.message || eventData.error || "An error occurred";
+    eventData.data?.message ||
+    eventData.message ||
+    eventData.error ||
+    "An error occurred";
 
   return {
     id: Date.now(),
@@ -193,29 +197,34 @@ const eventHandlers = {
  * @returns {Object|null} - Message object to add to messages, or null to ignore
  */
 export const processEvent = (eventData, context) => {
-  const eventType = eventData.event;
+  // Handle both 'event' and 'type' fields for event type
+  const eventType = eventData.event || eventData.type;
   const handler = eventHandlers[eventType];
 
   if (handler) {
     return handler(eventData, context);
   }
 
-  // Unknown event type - show as raw JSON
-  return {
-    id: Date.now(),
-    sender: "llm",
-    type: "text",
-    data: {
-      content: "```json\n" + JSON.stringify(eventData, null, 2) + "\n```",
-    },
-  };
+  // Unknown event type - ignore silently (don't show raw JSON)
+  console.log("Unknown event type:", eventType, eventData);
+  return null;
 };
 
 /**
  * Check if an event should stop the thinking state
- * @param {string} eventType - The event type
+ * @param {string} eventType - The event type (from 'event' or 'type' field)
  * @returns {boolean}
  */
 export const shouldStopThinking = (eventType) => {
-  return eventType === "complete" || eventType === "error";
+  const stopEvents = ["complete", "error", "done", "end", "finish"];
+  return stopEvents.includes(eventType);
+};
+
+/**
+ * Get event type from event data (handles both 'event' and 'type' fields)
+ * @param {Object} eventData - The event data
+ * @returns {string|undefined}
+ */
+export const getEventType = (eventData) => {
+  return eventData.event || eventData.type;
 };
