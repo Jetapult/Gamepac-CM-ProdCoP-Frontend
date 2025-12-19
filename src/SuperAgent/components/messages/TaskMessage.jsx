@@ -1,71 +1,51 @@
-import React, { useState } from "react";
-import {
-  ChevronDown,
-  ChevronUp,
-  Eye,
-  Code,
-  Edit3,
-  CornerDownLeft,
-} from "lucide-react";
+import React from "react";
+import ReactMarkdown from "react-markdown";
+import { Eye, Code, Edit3, CornerDownLeft } from "lucide-react";
 
 const TaskMessage = ({ task, isLatest = false, onSendMessage }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
-
   return (
-    <div className="max-w-[551px]">
-      {/* Task Header */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-3 mb-2 group"
-      >
-        <div className="w-5 h-5 flex items-center justify-center">
-          {isExpanded ? (
-            <ChevronUp size={16} className="text-[#6d6d6d]" />
-          ) : (
-            <ChevronDown size={16} className="text-[#6d6d6d]" />
-          )}
-        </div>
-        <span
-          className="text-base font-medium text-black group-hover:text-[#1f6744]"
-          style={{ fontFamily: "Urbanist, sans-serif" }}
-        >
-          {task.title}
-        </span>
-      </button>
-
+    <div className={`max-w-[551px] ml-8 ${!task.description ? "-mt-2" : ""}`}>
       {/* Task Description */}
       {task.description && (
-        <p
-          className="text-sm text-[#b0b0b0] mb-3 ml-8"
+        <div
+          className="text-sm text-[#B0B0B0] mb-3 ml-7 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-2 prose-li:my-0.5 prose-strong:font-semibold prose-headings:font-semibold"
           style={{ fontFamily: "Urbanist, sans-serif", lineHeight: "21px" }}
         >
-          {task.description}
-        </p>
+          <ReactMarkdown>{task.description}</ReactMarkdown>
+        </div>
       )}
 
       {/* Actions List */}
-      {isExpanded && task.actions && task.actions.length > 0 && (
-        <div className="border border-[#f6f6f6] rounded-lg ml-8">
+      {task.actions && task.actions.length > 0 && (
+        <div className="border border-[#f6f6f6] rounded-lg overflow-hidden">
           {task.actions.map((action, index) => (
             <div
               key={action.id}
-              className={`flex items-center gap-2 px-3 py-2.5 ${
-                index !== task.actions.length - 1
-                  ? "border-b border-[#f6f6f6]"
-                  : ""
-              }`}
+              className="flex items-center gap-[9px] p-[10px]"
+              style={{
+                backgroundColor:
+                  action.status === "pending" ? "#F1FCF6" : "transparent",
+                borderBottom:
+                  index !== task.actions.length - 1
+                    ? "1px solid #F6F6F6"
+                    : "none",
+              }}
             >
               <ActionIcon type={action.type} status={action.status} />
-              <p
-                className="text-sm"
+              <div
+                className="text-[14px] flex items-center gap-2 min-w-0 flex-1"
                 style={{
                   fontFamily: "Urbanist, sans-serif",
                   lineHeight: "21px",
                 }}
               >
-                <span className="text-[#141414]">{action.text}</span>{" "}
-                <span className="text-[#b0b0b0]">{action.detail}</span>
-              </p>
+                <span className="text-[#141414] shrink-0">{action.text}</span>
+                {action.detail && (
+                  <span className="text-[#b0b0b0] truncate">
+                    {action.detail}
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -125,10 +105,14 @@ const ActionIcon = ({ type, status }) => {
 
   const Icon = getIcon();
   const iconColor =
-    status === "completed" ? "text-[#1f6744]" : "text-[#6d6d6d]";
+    status === "completed" ? "text-[#1f6744]" : "text-[#1f6744]";
+  // Only show background when completed, pending rows already have green background
+  const bgColor = status === "completed" ? "bg-[#F1FCF6]" : "bg-transparent";
 
   return (
-    <div className="w-5 h-5 flex items-center justify-center shrink-0 rounded bg-[#F1FCF6]">
+    <div
+      className={`w-5 h-5 flex items-center justify-center shrink-0 rounded ${bgColor}`}
+    >
       <Icon size={12} className={iconColor} strokeWidth={2} />
     </div>
   );

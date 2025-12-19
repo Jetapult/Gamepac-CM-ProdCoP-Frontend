@@ -1,6 +1,15 @@
 import React, { useState, useRef } from "react";
 import ReactDOM from "react-dom";
-import { Like, Dislike, Copy, Restart, Unread } from "@solar-icons/react";
+import ReactMarkdown from "react-markdown";
+import {
+  Like,
+  Dislike,
+  Copy,
+  Restart,
+  Unread,
+  AltArrowLeft,
+  AltArrowRight,
+} from "@solar-icons/react";
 import { CornerDownLeft } from "lucide-react";
 import gamepacLogo from "../../../assets/super-agents/gamepac-logo.svg";
 
@@ -49,10 +58,12 @@ const Tooltip = ({ children, text }) => {
 
 const LLMMessage = ({
   content,
-  agentName = "GamePac",
   isLatest = false,
   relatedActions = [],
   onSendMessage,
+  onRegenerate,
+  versionInfo,
+  canRegenerate = true,
 }) => {
   const [copiedTooltip, setCopiedTooltip] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -89,28 +100,17 @@ const LLMMessage = ({
 
   return (
     <div
-      className="flex flex-col gap-3 max-w-[551px] group"
+      className="flex flex-col gap-3 max-w-[551px] group ml-8"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Agent Header */}
-      <div className="flex items-center gap-2">
-        <img src={gamepacLogo} alt={agentName} className="w-6 h-6" />
-        <span
-          className="text-base font-medium text-black"
-          style={{ fontFamily: "Urbanist, sans-serif" }}
-        >
-          {agentName}
-        </span>
-      </div>
-
       {/* Response Text */}
-      <p
-        className="text-base text-black"
+      <div
+        className="text-base text-black prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-strong:font-semibold"
         style={{ fontFamily: "Urbanist, sans-serif", lineHeight: "24px" }}
       >
-        {content}
-      </p>
+        <ReactMarkdown>{content}</ReactMarkdown>
+      </div>
 
       {/* Related Actions - Only show for latest LLM message */}
       {isLatest && relatedActions.length > 0 && (
@@ -192,7 +192,46 @@ const LLMMessage = ({
             )}
           </button>
         </Tooltip>
-        <ActionIcon icon={Restart} tooltip="Regenerate" onClick={() => {}} />
+        {/* Version Navigation */}
+        {versionInfo && versionInfo.total > 1 && (
+          <div className="flex items-center gap-1 mr-1">
+            <button
+              onClick={versionInfo.onPrevious}
+              disabled={versionInfo.current === 1}
+              className={`p-[4px] rounded-[8px] transition-all ${
+                versionInfo.current === 1
+                  ? "text-[#d0d0d0] cursor-not-allowed"
+                  : "text-[#6d6d6d] hover:bg-[#f6f6f6]"
+              }`}
+            >
+              <AltArrowLeft weight="Linear" size={16} />
+            </button>
+            <span
+              className="text-xs text-[#6d6d6d] min-w-[32px] text-center"
+              style={{ fontFamily: "Urbanist, sans-serif" }}
+            >
+              {versionInfo.current}/{versionInfo.total}
+            </span>
+            <button
+              onClick={versionInfo.onNext}
+              disabled={versionInfo.current === versionInfo.total}
+              className={`p-[4px] rounded-[8px] transition-all ${
+                versionInfo.current === versionInfo.total
+                  ? "text-[#d0d0d0] cursor-not-allowed"
+                  : "text-[#6d6d6d] hover:bg-[#f6f6f6]"
+              }`}
+            >
+              <AltArrowRight weight="Linear" size={16} />
+            </button>
+          </div>
+        )}
+        {canRegenerate && (
+          <ActionIcon
+            icon={Restart}
+            tooltip="Regenerate"
+            onClick={onRegenerate}
+          />
+        )}
       </div>
     </div>
   );
