@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   AltArrowDown,
   Copy,
@@ -22,27 +22,10 @@ import {
   setSelectedTask,
 } from "../../store/reducer/superAgent";
 import { agents, getAgentById, getAgentBySlug } from "../index";
+import { getAuthToken } from "../../utils";
+import DeleteChatModal from "./DeleteChatModal";
 
-const tasks = [
-  {
-    id: 1,
-    title: "Build a Tic Tac Toe Game on Web",
-    description: "Build a Tic Tac Toe Game on Web",
-    agentSlug: "liveops",
-  },
-  {
-    id: 2,
-    title: "Give me idea for a women specific game options",
-    description: "Give me idea for a women specific game options",
-    agentSlug: "ua-playbook",
-  },
-  {
-    id: 3,
-    title: "Suggest me some game mechanics for a Tower Defense game",
-    description: "Suggest me some game mechanics for a Tower Defense game",
-    agentSlug: "game-director-report",
-  },
-];
+const API_BASE_URL = "http://localhost:3000";
 
 const Sidebar = () => {
   const dispatch = useDispatch();
@@ -50,13 +33,150 @@ const Sidebar = () => {
     (state) => state.superAgent.isSiderbarOpen
   );
   const [isLogoHovered, setIsLogoHovered] = useState(false);
+  const [chats, setChats] = useState([]);
+  const [isLoadingChats, setIsLoadingChats] = useState(false);
+  const [chatFilter, setChatFilter] = useState("all"); // "all" or "favourites"
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState(null);
+  const filterDropdownRef = useRef(null);
   const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
   const selectedTask = useSelector((state) => state.superAgent.selectedTask);
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Fetch chats from API
+  const fetchChats = useCallback(
+    async (filter = chatFilter) => {
+      setIsLoadingChats(true);
+      try {
+        const token = getAuthToken()?.token;
+        const favouriteParam = filter === "favourites" ? "&favourite=true" : "";
+        const response = await fetch(
+          `${API_BASE_URL}/v1/superagent/chats?limit=10&offset=0${favouriteParam}`,
+          {
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.success && result.data) {
+          setChats(result.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch chats:", error);
+      } finally {
+        setIsLoadingChats(false);
+      }
+    },
+    [chatFilter]
+  );
+
+  // Fetch chats on mount and when filter changes
+  useEffect(() => {
+    fetchChats(chatFilter);
+  }, [chatFilter]);
+
+  // Listen for chat-deleted event to refresh the list
+  useEffect(() => {
+    const handleChatDeleted = (event) => {
+      const deletedChatId = event.detail?.chatId;
+      // Remove the deleted chat from local state immediately
+      setChats((prev) => prev.filter((chat) => chat.id !== deletedChatId));
+    };
+
+    window.addEventListener("chat-deleted", handleChatDeleted);
+    return () => {
+      window.removeEventListener("chat-deleted", handleChatDeleted);
+    };
+  }, []);
+
+  // Close filter dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        filterDropdownRef.current &&
+        !filterDropdownRef.current.contains(event.target)
+      ) {
+        setShowFilterDropdown(false);
+      }
+    };
+
+    if (showFilterDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showFilterDropdown]);
+
+  // Toggle favourite for a chat
+  const toggleFavourite = async (chatId) => {
+    try {
+      const token = getAuthToken()?.token;
+      const response = await fetch(
+        `${API_BASE_URL}/v1/superagent/chats/${chatId}/favourite`,
+        {
+          method: "POST",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        // Update local state
+        setChats((prev) =>
+          prev.map((chat) =>
+            chat.id === chatId
+              ? { ...chat, is_favourite: result.data.is_favourite }
+              : chat
+          )
+        );
+        // If we're viewing favourites and unfavourited, remove from list
+        if (chatFilter === "favourites" && !result.data.is_favourite) {
+          setChats((prev) => prev.filter((chat) => chat.id !== chatId));
+        }
+        return result.data.is_favourite;
+      }
+    } catch (error) {
+      console.error("Failed to toggle favourite:", error);
+    }
+    return null;
+  };
+
   const toggleSidebar = () => {
     dispatch(setIsSiderbarOpen(!isSiderbarOpen));
+  };
+
+  // Handle delete chat from sidebar
+  const handleDeleteChat = (chatId) => {
+    setChatToDelete(chatId);
+    setShowDeleteModal(true);
+  };
+
+  // Called after successful deletion
+  const onDeleteSuccess = (deletedChatId) => {
+    // Remove from local state
+    setChats((prev) => prev.filter((chat) => chat.id !== deletedChatId));
+    // Check if we're currently viewing this chat
+    const currentPath = location.pathname;
+    if (currentPath === `/super-agent/chat/${deletedChatId}`) {
+      navigate("/super-agent");
+    }
+    setChatToDelete(null);
   };
 
   const handleAgentSelect = (agent) => {
@@ -191,42 +311,92 @@ const Sidebar = () => {
           </button>
         </div>
 
-        {/* Task List - Only when expanded */}
-        {tasks.length > 0 &&
-          (isSiderbarOpen ? (
-            <div className="flex-1 overflow-y-auto w-full">
-              <div className="flex items-center gap-[5px] mb-2">
+        {/* Chat List - Only when expanded */}
+        {isSiderbarOpen ? (
+          <div className="flex-1 overflow-y-auto w-full">
+            <div className="relative mb-2" ref={filterDropdownRef}>
+              <button
+                className="flex items-center gap-[5px] hover:opacity-80 transition-opacity"
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              >
                 <span className="font-urbanist text-[13px] text-[#b0b0b0]">
-                  All tasks
+                  {chatFilter === "all" ? "All chats" : "Favourites"}
                 </span>
                 <AltArrowDown
                   weight={"Linear"}
-                  className="w-4 h-4 text-[#6D6D6D]"
+                  className={`w-4 h-4 text-[#6D6D6D] transition-transform ${
+                    showFilterDropdown ? "rotate-180" : ""
+                  }`}
                 />
-              </div>
-
-              <div className="space-y-2">
-                {tasks.map((task) => (
-                  <TaskItem
-                    key={task.id}
-                    text={task.title}
-                    active={selectedTask?.id === task?.id}
-                    slug={task.agentSlug}
+              </button>
+              {showFilterDropdown && (
+                <div className="absolute left-0 top-full mt-1 w-[120px] bg-white border border-[#f1f1f1] rounded-lg shadow-lg z-50">
+                  <button
+                    className={`w-full text-left px-3 py-2 text-[13px] font-urbanist hover:bg-[#f6f6f6] rounded-t-lg ${
+                      chatFilter === "all"
+                        ? "text-[#1f6744] bg-[#f1fcf6]"
+                        : "text-[#141414]"
+                    }`}
                     onClick={() => {
-                      dispatch(setSelectedTask(task));
-                      navigate(`/super-agent/chat/id-slug-of-the-chat`);
+                      setChatFilter("all");
+                      setShowFilterDropdown(false);
+                    }}
+                  >
+                    All chats
+                  </button>
+                  <button
+                    className={`w-full text-left px-3 py-2 text-[13px] font-urbanist hover:bg-[#f6f6f6] rounded-b-lg ${
+                      chatFilter === "favourites"
+                        ? "text-[#1f6744] bg-[#f1fcf6]"
+                        : "text-[#141414]"
+                    }`}
+                    onClick={() => {
+                      setChatFilter("favourites");
+                      setShowFilterDropdown(false);
+                    }}
+                  >
+                    Favourites
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {isLoadingChats ? (
+              <div className="text-center py-4 text-[#b0b0b0] text-sm">
+                Loading...
+              </div>
+            ) : chats.length > 0 ? (
+              <div className="space-y-2">
+                {chats.map((chat) => (
+                  <TaskItem
+                    key={chat.id}
+                    chatId={chat.id}
+                    text={chat.title || "Untitled Chat"}
+                    active={selectedTask?.id === chat.id}
+                    slug={chat.data?.agent_slug}
+                    isFavourite={chat.is_favourite}
+                    onToggleFavourite={toggleFavourite}
+                    onDelete={handleDeleteChat}
+                    onClick={() => {
+                      dispatch(setSelectedTask({ id: chat.id, ...chat }));
+                      navigate(`/super-agent/chat/${chat.id}`);
                     }}
                   />
                 ))}
               </div>
-            </div>
-          ) : (
-            <Dialog
-              weight={"Linear"}
-              className="size-[24px] text-[#6d6d6d] cursor-pointer"
-              onClick={toggleSidebar}
-            />
-          ))}
+            ) : (
+              <div className="text-center py-4 text-[#b0b0b0] text-sm">
+                {chatFilter === "favourites" ? "No favourites" : "No chats"}
+              </div>
+            )}
+          </div>
+        ) : (
+          <Dialog
+            weight={"Linear"}
+            className="size-[24px] text-[#6d6d6d] cursor-pointer"
+            onClick={toggleSidebar}
+          />
+        )}
 
         {/* Account Section at Bottom */}
         <div
@@ -250,6 +420,17 @@ const Sidebar = () => {
           </button>
         </div>
       </div>
+
+      {/* Delete Chat Modal */}
+      <DeleteChatModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setChatToDelete(null);
+        }}
+        chatId={chatToDelete}
+        onDelete={onDeleteSuccess}
+      />
     </div>
   );
 };
@@ -272,8 +453,18 @@ const ActionButton = ({ icon, activeIcon, label, onClick, selected }) => {
 };
 
 // Task Item Component
-const TaskItem = ({ text, active = false, onClick, slug }) => {
+const TaskItem = ({
+  chatId,
+  text,
+  active = false,
+  onClick,
+  slug,
+  isFavourite = false,
+  onToggleFavourite,
+  onDelete,
+}) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isTogglingFavourite, setIsTogglingFavourite] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -297,11 +488,20 @@ const TaskItem = ({ text, active = false, onClick, slug }) => {
     setShowDropdown(!showDropdown);
   };
 
-  const handleAction = (action, e) => {
+  const handleAction = async (action, e) => {
     e.stopPropagation();
-    console.log(`${action} action triggered for task: ${text}`);
+
+    if (action === "favourite" && onToggleFavourite) {
+      setIsTogglingFavourite(true);
+      await onToggleFavourite(chatId);
+      setIsTogglingFavourite(false);
+    } else if (action === "delete" && onDelete) {
+      onDelete(chatId);
+    } else {
+      console.log(`${action} action triggered for task: ${text}`);
+    }
+
     setShowDropdown(false);
-    // Add your action handlers here
   };
 
   return (
@@ -330,7 +530,7 @@ const TaskItem = ({ text, active = false, onClick, slug }) => {
       {showDropdown && (
         <div
           ref={dropdownRef}
-          className="absolute right-0 top-full p-1 px-1.5 mt-1 w-[160px] bg-white border border-[#f1f1f1] rounded-lg shadow-lg z-50"
+          className="absolute right-0 top-full p-1 px-1.5 mt-1 w-[160px] bg-white border border-[#f1f1f1] rounded-lg shadow-lg z-[100]"
         >
           <button
             onClick={(e) => handleAction("share", e)}
@@ -343,11 +543,16 @@ const TaskItem = ({ text, active = false, onClick, slug }) => {
           </button>
           <button
             onClick={(e) => handleAction("favourite", e)}
-            className="w-full flex items-center gap-2 px-2 py-2 hover:bg-[#f6f6f6] transition-colors border-b border-[#f1f1f1]"
+            className="w-full flex items-center gap-2 px-2 py-2 hover:bg-[#f6f6f6] transition-colors border-b border-[#f1f1f1] disabled:opacity-50"
+            disabled={isTogglingFavourite}
           >
-            <Star weight={"Linear"} size={20} color="#6D6D6D" />
+            <Star
+              weight={isFavourite ? "Bold" : "Linear"}
+              size={20}
+              color={isFavourite ? "#f59e0b" : "#6D6D6D"}
+            />
             <span className="font-urbanist font-medium text-[14px] text-[#141414]">
-              Favourite
+              {isFavourite ? "Unfavourite" : "Favourite"}
             </span>
           </button>
           <button

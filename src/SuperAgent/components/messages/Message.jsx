@@ -3,6 +3,8 @@ import UserMessage from "./UserMessage";
 import LLMMessage from "./LLMMessage";
 import AttachmentMessage from "./AttachmentMessage";
 import TaskMessage from "./TaskMessage";
+import ThinkingMessage from "./ThinkingMessage";
+import AgentHeader from "./AgentHeader";
 
 /**
  * Message component that renders different message types based on the message object
@@ -11,11 +13,18 @@ import TaskMessage from "./TaskMessage";
  * {
  *   id: string | number,
  *   sender: "user" | "llm",
- *   type: "text" | "attachment" | "task" | "artifact",
+ *   type: "text" | "attachment" | "task" | "artifact" | "thinking",
  *   data: object // varies based on type
  * }
  */
-const Message = ({ message, isLatest, onSendMessage }) => {
+const Message = ({
+  message,
+  isLatest,
+  isFirstLLMAfterUser,
+  onSendMessage,
+  onRegenerate,
+  versionInfo,
+}) => {
   const { sender, type, data } = message;
 
   switch (type) {
@@ -26,10 +35,14 @@ const Message = ({ message, isLatest, onSendMessage }) => {
         return (
           <LLMMessage
             content={data.content}
-            agentName={data.agentName}
             isLatest={isLatest}
             relatedActions={data.relatedActions || []}
             onSendMessage={onSendMessage}
+            onRegenerate={() =>
+              onRegenerate && onRegenerate(message.apiMessageId)
+            }
+            versionInfo={versionInfo}
+            canRegenerate={!!message.apiMessageId}
           />
         );
       }
@@ -45,6 +58,21 @@ const Message = ({ message, isLatest, onSendMessage }) => {
           isLatest={isLatest}
           onSendMessage={onSendMessage}
         />
+      );
+
+    case "thinking":
+      return (
+        <ThinkingMessage content={data.content} nextAction={data.nextAction} />
+      );
+
+    case "agent_header":
+      return <AgentHeader agentName={data.agentName} />;
+
+    case "error":
+      return (
+        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <span className="text-red-600 text-sm">{data.content}</span>
+        </div>
       );
 
     // Add more message types here as needed
