@@ -63,7 +63,7 @@ const IntegrationDropdown = ({
   onAddConnectors,
 }) => {
   const handleConnect = (integration) => {
-    const isConnected = connectedIntegrations.includes(integration.slug);
+    const isConnected = connectedIntegrations?.length ? connectedIntegrations?.includes(integration.slug) : false;
     if (!isConnected) {
       onIntegrationClick(integration);
       onClose();
@@ -79,7 +79,7 @@ const IntegrationDropdown = ({
     <div className="absolute top-full left-0 mt-2 w-[250px] bg-white border border-[#f1f1f1] rounded-[8px] shadow-lg z-50">
       <div className="p-1.5">
         {integrations.map((integration, index) => {
-          const isConnected = connectedIntegrations.includes(integration.slug);
+          const isConnected = connectedIntegrations?.length ? connectedIntegrations?.includes(integration.slug) : false;
           return (
             <button
               key={integration.id}
@@ -162,7 +162,7 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
   const [showConnectorModal, setShowConnectorModal] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState(null);
   const [showAddConnectorsModal, setShowAddConnectorsModal] = useState(false);
-  const [connectedIntegrations, setConnectedIntegrations] = useState(["gmail"]);
+  const [connectedIntegrations, setConnectedIntegrations] = useState();
   const selectedTemplate = useSelector(
     (state) => state.superAgent.selectedTemplate
   );
@@ -193,8 +193,8 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
 
   const handleConnectSuccess = (integrationSlug) => {
     setConnectedIntegrations((prev) => {
-      if (!prev.includes(integrationSlug)) {
-        return [...prev, integrationSlug];
+      if (!prev?.includes(integrationSlug)) {
+        return [...prev || [], integrationSlug];
       }
       return prev;
     });
@@ -335,7 +335,7 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
                 setShowIntegrationDropdown(!showIntegrationDropdown)
               }
             >
-              {connectedIntegrations.length ? (
+              {connectedIntegrations?.length ? (
                 <>
                   {connectedIntegrations.map((integration) => (
                     <img

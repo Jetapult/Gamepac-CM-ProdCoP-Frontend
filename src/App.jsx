@@ -129,17 +129,15 @@ function AppContent() {
   }, []);
 
   return (
-    <div className={isOnSuperAgentPage ? "" : "body-margin-top bg-[#f6f6f7]"}>
+    <div className={"bg-[#f6f6f7]"}>
       <>
-          {!isOnSuperAgentPage && <Navbar />}
+          {/* {!isOnSuperAgentPage && <Navbar />} */}
           <Routes>
             <Route
               exact
               path="/"
               element={
-                <UnprotectedRoute>
-                  <Landing />
-                </UnprotectedRoute>
+                isAuthenticated() ? <SuperAgent /> : <Landing />
               }
             />
             <Route

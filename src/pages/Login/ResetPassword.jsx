@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { parseJwt } from "../../utils";
-import info from "../../assets/info.svg";
 import api from "../../api";
 import { authenticate } from "../../auth";
+import AuthLayout from "./AuthLayout";
+import Loader from "../../components/Loader";
+import { Eye, EyeClosed, CheckCircle, CloseCircle } from "@solar-icons/react";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [showResetPasswordSuccess, setShowResetPasswordSuccess] =
     useState(false);
   const navigate = useNavigate();
@@ -16,47 +19,44 @@ const ResetPassword = () => {
   const queryParams = new URLSearchParams(location.search);
   const token = queryParams.get("token");
   const userData = parseJwt(token);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Password validation rules
+  const passwordValidation = useMemo(() => {
+    return {
+      minLength: password.length >= 9,
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+      hasSpecial: /[!@#$%^&*()_+\-=[\]{}|\\:'",.<>/?]/.test(password),
+    };
+  }, [password]);
+
+  const isPasswordValid = useMemo(() => {
+    return Object.values(passwordValidation).every(Boolean);
+  }, [passwordValidation]);
+
+  const passwordsMatch = useMemo(() => {
+    return password && confirmPassword && password === confirmPassword;
+  }, [password, confirmPassword]);
+
+  const isFormValid = useMemo(() => {
+    return isPasswordValid && passwordsMatch;
+  }, [isPasswordValid, passwordsMatch]);
 
   const handleLoginRedirect = () => {
     navigate("/login");
   };
 
-  function validatePassword() {
-    const minLengthRegex = /.{9,}/;
-    const uppercaseRegex = /[A-Z]/;
-    const lowercaseRegex = /[a-z]/;
-    const numberRegex = /[0-9]/;
-    const specialCharRegex = /[!@#$%^&*()_+\-=[\]{}|\\:'",.<>/?]/;
-
-    if (password !== confirmPassword) {
-      return "Passwords do not match.";
-    }
-    if (!minLengthRegex.test(password)) {
-      return "Password must be at least 9 characters long.";
-    }
-    if (!uppercaseRegex.test(password)) {
-      return "Password must contain at least one uppercase letter.";
-    }
-    if (!lowercaseRegex.test(password)) {
-      return "Password must contain at least one lowercase letter.";
-    }
-    if (!numberRegex.test(password)) {
-      return "Password must contain at least one number.";
-    }
-    if (!specialCharRegex.test(password)) {
-      return "Password must contain at least one special character.";
-    }
-    return "";
-  }
-
   const handleSubmit = async (e) => {
     try {
       e.preventDefault();
-      const validationError = validatePassword(password);
-      if (validationError) {
-        setError(validationError);
+      if (!isFormValid) {
         return;
       }
+      setIsLoading(true);
+      setError("");
       const requestbody = {
         password: password,
         email: userData.email,
@@ -75,109 +75,218 @@ const ResetPassword = () => {
           });
         }
       }
+      setIsLoading(false);
     } catch (err) {
       console.log(err, "err");
+      setError("Something went wrong. Please try again.");
+      setIsLoading(false);
     }
   };
+
+  const ValidationItem = ({ isValid, text }) => (
+    <li className={`flex items-center gap-2 text-xs ${isValid ? "text-[#B0B0B0]" : "text-[#E53935]"}`}>
+      {isValid ? (
+        <CheckCircle weight={"Bold"} size={16} color="#00A251" />
+      ) : (
+        <CloseCircle weight={"Bold"} size={16} color="#E53935" />
+      )}
+      {text}
+    </li>
+  );
+
+  const InactiveValidationItem = ({ text }) => (
+    <li className="flex items-center gap-2 text-xs text-[#B0B0B0]">
+      <CheckCircle weight={"Bold"} size={16} color="#B0B0B0" />
+      {text}
+    </li>
+  );
+
+  if (showResetPasswordSuccess) {
+    return (
+      <AuthLayout>
+        <div className="">
+          <h5 className="text-[22px] text-[#0E0E0E] font-normal mb-2">
+            You've updated the password successfully
+          </h5>
+          <p className="text-xs text-[#6D6D6D] font-normal mb-6">
+            You can now use it to login to your account. Remember, always keep your password confidential and complex
+          </p>
+          <button
+            className="mt-4 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-enabled-btn"
+            onClick={handleLoginRedirect}
+          >
+            Continue to login
+          </button>
+        </div>
+      </AuthLayout>
+    );
+  }
+
   return (
-    <div className="flex items-center justify-center pt-10">
-      <div className=" bg-white p-8 rounded-md shadow-md font-['Inter'] w-96">
-        {showResetPasswordSuccess ? (
-          <div className="text-center">
-            <h2 className="text-xl font-bold mb-2">
-              Your password has been successfully updated!
-            </h2>
-            <p className="mb-6">You can now log in with your new password.</p>
-            <button
-              onClick={handleLoginRedirect}
-              className="bg-[#B9FF66] text-[#000] py-2 px-4 rounded-md hover:bg-[#000] hover:text-[#B9FF66]"
-            >
-              Log In
-            </button>
-          </div>
-        ) : (
-          <>
-            <h2 className="text-2xl font-bold mb-4">Set Password</h2>
-            <form>
-              <div className="mb-4">
-                <label
-                  htmlFor="username"
-                  className="block text-sm font-medium text-gray-800"
-                >
-                  Password
-                </label>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-blue-400"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-800"
-                >
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-blue-400"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </div>
-              <div className="bg-[#e6e6e6] rounded text-[#808080] mb-4 p-2 text-[12px]">
-                <p className="flex items-center font-bold">
-                  <img
-                    src={info}
-                    alt="info"
-                    width={20}
-                    height={20}
-                    className="inline mr-1"
-                  />
-                  Note
-                </p>
-                <ul>
-                  <li>Minimum length: 9 characters</li>
-                  <li>Must contain at least one:</li>
-                  <ul className="list-disc ml-4">
-                    <li>Uppercase letter (A-Z)</li>
-                    <li>Lowercase letter (a-z)</li>
-                    <li>Number (0-9)</li>
-                    <li>{`Special character (! @ # $ % ^ & * _ - + = [ ] { } | \ : ' " , . < > / ?)`}</li>
-                  </ul>
-                </ul>
-              </div>
-              <p className="text-red-500 text-sm">{error}</p>
-              {validatePassword() ? (
-                <button
-                  type="submit"
-                  className="w-full bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none focus:ring focus:border-gray-400 cursor-not-allowed"
-                  disabled
-                >
-                  Change Password
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  className="w-full bg-[#B9FF66] text-[#000] py-2 px-4 rounded-md focus:outline-none focus:ring focus:border-gray-400"
-                  onClick={handleSubmit}
-                >
-                  Change Password
-                </button>
-              )}
-            </form>
-          </>
-        )}
+    <AuthLayout>
+      <div className="">
+        <h5 className="text-[22px] text-[#0E0E0E] font-medium">
+          Set new password
+        </h5>
+        <p className="text-xs text-[#6D6D6D] font-normal mb-6">
+          Enter your email address and we'll send you a link to reset your
+          password.
+        </p>
       </div>
-    </div>
+      <form className="w-full">
+        <div className="mb-4 relative">
+          <label
+            htmlFor="password"
+            className="block text-xs text-[#76819A] font-normal mb-1"
+          >
+            New password
+          </label>
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Enter new password"
+            className={`w-full p-2 max-h-[40px] text-[#292929] rounded-lg shadow-[0_1px_2px_0_rgba(16,24,40,0.05)] placeholder:text-sm placeholder:tracking-normal placeholder:font-normal font-urbanist h-[40px] border focus:outline-none ${
+              password && !isPasswordValid
+                ? "border-[#E53935] focus:border-[#E53935]"
+                : "border-transparent focus:border-[#C1C1C1]"
+            } ${showPassword || !password ? "text-sm" : "text-[40px]"}`}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {showPassword ? (
+            <Eye
+              weight={"Linear"}
+              size={20}
+              color="#B6B6B6"
+              className="absolute right-2 top-10 transform -translate-y-[50%] cursor-pointer"
+              onClick={() => setShowPassword(!showPassword)}
+            />
+          ) : (
+            <EyeClosed
+              weight={"Linear"}
+              size={20}
+              color="#B6B6B6"
+              className="absolute right-2 top-10 transform -translate-y-[50%] cursor-pointer"
+              onClick={() => setShowPassword(!showPassword)}
+            />
+          )}
+        </div>
+
+        <div className="mb-2 relative">
+          <label
+            htmlFor="confirmPassword"
+            className="block text-xs text-[#76819A] font-normal mb-1"
+          >
+            Confirm new password
+          </label>
+          <input
+            type={showConfirmPassword ? "text" : "password"}
+            placeholder="Confirm new password"
+            className={`w-full p-2 text-[#292929] max-h-[40px] rounded-lg shadow-[0_1px_2px_0_rgba(16,24,40,0.05)] placeholder:text-sm placeholder:tracking-normal placeholder:font-normal font-urbanist h-[40px] border focus:outline-none ${
+              confirmPassword && !passwordsMatch
+                ? "border-[#E53935] focus:border-[#E53935]"
+                : "border-transparent focus:border-[#C1C1C1]"
+            } ${showConfirmPassword || !confirmPassword ? "text-sm" : "text-[40px]"}`}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          {showConfirmPassword ? (
+            <Eye
+              weight={"Linear"}
+              size={20}
+              color="#B6B6B6"
+              className="absolute right-2 top-10 transform -translate-y-[50%] cursor-pointer"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            />
+          ) : (
+            <EyeClosed
+              weight={"Linear"}
+              size={20}
+              color="#B6B6B6"
+              className="absolute right-2 top-10 transform -translate-y-[50%] cursor-pointer"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            />
+          )}
+        </div>
+
+        {confirmPassword && (
+          <div className={`flex items-center gap-2 text-xs mb-4 ${passwordsMatch ? "text-[#00A251]" : "text-[#E53935]"}`}>
+            {passwordsMatch ? (
+              <>
+                <CheckCircle weight={"Bold"} size={16} color="#00A251" />
+                Matches perfectly
+              </>
+            ) : (
+              <>
+                <CloseCircle weight={"Bold"} size={16} color="#E53935" />
+                {isPasswordValid ? "Passwords do not match" : "Password too weak"}
+              </>
+            )}
+          </div>
+        )}
+
+        {password && (
+          <div className="border border-[#D9DEE4] rounded-md p-4 bg-white mt-4">
+            <p className="text-xs font-normal mb-3">
+              Your password must contain :
+            </p>
+            <ul className="list-type-none grid grid-cols-2 gap-2">
+              <ValidationItem isValid={passwordValidation.minLength} text="At least 9 characters" />
+              <ValidationItem isValid={passwordValidation.hasNumber} text="Numbers (0-9)" />
+              <ValidationItem isValid={passwordValidation.hasUppercase} text="Upper case letter (A-Z)" />
+              <ValidationItem isValid={passwordValidation.hasLowercase} text="Lower case letter (a-z)" />
+              <ValidationItem isValid={passwordValidation.hasSpecial} text="Special character (!@#$%*^&%)" />
+            </ul>
+          </div>
+        )}
+
+        {!password && (
+          <div className="border border-[#D9DEE4] rounded-md p-4 bg-white mt-4">
+            <p className="text-xs font-normal mb-3">
+              Your password must contain :
+            </p>
+            <ul className="list-type-none grid grid-cols-2 gap-2">
+              <InactiveValidationItem text="At least 9 characters" />
+              <InactiveValidationItem text="Numbers (0-9)" />
+              <InactiveValidationItem text="Upper case letter (A-Z)" />
+              <InactiveValidationItem text="Lower case letter (a-z)" />
+              <InactiveValidationItem text="Special character (!@#$%*^&%)" />
+            </ul>
+          </div>
+        )}
+
+        {error && (
+          <p className="text-[#E53935] text-xs mt-2">{error}</p>
+        )}
+
+        {/* Submit Button */}
+        {isLoading ? (
+          <button
+            type="button"
+            className="mt-6 mb-4 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-enabled-btn flex items-center justify-center"
+            disabled
+          >
+            <Loader size={18} />
+          </button>
+        ) : isFormValid ? (
+          <button
+            type="button"
+            className="mt-6 mb-4 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-enabled-btn"
+            onClick={handleSubmit}
+          >
+            Change Password
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="mt-6 mb-4 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-disabled-btn cursor-not-allowed"
+            disabled
+          >
+            Change Password
+          </button>
+        )}
+      </form>
+    </AuthLayout>
   );
 };
+
 export default ResetPassword;
