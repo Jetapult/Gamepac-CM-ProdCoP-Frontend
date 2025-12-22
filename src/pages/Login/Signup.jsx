@@ -2,7 +2,8 @@ import { useState } from "react";
 import api from "../../api";
 import ToastMessage from "../../components/ToastMessage";
 import { emailRegex } from "../../utils";
-import loadingIcon from "../../assets/transparent-spinner.svg";
+import Loader from "../../components/Loader";
+import AuthLayout from "./AuthLayout";
 
 const Signup = () => {
   const [data, setData] = useState({
@@ -18,6 +19,7 @@ const Signup = () => {
   });
   const [signupLoader, setSignupLoader] = useState(false);
   const [isEmailSent, setEmailSent] = useState(false);
+  const [signupError, setSignupError] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,14 +27,18 @@ const Signup = () => {
       ...prev,
       [name]: value,
     }));
+    setSignupError("");
   };
+
   const handleSignup = async (e) => {
     try {
       e.preventDefault();
-      setSignupLoader(true);
       if (!emailRegex.test(data.email)) {
+        setSignupError("Please enter a valid email address");
         return;
       }
+      setSignupLoader(true);
+      setSignupError("");
       const requestbody = {
         email: data.email.trim(),
         studio_name: data.studio_name.trim(),
@@ -57,104 +63,130 @@ const Signup = () => {
       }
       setSignupLoader(false);
     } catch (err) {
-      if (err.response.data.message) {
-        setToastMessage({
-          show: true,
-          message: err.response.data.message,
-          type: "error",
-        });
+      if (err.response?.data?.message) {
+        setSignupError(err.response.data.message);
+      } else {
+        setSignupError("Something went wrong. Please try again.");
       }
       setSignupLoader(false);
     }
   };
+
+  const isFormValid = data.email && data.studio_name && data.name;
+
+  if (isEmailSent) {
+    return (
+      <AuthLayout>
+        <div className="">
+          <h5 className="text-[22px] text-[#0E0E0E] font-normal mb-2">
+            Check Your Inbox
+          </h5>
+          <p className="text-xs text-[#6D6D6D] font-normal mb-6">
+            We've sent an invite email to {data.email || "your email address"}. Please check your inbox to complete the signup process.
+          </p>
+        </div>
+      </AuthLayout>
+    );
+  }
+
   return (
     <>
-      <div className="flex items-center justify-center pt-10">
-        <div className=" bg-white p-8 rounded-md shadow-md font-['Inter'] w-96">
-          <h2 className="text-2xl font-bold mb-4">Signup</h2>
-          <form>
-            <div className="mb-4">
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-800"
-              >
-                Name<span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-blue-400"
-                required
-                value={data.name}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="mb-4">
-              <label
-                htmlFor="studio_name"
-                className="block text-sm font-medium text-gray-800"
-              >
-                Studio Name<span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="studio_name"
-                name="studio_name"
-                className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-blue-400"
-                required
-                value={data.studio_name}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="mb-4">
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-800"
-              >
-                Business Email<span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="email"
-                name="email"
-                className="mt-1 px-4 py-2 w-full rounded-md border border-gray-400 focus:outline-none focus:ring focus:border-blue-400"
-                required
-                value={data.email}
-                onChange={handleChange}
-              />
-            </div>
-            {data.email && data.studio_name && data.name ? (
-              <>
-                {signupLoader ? (
-                  <button
-                    type="submit"
-                    className="w-full bg-[#000] text-white flex justify-center py-2 px-4 rounded-md outline-none"
-                    onClick={handleSignup}
-                  >
-                    <img src={loadingIcon} alt="loading" className="w-8 h-8" />
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    className="w-full bg-[#B9FF66] text-[#000] py-2 px-4 rounded-md outline-none hover:bg-[#000] hover:text-[#B9FF66]"
-                    onClick={handleSignup}
-                  >
-                    Signup
-                  </button>
-                )}
-              </>
-            ) : (
-              <button
-                type="submit"
-                className="w-full bg-gray-500 text-white py-2 px-4 rounded-md outline-none"
-              >
-                {isEmailSent ? "Email sent " : "Signup"}
-              </button>
-            )}
-          </form>
+      <AuthLayout>
+        <div className="">
+          <h5 className="text-[22px] text-[#0E0E0E] font-medium">
+            Add your Studio Details
+          </h5>
+          <p className="text-xs text-[#6D6D6D] font-normal mb-6">
+            This will help us in tailoring GamePac to your creative needs.
+          </p>
         </div>
-      </div>
+        <form className="w-full">
+          <div className="mb-4">
+            <label
+              htmlFor="studio_name"
+              className="block text-xs text-[#76819A] font-normal mb-1"
+            >
+              Studio Name<span className="text-[#E53935]">*</span>
+            </label>
+            <input
+              type="text"
+              id="studio_name"
+              name="studio_name"
+              placeholder="Add Studio Name here"
+              className="w-full p-2 rounded-lg shadow-[0_1px_2px_0_rgba(16,24,40,0.05)] text-sm font-urbanist h-[40px] border border-transparent focus:outline-none focus:border-[#C1C1C1]"
+              value={data.studio_name}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="mb-4">
+            <label
+              htmlFor="email"
+              className="block text-xs text-[#76819A] font-normal mb-1"
+            >
+              Business Email<span className="text-[#E53935]">*</span>
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Enter email"
+              className={`w-full p-2 rounded-lg shadow-[0_1px_2px_0_rgba(16,24,40,0.05)] text-sm font-urbanist h-[40px] border border-transparent focus:outline-none focus:border-[#C1C1C1] ${signupError.includes("email") ? "border-[#D92D20]" : "border-transparent"}`}
+              value={data.email}
+              onChange={(e) => {
+                handleChange(e);
+                setSignupError("");
+              }}
+            />
+          </div>
+          <div className="mb-4">
+            <label
+              htmlFor="name"
+              className="block text-xs text-[#76819A] font-normal mb-1"
+            >
+              User Name<span className="text-[#E53935]">*</span>
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              placeholder="Add User_name"
+              className="w-full p-2 rounded-lg shadow-[0_1px_2px_0_rgba(16,24,40,0.05)] text-sm font-urbanist h-[40px] border border-transparent focus:outline-none focus:border-[#C1C1C1]"
+              value={data.name}
+              onChange={handleChange}
+            />
+          </div>
+
+          {signupError && (
+            <p className="text-[#E53935] text-xs mt-2 mb-2">{signupError}</p>
+          )}
+
+          {signupLoader ? (
+            <button
+              type="button"
+              className="mt-6 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-enabled-btn flex items-center justify-center"
+              disabled
+            >
+              <Loader size={18} />
+            </button>
+          ) : isFormValid ? (
+            <button
+              type="button"
+              className="mt-6 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-enabled-btn"
+              onClick={handleSignup}
+            >
+              Add Studio
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="mt-6 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-disabled-btn cursor-not-allowed"
+              disabled
+            >
+              Add Studio
+            </button>
+          )}
+        </form>
+      </AuthLayout>
       {toastMessage.show && (
         <ToastMessage
           message={toastMessage}
@@ -164,4 +196,5 @@ const Signup = () => {
     </>
   );
 };
+
 export default Signup;

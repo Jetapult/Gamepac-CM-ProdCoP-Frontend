@@ -3,7 +3,7 @@ import api from "../../api";
 import ToastMessage from "../../components/ToastMessage";
 import { authenticate } from "../../auth";
 import { emailRegex } from "../../utils";
-import loadingIcon from "../../assets/transparent-spinner.svg";
+import Loader from "../../components/Loader";
 import { ArrowRight, Eye, EyeClosed } from "@solar-icons/react";
 import googleLogo from "../../assets/super-agents/google-logo.svg";
 import AuthLayout from "./AuthLayout";
@@ -19,8 +19,12 @@ const Login = () => {
     type: "success",
   });
   const [loginLoader, setLoginLoader] = useState(false);
-  const [emailPassword, setEmailPassword] = useState(false);
+  const [forgotPasswordLoader, setForgotPasswordLoader] = useState(false);
+  const [showForgotPasswordSuccess, setShowForgotPasswordSuccess] = useState(false);
+  const [emailPassword, setEmailPassword] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [forgotPasswordError, setForgotPasswordError] = useState("");
 
   const handleForgotPassword = async (event) => {
     try {
@@ -28,6 +32,8 @@ const Login = () => {
       if (!emailRegex.test(email)) {
         return;
       }
+      setForgotPasswordLoader(true);
+      setForgotPasswordError("");
       const requestbody = {
         email,
       };
@@ -36,20 +42,16 @@ const Login = () => {
         requestbody
       );
       if (forgot_response.status === 200) {
-        setToastMessage({
-          show: true,
-          message: "Email sent successfully",
-          type: "success",
-        });
+        setShowForgotPasswordSuccess(true);
       }
+      setForgotPasswordLoader(false);
     } catch (err) {
-      if (err.response.data.message) {
-        setToastMessage({
-          show: true,
-          message: err.response.data.message,
-          type: "error",
-        });
+      if (err.response?.data?.message) {
+        setForgotPasswordError(err.response.data.message);
+      } else {
+        setForgotPasswordError("Something went wrong. Please try again.");
       }
+      setForgotPasswordLoader(false);
     }
   };
 
@@ -57,6 +59,7 @@ const Login = () => {
     e.preventDefault();
     try {
       setLoginLoader(true);
+      setLoginError("");
       const requestbody = {
         email: email.trim(),
         password,
@@ -74,12 +77,10 @@ const Login = () => {
       }
       setLoginLoader(false);
     } catch (err) {
-      if (err.response.data.message) {
-        setToastMessage({
-          show: true,
-          message: err.response.data.message,
-          type: "error",
-        });
+      if (err.response?.data?.message) {
+        setLoginError(err.response.data.message);
+      } else {
+        setLoginError("Something went wrong. Please try again.");
       }
       setLoginLoader(false);
     }
@@ -88,7 +89,40 @@ const Login = () => {
   const enableForgotPassword = () => {
     setShowForgotPassword(true);
     setEmailPassword(false);
+    setLoginError("");
   };
+
+  const handleBackToSignIn = () => {
+    setShowForgotPassword(false);
+    setShowForgotPasswordSuccess(false);
+    setEmailPassword(true);
+    setForgotPasswordError("");
+  };
+
+  if (showForgotPasswordSuccess) {
+    return (
+      <AuthLayout>
+        <div className="">
+          <h5 className="text-[22px] text-[#0E0E0E] font-normal mb-2">
+            Link Sent, Check Your Inbox
+          </h5>
+          <p className="text-xs text-[#6D6D6D] font-normal mb-6">
+            We'll send recovery link to {email} if it exits in our system.
+          </p>
+          <p className="text-sm text-[#6D6D6D]">
+            Remember Password?{" "}
+            <span
+              className="text-[#1F6744] font-medium cursor-pointer underline"
+              onClick={handleBackToSignIn}
+            >
+              Back to Sign in
+            </span>
+          </p>
+        </div>
+      </AuthLayout>
+    );
+  }
+
   return (
     <AuthLayout>
       {showForgotPassword ? (
@@ -117,10 +151,13 @@ const Login = () => {
           <input
             type="email"
             placeholder="Enter your email address"
-            className="w-full p-2 rounded-lg shadow-[0_1px_2px_0_rgba(16,24,40,0.05)] text-sm font-urbanist h-[40px] border border-transparent focus:outline-none focus:border-[#C1C1C1]"
+            className={`w-full p-2 rounded-lg shadow-[0_1px_2px_0_rgba(16,24,40,0.05)] text-sm font-urbanist h-[40px] border focus:outline-none focus:border-[#C1C1C1] ${
+              loginError.includes("email") || loginError.includes("user does not exist") ? "border-[#D92D20]" : "border-transparent"
+            }`}
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
+              setLoginError("");
               if (e.target.value && !emailPassword) {
                 setEmailPassword(true);
               }
@@ -141,11 +178,15 @@ const Login = () => {
                 </label>
                 <input
                   type={showPassword ? "text" : "password"}
-                  className={`w-full p-2 max-h-[40px] rounded-lg shadow-[0_1px_2px_0_rgba(16,24,40,0.05)] placeholder:text-sm placeholder:tracking-normal font-urbanist h-[40px] border border-transparent focus:outline-none focus:border-[#C1C1C1] ${
-                    showPassword ? "text-sm" : "text-[40px]"
-                  }`}
+                  placeholder="Enter your password"
+                  className={`w-full p-2 max-h-[40px] rounded-lg shadow-[0_1px_2px_0_rgba(16,24,40,0.05)] placeholder:text-sm placeholder:tracking-normal placeholder:font-normal font-urbanist h-[40px] border focus:outline-none focus:border-[#C1C1C1] ${
+                    showPassword || !password ? "text-sm" : "text-[40px]"
+                  } ${loginError.includes("password") ? "border-[#D92D20]" : "border-transparent"}`}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setLoginError("");
+                  }}
                 />
                 {showPassword ? (
                   <Eye
@@ -173,10 +214,10 @@ const Login = () => {
               </div>
             ) : (
               <>
-                <p className="flex text-xs text-[#76819A] font-normal my-4 after:content-[''] after:block after:w-full after:h-[1px] after:bg-[#D9DEE4] after:ml-4 after:my-2 before:content-[''] before:block before:w-full before:h-[1px] before:bg-[#D9DEE4] before:mr-4 before:my-2">
+                <p className="flex text-xs text-[#76819A] font-normal my-5 after:content-[''] after:block after:w-full after:h-[1px] after:bg-[#D9DEE4] after:ml-4 after:my-2 before:content-[''] before:block before:w-full before:h-[1px] before:bg-[#D9DEE4] before:mr-4 before:my-2">
                   Or
                 </p>
-                <button className="bg-[#FFF] border border-[#DFDFDF] text-sm text-center rounded-lg py-2 w-full shadow-[0_2px_2px_0_rgba(0,0,0,0.08)] mt-4 h-[40px]">
+                <button className="bg-[#FFF] border border-[#DFDFDF] text-sm text-center rounded-lg py-2 w-full shadow-[0_2px_2px_0_rgba(0,0,0,0.08)] h-[40px]">
                   <img
                     src={googleLogo}
                     alt="google-logo"
@@ -189,23 +230,37 @@ const Login = () => {
           </>
         )}
 
-        {(email && password && !loginLoader) ||
-        (showForgotPassword && emailRegex.test(email)) ? (
+        {loginLoader || forgotPasswordLoader ? (
           <button
-            className="mt-10 mb-4 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-enabled-btn"
+            className="mt-10 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-enabled-btn flex items-center justify-center gap-2"
+            disabled
+          >
+            <Loader size={18} />
+          </button>
+        ) : (email && password) || (showForgotPassword && emailRegex.test(email)) ? (
+          <button
+            className="mt-10 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-enabled-btn"
             onClick={showForgotPassword ? handleForgotPassword : handleLogin}
           >
             {showForgotPassword ? "Send Reset Link " : "Login"}
           </button>
         ) : (
-          <button className="mt-10 mb-4 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-disabled-btn">
+          <button className="mt-10 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-disabled-btn">
             {showForgotPassword ? "Send Email" : "Login"}
           </button>
+        )}
+        {!showForgotPassword && loginError && (
+          <p className="text-[#E53935] text-xs mt-2">
+            {loginError.includes("user does not exist") ? "User does not exist" : "Invalid login credentials."}
+          </p>
+        )}
+        {showForgotPassword && forgotPasswordError && (
+          <p className="text-[#E53935] text-xs mt-2">{forgotPasswordError}</p>
         )}
         {(emailPassword || showForgotPassword) && (
           <button
             type="button"
-            className="mt-2 mb-4 h-[40px] text-center rounded-lg w-full py-2 bg-white relative"
+            className="mt-6 h-[40px] text-center rounded-lg w-full py-2 bg-white relative"
             style={{
               background:
                 "linear-gradient(#F6F6F6, #F6F6F6) padding-box, linear-gradient(333deg, #11A85F 13.46%, #1F6744 103.63%) border-box",
@@ -225,7 +280,7 @@ const Login = () => {
       </form>
       {!emailPassword && !showForgotPassword && (
         <>
-          <p className="text-[#76819A] text-xs text-center cursor-pointer mb-10">
+          <p className="text-[#76819A] text-xs text-center cursor-pointer mb-10 mt-4">
             Don’t have an account?{" "}
             <span className="text-[#1F6744]">
               Contact Us{" "}

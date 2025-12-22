@@ -4,12 +4,14 @@ import { parseJwt } from "../../utils";
 import api from "../../api";
 import { authenticate } from "../../auth";
 import AuthLayout from "./AuthLayout";
+import Loader from "../../components/Loader";
 import { Eye, EyeClosed, CheckCircle, CloseCircle } from "@solar-icons/react";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [showResetPasswordSuccess, setShowResetPasswordSuccess] =
     useState(false);
   const navigate = useNavigate();
@@ -53,6 +55,8 @@ const ResetPassword = () => {
       if (!isFormValid) {
         return;
       }
+      setIsLoading(true);
+      setError("");
       const requestbody = {
         password: password,
         email: userData.email,
@@ -71,9 +75,11 @@ const ResetPassword = () => {
           });
         }
       }
+      setIsLoading(false);
     } catch (err) {
       console.log(err, "err");
       setError("Something went wrong. Please try again.");
+      setIsLoading(false);
     }
   };
 
@@ -98,21 +104,18 @@ const ResetPassword = () => {
   if (showResetPasswordSuccess) {
     return (
       <AuthLayout>
-        <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <CheckCircle weight={"Bold"} size={64} color="#00A251" />
-          </div>
-          <h5 className="text-[22px] text-[#0E0E0E] font-medium mb-2">
-            Password Updated!
+        <div className="">
+          <h5 className="text-[22px] text-[#0E0E0E] font-normal mb-2">
+            You've updated the password successfully
           </h5>
           <p className="text-xs text-[#6D6D6D] font-normal mb-6">
-            Your password has been successfully updated. You can now log in with your new password.
+            You can now use it to login to your account. Remember, always keep your password confidential and complex
           </p>
           <button
             className="mt-4 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-enabled-btn"
             onClick={handleLoginRedirect}
           >
-            Back to Login
+            Continue to login
           </button>
         </div>
       </AuthLayout>
@@ -140,11 +143,12 @@ const ResetPassword = () => {
           </label>
           <input
             type={showPassword ? "text" : "password"}
-            className={`w-full p-2 max-h-[40px] text-[#292929] rounded-lg shadow-[0_1px_2px_0_rgba(16,24,40,0.05)] placeholder:text-sm placeholder:tracking-normal font-urbanist h-[40px] border focus:outline-none ${
+            placeholder="Enter new password"
+            className={`w-full p-2 max-h-[40px] text-[#292929] rounded-lg shadow-[0_1px_2px_0_rgba(16,24,40,0.05)] placeholder:text-sm placeholder:tracking-normal placeholder:font-normal font-urbanist h-[40px] border focus:outline-none ${
               password && !isPasswordValid
                 ? "border-[#E53935] focus:border-[#E53935]"
                 : "border-transparent focus:border-[#C1C1C1]"
-            } ${showPassword ? "text-sm" : "text-[40px]"}`}
+            } ${showPassword || !password ? "text-sm" : "text-[40px]"}`}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -176,11 +180,12 @@ const ResetPassword = () => {
           </label>
           <input
             type={showConfirmPassword ? "text" : "password"}
-            className={`w-full p-2 text-[#292929] max-h-[40px] rounded-lg shadow-[0_1px_2px_0_rgba(16,24,40,0.05)] placeholder:text-sm placeholder:tracking-normal font-urbanist h-[40px] border focus:outline-none ${
+            placeholder="Confirm new password"
+            className={`w-full p-2 text-[#292929] max-h-[40px] rounded-lg shadow-[0_1px_2px_0_rgba(16,24,40,0.05)] placeholder:text-sm placeholder:tracking-normal placeholder:font-normal font-urbanist h-[40px] border focus:outline-none ${
               confirmPassword && !passwordsMatch
                 ? "border-[#E53935] focus:border-[#E53935]"
                 : "border-transparent focus:border-[#C1C1C1]"
-            } ${showConfirmPassword ? "text-sm" : "text-[40px]"}`}
+            } ${showConfirmPassword || !confirmPassword ? "text-sm" : "text-[40px]"}`}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
@@ -254,7 +259,15 @@ const ResetPassword = () => {
         )}
 
         {/* Submit Button */}
-        {isFormValid ? (
+        {isLoading ? (
+          <button
+            type="button"
+            className="mt-6 mb-4 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-enabled-btn flex items-center justify-center"
+            disabled
+          >
+            <Loader size={18} />
+          </button>
+        ) : isFormValid ? (
           <button
             type="button"
             className="mt-6 mb-4 h-[40px] text-center rounded-lg w-full py-2 text-white bg-login-enabled-btn"
