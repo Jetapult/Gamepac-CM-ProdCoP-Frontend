@@ -187,7 +187,7 @@ const Sidebar = () => {
             onMouseEnter={() => setIsLogoHovered(true)}
           >
             {isLogoHovered && !isSiderbarOpen ? (
-              <div className="cursor-pointer size-[30px] m-1 text-[#6d6d6d] flex items-center justify-center bg-[#F1FCF6] rounded-[5px]">
+              <div className="cursor-pointer size-[38px] m-1 text-[#6d6d6d] flex items-center justify-center bg-[#F1FCF6] rounded-[5px]">
                 <Siderbar
                   color="#6d6d6d"
                   onClick={toggleSidebar}
@@ -195,12 +195,14 @@ const Sidebar = () => {
                 />
               </div>
             ) : (
-              <img
-                src={gamepacLogo}
-                alt="GamePac Logo"
-                className="size-[24px] shrink-0 cursor-pointer"
-                onClick={toggleSidebar}
-              />
+              <div className={`cursor-pointer size-[38px] flex items-center justify-center ${isSiderbarOpen ? "" : "m-1"}`}>
+                <img
+                  src={gamepacLogo}
+                  alt="GamePac Logo"
+                  className="size-[24px] shrink-0 cursor-pointer"
+                  onClick={toggleSidebar}
+                />
+              </div>
             )}
             {isSiderbarOpen && (
               <span
