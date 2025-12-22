@@ -198,7 +198,7 @@ const Sidebar = () => {
               <img
                 src={gamepacLogo}
                 alt="GamePac Logo"
-                className="size-[38px] shrink-0 cursor-pointer"
+                className="size-[24px] shrink-0 cursor-pointer"
                 onClick={toggleSidebar}
               />
             )}
