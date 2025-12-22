@@ -42,6 +42,10 @@ export default {
       'tighter-md': '-0.198px',
       'tighter-lg': '-0.374px',
     },
+    backgroundImage: {
+      'login-disabled-btn': 'linear-gradient(333deg, rgba(17, 168, 95, 0.40) 13.46%, rgba(31, 103, 68, 0.40) 103.63%)',
+      'login-enabled-btn': 'linear-gradient(333deg, #11A85F 13.46%, #1F6744 103.63%)',
+    },
     },
   },
   plugins: [],
