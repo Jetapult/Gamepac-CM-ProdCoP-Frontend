@@ -49,7 +49,7 @@ const backedby = [
 
 const AuthLayout = ({ children }) => {
   return (
-    <div className="grid grid-cols-2 h-[calc(100vh-60px)] font-urbanist">
+    <div className="grid grid-cols-2 h-screen font-urbanist">
       {/* Left Panel */}
       <div
         className="row-span-6 relative overflow-hidden"
@@ -91,7 +91,7 @@ const AuthLayout = ({ children }) => {
       </div>
 
       {/* Right Panel */}
-      <div className="row-span-6 flex flex-col items-center justify-start bg-[url('/src/assets/super-agents/background-lines.svg')] bg-no-repeat bg-cover bg-center pt-[100px]">
+      <div className="row-span-6 flex flex-col items-center justify-start bg-[url('/src/assets/super-agents/background-lines.svg')] bg-no-repeat bg-cover bg-center pt-[150px]">
         <div className="w-[400px]">
           <img
             src={gamepacLogo}
