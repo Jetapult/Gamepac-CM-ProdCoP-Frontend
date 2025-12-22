@@ -22,10 +22,8 @@ import {
   setSelectedTask,
 } from "../../store/reducer/superAgent";
 import { agents, getAgentById, getAgentBySlug } from "../index";
-import { getAuthToken } from "../../utils";
 import DeleteChatModal from "./DeleteChatModal";
-
-const API_BASE_URL = "http://localhost:3000";
+import api from "@/api";
 
 const Sidebar = () => {
   const dispatch = useDispatch();
@@ -50,22 +48,13 @@ const Sidebar = () => {
     async (filter = chatFilter) => {
       setIsLoadingChats(true);
       try {
-        const token = getAuthToken()?.token;
-        const favouriteParam = filter === "favourites" ? "&favourite=true" : "";
-        const response = await fetch(
-          `${API_BASE_URL}/v1/superagent/chats?limit=10&offset=0${favouriteParam}`,
-          {
-            headers: {
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        const params = { limit: 10, offset: 0 };
+        if (filter === "favourites") {
+          params.favourite = true;
         }
+        const response = await api.get("/v1/superagent/chats", { params });
 
-        const result = await response.json();
+        const result = response.data;
         if (result.success && result.data) {
           setChats(result.data);
         }
@@ -120,22 +109,11 @@ const Sidebar = () => {
   // Toggle favourite for a chat
   const toggleFavourite = async (chatId) => {
     try {
-      const token = getAuthToken()?.token;
-      const response = await fetch(
-        `${API_BASE_URL}/v1/superagent/chats/${chatId}/favourite`,
-        {
-          method: "POST",
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        }
+      const response = await api.post(
+        `/v1/superagent/chats/${chatId}/favourite`
       );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
+      const result = response.data;
       if (result.success) {
         // Update local state
         setChats((prev) =>
