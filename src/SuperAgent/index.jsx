@@ -16,7 +16,12 @@ import ChatInput from "./components/ChatInput";
 import { useDispatch, useSelector } from "react-redux";
 import MegaphoneIcon from "../assets/super-agents/megaphone-icon.svg";
 import ActiveMegaphoneIcon from "../assets/super-agents/megaphone-active.svg";
-import { setSelectedAgent, setSelectedTemplate } from "../store/reducer/superAgent";
+import {
+  setSelectedAgent,
+  setSelectedTemplate,
+} from "../store/reducer/superAgent";
+import api from "../api";
+import GameDropdown from "./components/GameDropdown";
 
 export const agents = [
   {
@@ -37,7 +42,7 @@ export const agents = [
   {
     id: "2",
     name: "Game Director Report",
-    slug: "game-director-report",
+    slug: "toyagent",
     icon: <Notebook2 weight={"Linear"} className="size-[24px]" />,
   },
   {
@@ -103,10 +108,43 @@ const SuperAgent = () => {
   const [activeTab, setActiveTab] = useState("chat");
   const [activeFilter, setActiveFilter] = useState("recommended");
   const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
+  const selectedGame = useSelector((state) => state.superAgent.selectedGame);
+  const ContextStudioData = useSelector(
+    (state) => state.admin.ContextStudioData
+  );
 
-  const onSendMessage = () => {
-    dispatch(setSelectedTemplate({}));
-    navigate(`/super-agent/chat/xyz`);
+  const onSendMessage = async (query) => {
+    if (!selectedGame) {
+      alert("Please select a game to continue.");
+      return;
+    }
+    try {
+      const title = query?.trim().slice(0, 50) || "";
+      const response = await api.post("/v1/superagent/chats", {
+        data: {
+          agent_slug: selectedAgent.slug,
+          game_id: selectedGame?.id,
+          studio_slug: ContextStudioData?.slug,
+        },
+      });
+      if (response.data?.success && response.data?.data?.id) {
+        const chatId = response.data.data.id;
+        // Update chat title via PATCH
+        if (title) {
+          await api.patch(`/v1/superagent/chats/${chatId}`, { title });
+        }
+        dispatch(setSelectedTemplate({}));
+        navigate(`/super-agent/chat/${chatId}`, {
+          state: {
+            initialQuery: query,
+            agentSlug: selectedAgent.slug,
+            gameId: selectedGame?.id,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Failed to create chat:", error);
+    }
   };
 
   return (
@@ -150,6 +188,38 @@ const SuperAgent = () => {
           </div>
         </div>
 
+        {/* Studio & Game Selector */}
+        <div className="absolute top-4 left-[72px] flex items-center gap-4 z-20">
+          {/* Studio Tag */}
+          {ContextStudioData && (
+            <div className="flex items-center gap-2">
+              {(ContextStudioData?.studio_logo || ContextStudioData?.logo) && (
+                <div className="w-8 h-8 rounded-[5px] border border-[#f6f6f6] bg-white overflow-hidden flex items-center justify-center">
+                  <img
+                    src={
+                      ContextStudioData?.studio_logo || ContextStudioData?.logo
+                    }
+                    alt=""
+                    className="w-[26px] h-[23px] object-contain"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
+              <span
+                className="text-[14px] text-[#141414] font-medium leading-6"
+                style={{ fontFamily: "Urbanist, sans-serif" }}
+              >
+                {ContextStudioData?.studio_name || ContextStudioData?.name}
+              </span>
+            </div>
+          )}
+
+          {/* Game Dropdown */}
+          <GameDropdown />
+        </div>
+
         {/* Header Section */}
         <div className="flex flex-col items-center py-12">
           <h1 className="text-4xl font-semibold text-[#1f6744] mb-3 font-urbanist">
@@ -174,7 +244,15 @@ const SuperAgent = () => {
                   ? "border-[#1f6744] bg-[#F1FCF6] text-[#1f6744]"
                   : "text-[#6d6d6d] border-[#e6e6e6] hover:border-[#1f6744] bg-white"
               }`}
-              onClick={() => dispatch(setSelectedAgent({id:action.id, name:action.name, slug:action.slug}))}
+              onClick={() =>
+                dispatch(
+                  setSelectedAgent({
+                    id: action.id,
+                    name: action.name,
+                    slug: action.slug,
+                  })
+                )
+              }
             >
               {action.activeIcon && selectedAgent.id === action.id
                 ? action.activeIcon

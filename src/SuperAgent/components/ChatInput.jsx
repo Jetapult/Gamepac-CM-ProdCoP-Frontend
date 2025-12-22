@@ -6,6 +6,7 @@ import {
   Plain,
   PlugCircle,
   SsdRound,
+  StopCircle,
 } from "@solar-icons/react";
 import { useSelector, useDispatch } from "react-redux";
 import { setSelectedTemplate } from "../../store/reducer/superAgent";
@@ -59,7 +60,7 @@ const IntegrationDropdown = ({
   onIntegrationClick,
   connectedIntegrations,
   onToggleConnection,
-  onAddConnectors
+  onAddConnectors,
 }) => {
   const handleConnect = (integration) => {
     const isConnected = connectedIntegrations.includes(integration.slug);
@@ -153,7 +154,7 @@ const IntegrationDropdown = ({
   );
 };
 
-const ChatInput = ({ onSendMessage, isThinking = false }) => {
+const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
   const dispatch = useDispatch();
   const [inputValue, setInputValue] = useState("");
   const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
@@ -165,6 +166,7 @@ const ChatInput = ({ onSendMessage, isThinking = false }) => {
   const selectedTemplate = useSelector(
     (state) => state.superAgent.selectedTemplate
   );
+  const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
   const userRef = useRef(null);
   const dropdownRef = useRef(null);
   const integrationDropdownRef = useRef(null);
@@ -206,7 +208,12 @@ const ChatInput = ({ onSendMessage, isThinking = false }) => {
   };
 
   const handleSend = () => {
-    if (inputValue.trim() && onSendMessage && !isThinking) {
+    if (
+      inputValue.trim() &&
+      onSendMessage &&
+      !isThinking &&
+      selectedAgent?.id
+    ) {
       onSendMessage(inputValue);
       setInputValue("");
     }
@@ -274,7 +281,7 @@ const ChatInput = ({ onSendMessage, isThinking = false }) => {
       <textarea
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && onSendMessage()}
+        onKeyDown={handleKeyDown}
         placeholder="Generate a professional sentiment analysis report"
         className="w-full bg-transparent border-none outline-none text-lg text-[#141414] placeholder:text-[#b0b0b0] font-urbanist "
         rows={selectedTemplate.id ? 2 : 4}
@@ -332,6 +339,7 @@ const ChatInput = ({ onSendMessage, isThinking = false }) => {
                 <>
                   {connectedIntegrations.map((integration) => (
                     <img
+                      key={integration}
                       src={getIntegrationBySlug(integration).icon}
                       alt={integration}
                       className="size-[16px] object-contain"
@@ -358,21 +366,36 @@ const ChatInput = ({ onSendMessage, isThinking = false }) => {
           </div>
         </div>
 
-        <button
-          onClick={handleSend}
-          className={`w-9 h-9 rounded-[8px] flex items-center justify-center transition-all relative overflow-hidden cursor-pointer disabled:cursor-not-allowed border border-[rgba(255,255,255,0.3)] ${
-            !inputValue.trim() || isThinking
-              ? "bg-[#E6E6E6]"
-              : "bg-[linear-gradient(333deg,#11A85F_13.46%,#1F6744_103.63%)]"
-          }`}
-          disabled={!inputValue.trim() || isThinking}
-        >
-          <Plain
-            weight={"Linear"}
-            size={20}
-            color={!inputValue.trim() || isThinking ? "#B0B0B0" : "#FFFFFF"}
-          />
-        </button>
+        {isThinking ? (
+          <button
+            onClick={onStop}
+            className="w-9 h-9 rounded-[8px] flex items-center justify-center transition-all cursor-pointer border border-[rgba(255,255,255,0.3)]"
+            style={{
+              background:
+                "linear-gradient(0deg, #E6E6E6 0%, #E6E6E6 100%), radial-gradient(50% 50% at 50% 50%, rgba(255, 255, 255, 0.00) 12%, rgba(255, 255, 255, 0.20) 24%)",
+            }}
+          >
+            <StopCircle weight={"Bold"} size={20} color="#0f4159" />
+          </button>
+        ) : (
+          <button
+            onClick={handleSend}
+            className={`w-9 h-9 rounded-[8px] flex items-center justify-center transition-all relative overflow-hidden cursor-pointer disabled:cursor-not-allowed border border-[rgba(255,255,255,0.3)] ${
+              !inputValue.trim() || !selectedAgent?.id
+                ? "bg-[#E6E6E6]"
+                : "bg-[linear-gradient(333deg,#11A85F_13.46%,#1F6744_103.63%)]"
+            }`}
+            disabled={!inputValue.trim() || !selectedAgent?.id}
+          >
+            <Plain
+              weight={"Linear"}
+              size={20}
+              color={
+                !inputValue.trim() || !selectedAgent?.id ? "#B0B0B0" : "#FFFFFF"
+              }
+            />
+          </button>
+        )}
       </div>
 
       {/* Connector Modal */}
