@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Lock, Globe, Link2, Loader2 } from "lucide-react";
-import { getAuthToken } from "../../utils";
-
-const API_BASE_URL = "http://localhost:3000";
+import api from "@/api";
 
 const ShareChatModal = ({
   isOpen,
@@ -35,23 +33,9 @@ const ShareChatModal = ({
     setError(null);
 
     try {
-      const token = getAuthToken()?.token;
-      const response = await fetch(
-        `${API_BASE_URL}/v1/superagent/chats/${chatId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ is_public: isPublic }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to update access");
-      }
+      await api.patch(`/v1/superagent/chats/${chatId}`, {
+        is_public: isPublic,
+      });
 
       setAccessType(newAccessType);
       if (onAccessChange) {
@@ -59,7 +43,9 @@ const ShareChatModal = ({
       }
     } catch (err) {
       console.error("Failed to update chat access:", err);
-      setError(err.message || "Failed to update access");
+      setError(
+        err.response?.data?.message || err.message || "Failed to update access"
+      );
     } finally {
       setIsUpdating(false);
     }

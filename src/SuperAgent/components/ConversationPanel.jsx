@@ -10,8 +10,7 @@ import {
   shouldStopThinking,
   getAgentDisplayName,
 } from "../utils/eventHandlers";
-
-const API_BASE_URL = "http://localhost:3000";
+import api from "@/api";
 
 const ConversationPanel = ({
   chatId,
@@ -60,36 +59,27 @@ const ConversationPanel = ({
     if (!chatId || propAgentSlug) return; // Skip if we already have agent slug from prop
 
     try {
-      const token = getAuthToken()?.token;
-      const response = await fetch(
-        `${API_BASE_URL}/v1/superagent/chats/${chatId}`,
-        {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
+      const response = await api.get(`/v1/superagent/chats/${chatId}`);
+      const result = response.data;
+      if (result.success && result.data) {
+        if (result.data.data?.agent_slug) {
+          setFetchedAgentSlug(result.data.data.agent_slug);
         }
-      );
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          if (result.data.data?.agent_slug) {
-            setFetchedAgentSlug(result.data.data.agent_slug);
-          }
-          if (result.data.title && onTitleUpdate) {
-            onTitleUpdate(result.data.title);
-          }
-          if (onPublicUpdate) {
-            onPublicUpdate(result.data.is_public || false);
-          }
+        if (result.data.title && onTitleUpdate) {
+          onTitleUpdate(result.data.title);
         }
-      } else if (response.status === 404) {
-        setChatNotFound(true);
-      } else if (response.status === 403) {
-        if (onAccessDenied) onAccessDenied();
+        if (onPublicUpdate) {
+          onPublicUpdate(result.data.is_public || false);
+        }
       }
     } catch (error) {
-      console.error("Failed to fetch chat details:", error);
+      if (error.response?.status === 404) {
+        setChatNotFound(true);
+      } else if (error.response?.status === 403) {
+        if (onAccessDenied) onAccessDenied();
+      } else {
+        console.error("Failed to fetch chat details:", error);
+      }
     }
   }, [chatId, propAgentSlug]);
 
@@ -99,25 +89,12 @@ const ConversationPanel = ({
 
     setIsLoadingHistory(true);
     try {
-      const token = getAuthToken()?.token;
-      const response = await fetch(
-        `${API_BASE_URL}/v1/superagent/chats/${chatId}/messages?limit=50&offset=0`,
-        {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        }
+      const response = await api.get(
+        `/v1/superagent/chats/${chatId}/messages`,
+        { params: { limit: 50, offset: 0 } }
       );
 
-      if (!response.ok) {
-        if (response.status === 403) {
-          if (onAccessDenied) onAccessDenied();
-          return;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
+      const result = response.data;
       if (result.success && result.data) {
         // Transform API messages to our format
         const transformedMessages = result.data
@@ -159,7 +136,11 @@ const ConversationPanel = ({
         historyFetchedRef.current = true;
       }
     } catch (error) {
-      console.error("Failed to fetch chat history:", error);
+      if (error.response?.status === 403) {
+        if (onAccessDenied) onAccessDenied();
+      } else {
+        console.error("Failed to fetch chat history:", error);
+      }
     } finally {
       setIsLoadingHistory(false);
     }
@@ -355,7 +336,7 @@ const ConversationPanel = ({
       try {
         const token = getAuthToken()?.token;
         const response = await fetch(
-          `${API_BASE_URL}/v1/superagent/chats/${chatId}/messages`,
+          `${api.defaults.baseURL}v1/superagent/chats/${chatId}/messages`,
           {
             method: "POST",
             headers: {
@@ -484,7 +465,7 @@ const ConversationPanel = ({
       try {
         const token = getAuthToken()?.token;
         const response = await fetch(
-          `${API_BASE_URL}/v1/superagent/messages/${messageId}/regenerate`,
+          `${api.defaults.baseURL}v1/superagent/messages/${messageId}/regenerate`,
           {
             method: "POST",
             headers: {
