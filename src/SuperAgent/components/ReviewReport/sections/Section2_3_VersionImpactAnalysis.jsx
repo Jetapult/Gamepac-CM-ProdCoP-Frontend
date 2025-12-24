@@ -1,0 +1,57 @@
+import { SectionTitle } from "@/SuperAgent/components/ReviewReport/ui";
+
+const Section2_3_VersionImpactAnalysis = ({ data }) => {
+  if (!data) return null;
+
+  return (
+    <>
+      {data.title && (
+        <SectionTitle style={{ marginTop: "37.5pt" }}>
+          {data.title}
+        </SectionTitle>
+      )}
+
+      {data.description && (
+        <div
+          style={{
+            fontWeight: 400,
+            fontSize: "14px",
+            lineHeight: "21px",
+            color: "#141414",
+            marginTop: "16pt",
+          }}
+        >
+          {data.description}
+        </div>
+      )}
+
+      {data.versions?.length > 0 && (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Release Date</th>
+              <th>Sentiment Behavior</th>
+              <th>Key Issues</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.versions.map(
+              (v, index) =>
+                v?.version && (
+                  <tr key={index}>
+                    <td>{v.version}</td>
+                    <td>{v.releaseDate || "N/A"}</td>
+                    <td>{v.sentimentBehavior || "N/A"}</td>
+                    <td>{v.keyIssues || "N/A"}</td>
+                  </tr>
+                )
+            )}
+          </tbody>
+        </table>
+      )}
+    </>
+  );
+};
+
+export default Section2_3_VersionImpactAnalysis;
