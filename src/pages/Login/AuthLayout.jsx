@@ -7,6 +7,7 @@ import JetsyntesisLogo from "../../assets/super-agents/jetsynthesys-logo.svg";
 import NuvamaLogo from "../../assets/super-agents/nuvama-logo.svg";
 import ellipse from "../../assets/super-agents/ellipse.svg";
 import gamepacLogo from "../../assets/super-agents/gamepac-logo.svg";
+import LoginGif from "../../components/LoginGif";
 
 const backedby = [
   {
@@ -58,11 +59,7 @@ const AuthLayout = ({ children }) => {
             "linear-gradient(191deg, rgba(87, 248, 170, 0.60) 3.44%, rgba(51, 146, 100, 0.10) 68.2%)",
         }}
       >
-        <img
-          src={sampleGamepacImage}
-          alt="sample-gamepac-image"
-          className="w-full h-full object-cover"
-        />
+        <LoginGif />
         <div className="absolute -bottom-[200px] -left-[150px] w-[900px] h-[500px] flex items-center justify-center">
           <img
             src={ellipse}
