@@ -1,4 +1,4 @@
-import { SectionTitle } from "@/SuperAgent/components/ReviewReport/ui";
+import { SectionTitle } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
 
 const Section1_3_KeyTrends = ({ data }) => {
   if (!data) return null;

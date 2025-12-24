@@ -1,4 +1,4 @@
-import { SectionTitle, ChartContainer } from "@/SuperAgent/components/ReviewReport/ui";
+import { SectionTitle, ChartContainer } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
 
 const Section2_2_IssueCategoryBreakdown = ({ data }) => {
   if (!data) return null;

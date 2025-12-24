@@ -1,4 +1,4 @@
-import { SectionTitle, ChartContainer } from "@/SuperAgent/components/ReviewReport/ui";
+import { SectionTitle, ChartContainer } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
 
 const Section2_4_GeographicDistribution = ({ data }) => {
   if (!data) return null;

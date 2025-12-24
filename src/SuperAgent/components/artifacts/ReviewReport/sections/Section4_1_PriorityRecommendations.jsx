@@ -1,4 +1,4 @@
-import { SectionTitle } from "@/SuperAgent/components/ReviewReport/ui";
+import { SectionTitle } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
 
 const Section4_1_PriorityRecommendations = ({ data }) => {
   if (!data) return null;

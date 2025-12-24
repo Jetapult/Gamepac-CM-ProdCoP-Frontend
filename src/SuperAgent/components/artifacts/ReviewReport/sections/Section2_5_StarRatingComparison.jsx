@@ -1,5 +1,5 @@
-import { SectionTitle, ChartContainer } from "@/SuperAgent/components/ReviewReport/ui";
-import { ArrowIcon } from "@/SuperAgent/components/ReviewReport/ui";
+import { SectionTitle, ChartContainer } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
+import { ArrowIcon } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
 
 const Section2_5_StarRatingComparison = ({ data }) => {
   if (!data) return null;

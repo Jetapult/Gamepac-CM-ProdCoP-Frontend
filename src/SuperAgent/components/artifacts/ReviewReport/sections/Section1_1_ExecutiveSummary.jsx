@@ -1,5 +1,5 @@
-import { SectionTitle, MetricCard } from "@/SuperAgent/components/ReviewReport/ui";
-import { BarChartIcon, ChatIcon } from "@/SuperAgent/components/ReviewReport/ui";
+import { SectionTitle, MetricCard } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
+import { BarChartIcon, ChatIcon } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
 
 const iconMap = {
   barChart: <BarChartIcon />,

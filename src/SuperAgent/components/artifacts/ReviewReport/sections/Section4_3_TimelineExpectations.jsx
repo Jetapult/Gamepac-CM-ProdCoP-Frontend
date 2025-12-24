@@ -1,6 +1,6 @@
-import { SectionTitle } from "@/SuperAgent/components/ReviewReport/ui";
+import { SectionTitle } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
 
-const Section3_2_ResolvedIssues = ({ data }) => {
+const Section4_3_TimelineExpectations = ({ data }) => {
   if (!data) return null;
 
   return (
@@ -11,12 +11,12 @@ const Section3_2_ResolvedIssues = ({ data }) => {
         </SectionTitle>
       )}
 
-      {data.resolvedIssues?.length > 0 && (
+      {data.expectations?.length > 0 && (
         <div style={{ marginTop: "16pt" }}>
           <ul style={{ listStyleType: "disc", paddingLeft: "20px", margin: 0 }}>
-            {data.resolvedIssues.map(
-              (issue, index) =>
-                issue?.title && (
+            {data.expectations.map(
+              (expectation, index) =>
+                expectation && (
                   <li
                     key={index}
                     style={{
@@ -27,7 +27,7 @@ const Section3_2_ResolvedIssues = ({ data }) => {
                       marginBottom: "12px",
                     }}
                   >
-                    <strong>{issue.title}:</strong> {issue.description || ""}
+                    {expectation}
                   </li>
                 )
             )}
@@ -38,4 +38,4 @@ const Section3_2_ResolvedIssues = ({ data }) => {
   );
 };
 
-export default Section3_2_ResolvedIssues;
+export default Section4_3_TimelineExpectations;

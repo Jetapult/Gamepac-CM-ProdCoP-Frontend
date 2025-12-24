@@ -1,6 +1,6 @@
-import { SectionTitle } from "@/SuperAgent/components/ReviewReport/ui";
+import { SectionTitle } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
 
-const Section4_3_TimelineExpectations = ({ data }) => {
+const Section4_2_ResponsibleTeams = ({ data }) => {
   if (!data) return null;
 
   return (
@@ -11,12 +11,12 @@ const Section4_3_TimelineExpectations = ({ data }) => {
         </SectionTitle>
       )}
 
-      {data.expectations?.length > 0 && (
+      {data.teams?.length > 0 && (
         <div style={{ marginTop: "16pt" }}>
           <ul style={{ listStyleType: "disc", paddingLeft: "20px", margin: 0 }}>
-            {data.expectations.map(
-              (expectation, index) =>
-                expectation && (
+            {data.teams.map(
+              (team, index) =>
+                team?.title && (
                   <li
                     key={index}
                     style={{
@@ -27,7 +27,7 @@ const Section4_3_TimelineExpectations = ({ data }) => {
                       marginBottom: "12px",
                     }}
                   >
-                    {expectation}
+                    <strong>{team.title}:</strong> {team.description || ""}
                   </li>
                 )
             )}
@@ -38,4 +38,4 @@ const Section4_3_TimelineExpectations = ({ data }) => {
   );
 };
 
-export default Section4_3_TimelineExpectations;
+export default Section4_2_ResponsibleTeams;
