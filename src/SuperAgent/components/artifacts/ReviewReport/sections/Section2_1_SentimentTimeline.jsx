@@ -1,5 +1,5 @@
-import { SectionTitle, ChartContainer, VersionCard } from "@/SuperAgent/components/ReviewReport/ui";
-import { StarIcon } from "@/SuperAgent/components/ReviewReport/ui";
+import { SectionTitle, ChartContainer, VersionCard } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
+import { StarIcon } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
 
 const Section2_1_SentimentTimeline = ({ data }) => {
   if (!data) return null;

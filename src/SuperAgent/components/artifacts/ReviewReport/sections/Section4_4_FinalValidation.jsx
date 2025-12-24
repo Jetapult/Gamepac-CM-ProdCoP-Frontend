@@ -1,4 +1,4 @@
-import { SectionTitle } from "@/SuperAgent/components/ReviewReport/ui";
+import { SectionTitle } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
 
 const Section4_4_FinalValidation = ({ data }) => {
   if (!data) return null;

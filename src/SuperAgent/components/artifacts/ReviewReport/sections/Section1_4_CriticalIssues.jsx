@@ -1,13 +1,15 @@
-import { SectionTitle, IssueItem } from "@/SuperAgent/components/ReviewReport/ui";
+import { SectionTitle, IssueItem } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
 
-const Section3_1_EmergingIssues = ({ data }) => {
+const Section1_4_CriticalIssues = ({ data }) => {
   if (!data) return null;
 
   return (
     <>
       {data.title && (
         <SectionTitle style={{ marginTop: "37.5pt" }}>
-          {data.title}
+          {data.title}{" "}
+          {data.urgencyThreshold !== undefined &&
+            `(Urgency > ${data.urgencyThreshold})`}
         </SectionTitle>
       )}
 
@@ -20,7 +22,11 @@ const Section3_1_EmergingIssues = ({ data }) => {
                   key={index}
                   number={issue.number || String(index + 1).padStart(2, "0")}
                   title={issue.title}
-                  description={issue.description || ""}
+                  description={`${issue.description || ""} ${
+                    issue.urgency !== undefined
+                      ? `(Urgency: ${issue.urgency})`
+                      : ""
+                  }`}
                 />
               )
           )}
@@ -30,4 +36,4 @@ const Section3_1_EmergingIssues = ({ data }) => {
   );
 };
 
-export default Section3_1_EmergingIssues;
+export default Section1_4_CriticalIssues;

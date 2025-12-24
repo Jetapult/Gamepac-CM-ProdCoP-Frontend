@@ -1,6 +1,6 @@
-import { SectionTitle } from "@/SuperAgent/components/ReviewReport/ui";
+import { SectionTitle } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
 
-const Section4_2_ResponsibleTeams = ({ data }) => {
+const Section3_2_ResolvedIssues = ({ data }) => {
   if (!data) return null;
 
   return (
@@ -11,12 +11,12 @@ const Section4_2_ResponsibleTeams = ({ data }) => {
         </SectionTitle>
       )}
 
-      {data.teams?.length > 0 && (
+      {data.resolvedIssues?.length > 0 && (
         <div style={{ marginTop: "16pt" }}>
           <ul style={{ listStyleType: "disc", paddingLeft: "20px", margin: 0 }}>
-            {data.teams.map(
-              (team, index) =>
-                team?.title && (
+            {data.resolvedIssues.map(
+              (issue, index) =>
+                issue?.title && (
                   <li
                     key={index}
                     style={{
@@ -27,7 +27,7 @@ const Section4_2_ResponsibleTeams = ({ data }) => {
                       marginBottom: "12px",
                     }}
                   >
-                    <strong>{team.title}:</strong> {team.description || ""}
+                    <strong>{issue.title}:</strong> {issue.description || ""}
                   </li>
                 )
             )}
@@ -38,4 +38,4 @@ const Section4_2_ResponsibleTeams = ({ data }) => {
   );
 };
 
-export default Section4_2_ResponsibleTeams;
+export default Section3_2_ResolvedIssues;
