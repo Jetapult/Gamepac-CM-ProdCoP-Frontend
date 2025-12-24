@@ -114,7 +114,7 @@ const PreviewPanel = ({
 
       {/* Artifact Placeholder - Only show when no artifact */}
       {!hasArtifact && !isThinking && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center">
           <ArtifactPlaceholder />
         </div>
       )}
