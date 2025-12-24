@@ -167,7 +167,7 @@ const Sidebar = () => {
   return (
     <div
       className={`fixed left-0 top-0 lg:sticky h-screen bg-white border-r border-[#f6f6f6] flex flex-col z-50 transition-all duration-300 ${
-        isSiderbarOpen ? "w-[290px]" : "w-[64px]"
+        isSiderbarOpen ? "w-[290px] min-w-[290px] max-w-[290px]" : "w-[64px]"
       }`}
     >
       <div
