@@ -19,6 +19,8 @@ const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
 
   // Artifact content for preview panel
   const [artifactContent, setArtifactContent] = useState(null);
+  const [artifactType, setArtifactType] = useState(null);
+  const [artifactData, setArtifactData] = useState(null);
 
   // Chat public/private state
   const [isPublic, setIsPublic] = useState(false);
@@ -88,6 +90,10 @@ const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
           }}
           onThinkingChange={setIsThinking}
           onArtifactUpdate={setArtifactContent}
+          onStructuredArtifactUpdate={(type, data) => {
+            setArtifactType(type);
+            setArtifactData(data);
+          }}
           onTitleUpdate={handleTitleChange}
           onPublicUpdate={setIsPublic}
           onAccessDenied={() => setAccessDenied(true)}
@@ -101,6 +107,8 @@ const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
           allTasks={allTasks}
           isThinking={isThinking}
           artifactContent={artifactContent}
+          artifactType={artifactType}
+          artifactData={artifactData}
         />
       </div>
     </div>
