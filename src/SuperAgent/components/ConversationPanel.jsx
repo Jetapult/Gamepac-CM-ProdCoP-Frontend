@@ -19,6 +19,7 @@ const ConversationPanel = ({
   onTaskUpdate,
   onThinkingChange,
   onArtifactUpdate,
+  onStructuredArtifactUpdate,
   onTitleUpdate,
   onPublicUpdate,
   onAccessDenied,
