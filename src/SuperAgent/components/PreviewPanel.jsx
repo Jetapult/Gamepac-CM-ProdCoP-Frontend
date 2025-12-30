@@ -3,7 +3,19 @@ import ReactMarkdown from "react-markdown";
 import TaskProgress from "./TaskProgress";
 import ZeroStateAnimation from "./ZeroStateAnimation";
 import ArtifactPlaceholder from "./ArtifactPlaceholder";
-import sampleReportData from "@/pages/ReviewReport/data/sampleReportData.json";
+import bugReportData from "@/pages/ReviewReport/data/bugReportData.json";
+import bugReportShortData from "@/pages/ReviewReport/data/bugReportShortData.json";
+import reviewReportData from "@/pages/ReviewReport/data/reviewReportData.json";
+import reviewReportShortData from "@/pages/ReviewReport/data/reviewReportShortData.json";
+
+const REPORT_DATA = {
+  "bug-report": bugReportData,
+  "bug-report-short": bugReportShortData,
+  "review-report": reviewReportData,
+  "review-report-short": reviewReportShortData,
+};
+
+const DEFAULT_REPORT_TYPE = "bug-report-short";
 
 // Simple markdown detection - checks for common markdown patterns
 const isMarkdown = (text) => {
@@ -127,8 +139,8 @@ const PreviewPanel = ({
       {!hasArtifact && !hasStructuredArtifact && !isThinking && (
         <div className="absolute inset-0">
           <ArtifactPlaceholder
-            type="bug-report-short"
-            data={sampleReportData}
+            type={DEFAULT_REPORT_TYPE}
+            data={REPORT_DATA[DEFAULT_REPORT_TYPE]}
           />
         </div>
       )}

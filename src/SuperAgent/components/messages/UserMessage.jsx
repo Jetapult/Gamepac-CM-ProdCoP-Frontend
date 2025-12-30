@@ -1,6 +1,83 @@
 import React, { useState, useRef } from "react";
 import ReactDOM from "react-dom";
 import { Copy, Unread } from "@solar-icons/react";
+import pdfIcon from "../../../assets/file-icons/pdf.png";
+import wordIcon from "../../../assets/file-icons/word.png";
+import excelIcon from "../../../assets/file-icons/excel.png";
+import mediaIcon from "../../../assets/file-icons/media.png";
+import codeIcon from "../../../assets/file-icons/code.png";
+
+const FILE_TYPE_ICONS = {
+  pdf: pdfIcon,
+  doc: wordIcon,
+  docx: wordIcon,
+  xls: excelIcon,
+  xlsx: excelIcon,
+  csv: excelIcon,
+  txt: codeIcon,
+  png: mediaIcon,
+  jpg: mediaIcon,
+  jpeg: mediaIcon,
+  svg: mediaIcon,
+  mp4: mediaIcon,
+};
+
+const formatFileSize = (size) => {
+  if (typeof size === "string") return size;
+  if (typeof size === "number") {
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  return "";
+};
+
+const MessageAttachment = ({ attachment }) => {
+  const fileType = attachment.file_type || attachment.fileType || "";
+  const isImage = ["png", "jpg", "jpeg", "svg"].includes(fileType);
+  const isVideo = fileType === "mp4";
+  const hasPreview = (isImage || isVideo) && attachment.file_url;
+  const fileIcon = FILE_TYPE_ICONS[fileType] || mediaIcon;
+
+  return (
+    <div
+      className="flex items-center gap-2 p-2 rounded-lg border border-[#e6e6e6] bg-white"
+      style={{ minWidth: "140px", maxWidth: "180px", height: "52px" }}
+    >
+      {hasPreview ? (
+        <div className="w-8 h-8 rounded overflow-hidden shrink-0">
+          {isImage ? (
+            <img
+              src={attachment.file_url}
+              alt={attachment.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <video
+              src={attachment.file_url}
+              className="w-full h-full object-cover"
+              muted
+            />
+          )}
+        </div>
+      ) : (
+        <img
+          src={fileIcon}
+          alt={fileType}
+          className="w-8 h-8 shrink-0 object-contain"
+        />
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-[12px] text-[#141414] font-urbanist font-medium truncate">
+          {attachment.name}
+        </p>
+        <p className="text-[10px] text-[#6D6D6D] font-urbanist">
+          {formatFileSize(attachment.size)}
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const Tooltip = ({ children, text }) => {
   const [show, setShow] = useState(false);
@@ -45,7 +122,7 @@ const Tooltip = ({ children, text }) => {
   );
 };
 
-const UserMessage = ({ content, isLatest = false }) => {
+const UserMessage = ({ content, attachments = [], isLatest = false }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [copiedTooltip, setCopiedTooltip] = useState(false);
 
@@ -72,12 +149,21 @@ const UserMessage = ({ content, isLatest = false }) => {
       <div
         className={`bg-[#f6f6f6] border border-[#e6e6e6] ${borderRadiusClass} px-4 py-[14px]`}
       >
-        <p
-          className="text-base text-[#141414]"
-          style={{ fontFamily: "Urbanist, sans-serif", lineHeight: "24px" }}
-        >
-          {content}
-        </p>
+        {content && (
+          <p
+            className="text-base text-[#141414]"
+            style={{ fontFamily: "Urbanist, sans-serif", lineHeight: "24px" }}
+          >
+            {content}
+          </p>
+        )}
+        {attachments && attachments.length > 0 && (
+          <div className={`flex flex-wrap gap-2 ${content ? "mt-2" : ""}`}>
+            {attachments.map((attachment) => (
+              <MessageAttachment key={attachment.id} attachment={attachment} />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Copy Icon - Only visible on hover */}

@@ -4,7 +4,12 @@ import ChatHeader from "./ChatHeader";
 import ConversationPanel from "./ConversationPanel";
 import PreviewPanel from "./PreviewPanel";
 
-const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
+const ChatScreen = ({
+  chatId,
+  initialQuery = "",
+  initialAttachments = [],
+  agentSlug = "",
+}) => {
   const navigate = useNavigate();
 
   // Chat title state
@@ -79,6 +84,7 @@ const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
         <ConversationPanel
           chatId={chatId}
           initialQuery={initialQuery}
+          initialAttachments={initialAttachments}
           agentSlug={agentSlug}
           onTaskUpdate={(task, index, time, tasks) => {
             setCurrentTask(task);
