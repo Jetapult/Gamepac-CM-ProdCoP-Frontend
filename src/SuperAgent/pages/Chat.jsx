@@ -11,12 +11,17 @@ const Chat = () => {
   // Use refs to capture initial values before navigate clears them
   const initialValuesRef = useRef({
     initialQuery: location.state?.initialQuery || "",
+    initialAttachments: location.state?.initialAttachments || [],
     agentSlug: location.state?.agentSlug || "",
   });
 
   // Clear the navigation state after first render to prevent re-sending on refresh
   useEffect(() => {
-    if (location.state?.initialQuery || location.state?.agentSlug) {
+    if (
+      location.state?.initialQuery ||
+      location.state?.agentSlug ||
+      location.state?.initialAttachments
+    ) {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, []);
@@ -28,6 +33,7 @@ const Chat = () => {
         <ChatScreen
           chatId={chatId}
           initialQuery={initialValuesRef.current.initialQuery}
+          initialAttachments={initialValuesRef.current.initialAttachments}
           agentSlug={initialValuesRef.current.agentSlug}
         />
       </div>

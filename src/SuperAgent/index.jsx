@@ -113,7 +113,7 @@ const SuperAgent = () => {
     (state) => state.admin.ContextStudioData
   );
 
-  const onSendMessage = async (query) => {
+  const onSendMessage = async (query, attachments = []) => {
     if (!selectedGame) {
       alert("Please select a game to continue.");
       return;
@@ -137,6 +137,7 @@ const SuperAgent = () => {
         navigate(`/super-agent/chat/${chatId}`, {
           state: {
             initialQuery: query,
+            initialAttachments: attachments,
             agentSlug: selectedAgent.slug,
             gameId: selectedGame?.id,
           },
@@ -231,7 +232,7 @@ const SuperAgent = () => {
         </div>
 
         {/* Chat Input Area */}
-        <div className="flex flex-col items-center px-8 w-full max-w-[800px] mx-auto w-full">
+        <div className="flex flex-col items-center px-8 w-full max-w-[800px] mx-auto">
           <ChatInput onSendMessage={onSendMessage} />
         </div>
         {/* Quick Action Buttons */}

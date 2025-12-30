@@ -30,7 +30,13 @@ const Message = ({
   switch (type) {
     case "text":
       if (sender === "user") {
-        return <UserMessage content={data.content} isLatest={isLatest} />;
+        return (
+          <UserMessage
+            content={data.content}
+            attachments={data.attachments}
+            isLatest={isLatest}
+          />
+        );
       } else if (sender === "llm") {
         return (
           <LLMMessage
