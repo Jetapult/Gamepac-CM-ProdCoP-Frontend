@@ -320,6 +320,7 @@ const ConversationPanel = ({
           setNeedsClarification,
           onThinkingChange,
           onArtifactUpdate,
+          onStructuredArtifactUpdate,
           agentSlug,
         });
 
@@ -453,6 +454,7 @@ const ConversationPanel = ({
           setNeedsClarification,
           onThinkingChange,
           onArtifactUpdate,
+          onStructuredArtifactUpdate,
           agentSlug,
         });
 
