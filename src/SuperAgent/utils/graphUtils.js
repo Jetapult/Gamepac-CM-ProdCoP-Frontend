@@ -12,19 +12,20 @@
  * TODO: Replace with actual chart rendering (e.g., Chart.js, Recharts)
  */
 
-import platformChartImage from "@/assets/bug-report/platform-chart.png";
-import escalationChartImage from "@/assets/bug-report/escalation-chart.png";
-
-// Placeholder image for charts that don't have static PNGs yet
+// All charts use placeholder URLs with big PLACEHOLDER text
 const PLACEHOLDER_CHART =
-  "https://placehold.co/600x300/f8f8f7/6d6d6d?text=Chart+Placeholder";
+  "https://placehold.co/600x300/f8f8f7/141414?text=PLACEHOLDER&font=roboto";
+const PLACEHOLDER_PLATFORM =
+  "https://placehold.co/400x300/f8f8f7/141414?text=PLACEHOLDER%0APlatform+Chart&font=roboto";
+const PLACEHOLDER_ESCALATION =
+  "https://placehold.co/500x300/f8f8f7/141414?text=PLACEHOLDER%0AEscalation+Chart&font=roboto";
 
 export const generateLineChart = (data = {}) => PLACEHOLDER_CHART;
 export const generateHorizontalBarChart = (data = {}) => PLACEHOLDER_CHART;
 export const generateGeoBarChart = (data = {}) => PLACEHOLDER_CHART;
 export const generateGroupedBarChart = (data = {}) => PLACEHOLDER_CHART;
-export const generatePlatformChart = (data = {}) => platformChartImage;
-export const generateEscalationChart = (data = {}) => escalationChartImage;
+export const generatePlatformChart = (data = {}) => PLACEHOLDER_PLATFORM;
+export const generateEscalationChart = (data = {}) => PLACEHOLDER_ESCALATION;
 
 export const generateChart = (chartType, data = {}) => {
   const chartGenerators = {
