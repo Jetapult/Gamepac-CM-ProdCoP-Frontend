@@ -3,6 +3,10 @@
  * Each event type has its own handler function
  */
 
+// Counter for unique message IDs
+let messageIdCounter = 0;
+const getUniqueId = () => `${Date.now()}-${++messageIdCounter}`;
+
 // Agent name mapping from slug
 const agentNameMap = {
   gamepac: "GamePac",
@@ -18,7 +22,7 @@ export const getAgentDisplayName = (agentSlug) => {
 export const handleStartEvent = (eventData, context) => {
   const agentName = getAgentDisplayName(context.agentSlug);
   return {
-    id: Date.now(),
+    id: getUniqueId(),
     sender: "llm",
     type: "agent_header",
     data: {
@@ -38,7 +42,7 @@ export const handleReasonEvent = (eventData, context) => {
   }
 
   return {
-    id: Date.now(),
+    id: getUniqueId(),
     sender: "llm",
     type: "task",
     data: {
@@ -124,7 +128,7 @@ export const handleActionEvent = (eventData, context) => {
   const formattedMessage = eventData.formatted_message || "";
 
   return {
-    id: Date.now(),
+    id: getUniqueId(),
     sender: "llm",
     type: "task",
     data: {
@@ -160,7 +164,7 @@ export const handleResponseEvent = (eventData, context) => {
 
   // Return as LLM text message
   return {
-    id: Date.now(),
+    id: getUniqueId(),
     sender: "llm",
     type: "text",
     apiMessageId: messageId,
@@ -189,7 +193,7 @@ export const handleCompleteEvent = (eventData, context) => {
 
   // Return as LLM text message - LLMMessage already renders markdown
   return {
-    id: Date.now(),
+    id: getUniqueId(),
     sender: "llm",
     type: "text",
     apiMessageId: messageId, // Store API message ID for regenerate (null if not provided)
@@ -209,7 +213,7 @@ export const handleErrorEvent = (eventData, context) => {
     "An error occurred";
 
   return {
-    id: Date.now(),
+    id: getUniqueId(),
     sender: "llm",
     type: "error",
     data: {
@@ -232,7 +236,7 @@ export const handleToolResultEvent = (eventData, context) => {
 
     // Return a message indicating the report was generated
     return {
-      id: Date.now(),
+      id: getUniqueId(),
       sender: "llm",
       type: "report_artifact",
       data: {
@@ -273,8 +277,7 @@ export const processEvent = (eventData, context) => {
     return handler(eventData, context);
   }
 
-  // Unknown event type - ignore silently (don't show raw JSON)
-  console.log("Unknown event type:", eventType, eventData);
+  // Unknown event type - ignore silently
   return null;
 };
 

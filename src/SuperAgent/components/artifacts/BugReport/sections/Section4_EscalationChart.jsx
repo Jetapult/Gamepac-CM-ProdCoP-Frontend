@@ -1,4 +1,4 @@
-import escalationChartImage from "@/assets/bug-report/escalation-chart.png";
+import { generateEscalationChart } from "@/SuperAgent/utils/graphUtils";
 
 const Section4_EscalationChart = ({ data }) => {
   if (!data) return null;
@@ -17,7 +17,7 @@ const Section4_EscalationChart = ({ data }) => {
   return (
     <div style={styles.container}>
       <img
-        src={escalationChartImage}
+        src={generateEscalationChart(data)}
         alt="Escalation Trend Chart"
         style={styles.image}
       />
