@@ -310,8 +310,6 @@ const ConversationPanel = ({
       };
 
       const processEvent = (eventData) => {
-        console.log("Processing event:", eventData.event, eventData);
-
         const message = processEventHandler(eventData, {
           setMessages,
           setStreamingTask,
@@ -331,7 +329,6 @@ const ConversationPanel = ({
         // Stop thinking on complete or error (check both 'event' and 'type' fields)
         const eventType = eventData.event || eventData.type;
         if (shouldStopThinking(eventType)) {
-          console.log("Stopping thinking for event:", eventType);
           setStreamingTask(null);
           setIsThinking(false);
           if (onThinkingChange) onThinkingChange(false);
@@ -380,21 +377,12 @@ const ConversationPanel = ({
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
-        let chunkCount = 0;
-
-        console.log("[STREAM] Starting to read response body");
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) {
-            console.log("[STREAM] Reader done, total chunks:", chunkCount);
-            break;
-          }
+          if (done) break;
 
-          chunkCount++;
-          const chunk = decoder.decode(value, { stream: true });
-          console.log(`[STREAM] Chunk ${chunkCount}:`, chunk.slice(0, 100));
-          buffer += chunk;
+          buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split("\n");
           buffer = lines.pop() || "";
 
@@ -429,12 +417,11 @@ const ConversationPanel = ({
             console.warn("Failed to parse final buffer:", buffer);
           }
         }
-        console.log("[STREAM] Finished processing all events");
       } catch (error) {
         if (error.name === "AbortError") {
-          console.log("[STREAM] Request aborted by user");
+          console.log("Request aborted by user");
         } else {
-          console.error("[STREAM] Error:", error.name, error.message);
+          console.error("Failed to send message:", error);
           setError(
             error.message || "Failed to send message. Please try again."
           );
@@ -442,7 +429,6 @@ const ConversationPanel = ({
         setIsThinking(false);
         if (onThinkingChange) onThinkingChange(false);
       } finally {
-        console.log("[STREAM] Finally block, cleaning up");
         abortControllerRef.current = null;
       }
     },

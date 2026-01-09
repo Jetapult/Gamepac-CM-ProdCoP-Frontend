@@ -1,4 +1,4 @@
-import platformChartImage from "@/assets/bug-report/platform-chart.png";
+import { generatePlatformChart } from "@/SuperAgent/utils/graphUtils";
 
 const Section3_PlatformChart = ({ data }) => {
   if (!data) return null;
@@ -17,7 +17,7 @@ const Section3_PlatformChart = ({ data }) => {
   return (
     <div style={styles.container}>
       <img
-        src={platformChartImage}
+        src={generatePlatformChart(data)}
         alt="Platform Distribution Chart"
         style={styles.image}
       />
