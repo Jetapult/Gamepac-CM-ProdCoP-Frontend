@@ -21,30 +21,30 @@ const GameDropdown = ({ disabled = false }) => {
   const dropdownRef = useRef(null);
 
   // Fetch games using existing service when studio data is available
-  useEffect(() => {
-    const loadGames = async () => {
-      const studioSlug = ContextStudioData?.slug;
-      if (games.length > 0 || !studioSlug) return; // Already fetched or no studio
+  // useEffect(() => {
+  //   const loadGames = async () => {
+  //     const studioSlug = ContextStudioData?.slug;
+  //     if (games.length > 0 || !studioSlug) return; // Already fetched or no studio
 
-      setIsLoading(true);
-      try {
-        const gamesData = await fetchAllgames(studioSlug);
-        if (gamesData && gamesData.length > 0) {
-          dispatch(setGamesAction(gamesData));
-          // Auto-select first game if none selected
-          if (!selectedGame) {
-            dispatch(setSelectedGame(gamesData[0]));
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch games:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  //     setIsLoading(true);
+  //     try {
+  //       const gamesData = await fetchAllgames(studioSlug);
+  //       if (gamesData && gamesData.length > 0) {
+  //         dispatch(setGamesAction(gamesData));
+  //         // Auto-select first game if none selected
+  //         if (!selectedGame) {
+  //           dispatch(setSelectedGame(gamesData[0]));
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error("Failed to fetch games:", error);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
 
-    loadGames();
-  }, [ContextStudioData?.slug, dispatch, selectedGame, games.length]);
+  //   loadGames();
+  // }, [ContextStudioData?.slug, dispatch, selectedGame, games.length]);
 
   // Close dropdown on outside click
   useEffect(() => {
