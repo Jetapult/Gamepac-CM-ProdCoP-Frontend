@@ -68,6 +68,7 @@ import SampleRLAgent from "./pages/Agents/SampleRLAgent.jsx";
 import SuperAgent from "./SuperAgent/index.jsx";
 import Library from "./SuperAgent/pages/Library.jsx";
 import Chat from "./SuperAgent/pages/Chat.jsx";
+import SmartFeedback from "./SuperAgent/pages/CommpacDashboard/SmartFeedback.jsx";
 
 
 function AppContent() {
@@ -379,6 +380,7 @@ function AppContent() {
             <Route path="/super-agent" element={<PrivateRoute><SuperAgent /></PrivateRoute>} />
             <Route path="/super-agent/library" element={<PrivateRoute><Library /></PrivateRoute>} />
             <Route path="/super-agent/chat/:slug" element={<PrivateRoute><Chat /></PrivateRoute>} />
+            <Route path="/super-agent/smart-feedback" element={<PrivateRoute><SmartFeedback /></PrivateRoute>} />
             <Route path="/super-agent/:slug" element={<PrivateRoute><SuperAgent /></PrivateRoute>} />
             <Route
               path="*"
