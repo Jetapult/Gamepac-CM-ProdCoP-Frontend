@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
+  CloseCircle,
   CloseSquare,
   FileText,
   Paperclip,
@@ -8,10 +9,24 @@ import {
   SsdRound,
   StopCircle,
 } from "@solar-icons/react";
+import {
+  uploadAttachment,
+  validateFile,
+  getFileTypeFromName,
+  isImageFile,
+  isVideoFile,
+  MAX_ATTACHMENTS,
+  ALLOWED_EXTENSIONS,
+} from "../../services/superAgentApi";
 import { useSelector, useDispatch } from "react-redux";
 import { setSelectedTemplate } from "../../store/reducer/superAgent";
 import ConnectorModal from "./ConnectorModal";
 import AddConnectorsModal from "./AddConnectorsModal";
+import pdfIcon from "../../assets/file-icons/pdf.png";
+import wordIcon from "../../assets/file-icons/word.png";
+import excelIcon from "../../assets/file-icons/excel.png";
+import mediaIcon from "../../assets/file-icons/media.png";
+import codeIcon from "../../assets/file-icons/code.png";
 
 const integrations = [
   {
@@ -63,7 +78,9 @@ const IntegrationDropdown = ({
   onAddConnectors,
 }) => {
   const handleConnect = (integration) => {
-    const isConnected = connectedIntegrations?.length ? connectedIntegrations?.includes(integration.slug) : false;
+    const isConnected = connectedIntegrations?.length
+      ? connectedIntegrations?.includes(integration.slug)
+      : false;
     if (!isConnected) {
       onIntegrationClick(integration);
       onClose();
@@ -79,7 +96,9 @@ const IntegrationDropdown = ({
     <div className="absolute top-full left-0 mt-2 w-[250px] bg-white border border-[#f1f1f1] rounded-[8px] shadow-lg z-50">
       <div className="p-1.5">
         {integrations.map((integration, index) => {
-          const isConnected = connectedIntegrations?.length ? connectedIntegrations?.includes(integration.slug) : false;
+          const isConnected = connectedIntegrations?.length
+            ? connectedIntegrations?.includes(integration.slug)
+            : false;
           return (
             <button
               key={integration.id}
@@ -154,6 +173,128 @@ const IntegrationDropdown = ({
   );
 };
 
+const FILE_TYPE_ICONS = {
+  pdf: pdfIcon,
+  doc: wordIcon,
+  docx: wordIcon,
+  xls: excelIcon,
+  xlsx: excelIcon,
+  csv: excelIcon,
+  txt: codeIcon,
+  png: mediaIcon,
+  jpg: mediaIcon,
+  jpeg: mediaIcon,
+  svg: mediaIcon,
+  mp4: mediaIcon,
+};
+
+const formatFileSize = (bytes) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const AttachmentPreview = ({ attachment, onRemove }) => {
+  const { name, fileType, size, progress, status, previewUrl } = attachment;
+  const isImage = ["png", "jpg", "jpeg", "svg"].includes(fileType);
+  const isVideo = fileType === "mp4";
+  const hasPreview = (isImage || isVideo) && previewUrl;
+  const fileIcon = FILE_TYPE_ICONS[fileType] || mediaIcon;
+
+  return (
+    <div className="relative group">
+      <div
+        className={`relative flex items-center gap-2 p-2 rounded-lg border ${
+          status === "error"
+            ? "border-red-300 bg-red-50"
+            : "border-[#e6e6e6] bg-white"
+        }`}
+        style={{
+          minWidth: "140px",
+          maxWidth: "180px",
+          height: "52px",
+        }}
+      >
+        {hasPreview ? (
+          <div className="relative w-8 h-8 rounded overflow-hidden shrink-0">
+            {isImage ? (
+              <img
+                src={previewUrl}
+                alt={name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <video
+                src={previewUrl}
+                className="w-full h-full object-cover"
+                muted
+              />
+            )}
+            {status === "uploading" && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <svg className="w-5 h-5" viewBox="0 0 36 36">
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="14"
+                    fill="none"
+                    stroke="#ffffff40"
+                    strokeWidth="3"
+                  />
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="14"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="3"
+                    strokeDasharray={`${progress * 0.88} 88`}
+                    strokeLinecap="round"
+                    transform="rotate(-90 18 18)"
+                  />
+                </svg>
+              </div>
+            )}
+          </div>
+        ) : (
+          <img
+            src={fileIcon}
+            alt={fileType}
+            className="w-8 h-8 shrink-0 object-contain"
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-[12px] text-[#141414] font-urbanist font-medium truncate">
+            {name}
+          </p>
+          <p className="text-[10px] text-[#6D6D6D] font-urbanist">
+            {formatFileSize(size)}
+          </p>
+          {status === "uploading" && (
+            <div className="mt-1 h-1 bg-[#e6e6e6] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#1f6744] transition-all duration-200"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          )}
+        </div>
+
+        {status === "error" && (
+          <span className="text-[10px] text-red-500 font-urbanist">Failed</span>
+        )}
+
+        <button
+          onClick={onRemove}
+          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white border border-[#e6e6e6] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-[#f6f6f6]"
+        >
+          <CloseCircle weight="Bold" size={12} color="#6D6D6D" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
   const dispatch = useDispatch();
   const [inputValue, setInputValue] = useState("");
@@ -163,6 +304,9 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
   const [selectedIntegration, setSelectedIntegration] = useState(null);
   const [showAddConnectorsModal, setShowAddConnectorsModal] = useState(false);
   const [connectedIntegrations, setConnectedIntegrations] = useState();
+  const [attachments, setAttachments] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   const selectedTemplate = useSelector(
     (state) => state.superAgent.selectedTemplate
   );
@@ -170,6 +314,7 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
   const userRef = useRef(null);
   const dropdownRef = useRef(null);
   const integrationDropdownRef = useRef(null);
+  const uploadQueueRef = useRef([]);
 
   const handleIntegrationClick = (integration) => {
     setSelectedIntegration(integration);
@@ -194,7 +339,7 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
   const handleConnectSuccess = (integrationSlug) => {
     setConnectedIntegrations((prev) => {
       if (!prev?.includes(integrationSlug)) {
-        return [...prev || [], integrationSlug];
+        return [...(prev || []), integrationSlug];
       }
       return prev;
     });
@@ -207,15 +352,157 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
     setShowConnectorModal(true);
   };
 
+  const handleFileSelect = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    setShowAttachmentDropdown(false);
+    setUploadError(null);
+
+    const remainingSlots = MAX_ATTACHMENTS - attachments.length;
+    if (remainingSlots <= 0) {
+      setUploadError(`Maximum ${MAX_ATTACHMENTS} attachments allowed`);
+      return;
+    }
+
+    const filesToUpload = files.slice(0, remainingSlots);
+    if (files.length > remainingSlots) {
+      setUploadError(
+        `Only ${remainingSlots} more file(s) can be added. Max ${MAX_ATTACHMENTS} attachments.`
+      );
+    }
+
+    for (const file of filesToUpload) {
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        setUploadError(validation.error);
+        continue;
+      }
+
+      const tempId = `temp-${Date.now()}-${Math.random()}`;
+      const fileType = getFileTypeFromName(file.name);
+      const previewUrl =
+        isImageFile(fileType) || isVideoFile(fileType)
+          ? URL.createObjectURL(file)
+          : null;
+
+      const newAttachment = {
+        tempId,
+        file,
+        name: file.name,
+        fileType,
+        size: file.size,
+        progress: 0,
+        status: "uploading",
+        previewUrl,
+        id: null,
+        file_url: null,
+      };
+
+      setAttachments((prev) => [...prev, newAttachment]);
+      uploadQueueRef.current.push({ tempId, file });
+    }
+
+    processUploadQueue();
+    e.target.value = "";
+  };
+
+  const processUploadQueue = async () => {
+    if (isUploading || uploadQueueRef.current.length === 0) return;
+
+    setIsUploading(true);
+
+    while (uploadQueueRef.current.length > 0) {
+      const { tempId, file } = uploadQueueRef.current.shift();
+
+      try {
+        const response = await uploadAttachment(file, (progress) => {
+          setAttachments((prev) =>
+            prev.map((att) =>
+              att.tempId === tempId ? { ...att, progress } : att
+            )
+          );
+        });
+
+        if (response.success && response.data) {
+          setAttachments((prev) =>
+            prev.map((att) =>
+              att.tempId === tempId
+                ? {
+                    ...att,
+                    status: "uploaded",
+                    progress: 100,
+                    id: response.data.id,
+                    file_url: response.data.file_url,
+                  }
+                : att
+            )
+          );
+        } else {
+          throw new Error("Upload failed");
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        setAttachments((prev) =>
+          prev.map((att) =>
+            att.tempId === tempId
+              ? { ...att, status: "error", progress: 0 }
+              : att
+          )
+        );
+        setUploadError(
+          error.response?.data?.message || "Failed to upload file"
+        );
+      }
+    }
+
+    setIsUploading(false);
+  };
+
+  const removeAttachment = (tempId) => {
+    setAttachments((prev) => {
+      const attachment = prev.find((att) => att.tempId === tempId);
+      if (attachment?.previewUrl) {
+        URL.revokeObjectURL(attachment.previewUrl);
+      }
+      return prev.filter((att) => att.tempId !== tempId);
+    });
+    uploadQueueRef.current = uploadQueueRef.current.filter(
+      (item) => item.tempId !== tempId
+    );
+  };
+
   const handleSend = () => {
+    const hasContent =
+      inputValue.trim() || attachments.some((att) => att.status === "uploaded");
+    const allUploaded = attachments.every(
+      (att) => att.status === "uploaded" || att.status === "error"
+    );
+
     if (
-      inputValue.trim() &&
+      hasContent &&
       onSendMessage &&
       !isThinking &&
+      !isUploading &&
+      allUploaded &&
       selectedAgent?.id
     ) {
-      onSendMessage(inputValue);
+      const uploadedAttachments = attachments
+        .filter((att) => att.status === "uploaded" && att.id)
+        .map((att) => ({
+          id: att.id,
+          name: att.name,
+          file_type: att.fileType,
+          file_url: att.file_url,
+          size: att.size,
+        }));
+
+      onSendMessage(inputValue, uploadedAttachments);
       setInputValue("");
+      attachments.forEach((att) => {
+        if (att.previewUrl) URL.revokeObjectURL(att.previewUrl);
+      });
+      setAttachments([]);
     }
   };
 
@@ -249,7 +536,7 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
   }, [showAttachmentDropdown, showIntegrationDropdown]);
 
   return (
-    <div className="w-full bg-[#f6f6f6] border border-[#f6f6f6] rounded-2xl p-2 px-4 pt-3 mb-5 relative relative max-h-[190px]">
+    <div className="w-full bg-[#f6f6f6] border border-[#f6f6f6] rounded-2xl p-2 px-4 pt-3 mb-5 relative flex flex-col">
       {selectedTemplate.id && (
         <div className="flex items-flex-start justify-between gap-2 mb-1 rounded-lg p-2 border border-[#e6e6e6] bg-[#f1f1f1] inline-flex">
           <img
@@ -278,13 +565,37 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
           </span>
         </div>
       )}
+      {attachments.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-2">
+          {attachments.map((attachment) => (
+            <AttachmentPreview
+              key={attachment.tempId}
+              attachment={attachment}
+              onRemove={() => removeAttachment(attachment.tempId)}
+            />
+          ))}
+        </div>
+      )}
+
+      {uploadError && (
+        <div className="flex items-center gap-2 mb-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+          <span className="text-red-600 text-sm flex-1">{uploadError}</span>
+          <button
+            onClick={() => setUploadError(null)}
+            className="text-red-400 hover:text-red-600"
+          >
+            <CloseCircle weight="Linear" size={16} />
+          </button>
+        </div>
+      )}
+
       <textarea
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Generate a professional sentiment analysis report"
         className="w-full bg-transparent border-none outline-none text-lg text-[#141414] placeholder:text-[#b0b0b0] font-urbanist "
-        rows={selectedTemplate.id ? 2 : 4}
+        rows={selectedTemplate.id || attachments.length > 0 ? 2 : 4}
         autoFocus
       />
 
@@ -299,17 +610,37 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
             </button>
 
             {showAttachmentDropdown && (
-              <div className="absolute top-full left-0 mt-2 w-[250px] bg-white border border-[#f1f1f1] rounded-[8px] shadow-lg z-50 p-2">
+              <div className="absolute bottom-full left-0 mb-2 w-[250px] bg-white border border-[#f1f1f1] rounded-[8px] shadow-lg z-50 p-2">
                 <div className="relative overflow-hidden">
                   <button
-                    className="w-full flex items-center gap-3 p-2 hover:bg-[#f6f7f8] hover:rounded-[8px] transition-colors"
-                    onClick={() => userRef.current?.click()}
+                    className={`w-full flex items-center gap-3 p-2 hover:bg-[#f6f7f8] hover:rounded-[8px] transition-colors ${
+                      attachments.length >= MAX_ATTACHMENTS
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      attachments.length < MAX_ATTACHMENTS &&
+                      userRef.current?.click()
+                    }
+                    disabled={attachments.length >= MAX_ATTACHMENTS}
                   >
                     <FileText weight="Linear" size={20} color="#6D6D6D" />
                     <span className="text-[14px] text-[#141414] font-urbanist font-medium">
                       Add from local files
                     </span>
-                    <input type="file" ref={userRef} className="hidden" />
+                    <span className="text-[12px] text-[#6D6D6D] font-urbanist ml-auto">
+                      {attachments.length}/{MAX_ATTACHMENTS}
+                    </span>
+                    <input
+                      type="file"
+                      ref={userRef}
+                      className="hidden"
+                      onChange={handleFileSelect}
+                      accept={ALLOWED_EXTENSIONS.map((ext) => `.${ext}`).join(
+                        ","
+                      )}
+                      multiple
+                    />
                   </button>
                   <hr className="my-1 bg-[#f1f1f1]" />
 
@@ -381,17 +712,30 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
           <button
             onClick={handleSend}
             className={`w-9 h-9 rounded-[8px] flex items-center justify-center transition-all relative overflow-hidden cursor-pointer disabled:cursor-not-allowed border border-[rgba(255,255,255,0.3)] ${
-              !inputValue.trim() || !selectedAgent?.id
+              (!inputValue.trim() &&
+                !attachments.some((att) => att.status === "uploaded")) ||
+              !selectedAgent?.id ||
+              isUploading
                 ? "bg-[#E6E6E6]"
                 : "bg-[linear-gradient(333deg,#11A85F_13.46%,#1F6744_103.63%)]"
             }`}
-            disabled={!inputValue.trim() || !selectedAgent?.id}
+            disabled={
+              (!inputValue.trim() &&
+                !attachments.some((att) => att.status === "uploaded")) ||
+              !selectedAgent?.id ||
+              isUploading
+            }
           >
             <Plain
               weight={"Linear"}
               size={20}
               color={
-                !inputValue.trim() || !selectedAgent?.id ? "#B0B0B0" : "#FFFFFF"
+                (!inputValue.trim() &&
+                  !attachments.some((att) => att.status === "uploaded")) ||
+                !selectedAgent?.id ||
+                isUploading
+                  ? "#B0B0B0"
+                  : "#FFFFFF"
               }
             />
           </button>

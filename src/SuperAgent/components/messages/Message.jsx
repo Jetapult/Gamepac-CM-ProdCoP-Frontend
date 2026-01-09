@@ -30,7 +30,13 @@ const Message = ({
   switch (type) {
     case "text":
       if (sender === "user") {
-        return <UserMessage content={data.content} isLatest={isLatest} />;
+        return (
+          <UserMessage
+            content={data.content}
+            attachments={data.attachments}
+            isLatest={isLatest}
+          />
+        );
       } else if (sender === "llm") {
         return (
           <LLMMessage
@@ -79,6 +85,10 @@ const Message = ({
     case "artifact":
       // TODO: Implement artifact message component
       return <div>Artifact message (to be implemented)</div>;
+
+    case "report_artifact":
+      // Report shows in preview panel, no message needed
+      return null;
 
     default:
       console.warn(`Unknown message type: ${type}`);
