@@ -7,6 +7,7 @@ import Loader from "../../components/Loader";
 import { ArrowRight, Eye, EyeClosed } from "@solar-icons/react";
 import googleLogo from "../../assets/super-agents/google-logo.svg";
 import AuthLayout from "./AuthLayout";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -25,6 +26,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [forgotPasswordError, setForgotPasswordError] = useState("");
+  const navigate = useNavigate();
 
   const handleForgotPassword = async (event) => {
     try {
@@ -257,7 +259,7 @@ const Login = () => {
         {showForgotPassword && forgotPasswordError && (
           <p className="text-[#E53935] text-xs mt-2">{forgotPasswordError}</p>
         )}
-        {(emailPassword || showForgotPassword) && (
+        {showForgotPassword && (
           <button
             type="button"
             className="mt-6 h-[40px] text-center rounded-lg w-full py-2 bg-white relative"
@@ -278,13 +280,13 @@ const Login = () => {
           </button>
         )}
       </form>
-      {!emailPassword && !showForgotPassword && (
+      {!showForgotPassword && (
         <>
           <p className="text-[#76819A] text-xs text-center cursor-pointer mb-10 mt-4">
             Don’t have an account?{" "}
-            <span className="text-[#1F6744]">
-              Contact Us{" "}
-              <ArrowRight weight={"Linear"} className="inline-flex" />
+            <span className="text-[#1F6744]" onClick={() => navigate("/signup")}>
+              Sign Up
+              <ArrowRight weight={"Linear"} className="inline-flex ml-1" />
             </span>
           </p>
           <p className="text-[11px] text-[11px] text-center text-[#76819A]">

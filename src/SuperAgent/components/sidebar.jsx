@@ -9,6 +9,7 @@ import {
   UserRounded,
   Star,
   TrashBinTrash,
+  ChatSquareArrow,
 } from "@solar-icons/react";
 import gamepacLogo from "../../assets/super-agents/gamepac-logo.svg";
 import sidebarCloseIcon from "../../assets/super-agents/side-drawer-close-icon.svg";
@@ -20,10 +21,13 @@ import {
   setIsSiderbarOpen,
   setSelectedAgent,
   setSelectedTask,
+  setGames as setGamesAction,
+  setSelectedGame
 } from "../../store/reducer/superAgent";
 import { agents, getAgentById, getAgentBySlug } from "../index";
 import DeleteChatModal from "./DeleteChatModal";
 import api from "@/api";
+import { fetchAllgames } from "../../services/games.service";
 
 const Sidebar = () => {
   const dispatch = useDispatch();
@@ -40,6 +44,11 @@ const Sidebar = () => {
   const filterDropdownRef = useRef(null);
   const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
   const selectedTask = useSelector((state) => state.superAgent.selectedTask);
+  const ContextStudioData = useSelector(
+    (state) => state.admin.ContextStudioData
+  );
+  const games = useSelector((state) => state.superAgent.games);
+  const selectedGame = useSelector((state) => state.superAgent.selectedGame);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -164,6 +173,28 @@ const Sidebar = () => {
     navigate(`/super-agent/${agent.slug}`);
   };
 
+  useEffect(() => {
+    const loadGames = async () => {
+      const studioSlug = ContextStudioData?.slug;
+      if (games.length > 0 || !studioSlug) return; // Already fetched or no studio
+
+      try {
+        const gamesData = await fetchAllgames(studioSlug);
+        if (gamesData && gamesData.length > 0) {
+          dispatch(setGamesAction(gamesData));
+          // Auto-select first game if none selected
+          if (!selectedGame) {
+            dispatch(setSelectedGame(gamesData[0]));
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch games:", error);
+      }
+    };
+
+    loadGames();
+  }, [ContextStudioData?.slug, dispatch, selectedGame, games.length]);
+
   return (
     <div
       className={`fixed left-0 top-0 lg:sticky h-screen bg-white border-r border-[#f6f6f6] flex flex-col z-50 transition-all duration-300 ${
@@ -195,7 +226,11 @@ const Sidebar = () => {
                 />
               </div>
             ) : (
-              <div className={`cursor-pointer size-[38px] flex items-center justify-center ${isSiderbarOpen ? "" : "m-1"}`}>
+              <div
+                className={`cursor-pointer size-[38px] flex items-center justify-center ${
+                  isSiderbarOpen ? "" : "m-1"
+                }`}
+              >
                 <img
                   src={gamepacLogo}
                   alt="GamePac Logo"
@@ -290,6 +325,25 @@ const Sidebar = () => {
             )}
           </button>
         </div>
+        {selectedAgent.slug === "commpac" && (
+          <div className="flex items-center gap-2 mb-6">
+            <button
+              className={`flex items-center gap-2 cursor-pointer hover:bg-[#F1FCF6] rounded-[5px] p-1.5 w-full text-[#6D6D6D] text-[14px] font-urbanist font-medium ${
+                location.pathname === "/super-agent/smart-feedback"
+                  ? "bg-[#F1FCF6] text-[#1F6744]"
+                  : ""
+              }`}
+              onClick={() => navigate("/super-agent/smart-feedback")}
+            >
+              <ChatSquareArrow
+                weight={"Linear"}
+                size={24}
+                color={"#6D6D6D"}
+              />
+              {isSiderbarOpen && "Smart Feedback"}
+            </button>
+          </div>
+        )}
 
         {/* Chat List - Only when expanded */}
         {isSiderbarOpen ? (

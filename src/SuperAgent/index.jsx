@@ -165,7 +165,7 @@ const SuperAgent = () => {
         {/* Tab Switcher */}
         <div className="flex justify-center">
           <div className="bg-[#f6f6f6] border border-[#e6e6e6] rounded-lg p-0.5 flex gap-1.5">
-            {tabs.map((tab, index) => (
+            {/* {tabs.map((tab, index) => (
               <React.Fragment key={tab.id}>
                 <button
                   onClick={() => setActiveTab(tab.slug)}
@@ -184,7 +184,7 @@ const SuperAgent = () => {
                   <div className="w-px h-6 bg-[#E6E6E6] self-center" />
                 )}
               </React.Fragment>
-            ))}
+            ))} */}
           </div>
         </div>
 
