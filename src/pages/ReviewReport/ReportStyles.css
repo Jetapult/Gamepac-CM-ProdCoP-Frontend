@@ -1,0 +1,179 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+.review-report-container * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.review-report-container {
+  font-family: "Inter", sans-serif;
+  color: #141414;
+  background: white;
+  padding: 38pt 40pt;
+  line-height: 1.25;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+@media print {
+  .review-report-container {
+    width: 210mm;
+    height: 297mm;
+  }
+}
+
+/* COMPONENT 1: Title "Review Report- Detailed" */
+.review-report-container .title {
+  font-weight: 600;
+  font-size: 14pt;
+  line-height: 21pt;
+  color: #141414;
+}
+
+/* COMPONENT 2: Analysis Period */
+.review-report-container .analysis-period {
+  font-weight: 400;
+  font-size: 12pt;
+  line-height: 12pt;
+  color: #6d6d6d;
+  margin-top: 6pt;
+}
+
+/* COMPONENT 3: Main Title "Dragon Forge Arena" */
+.review-report-container .main-title {
+  font-weight: 700;
+  font-size: 40pt;
+  line-height: 52pt;
+  color: #141414;
+  margin-top: 48.75pt;
+}
+
+/* COMPONENT 4: Overall Sentiment Score */
+.review-report-container .sentiment-score {
+  font-weight: 300;
+  font-size: 16pt;
+  line-height: 28pt;
+  letter-spacing: 0.16px;
+  color: #141414;
+  margin-top: 6pt;
+}
+
+/* COMPONENT 5: Section Title "1. Report Metadata" */
+.review-report-container .section-title {
+  font-weight: 500;
+  font-size: 18pt;
+  line-height: 18pt;
+  color: #141414;
+  margin-top: 37.5pt;
+}
+
+/* COMPONENT 6: Report Metadata Table - FIXED FOR ROUNDED CORNERS */
+.review-report-container .metadata-table {
+  margin-top: 16pt;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #d9dee4;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.review-report-container .metadata-table th {
+  background-color: #f6f7f8;
+  color: #6a728b;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: normal;
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid #d9dee4;
+  border-right: 1px solid #d9dee4;
+}
+
+.review-report-container .metadata-table th:last-child {
+  border-right: none;
+}
+
+.review-report-container .metadata-table td {
+  background-color: white;
+  color: #30333b;
+  font-size: 14px;
+  padding: 16px 12px;
+  border-bottom: 1px solid #d9dee4;
+  border-right: 1px solid #d9dee4;
+}
+
+.review-report-container .metadata-table td:last-child {
+  border-right: none;
+}
+
+.review-report-container .metadata-table tr:last-child td {
+  border-bottom: none;
+}
+
+.review-report-container .metadata-table td:first-child {
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: -0.42px;
+}
+
+.review-report-container .metadata-table td:last-child {
+  font-weight: 400;
+  line-height: 18px;
+}
+
+.review-report-container .metadata-table tr:last-child td:last-child {
+  font-weight: 700;
+  color: #4a4f5e;
+  line-height: 16px;
+  letter-spacing: -0.42px;
+}
+
+/* General table styles - FIXED FOR ROUNDED CORNERS */
+.review-report-container .data-table {
+  margin-top: 16pt;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #d9dee4;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.review-report-container .data-table th {
+  background-color: #f6f7f8;
+  color: #6a728b;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: normal;
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid #d9dee4;
+  border-right: 1px solid #d9dee4;
+}
+
+.review-report-container .data-table th:last-child {
+  border-right: none;
+}
+
+.review-report-container .data-table td {
+  background-color: white;
+  color: #30333b;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 18px;
+  padding: 16px 12px;
+  border-bottom: 1px solid #d9dee4;
+  border-right: 1px solid #d9dee4;
+}
+
+.review-report-container .data-table td:last-child {
+  border-right: none;
+}
+
+.review-report-container .data-table tr:last-child td {
+  border-bottom: none;
+}

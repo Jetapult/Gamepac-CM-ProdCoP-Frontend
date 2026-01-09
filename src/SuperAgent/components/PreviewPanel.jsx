@@ -27,8 +27,11 @@ const PreviewPanel = ({
   allTasks = [],
   isThinking = false,
   artifactContent = null,
+  artifactType = null,
+  artifactData = null,
 }) => {
   const hasArtifact = artifactContent && isMarkdown(artifactContent);
+  const hasStructuredArtifact = artifactType && artifactData;
 
   return (
     <div className="flex-1 bg-[#f8f8f7] border-l border-[#f6f6f6] flex flex-col relative">
@@ -112,10 +115,10 @@ const PreviewPanel = ({
         </div>
       )}
 
-      {/* Artifact Placeholder - Only show when no artifact */}
-      {!hasArtifact && !isThinking && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <ArtifactPlaceholder />
+      {/* Structured Artifact (Review Reports) */}
+      {hasStructuredArtifact && !isThinking && (
+        <div className="absolute inset-0">
+          <ArtifactPlaceholder type={artifactType} data={artifactData} />
         </div>
       )}
 

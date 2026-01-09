@@ -15,10 +15,12 @@ import api from "@/api";
 const ConversationPanel = ({
   chatId,
   initialQuery,
+  initialAttachments = [],
   agentSlug: propAgentSlug = "",
   onTaskUpdate,
   onThinkingChange,
   onArtifactUpdate,
+  onStructuredArtifactUpdate,
   onTitleUpdate,
   onPublicUpdate,
   onAccessDenied,
@@ -106,6 +108,7 @@ const ConversationPanel = ({
                 type: "text",
                 data: {
                   content: msg.data?.content || "",
+                  attachments: msg.data?.attachments || [],
                 },
               };
             } else if (msg.sender === "agent") {
@@ -235,8 +238,8 @@ const ConversationPanel = ({
   }, [fetchChatDetails, fetchChatHistory]);
 
   const sendMessage = useCallback(
-    async (content) => {
-      if (!content.trim() || !chatId) return;
+    async (content, attachments = []) => {
+      if ((!content.trim() && attachments.length === 0) || !chatId) return;
 
       if (!selectedGame) {
         setError("Please select a game to continue.");
@@ -253,9 +256,13 @@ const ConversationPanel = ({
         type: "text",
         data: {
           content: messageToSend,
+          attachments: attachments,
         },
       };
       setMessages((prev) => [...prev, userMessage]);
+
+      // Extract attachment IDs for API request
+      const attachmentIds = attachments.map((att) => att.id);
 
       // Start streaming
       setIsThinking(true);
@@ -313,6 +320,7 @@ const ConversationPanel = ({
           setNeedsClarification,
           onThinkingChange,
           onArtifactUpdate,
+          onStructuredArtifactUpdate,
           agentSlug,
         });
 
@@ -348,6 +356,9 @@ const ConversationPanel = ({
               agent_slug: agentSlug,
               game_id: selectedGame?.id || null,
               studio_slug: ContextStudioData?.slug || null,
+              ...(attachmentIds.length > 0 && {
+                attachment_ids: attachmentIds,
+              }),
             }),
             signal: abortControllerRef.current.signal,
           }
@@ -443,6 +454,7 @@ const ConversationPanel = ({
           setNeedsClarification,
           onThinkingChange,
           onArtifactUpdate,
+          onStructuredArtifactUpdate,
           agentSlug,
         });
 
@@ -570,22 +582,27 @@ const ConversationPanel = ({
 
   // Send initial query on mount if present (wait for agentSlug)
   useEffect(() => {
-    if (!initialQuery || !chatId || !agentSlug) return;
+    if (
+      (!initialQuery && initialAttachments.length === 0) ||
+      !chatId ||
+      !agentSlug
+    )
+      return;
     if (initialQuerySentRef.current) return;
 
     initialQuerySentRef.current = true;
 
     // Use setTimeout to defer execution and prevent StrictMode double-send
     const timer = setTimeout(() => {
-      sendMessageRef.current(initialQuery);
+      sendMessageRef.current(initialQuery, initialAttachments);
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [initialQuery, chatId, agentSlug]);
+  }, [initialQuery, initialAttachments, chatId, agentSlug]);
 
-  const handleSendMessage = (content) => {
+  const handleSendMessage = (content, attachments = []) => {
     setError(null);
-    sendMessage(content);
+    sendMessage(content, attachments);
   };
 
   // Show chat not found message

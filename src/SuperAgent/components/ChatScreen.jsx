@@ -4,7 +4,12 @@ import ChatHeader from "./ChatHeader";
 import ConversationPanel from "./ConversationPanel";
 import PreviewPanel from "./PreviewPanel";
 
-const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
+const ChatScreen = ({
+  chatId,
+  initialQuery = "",
+  initialAttachments = [],
+  agentSlug = "",
+}) => {
   const navigate = useNavigate();
 
   // Chat title state
@@ -19,6 +24,8 @@ const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
 
   // Artifact content for preview panel
   const [artifactContent, setArtifactContent] = useState(null);
+  const [artifactType, setArtifactType] = useState(null);
+  const [artifactData, setArtifactData] = useState(null);
 
   // Chat public/private state
   const [isPublic, setIsPublic] = useState(false);
@@ -77,6 +84,7 @@ const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
         <ConversationPanel
           chatId={chatId}
           initialQuery={initialQuery}
+          initialAttachments={initialAttachments}
           agentSlug={agentSlug}
           onTaskUpdate={(task, index, time, tasks) => {
             setCurrentTask(task);
@@ -88,6 +96,10 @@ const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
           }}
           onThinkingChange={setIsThinking}
           onArtifactUpdate={setArtifactContent}
+          onStructuredArtifactUpdate={(type, data) => {
+            setArtifactType(type);
+            setArtifactData(data);
+          }}
           onTitleUpdate={handleTitleChange}
           onPublicUpdate={setIsPublic}
           onAccessDenied={() => setAccessDenied(true)}
@@ -101,6 +113,8 @@ const ChatScreen = ({ chatId, initialQuery = "", agentSlug = "" }) => {
           allTasks={allTasks}
           isThinking={isThinking}
           artifactContent={artifactContent}
+          artifactType={artifactType}
+          artifactData={artifactData}
         />
       </div>
     </div>

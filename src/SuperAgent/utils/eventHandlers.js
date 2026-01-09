@@ -73,6 +73,18 @@ const toolTitleMap = {
   synthesize: "Synthesizing Findings",
   jira_validate: "Validating Jira Ticket",
   jira_create: "Creating Jira Ticket",
+  generate_bug_report_detailed: "Generating Detailed Bug Report",
+  generate_bug_report_short: "Generating Bug Report Summary",
+  generate_review_report_detailed: "Generating Detailed Review Report",
+  generate_review_report_short: "Generating Review Report Summary",
+};
+
+// Report tool name to artifact type mapping
+const reportToolToArtifactType = {
+  generate_bug_report_detailed: "bug-report",
+  generate_bug_report_short: "bug-report-short",
+  generate_review_report_detailed: "review-report",
+  generate_review_report_short: "review-report-short",
 };
 
 // Handler for 'action' event
@@ -181,6 +193,35 @@ export const handleErrorEvent = (eventData, context) => {
   };
 };
 
+// Handler for 'tool_result' event - handles report generation results
+export const handleToolResultEvent = (eventData, context) => {
+  const toolName = eventData.tool_name || "";
+  const toolResult = eventData.tool_result || eventData.result || {};
+
+  // Check if this is a report generation tool
+  const artifactType = reportToolToArtifactType[toolName];
+
+  if (artifactType && context.onStructuredArtifactUpdate) {
+    // Call the artifact update callback with the report type and data
+    context.onStructuredArtifactUpdate(artifactType, toolResult);
+
+    // Return a message indicating the report was generated
+    return {
+      id: Date.now(),
+      sender: "llm",
+      type: "report_artifact",
+      data: {
+        reportType: artifactType,
+        reportData: toolResult,
+        toolName: toolName,
+      },
+    };
+  }
+
+  // For non-report tool results, return null (don't show anything)
+  return null;
+};
+
 // Map of event types to handlers
 const eventHandlers = {
   start: handleStartEvent,
@@ -188,6 +229,7 @@ const eventHandlers = {
   action: handleActionEvent,
   complete: handleCompleteEvent,
   error: handleErrorEvent,
+  tool_result: handleToolResultEvent,
 };
 
 /**
