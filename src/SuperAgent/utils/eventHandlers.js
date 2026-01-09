@@ -145,6 +145,31 @@ export const handleActionEvent = (eventData, context) => {
   };
 };
 
+// Handler for 'response' event - the actual LLM response
+export const handleResponseEvent = (eventData, context) => {
+  let content = eventData.content || "";
+  const messageId = eventData.message_id || null;
+
+  // Strip <think>...</think> tags (model's internal reasoning)
+  content = content.replace(/<think>[\s\S]*?<\/think>\s*/g, "").trim();
+
+  // If no content after stripping, return null
+  if (!content) {
+    return null;
+  }
+
+  // Return as LLM text message
+  return {
+    id: Date.now(),
+    sender: "llm",
+    type: "text",
+    apiMessageId: messageId,
+    data: {
+      content: content,
+    },
+  };
+};
+
 // Handler for 'complete' event
 export const handleCompleteEvent = (eventData, context) => {
   const report = eventData.report || {};
@@ -227,6 +252,7 @@ const eventHandlers = {
   start: handleStartEvent,
   reason: handleReasonEvent,
   action: handleActionEvent,
+  response: handleResponseEvent,
   complete: handleCompleteEvent,
   error: handleErrorEvent,
   tool_result: handleToolResultEvent,

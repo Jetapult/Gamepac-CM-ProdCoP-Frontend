@@ -380,19 +380,33 @@ const ConversationPanel = ({
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
+        let chunkCount = 0;
+
+        console.log("[STREAM] Starting to read response body");
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            console.log("[STREAM] Reader done, total chunks:", chunkCount);
+            break;
+          }
 
-          buffer += decoder.decode(value, { stream: true });
+          chunkCount++;
+          const chunk = decoder.decode(value, { stream: true });
+          console.log(`[STREAM] Chunk ${chunkCount}:`, chunk.slice(0, 100));
+          buffer += chunk;
           const lines = buffer.split("\n");
           buffer = lines.pop() || "";
 
           for (const line of lines) {
-            if (line.trim()) {
+            const trimmedLine = line.trim();
+            if (trimmedLine) {
               try {
-                const event = JSON.parse(line);
+                // Handle SSE format: strip "data: " prefix if present
+                const jsonStr = trimmedLine.startsWith("data: ")
+                  ? trimmedLine.slice(6)
+                  : trimmedLine;
+                const event = JSON.parse(jsonStr);
                 processEvent(event);
               } catch (e) {
                 console.warn("Failed to parse event:", line);
@@ -402,19 +416,25 @@ const ConversationPanel = ({
         }
 
         // Process any remaining buffer
-        if (buffer.trim()) {
+        const finalLine = buffer.trim();
+        if (finalLine) {
           try {
-            const event = JSON.parse(buffer);
+            // Handle SSE format: strip "data: " prefix if present
+            const jsonStr = finalLine.startsWith("data: ")
+              ? finalLine.slice(6)
+              : finalLine;
+            const event = JSON.parse(jsonStr);
             processEvent(event);
           } catch (e) {
             console.warn("Failed to parse final buffer:", buffer);
           }
         }
+        console.log("[STREAM] Finished processing all events");
       } catch (error) {
         if (error.name === "AbortError") {
-          console.log("Request aborted by user");
+          console.log("[STREAM] Request aborted by user");
         } else {
-          console.error("Failed to send message:", error);
+          console.error("[STREAM] Error:", error.name, error.message);
           setError(
             error.message || "Failed to send message. Please try again."
           );
@@ -422,6 +442,7 @@ const ConversationPanel = ({
         setIsThinking(false);
         if (onThinkingChange) onThinkingChange(false);
       } finally {
+        console.log("[STREAM] Finally block, cleaning up");
         abortControllerRef.current = null;
       }
     },
@@ -531,9 +552,14 @@ const ConversationPanel = ({
           buffer = lines.pop() || "";
 
           for (const line of lines) {
-            if (line.trim()) {
+            const trimmedLine = line.trim();
+            if (trimmedLine) {
               try {
-                const event = JSON.parse(line);
+                // Handle SSE format: strip "data: " prefix if present
+                const jsonStr = trimmedLine.startsWith("data: ")
+                  ? trimmedLine.slice(6)
+                  : trimmedLine;
+                const event = JSON.parse(jsonStr);
                 processEvent(event);
               } catch (e) {
                 console.warn("Failed to parse event:", line);
@@ -543,9 +569,14 @@ const ConversationPanel = ({
         }
 
         // Process any remaining buffer
-        if (buffer.trim()) {
+        const finalLine = buffer.trim();
+        if (finalLine) {
           try {
-            const event = JSON.parse(buffer);
+            // Handle SSE format: strip "data: " prefix if present
+            const jsonStr = finalLine.startsWith("data: ")
+              ? finalLine.slice(6)
+              : finalLine;
+            const event = JSON.parse(jsonStr);
             processEvent(event);
           } catch (e) {
             console.warn("Failed to parse final buffer:", buffer);
