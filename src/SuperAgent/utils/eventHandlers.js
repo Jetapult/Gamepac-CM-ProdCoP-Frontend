@@ -81,6 +81,8 @@ const toolTitleMap = {
   generate_bug_report_short: "Generating Bug Report Summary",
   generate_review_report_detailed: "Generating Detailed Review Report",
   generate_review_report_short: "Generating Review Report Summary",
+  get_google_play_reviews: "Loading Google Play Reviews",
+  get_app_store_reviews: "Loading App Store Reviews",
 };
 
 // Report tool name to artifact type mapping
@@ -154,22 +156,29 @@ export const handleResponseEvent = (eventData, context) => {
   let content = eventData.content || "";
   const messageId = eventData.message_id || null;
 
-  // Strip <think>...</think> tags (model's internal reasoning)
-  content = content.replace(/<think>[\s\S]*?<\/think>\s*/g, "").trim();
+  // Extract thinking content from <think>...</think> tags
+  const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/);
+  const thinkingContent = thinkMatch ? thinkMatch[1].trim() : null;
 
-  // If no content after stripping, return null
-  if (!content) {
+  // Strip <think>...</think> tags from main content
+  const mainContent = content
+    .replace(/<think>[\s\S]*?<\/think>\s*/g, "")
+    .trim();
+
+  // If no content at all, return null
+  if (!mainContent && !thinkingContent) {
     return null;
   }
 
-  // Return as LLM text message
+  // Return as LLM text message with optional thinking
   return {
     id: getUniqueId(),
     sender: "llm",
     type: "text",
     apiMessageId: messageId,
     data: {
-      content: content,
+      content: mainContent,
+      thinking: thinkingContent,
     },
   };
 };
@@ -222,10 +231,71 @@ export const handleErrorEvent = (eventData, context) => {
   };
 };
 
+// Handler for 'tool_call' event - shows tool being called
+export const handleToolCallEvent = (eventData, context) => {
+  const toolName = eventData.tool || eventData.tool_name || "action";
+  const toolArgs = eventData.args || eventData.tool_args || {};
+  const step = eventData.step || null;
+
+  // Get title from mapping or use tool name
+  const title = toolTitleMap[toolName] || toolName;
+
+  // Get description based on tool type
+  let description = "";
+  if (toolName === "update_plan_note") {
+    description = toolArgs.note || "";
+  } else if (toolName === "request_clarification") {
+    description = toolArgs.reason || "";
+  } else {
+    const hasContent = Object.keys(toolArgs).length > 0;
+    if (hasContent) {
+      description = Object.entries(toolArgs)
+        .map(([key, value]) => {
+          const formattedKey = key
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+          const formattedValue =
+            typeof value === "object" ? JSON.stringify(value) : value;
+          return `**${formattedKey}:** ${formattedValue}`;
+        })
+        .join("\n\n");
+    }
+  }
+
+  return {
+    id: getUniqueId(),
+    sender: "llm",
+    type: "task",
+    data: {
+      title: title,
+      description: description,
+      actions: [
+        {
+          id: `action-${Date.now()}`,
+          toolName: toolName,
+          type: "executing",
+          text: title,
+          detail: "",
+          status: "in_progress",
+        },
+      ],
+      relatedActions: [],
+    },
+  };
+};
+
 // Handler for 'tool_result' event - handles report generation results
 export const handleToolResultEvent = (eventData, context) => {
-  const toolName = eventData.tool_name || "";
-  const toolResult = eventData.tool_result || eventData.result || {};
+  const toolName = eventData.tool || eventData.tool_name || "";
+  // Handle result as either object or JSON string
+  let toolResult = eventData.tool_result || eventData.result || {};
+  if (typeof toolResult === "string") {
+    try {
+      toolResult = JSON.parse(toolResult);
+    } catch (e) {
+      // Keep as string if not valid JSON
+    }
+  }
 
   // Check if this is a report generation tool
   const artifactType = reportToolToArtifactType[toolName];
@@ -256,6 +326,7 @@ const eventHandlers = {
   start: handleStartEvent,
   reason: handleReasonEvent,
   action: handleActionEvent,
+  tool_call: handleToolCallEvent,
   response: handleResponseEvent,
   complete: handleCompleteEvent,
   error: handleErrorEvent,

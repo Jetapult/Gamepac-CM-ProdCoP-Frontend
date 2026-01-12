@@ -10,7 +10,7 @@ import {
   AltArrowLeft,
   AltArrowRight,
 } from "@solar-icons/react";
-import { CornerDownLeft } from "lucide-react";
+import { CornerDownLeft, ChevronDown } from "lucide-react";
 import gamepacLogo from "../../../assets/super-agents/gamepac-logo.svg";
 
 const Tooltip = ({ children, text }) => {
@@ -58,6 +58,7 @@ const Tooltip = ({ children, text }) => {
 
 const LLMMessage = ({
   content,
+  thinking,
   isLatest = false,
   relatedActions = [],
   onSendMessage,
@@ -68,6 +69,7 @@ const LLMMessage = ({
   const [copiedTooltip, setCopiedTooltip] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [feedback, setFeedback] = useState(null); // 'liked' | 'disliked' | null
+  const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -104,6 +106,33 @@ const LLMMessage = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Thinking Section - Collapsible */}
+      {thinking && (
+        <div className="mb-2">
+          <button
+            onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
+            className="flex items-center gap-1 text-sm text-[#6d6d6d] hover:text-[#141414] transition-colors"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            <ChevronDown
+              size={16}
+              className={`transition-transform ${
+                isThinkingExpanded ? "rotate-0" : "-rotate-90"
+              }`}
+            />
+            <span>Thinking</span>
+          </button>
+          {isThinkingExpanded && (
+            <div
+              className="mt-2 p-3 bg-[#f9f9f9] rounded-lg text-sm text-[#6d6d6d] prose prose-sm max-w-none"
+              style={{ fontFamily: "Urbanist, sans-serif", lineHeight: "20px" }}
+            >
+              <ReactMarkdown>{thinking}</ReactMarkdown>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Response Text */}
       <div
         className="text-base text-black prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-strong:font-semibold"
