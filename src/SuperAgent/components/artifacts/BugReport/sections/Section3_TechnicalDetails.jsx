@@ -47,8 +47,9 @@ const StepItem = ({ number, text }) => (
   </div>
 );
 
-const Section3_TechnicalDetails = ({ data }) => {
+const Section3_TechnicalDetails = ({ data, sectionNumber }) => {
   if (!data) return null;
+  const displayNumber = sectionNumber || "3.";
 
   const styles = {
     container: {
@@ -104,7 +105,9 @@ const Section3_TechnicalDetails = ({ data }) => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.sectionTitle}>3. Technical Details Section</div>
+      <div style={styles.sectionTitle}>
+        {displayNumber} Technical Details Section
+      </div>
 
       <div style={styles.content}>
         {/* 3.1 Issue Description */}

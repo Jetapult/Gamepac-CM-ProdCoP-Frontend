@@ -1,4 +1,5 @@
-const Section2_ImpactSnapshot = ({ data = {} }) => {
+const Section2_ImpactSnapshot = ({ data = {}, sectionNumber }) => {
+  const displayNumber = sectionNumber || "2.";
   const styles = {
     container: {
       display: "flex",
@@ -109,7 +110,9 @@ const Section2_ImpactSnapshot = ({ data = {} }) => {
   return (
     <div style={styles.container}>
       <div style={styles.titleContainer}>
-        <div style={styles.sectionTitle}>2. {data.title || ""}</div>
+        <div style={styles.sectionTitle}>
+          {displayNumber} {data.title || ""}
+        </div>
         <div style={styles.description}>{data.description || ""}</div>
       </div>
 

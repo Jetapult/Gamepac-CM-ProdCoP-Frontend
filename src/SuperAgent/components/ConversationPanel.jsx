@@ -98,6 +98,9 @@ const ConversationPanel = ({
 
       const result = response.data;
       if (result.success && result.data) {
+        // Track the latest artifact to restore in preview panel
+        let latestArtifact = null;
+
         // Transform API messages to our format
         const transformedMessages = result.data
           .map((msg) => {
@@ -117,7 +120,13 @@ const ConversationPanel = ({
               const processedMessages = [];
 
               for (const event of rawEvents) {
-                const message = processEventHandler(event, { agentSlug });
+                const message = processEventHandler(event, {
+                  agentSlug,
+                  onStructuredArtifactUpdate: (type, data) => {
+                    // Capture the latest artifact for restoration
+                    latestArtifact = { type, data };
+                  },
+                });
                 if (message) {
                   processedMessages.push({
                     ...message,
@@ -137,6 +146,11 @@ const ConversationPanel = ({
 
         setMessages(transformedMessages);
         historyFetchedRef.current = true;
+
+        // Restore the latest artifact in the preview panel
+        if (latestArtifact && onStructuredArtifactUpdate) {
+          onStructuredArtifactUpdate(latestArtifact.type, latestArtifact.data);
+        }
       }
     } catch (error) {
       if (error.response?.status === 403) {
@@ -147,7 +161,7 @@ const ConversationPanel = ({
     } finally {
       setIsLoadingHistory(false);
     }
-  }, [chatId, agentSlug]);
+  }, [chatId, agentSlug, onStructuredArtifactUpdate]);
 
   // Helper to process raw_events into a task structure
   const processRawEventsToTask = (rawEvents) => {
@@ -346,6 +360,8 @@ const ConversationPanel = ({
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              Accept: "text/event-stream",
+              "Cache-Control": "no-cache",
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
             body: JSON.stringify({
@@ -382,39 +398,47 @@ const ConversationPanel = ({
           const { done, value } = await reader.read();
           if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
+          const chunk = decoder.decode(value, { stream: true });
+          console.log("[SSE] Received chunk:", chunk.length, "chars");
+          buffer += chunk;
 
-          for (const line of lines) {
-            const trimmedLine = line.trim();
-            if (trimmedLine) {
-              try {
-                // Handle SSE format: strip "data: " prefix if present
-                const jsonStr = trimmedLine.startsWith("data: ")
-                  ? trimmedLine.slice(6)
-                  : trimmedLine;
-                const event = JSON.parse(jsonStr);
-                processEvent(event);
-              } catch (e) {
-                console.warn("Failed to parse event:", line);
+          // SSE events are separated by double newlines
+          const eventBlocks = buffer.split("\n\n");
+          buffer = eventBlocks.pop() || ""; // Keep incomplete event in buffer
+
+          for (const eventBlock of eventBlocks) {
+            const lines = eventBlock.split("\n");
+            for (const line of lines) {
+              const trimmedLine = line.trim();
+              if (trimmedLine && trimmedLine.startsWith("data: ")) {
+                try {
+                  const jsonStr = trimmedLine.slice(6);
+                  const event = JSON.parse(jsonStr);
+                  console.log("[SSE] Event received:", event.type, event);
+                  processEvent(event);
+                } catch (e) {
+                  console.warn("Failed to parse event:", trimmedLine, e);
+                }
               }
             }
           }
         }
 
         // Process any remaining buffer
-        const finalLine = buffer.trim();
-        if (finalLine) {
-          try {
-            // Handle SSE format: strip "data: " prefix if present
-            const jsonStr = finalLine.startsWith("data: ")
-              ? finalLine.slice(6)
-              : finalLine;
-            const event = JSON.parse(jsonStr);
-            processEvent(event);
-          } catch (e) {
-            console.warn("Failed to parse final buffer:", buffer);
+        if (buffer.trim()) {
+          const lines = buffer.split("\n");
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (trimmedLine && trimmedLine.startsWith("data: ")) {
+              try {
+                const jsonStr = trimmedLine.slice(6);
+                const event = JSON.parse(jsonStr);
+                console.log("[SSE] Final event received:", event.type, event);
+                processEvent(event);
+              } catch (e) {
+                console.warn("Failed to parse final event:", trimmedLine, e);
+              }
+            }
           }
         }
       } catch (error) {
@@ -488,6 +512,8 @@ const ConversationPanel = ({
           {
             method: "POST",
             headers: {
+              Accept: "text/event-stream",
+              "Cache-Control": "no-cache",
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
             signal: abortControllerRef.current.signal,
@@ -533,39 +559,44 @@ const ConversationPanel = ({
           const { done, value } = await reader.read();
           if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
 
-          for (const line of lines) {
-            const trimmedLine = line.trim();
-            if (trimmedLine) {
-              try {
-                // Handle SSE format: strip "data: " prefix if present
-                const jsonStr = trimmedLine.startsWith("data: ")
-                  ? trimmedLine.slice(6)
-                  : trimmedLine;
-                const event = JSON.parse(jsonStr);
-                processEvent(event);
-              } catch (e) {
-                console.warn("Failed to parse event:", line);
+          // SSE events are separated by double newlines
+          const eventBlocks = buffer.split("\n\n");
+          buffer = eventBlocks.pop() || ""; // Keep incomplete event in buffer
+
+          for (const eventBlock of eventBlocks) {
+            const lines = eventBlock.split("\n");
+            for (const line of lines) {
+              const trimmedLine = line.trim();
+              if (trimmedLine && trimmedLine.startsWith("data: ")) {
+                try {
+                  const jsonStr = trimmedLine.slice(6);
+                  const event = JSON.parse(jsonStr);
+                  processEvent(event);
+                } catch (e) {
+                  console.warn("Failed to parse event:", trimmedLine, e);
+                }
               }
             }
           }
         }
 
         // Process any remaining buffer
-        const finalLine = buffer.trim();
-        if (finalLine) {
-          try {
-            // Handle SSE format: strip "data: " prefix if present
-            const jsonStr = finalLine.startsWith("data: ")
-              ? finalLine.slice(6)
-              : finalLine;
-            const event = JSON.parse(jsonStr);
-            processEvent(event);
-          } catch (e) {
-            console.warn("Failed to parse final buffer:", buffer);
+        if (buffer.trim()) {
+          const lines = buffer.split("\n");
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (trimmedLine && trimmedLine.startsWith("data: ")) {
+              try {
+                const jsonStr = trimmedLine.slice(6);
+                const event = JSON.parse(jsonStr);
+                processEvent(event);
+              } catch (e) {
+                console.warn("Failed to parse final event:", trimmedLine, e);
+              }
+            }
           }
         }
       } catch (error) {

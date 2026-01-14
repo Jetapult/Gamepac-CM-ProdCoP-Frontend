@@ -106,10 +106,12 @@ const PriorityBadge = ({ priority }) => {
   );
 };
 
-const Section4_ActionItems = ({ data }) => {
+const Section4_ActionItems = ({ data, sectionNumber }) => {
   const items = data?.actionItems || [];
 
   if (!items.length) return null;
+
+  const displayNumber = sectionNumber || "4.";
 
   return (
     <div
@@ -127,7 +129,7 @@ const Section4_ActionItems = ({ data }) => {
           gap: "14px",
         }}
       >
-        <SectionTitle>4. Action Items</SectionTitle>
+        <SectionTitle>{displayNumber} Action Items</SectionTitle>
         <p
           style={{
             fontFamily: "Inter, sans-serif",
