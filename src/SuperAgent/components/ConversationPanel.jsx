@@ -98,6 +98,9 @@ const ConversationPanel = ({
 
       const result = response.data;
       if (result.success && result.data) {
+        // Track the latest artifact to restore in preview panel
+        let latestArtifact = null;
+
         // Transform API messages to our format
         const transformedMessages = result.data
           .map((msg) => {
@@ -117,7 +120,13 @@ const ConversationPanel = ({
               const processedMessages = [];
 
               for (const event of rawEvents) {
-                const message = processEventHandler(event, { agentSlug });
+                const message = processEventHandler(event, {
+                  agentSlug,
+                  onStructuredArtifactUpdate: (type, data) => {
+                    // Capture the latest artifact for restoration
+                    latestArtifact = { type, data };
+                  },
+                });
                 if (message) {
                   processedMessages.push({
                     ...message,
@@ -137,6 +146,11 @@ const ConversationPanel = ({
 
         setMessages(transformedMessages);
         historyFetchedRef.current = true;
+
+        // Restore the latest artifact in the preview panel
+        if (latestArtifact && onStructuredArtifactUpdate) {
+          onStructuredArtifactUpdate(latestArtifact.type, latestArtifact.data);
+        }
       }
     } catch (error) {
       if (error.response?.status === 403) {
@@ -147,7 +161,7 @@ const ConversationPanel = ({
     } finally {
       setIsLoadingHistory(false);
     }
-  }, [chatId, agentSlug]);
+  }, [chatId, agentSlug, onStructuredArtifactUpdate]);
 
   // Helper to process raw_events into a task structure
   const processRawEventsToTask = (rawEvents) => {
