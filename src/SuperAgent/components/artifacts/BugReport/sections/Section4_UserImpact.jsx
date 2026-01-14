@@ -1,5 +1,6 @@
-const Section4_UserImpact = ({ data }) => {
+const Section4_UserImpact = ({ data, sectionNumber }) => {
   if (!data) return null;
+  const displayNumber = sectionNumber || "4.";
 
   const styles = {
     container: {
@@ -44,7 +45,9 @@ const Section4_UserImpact = ({ data }) => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.sectionTitle}>4. User Impact Analysis</div>
+      <div style={styles.sectionTitle}>
+        {displayNumber} User Impact Analysis
+      </div>
 
       <div style={styles.content}>
         {/* 4.1 Affected User Demographics */}

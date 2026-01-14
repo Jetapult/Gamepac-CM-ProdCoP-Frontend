@@ -94,7 +94,8 @@ const ClockIcon = () => (
   </svg>
 );
 
-const Section3_ResolutionProgress = ({ data = {} }) => {
+const Section3_ResolutionProgress = ({ data = {}, sectionNumber }) => {
+  const displayNumber = sectionNumber || "3.";
   const styles = {
     container: {
       display: "flex",
@@ -186,7 +187,9 @@ const Section3_ResolutionProgress = ({ data = {} }) => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.sectionTitle}>3. {data.title || ""}</div>
+      <div style={styles.sectionTitle}>
+        {displayNumber} {data.title || ""}
+      </div>
 
       <div style={styles.cardsContainer}>
         <div style={styles.cardsRow}>

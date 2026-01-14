@@ -134,8 +134,9 @@ const SummaryItem = ({ icon, title, description }) => (
   </div>
 );
 
-const Section2_IncidentSummary = ({ data }) => {
+const Section2_IncidentSummary = ({ data, sectionNumber }) => {
   if (!data) return null;
+  const displayNumber = sectionNumber || "2.";
 
   const styles = {
     container: {
@@ -198,7 +199,7 @@ const Section2_IncidentSummary = ({ data }) => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.sectionTitle}>2. Incident Summary</div>
+      <div style={styles.sectionTitle}>{displayNumber} Incident Summary</div>
 
       <div style={styles.content}>
         <p style={styles.description}>

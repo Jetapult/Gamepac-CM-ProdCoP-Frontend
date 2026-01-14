@@ -41,6 +41,7 @@ const Message = ({
         return (
           <LLMMessage
             content={data.content}
+            thinking={data.thinking}
             isLatest={isLatest}
             relatedActions={data.relatedActions || []}
             onSendMessage={onSendMessage}

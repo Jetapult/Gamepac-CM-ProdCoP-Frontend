@@ -1,13 +1,14 @@
 import { SectionTitle } from "@/SuperAgent/components/artifacts/ReviewReportShort/ui";
 
-const Section1_ReportMetadata = ({ data }) => {
+const Section1_ReportMetadata = ({ data, sectionNumber }) => {
   if (!data) return null;
 
   const timestamp = new Date().toISOString();
+  const displayNumber = sectionNumber || "1.";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <SectionTitle>1. Report Metadata</SectionTitle>
+      <SectionTitle>{displayNumber} Report Metadata</SectionTitle>
 
       <div
         style={{
