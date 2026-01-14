@@ -346,6 +346,8 @@ const ConversationPanel = ({
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              Accept: "text/event-stream",
+              "Cache-Control": "no-cache",
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
             body: JSON.stringify({
@@ -488,6 +490,8 @@ const ConversationPanel = ({
           {
             method: "POST",
             headers: {
+              Accept: "text/event-stream",
+              "Cache-Control": "no-cache",
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
             signal: abortControllerRef.current.signal,
