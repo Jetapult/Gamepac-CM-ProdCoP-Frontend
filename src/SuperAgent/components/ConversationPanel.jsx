@@ -384,39 +384,47 @@ const ConversationPanel = ({
           const { done, value } = await reader.read();
           if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
+          const chunk = decoder.decode(value, { stream: true });
+          console.log("[SSE] Received chunk:", chunk.length, "chars");
+          buffer += chunk;
 
-          for (const line of lines) {
-            const trimmedLine = line.trim();
-            if (trimmedLine) {
-              try {
-                // Handle SSE format: strip "data: " prefix if present
-                const jsonStr = trimmedLine.startsWith("data: ")
-                  ? trimmedLine.slice(6)
-                  : trimmedLine;
-                const event = JSON.parse(jsonStr);
-                processEvent(event);
-              } catch (e) {
-                console.warn("Failed to parse event:", line);
+          // SSE events are separated by double newlines
+          const eventBlocks = buffer.split("\n\n");
+          buffer = eventBlocks.pop() || ""; // Keep incomplete event in buffer
+
+          for (const eventBlock of eventBlocks) {
+            const lines = eventBlock.split("\n");
+            for (const line of lines) {
+              const trimmedLine = line.trim();
+              if (trimmedLine && trimmedLine.startsWith("data: ")) {
+                try {
+                  const jsonStr = trimmedLine.slice(6);
+                  const event = JSON.parse(jsonStr);
+                  console.log("[SSE] Event received:", event.type, event);
+                  processEvent(event);
+                } catch (e) {
+                  console.warn("Failed to parse event:", trimmedLine, e);
+                }
               }
             }
           }
         }
 
         // Process any remaining buffer
-        const finalLine = buffer.trim();
-        if (finalLine) {
-          try {
-            // Handle SSE format: strip "data: " prefix if present
-            const jsonStr = finalLine.startsWith("data: ")
-              ? finalLine.slice(6)
-              : finalLine;
-            const event = JSON.parse(jsonStr);
-            processEvent(event);
-          } catch (e) {
-            console.warn("Failed to parse final buffer:", buffer);
+        if (buffer.trim()) {
+          const lines = buffer.split("\n");
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (trimmedLine && trimmedLine.startsWith("data: ")) {
+              try {
+                const jsonStr = trimmedLine.slice(6);
+                const event = JSON.parse(jsonStr);
+                console.log("[SSE] Final event received:", event.type, event);
+                processEvent(event);
+              } catch (e) {
+                console.warn("Failed to parse final event:", trimmedLine, e);
+              }
+            }
           }
         }
       } catch (error) {
@@ -537,39 +545,44 @@ const ConversationPanel = ({
           const { done, value } = await reader.read();
           if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
 
-          for (const line of lines) {
-            const trimmedLine = line.trim();
-            if (trimmedLine) {
-              try {
-                // Handle SSE format: strip "data: " prefix if present
-                const jsonStr = trimmedLine.startsWith("data: ")
-                  ? trimmedLine.slice(6)
-                  : trimmedLine;
-                const event = JSON.parse(jsonStr);
-                processEvent(event);
-              } catch (e) {
-                console.warn("Failed to parse event:", line);
+          // SSE events are separated by double newlines
+          const eventBlocks = buffer.split("\n\n");
+          buffer = eventBlocks.pop() || ""; // Keep incomplete event in buffer
+
+          for (const eventBlock of eventBlocks) {
+            const lines = eventBlock.split("\n");
+            for (const line of lines) {
+              const trimmedLine = line.trim();
+              if (trimmedLine && trimmedLine.startsWith("data: ")) {
+                try {
+                  const jsonStr = trimmedLine.slice(6);
+                  const event = JSON.parse(jsonStr);
+                  processEvent(event);
+                } catch (e) {
+                  console.warn("Failed to parse event:", trimmedLine, e);
+                }
               }
             }
           }
         }
 
         // Process any remaining buffer
-        const finalLine = buffer.trim();
-        if (finalLine) {
-          try {
-            // Handle SSE format: strip "data: " prefix if present
-            const jsonStr = finalLine.startsWith("data: ")
-              ? finalLine.slice(6)
-              : finalLine;
-            const event = JSON.parse(jsonStr);
-            processEvent(event);
-          } catch (e) {
-            console.warn("Failed to parse final buffer:", buffer);
+        if (buffer.trim()) {
+          const lines = buffer.split("\n");
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (trimmedLine && trimmedLine.startsWith("data: ")) {
+              try {
+                const jsonStr = trimmedLine.slice(6);
+                const event = JSON.parse(jsonStr);
+                processEvent(event);
+              } catch (e) {
+                console.warn("Failed to parse final event:", trimmedLine, e);
+              }
+            }
           }
         }
       } catch (error) {

@@ -1,7 +1,12 @@
 import { SectionTitle } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
+import { replaceNumberInTitle } from "@/SuperAgent/components/artifacts/ReviewReport/utils/sectionNumbering";
 
-const Section3_IssueDeepDive = ({ data }) => {
+const Section3_IssueDeepDive = ({ data, sectionNumber }) => {
   if (!data) return null;
+
+  const displayTitle = sectionNumber
+    ? replaceNumberInTitle(data.title, sectionNumber)
+    : data.title;
 
   return (
     <>
@@ -15,7 +20,7 @@ const Section3_IssueDeepDive = ({ data }) => {
             marginTop: "37.5pt",
           }}
         >
-          {data.title}
+          {displayTitle}
         </div>
       )}
 

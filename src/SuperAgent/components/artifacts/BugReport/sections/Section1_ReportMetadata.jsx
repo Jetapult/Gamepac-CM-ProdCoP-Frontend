@@ -1,5 +1,6 @@
-const Section1_ReportMetadata = ({ data }) => {
+const Section1_ReportMetadata = ({ data, sectionNumber }) => {
   if (!data) return null;
+  const displayNumber = sectionNumber || "1.";
 
   const styles = {
     container: {
@@ -131,7 +132,7 @@ const Section1_ReportMetadata = ({ data }) => {
 
       {/* Section 1 */}
       <div style={styles.sectionContainer}>
-        <div style={styles.sectionTitle}>1. Incident Overview</div>
+        <div style={styles.sectionTitle}>{displayNumber} Incident Overview</div>
 
         <div style={styles.table}>
           {/* Field Column */}

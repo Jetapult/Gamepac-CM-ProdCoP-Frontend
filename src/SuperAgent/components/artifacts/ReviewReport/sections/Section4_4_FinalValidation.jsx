@@ -1,13 +1,18 @@
 import { SectionTitle } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
+import { replaceNumberInTitle } from "@/SuperAgent/components/artifacts/ReviewReport/utils/sectionNumbering";
 
-const Section4_4_FinalValidation = ({ data }) => {
+const Section4_4_FinalValidation = ({ data, sectionNumber }) => {
   if (!data) return null;
+
+  const displayTitle = sectionNumber
+    ? replaceNumberInTitle(data.title, sectionNumber)
+    : data.title;
 
   return (
     <>
       {data.title && (
         <SectionTitle style={{ marginTop: "37.5pt" }}>
-          {data.title}
+          {displayTitle}
         </SectionTitle>
       )}
 

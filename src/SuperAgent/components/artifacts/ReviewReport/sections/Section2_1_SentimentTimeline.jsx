@@ -1,13 +1,24 @@
-import { SectionTitle, ChartContainer, VersionCard } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
+import {
+  SectionTitle,
+  ChartContainer,
+  VersionCard,
+} from "@/SuperAgent/components/artifacts/ReviewReport/ui";
 import { StarIcon } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
+import { replaceNumberInTitle } from "@/SuperAgent/components/artifacts/ReviewReport/utils/sectionNumbering";
 
-const Section2_1_SentimentTimeline = ({ data }) => {
+const Section2_1_SentimentTimeline = ({ data, sectionNumber }) => {
   if (!data) return null;
+
+  const displayTitle = sectionNumber
+    ? replaceNumberInTitle(data.title, sectionNumber)
+    : data.title;
 
   return (
     <>
       {data.title && (
-        <SectionTitle style={{ marginTop: "24pt" }}>{data.title}</SectionTitle>
+        <SectionTitle style={{ marginTop: "24pt" }}>
+          {displayTitle}
+        </SectionTitle>
       )}
 
       {data.description && (

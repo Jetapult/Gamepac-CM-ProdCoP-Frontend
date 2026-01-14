@@ -1,11 +1,16 @@
 import { SectionTitle } from "@/SuperAgent/components/artifacts/ReviewReport/ui";
+import { replaceNumberInTitle } from "@/SuperAgent/components/artifacts/ReviewReport/utils/sectionNumbering";
 
-const Section1_ReportMetadata = ({ data }) => {
+const Section1_ReportMetadata = ({ data, sectionNumber }) => {
   if (!data) return null;
+
+  const displayTitle = sectionNumber
+    ? replaceNumberInTitle(data.title, sectionNumber)
+    : data.title;
 
   return (
     <>
-      {data.title && <SectionTitle>{data.title}</SectionTitle>}
+      {data.title && <SectionTitle>{displayTitle}</SectionTitle>}
 
       {data.metadata?.length > 0 && (
         <table className="metadata-table">

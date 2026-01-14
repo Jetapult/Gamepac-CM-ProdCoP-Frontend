@@ -141,7 +141,8 @@ const ApproachItem = ({ icon, title, description }) => (
   </div>
 );
 
-const Section5_ResolutionPlanning = ({ data = {} }) => {
+const Section5_ResolutionPlanning = ({ data = {}, sectionNumber }) => {
+  const displayNumber = sectionNumber || "5.";
   const styles = {
     container: {
       display: "flex",
@@ -196,7 +197,9 @@ const Section5_ResolutionPlanning = ({ data = {} }) => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.sectionTitle}>5. Resolution Planning Section</div>
+      <div style={styles.sectionTitle}>
+        {displayNumber} Resolution Planning Section
+      </div>
 
       <div style={styles.content}>
         <div style={styles.subsectionTitle}>
