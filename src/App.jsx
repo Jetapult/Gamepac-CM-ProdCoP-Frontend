@@ -69,6 +69,7 @@ import SuperAgent from "./SuperAgent/index.jsx";
 import Library from "./SuperAgent/pages/Library.jsx";
 import Chat from "./SuperAgent/pages/Chat.jsx";
 import SmartFeedback from "./SuperAgent/pages/CommpacDashboard/SmartFeedback.jsx";
+import Settings from "./SuperAgent/pages/Settings.jsx";
 
 
 function AppContent() {
@@ -381,6 +382,8 @@ function AppContent() {
             <Route path="/super-agent/library" element={<PrivateRoute><Library /></PrivateRoute>} />
             <Route path="/super-agent/chat/:slug" element={<PrivateRoute><Chat /></PrivateRoute>} />
             <Route path="/super-agent/smart-feedback" element={<PrivateRoute><SmartFeedback /></PrivateRoute>} />
+            <Route path="/super-agent/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+            <Route path="/super-agent/settings/:section" element={<PrivateRoute><Settings /></PrivateRoute>} />
             <Route path="/super-agent/:slug" element={<PrivateRoute><SuperAgent /></PrivateRoute>} />
             <Route
               path="*"

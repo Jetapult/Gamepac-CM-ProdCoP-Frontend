@@ -142,7 +142,7 @@ const AddTagModal = ({
             onClick={onClose}
             className="p-1 hover:bg-[#f6f7f8] rounded transition-colors"
           >
-            <X size={16} color="#6d6d6d" />
+            <X size={16} color="#6d6d6d" strokeWidth={1.5} />
           </button>
         </div>
 
