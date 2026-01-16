@@ -166,7 +166,8 @@ const NoteItem = ({ icon, title, description }) => (
   </div>
 );
 
-const Section6_CommunicationTrial = ({ data = {} }) => {
+const Section6_CommunicationTrial = ({ data = {}, sectionNumber }) => {
+  const displayNumber = sectionNumber || "6.";
   const styles = {
     container: {
       display: "flex",
@@ -222,7 +223,7 @@ const Section6_CommunicationTrial = ({ data = {} }) => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.sectionTitle}>6. Communication Trial</div>
+      <div style={styles.sectionTitle}>{displayNumber} Communication Trial</div>
 
       <div style={styles.content}>
         <div style={styles.notesTitle}>Internal Notes</div>

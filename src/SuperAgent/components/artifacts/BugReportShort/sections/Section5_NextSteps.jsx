@@ -1,4 +1,5 @@
-const Section5_NextSteps = ({ data = {} }) => {
+const Section5_NextSteps = ({ data = {}, sectionNumber }) => {
+  const displayNumber = sectionNumber || "5.";
   const styles = {
     container: {
       display: "flex",
@@ -71,7 +72,9 @@ const Section5_NextSteps = ({ data = {} }) => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.sectionTitle}>5. {data.title || ""}</div>
+      <div style={styles.sectionTitle}>
+        {displayNumber} {data.title || ""}
+      </div>
 
       <div style={styles.stepsContainer}>
         {steps.map((step, index) => (

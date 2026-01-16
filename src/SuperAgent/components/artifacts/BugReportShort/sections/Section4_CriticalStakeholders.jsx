@@ -1,4 +1,5 @@
-const Section4_CriticalStakeholders = ({ data = {} }) => {
+const Section4_CriticalStakeholders = ({ data = {}, sectionNumber }) => {
+  const displayNumber = sectionNumber || "4.";
   const styles = {
     container: {
       display: "flex",
@@ -66,7 +67,9 @@ const Section4_CriticalStakeholders = ({ data = {} }) => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.sectionTitle}>4. {data.title || ""}</div>
+      <div style={styles.sectionTitle}>
+        {displayNumber} {data.title || ""}
+      </div>
 
       <div style={styles.table}>
         {/* Role Column */}

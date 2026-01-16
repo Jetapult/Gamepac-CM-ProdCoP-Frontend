@@ -30,7 +30,8 @@ const WarningIcon = () => (
   </svg>
 );
 
-const Section1_BugOverview = ({ data = {} }) => {
+const Section1_BugOverview = ({ data = {}, sectionNumber }) => {
+  const displayNumber = sectionNumber || "1.";
   const styles = {
     container: {
       display: "flex",
@@ -112,7 +113,9 @@ const Section1_BugOverview = ({ data = {} }) => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.sectionTitle}>1. {data.title || ""}</div>
+      <div style={styles.sectionTitle}>
+        {displayNumber} {data.title || ""}
+      </div>
 
       <div style={styles.table}>
         {/* Severity Column */}

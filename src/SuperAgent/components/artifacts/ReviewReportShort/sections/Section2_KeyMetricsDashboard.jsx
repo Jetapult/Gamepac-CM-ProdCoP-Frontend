@@ -123,7 +123,9 @@ const MetricCard = ({
   </div>
 );
 
-const Section2_KeyMetricsDashboard = ({ data }) => {
+const Section2_KeyMetricsDashboard = ({ data, sectionNumber }) => {
+  const displayNumber = sectionNumber || "2.";
+
   return (
     <div
       style={{
@@ -134,7 +136,7 @@ const Section2_KeyMetricsDashboard = ({ data }) => {
       }}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <SectionTitle>2. Key Metrics Dashboard</SectionTitle>
+        <SectionTitle>{displayNumber} Key Metrics Dashboard</SectionTitle>
         <p
           style={{
             fontFamily: "Inter, sans-serif",

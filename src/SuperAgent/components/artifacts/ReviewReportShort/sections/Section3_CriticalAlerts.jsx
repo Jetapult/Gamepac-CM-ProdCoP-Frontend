@@ -101,8 +101,10 @@ const AlertCard = ({ type, value, description, valueColor = "#191919" }) => (
   </div>
 );
 
-const Section3_CriticalAlerts = ({ data }) => {
+const Section3_CriticalAlerts = ({ data, sectionNumber }) => {
   if (!data?.alerts || !data.alerts.length) return null;
+
+  const displayNumber = sectionNumber || "3.";
 
   return (
     <div
@@ -120,7 +122,7 @@ const Section3_CriticalAlerts = ({ data }) => {
           gap: "14px",
         }}
       >
-        <SectionTitle>3. Critical Alerts</SectionTitle>
+        <SectionTitle>{displayNumber} Critical Alerts</SectionTitle>
         <p
           style={{
             fontFamily: "Inter, sans-serif",
