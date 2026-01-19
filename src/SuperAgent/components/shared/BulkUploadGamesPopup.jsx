@@ -22,7 +22,7 @@ const BulkUploadGamesPopup = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [uploadedFileInfo, setUploadedFileInfo] = useState(null);
+  const [uploadResult, setUploadResult] = useState(null);
   const fileInputRef = useRef(null);
 
   const formatFileSize = (bytes) => {
@@ -92,14 +92,13 @@ const BulkUploadGamesPopup = ({
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !studio_id) return;
 
     setUploadState(UPLOAD_STATES.UPLOADING);
     setUploadProgress(0);
 
     const formData = new FormData();
     formData.append("file", selectedFile);
-    formData.append("studio_id", studio_id);
 
     try {
       // Simulate progress for better UX
@@ -113,7 +112,7 @@ const BulkUploadGamesPopup = ({
         });
       }, 200);
 
-      const response = await api.post("/v1/games/bulk-upload", formData, {
+      const response = await api.post(`/v1/games/bulk-upload/${studio_id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -122,17 +121,16 @@ const BulkUploadGamesPopup = ({
       clearInterval(progressInterval);
       setUploadProgress(100);
       setUploadState(UPLOAD_STATES.COMPLETED);
-      setUploadedFileInfo({
-        name: selectedFile.name,
-        size: formatFileSize(selectedFile.size),
-      });
+
+      // Store upload result for display
+      setUploadResult(response.data.data);
 
       // Call success callback after a short delay
       setTimeout(() => {
         if (onUploadSuccess) {
           onUploadSuccess(response.data);
         }
-      }, 1000);
+      }, 1500);
     } catch (error) {
       console.error("Upload failed:", error);
       setUploadState(UPLOAD_STATES.ERROR);
@@ -145,7 +143,7 @@ const BulkUploadGamesPopup = ({
     setUploadState(UPLOAD_STATES.IDLE);
     setUploadProgress(0);
     setErrorMessage("");
-    setUploadedFileInfo(null);
+    setUploadResult(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -160,8 +158,10 @@ const BulkUploadGamesPopup = ({
   };
 
   const downloadSampleFormat = () => {
-    // Create sample CSV content
-    const csvContent = "game_name,play_store_url,app_store_url,alias\nSample Game,https://play.google.com/store/apps/details?id=com.example,https://apps.apple.com/app/id123456789,sample-alias";
+    // Create sample CSV content matching API spec
+    const csvContent = `game_name,package_name,app_id,short_names,game_type,playstore_link,appstore_link
+Dream Home Builder,com.example.dreamhome,123456789,DHB,casual,https://play.google.com/store/apps/details?id=com.example.dreamhome,https://apps.apple.com/app/id123456789
+Sunset Escape,com.example.sunset,,SE,puzzle,https://play.google.com/store/apps/details?id=com.example.sunset,`;
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -244,22 +244,52 @@ const BulkUploadGamesPopup = ({
 
       case UPLOAD_STATES.COMPLETED:
         return (
-          <div className="border border-[#E7EAEE] rounded-lg p-4 bg-[#F6F7F8]">
-            <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3">
+            {/* Success Header */}
+            <div className="border border-[#D1FAE5] rounded-lg p-4 bg-[#ECFDF5]">
               <div className="flex items-center gap-3">
                 <CheckCircle size={24} color="#1F6744" />
                 <div>
-                  <p className="text-sm font-medium text-[#141414]">100% Completed</p>
-                  <p className="text-xs text-[#B0B0B0]">Total Files Size: {formatFileSize(selectedFile?.size || 0)}</p>
+                  <p className="text-sm font-medium text-[#141414]">Upload Completed</p>
+                  <p className="text-xs text-[#6d6d6d]">
+                    {uploadResult?.gamesAddedCount || 0} game(s) added successfully
+                  </p>
                 </div>
               </div>
-              <button
-                onClick={() => {/* View uploaded file logic */}}
-                className="text-sm font-medium text-[#1F6744] hover:underline"
-              >
-                View uploaded file
-              </button>
             </div>
+
+            {/* Duplicates Warning */}
+            {uploadResult?.duplicateGames?.length > 0 && (
+              <div className="border border-[#FDE68A] rounded-lg p-4 bg-[#FFFBEB]">
+                <p className="text-sm font-medium text-[#92400E] mb-1">
+                  Duplicates skipped ({uploadResult.duplicateGames.length})
+                </p>
+                <p className="text-xs text-[#B45309]">
+                  {uploadResult.duplicateGames.join(", ")}
+                </p>
+              </div>
+            )}
+
+            {/* Invalid Games Error */}
+            {uploadResult?.invalidGames?.length > 0 && (
+              <div className="border border-[#FECACA] rounded-lg p-4 bg-[#FEF2F2]">
+                <p className="text-sm font-medium text-[#DC2626] mb-1">
+                  Invalid entries ({uploadResult.invalidGames.length})
+                </p>
+                <div className="text-xs text-[#B91C1C] space-y-1">
+                  {uploadResult.invalidGames.slice(0, 3).map((item, idx) => (
+                    <p key={idx}>
+                      <span className="font-medium">{item.game}:</span> {item.reason}
+                    </p>
+                  ))}
+                  {uploadResult.invalidGames.length > 3 && (
+                    <p className="text-[#6d6d6d]">
+                      +{uploadResult.invalidGames.length - 3} more...
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         );
 
@@ -367,7 +397,7 @@ const BulkUploadGamesPopup = ({
                   : "bg-[#1F6744] text-white hover:bg-[#1a5a3a]"
               }`}
             >
-              Submit
+              {uploadState === UPLOAD_STATES.COMPLETED ? "Done" : "Submit"}
             </button>
           </div>
         </div>

@@ -300,13 +300,13 @@ const GamesSettings = ({ studioData }) => {
           <table className="w-full table-fixed">
             <thead>
               <tr className="border-b border-[#f6f6f6]">
-                <th className="w-[48px] px-4 py-3 text-left">
+                {/* <th className="w-[48px] px-4 py-3 text-left">
                   <Checkbox
                     checked={isAllSelected}
                     indeterminate={isIndeterminate}
                     onChange={handleSelectAll}
                   />
-                </th>
+                </th> */}
                 <th className="w-[280px] px-3 py-3 text-left">
                   <span className="font-urbanist font-medium text-[12px] text-[#b0b0b0]">
                     Name
@@ -389,12 +389,12 @@ const GamesSettings = ({ studioData }) => {
                         selectedGames.includes(game.id) ? "bg-[#f1fcf6]" : ""
                       }`}
                     >
-                      <td className="w-[48px] px-4 py-3">
+                      {/* <td className="w-[48px] px-4 py-3">
                         <Checkbox
                           checked={selectedGames.includes(game.id)}
                           onChange={() => handleSelectGame(game.id)}
                         />
-                      </td>
+                      </td> */}
                       <td className="w-[280px] px-3 py-3">
                         <div className="flex items-center gap-3">
                           {game.play_store_icon || game.app_store_icon ? (
@@ -422,8 +422,12 @@ const GamesSettings = ({ studioData }) => {
                       </td>
                       <td className="w-[180px] px-3 py-3">
                         <div className="flex items-center gap-2 flex-wrap">
-                          {game.package_name && <AndroidBadge />}
-                          {game.app_id && <AppleBadge />}
+                          {game.package_name && (
+                            <AndroidBadge url={game.play_store_url} />
+                          )}
+                          {game.app_id && (
+                            <AppleBadge url={game.app_store_url} />
+                          )}
                           {!game.package_name && !game.app_id && (
                             <span className="text-[#b0b0b0] text-[12px]">
                               -
@@ -558,13 +562,13 @@ const GamesSettings = ({ studioData }) => {
             <Plus size={16} /> Weekly Report
           </button>
           <div className="w-px h-6 bg-[#f6f6f6]" />
-          <button
+          {/* <button
             onClick={() => setShowDeleteConfirmation(true)}
             className="flex items-center gap-1 font-urbanist font-medium text-[14px] text-[#f25a5a] hover:opacity-80"
           >
             <TrashBinMinimalistic weight="Linear" size={16} color="#f25a5a" />
             Delete
-          </button>
+          </button> */}
         </div>
       )}
 

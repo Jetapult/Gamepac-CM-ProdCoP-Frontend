@@ -183,18 +183,52 @@ const UsersSettings = ({ studioData }) => {
 
   const handleBulkDelete = async () => {
     try {
-      for (const userId of selectedUsers) {
-        await api.delete(`/v1/users/${studioData?.id}/${userId}`);
-      }
-      setToastMessage({
-        show: true,
-        message: `${selectedUsers.length} user(s) deleted successfully`,
-        type: "success",
+      const response = await api.delete(`/v1/users/bulk-delete/${studioData?.id}`, {
+        data: { user_ids: selectedUsers },
       });
-      setUsers((prev) =>
-        prev.filter((user) => !selectedUsers.includes(user.id))
-      );
-      setSelectedUsers([]);
+
+      const { deleted, failed } = response.data.data || {};
+      const deletedCount = deleted?.length || 0;
+      const failedCount = failed?.length || 0;
+
+      // Remove successfully deleted users from the list
+      if (deletedCount > 0) {
+        // Get IDs of deleted users by matching emails
+        const deletedUserIds = users
+          .filter((user) => deleted?.includes(user.email))
+          .map((user) => user.id);
+
+        setUsers((prev) =>
+          prev.filter((user) => !deletedUserIds.includes(user.id))
+        );
+        setSelectedUsers((prev) =>
+          prev.filter((id) => !deletedUserIds.includes(id))
+        );
+      }
+
+      // Show appropriate toast message
+      if (failedCount > 0 && deletedCount > 0) {
+        const failedReasons = failed.map((f) => f.reason).join(", ");
+        setToastMessage({
+          show: true,
+          message: `${deletedCount} user(s) deleted. ${failedCount} failed: ${failedReasons}`,
+          type: "warning",
+        });
+      } else if (failedCount > 0) {
+        const failedReasons = failed.map((f) => f.reason).join(", ");
+        setToastMessage({
+          show: true,
+          message: `Failed to delete users: ${failedReasons}`,
+          type: "error",
+        });
+      } else {
+        setToastMessage({
+          show: true,
+          message: response.data.message || `${deletedCount} user(s) deleted successfully`,
+          type: "success",
+        });
+      }
+
       setShowDeleteConfirmation(false);
     } catch (err) {
       console.error("Failed to delete users:", err);

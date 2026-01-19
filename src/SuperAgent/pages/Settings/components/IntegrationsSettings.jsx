@@ -6,6 +6,9 @@ import {
   DangerTriangle,
   SquareTopDown,
   Paperclip,
+  AltArrowDown,
+  AltArrowUp,
+  CloseCircle,
 } from "@solar-icons/react";
 import appStoreIcon from "../../../../assets/super-agents/app-store-icon.svg";
 import playStoreIcon from "../../../../assets/super-agents/google-play-store-icon.svg";
@@ -27,7 +30,7 @@ const ALL_INTEGRATIONS = [
     description:
       "Fetch player reviews, ratings, and performance metrics to identify sentiment trends and feature impact.",
     icon: playStoreIcon,
-    documentationUrl: "https://play.google.com/console",
+    documentationUrl: "https://developers.google.com/android-publisher",
     configureUrl: "https://play.google.com/console",
     configFields: [], // Play Store uses OAuth, no manual config needed
   },
@@ -38,19 +41,19 @@ const ALL_INTEGRATIONS = [
     description:
       "Analyze user feedback and update history to generate insights for product improvements and release notes.",
     icon: appStoreIcon,
-    documentationUrl: "https://appstoreconnect.apple.com",
+    documentationUrl: "https://developer.apple.com/documentation/appstoreconnectapi",
     configFields: [
       {
         id: "apple_key_id",
         label: "Key ID",
         type: "text",
-        placeholder: "QN33C4AAK9",
+        placeholder: "",
       },
       {
         id: "apple_issuer_id",
         label: "Issuer ID",
         type: "text",
-        placeholder: "69a6de7f-f903-47e3-e053-5b8c7c11a4d1",
+        placeholder: "",
       },
       {
         id: "private_key_file",
@@ -70,12 +73,25 @@ const IntegrationCard = ({
   onConfigure,
   onGoToConfigure,
 }) => {
+  const [isGamesListExpanded, setIsGamesListExpanded] = useState(false);
+
   const status = integrationData?.status || INTEGRATION_STATUS.NOT_CONFIGURED;
   const hasConfigFields = integration.configFields?.length > 0;
   const isConnected = status === INTEGRATION_STATUS.CONNECTED;
+  const needsConfiguration = integrationData?.keysConfigured === false;
   const needsDetails =
     status === INTEGRATION_STATUS.WARNING ||
-    status === INTEGRATION_STATUS.NOT_CONFIGURED;
+    status === INTEGRATION_STATUS.NOT_CONFIGURED ||
+    needsConfiguration;
+
+  // Stats and games from API
+  const totalGames = integrationData?.totalGames || 0;
+  const connectedGames = integrationData?.connectedGames || 0;
+  const games = integrationData?.games || [];
+
+  // Separate games by status
+  const connectedGamesList = games.filter((g) => g.status === "connected");
+  const errorGamesList = games.filter((g) => g.status === "error");
 
   return (
     <div className="border border-[#f6f6f6] rounded-lg p-6">
@@ -91,9 +107,9 @@ const IntegrationCard = ({
               />
             </div>
             {/* Status indicator dot */}
-            {isConnected && (
+            {isConnected && !needsConfiguration && (
               <div className="absolute -bottom-1 -right-1">
-                <CheckCircle weight="Bold" size={16} color="#1F6744" />
+                <CheckCircle weight="Bold" size={16} color="#00A251" />
               </div>
             )}
             {needsDetails && hasConfigFields && (
@@ -113,10 +129,32 @@ const IntegrationCard = ({
 
           {/* Action links */}
           <div className="flex flex-col gap-3 mt-4">
-            {isConnected ? (
-              <span className="font-urbanist font-medium text-sm text-[#1F6744]">
-                Connected
-              </span>
+            {isConnected && !needsConfiguration ? (
+              <div className="flex flex-col gap-1">
+                <span className="font-urbanist font-medium text-sm text-[#00A251]">
+                  Connected
+                </span>
+                {totalGames > 0 && (
+                  <button
+                    onClick={() => setIsGamesListExpanded(!isGamesListExpanded)}
+                    className="flex items-center gap-1 font-urbanist text-xs text-[#6d6d6d] hover:text-[#141414] transition-colors"
+                  >
+                    {connectedGames} of {totalGames} games connected
+                    {isGamesListExpanded ? (
+                      <AltArrowUp weight="Linear" size={14} />
+                    ) : (
+                      <AltArrowDown weight="Linear" size={14} />
+                    )}
+                  </button>
+                )}
+              </div>
+            ) : needsConfiguration && hasConfigFields ? (
+              <button
+                onClick={() => onConfigure?.(integration)}
+                className="font-urbanist font-medium text-sm text-[#916603] hover:underline text-left"
+              >
+                Go to configure
+              </button>
             ) : hasConfigFields ? (
               <button
                 onClick={() => onConfigure?.(integration)}
@@ -135,13 +173,13 @@ const IntegrationCard = ({
             )}
 
             <a
-              href={integration.documentationUrl}
+              href={`/super-agent/settings/integrations/${integration.slug}/documentation`}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-urbanist font-medium text-sm text-[#141414] hover:underline flex items-center gap-1"
+              className="font-urbanist font-medium text-sm text-[#1F6744] hover:underline flex items-center gap-1"
             >
               Check documentation
-              <SquareTopDown weight={"Linear"} size={16} color="#141414" />
+              <SquareTopDown weight={"Linear"} size={16} color="#1F6744" />
             </a>
           </div>
         </div>
@@ -152,10 +190,62 @@ const IntegrationCard = ({
             onClick={() => onConfigure?.(integration)}
             className="px-4 py-2 border border-[#141414] rounded-lg font-urbanist font-medium text-sm text-[#141414] hover:bg-[#f6f6f6] transition-colors"
           >
-            {isConnected ? "Edit details" : "Add details"}
+            {isConnected && !needsConfiguration ? "Edit details" : "Add details"}
           </button>
         )}
       </div>
+
+      {/* Expandable Games List */}
+      {isGamesListExpanded && games.length > 0 && (
+        <div className="mt-6 pt-6 border-t border-[#f6f6f6]">
+          <div className="flex flex-col gap-4">
+            {/* Connected Games */}
+            {connectedGamesList.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <h5 className="font-urbanist font-medium text-sm text-[#141414] flex items-center gap-2">
+                  <CheckCircle weight="Bold" size={14} color="#00A251" />
+                  Connected ({connectedGamesList.length})
+                </h5>
+                <div className="flex flex-wrap gap-2">
+                  {connectedGamesList.map((game) => (
+                    <span
+                      key={game.game_id}
+                      className="inline-flex items-center px-3 py-1.5 bg-[#f0fdf4] border border-[#bbf7d0] rounded-full text-xs font-urbanist text-[#166534]"
+                    >
+                      {game.game_name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Error Games */}
+            {errorGamesList.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <h5 className="font-urbanist font-medium text-sm text-[#141414] flex items-center gap-2">
+                  <CloseCircle weight="Bold" size={14} color="#f25a5a" />
+                  Errors ({errorGamesList.length})
+                </h5>
+                <div className="flex flex-col gap-1.5">
+                  {errorGamesList.map((game) => (
+                    <div
+                      key={game.game_id}
+                      className="flex items-start gap-2 px-3 py-2 bg-[#fef2f2] border border-[#fecaca] rounded-lg"
+                    >
+                      <span className="font-urbanist text-xs font-medium text-[#991b1b] shrink-0">
+                        {game.game_name}
+                      </span>
+                      <span className="font-urbanist text-xs text-[#b91c1c]">
+                        — {game.error}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -368,7 +458,7 @@ const AppStoreConfigForm = ({
               value={getDisplayValue("apple_key_id")}
               onChange={(e) => handleInputChange("apple_key_id", e.target.value)}
               onFocus={() => handleInputFocus("apple_key_id")}
-              placeholder="QN33C4AAK9"
+              placeholder=""
               className={`px-4 py-3 border rounded-lg font-urbanist text-sm text-[#141414] placeholder:text-[#B0B0B0] focus:outline-none transition-colors ${
                 errors.apple_key_id
                   ? "border-[#f25a5a]"
@@ -394,7 +484,7 @@ const AppStoreConfigForm = ({
                 handleInputChange("apple_issuer_id", e.target.value)
               }
               onFocus={() => handleInputFocus("apple_issuer_id")}
-              placeholder="69a6de7f-f903-47e3-e053-5b8c7c11a4d1"
+              placeholder=""
               className={`px-4 py-3 border rounded-lg font-urbanist text-sm text-[#141414] placeholder:text-[#B0B0B0] focus:outline-none transition-colors ${
                 errors.apple_issuer_id
                   ? "border-[#f25a5a]"
@@ -504,11 +594,52 @@ const IntegrationsSettings = ({ studioData }) => {
   const [currentView, setCurrentView] = useState("list");
   const [selectedIntegration, setSelectedIntegration] = useState(null);
 
-  // Fetch App Store API keys on mount
+  // Fetch integration status on mount and when studio changes
   useEffect(() => {
-    const fetchAppStoreKeys = async () => {
-      if (!studioData?.id) return;
+    if (!studioData?.id) return;
 
+    // Reset loading state when studio changes
+    setIsLoading(true);
+
+    const fetchIntegrationStatus = async () => {
+
+      try {
+        // Fetch Play Store and App Store status in parallel
+        const [playStoreRes, appStoreRes] = await Promise.all([
+          api.get(`/v1/games/playstore-status/${studioData.id}`).catch(() => null),
+          api.get(`/v1/games/appstore-status/${studioData.id}`).catch(() => null),
+        ]);
+
+        const playStoreData = playStoreRes?.data?.data;
+        const appStoreData = appStoreRes?.data?.data;
+
+        setIntegrationData((prev) => ({
+          ...prev,
+          play_store: {
+            status: playStoreData?.connected
+              ? INTEGRATION_STATUS.CONNECTED
+              : INTEGRATION_STATUS.NOT_CONFIGURED,
+            totalGames: playStoreData?.totalGames || 0,
+            connectedGames: playStoreData?.connectedGames || 0,
+            games: playStoreData?.games || [],
+          },
+          app_store: {
+            status: appStoreData?.connected
+              ? INTEGRATION_STATUS.CONNECTED
+              : INTEGRATION_STATUS.NOT_CONFIGURED,
+            keysConfigured: appStoreData?.keysConfigured,
+            totalGames: appStoreData?.totalGames || 0,
+            connectedGames: appStoreData?.connectedGames || 0,
+            games: appStoreData?.games || [],
+            config: prev.app_store.config,
+          },
+        }));
+      } catch (err) {
+        console.error("Failed to fetch integration status:", err);
+      }
+    };
+
+    const fetchAppStoreKeys = async () => {
       try {
         const response = await api.get(
           `v1/games/apple-api-keys/${studioData.id}`
@@ -519,7 +650,7 @@ const IntegrationsSettings = ({ studioData }) => {
           setIntegrationData((prev) => ({
             ...prev,
             app_store: {
-              status: INTEGRATION_STATUS.CONNECTED,
+              ...prev.app_store,
               config: {
                 id: keysData.id,
                 apple_key_id: keysData.apple_key_id,
@@ -531,12 +662,19 @@ const IntegrationsSettings = ({ studioData }) => {
       } catch (err) {
         // No existing keys found - keep as NOT_CONFIGURED
         console.log("No App Store keys found for this studio");
+      }
+    };
+
+    // Fetch both status and keys, then stop loading
+    const fetchAllData = async () => {
+      try {
+        await Promise.all([fetchIntegrationStatus(), fetchAppStoreKeys()]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAppStoreKeys();
+    fetchAllData();
   }, [studioData?.id]);
 
   // Handle opening configuration form
@@ -608,17 +746,42 @@ const IntegrationsSettings = ({ studioData }) => {
     );
   }
 
-  // Loading state
+  // Loading state - Skeleton cards
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
         <h3 className="font-urbanist font-semibold text-[18px] text-[#141414]">
           Integrations
         </h3>
-        <div className="flex items-center justify-center py-12">
-          <span className="font-urbanist text-sm text-[#6d6d6d]">
-            Loading integrations...
-          </span>
+        <div className="flex flex-col gap-4">
+          {/* Skeleton cards */}
+          {[1, 2].map((item) => (
+            <div
+              key={item}
+              className="border border-[#f6f6f6] rounded-lg p-6 animate-pulse"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex flex-col gap-3">
+                  {/* Icon skeleton */}
+                  <div className="size-[50px] rounded-lg bg-[#E7EAEE]" />
+                  {/* Title skeleton */}
+                  <div className="h-5 w-28 bg-[#E7EAEE] rounded" />
+                  {/* Description skeleton */}
+                  <div className="flex flex-col gap-2">
+                    <div className="h-4 w-[400px] bg-[#E7EAEE] rounded" />
+                    <div className="h-4 w-[300px] bg-[#E7EAEE] rounded" />
+                  </div>
+                  {/* Action links skeleton */}
+                  <div className="flex flex-col gap-3 mt-4">
+                    <div className="h-4 w-24 bg-[#E7EAEE] rounded" />
+                    <div className="h-4 w-36 bg-[#E7EAEE] rounded" />
+                  </div>
+                </div>
+                {/* Button skeleton */}
+                <div className="h-10 w-28 bg-[#E7EAEE] rounded-lg" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
