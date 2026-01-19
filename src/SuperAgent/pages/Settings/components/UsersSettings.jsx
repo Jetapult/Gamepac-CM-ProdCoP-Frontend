@@ -332,13 +332,13 @@ const UsersSettings = ({ studioData }) => {
           <table className="w-full table-fixed">
             <thead>
               <tr className="border-b border-[#f6f6f6]">
-                <th className="w-[48px] px-4 py-3 text-left">
+                {/* <th className="w-[48px] px-4 py-3 text-left">
                   <Checkbox
                     checked={isAllSelected}
                     indeterminate={isIndeterminate}
                     onChange={handleSelectAll}
                   />
-                </th>
+                </th> */}
                 <th className="w-[200px] px-3 py-3 text-left">
                   <span className="font-urbanist font-medium text-[12px] text-[#b0b0b0]">
                     Name
@@ -421,12 +421,12 @@ const UsersSettings = ({ studioData }) => {
                         selectedUsers.includes(user.id) ? "bg-[#f1fcf6]" : ""
                       }`}
                     >
-                      <td className="w-[48px] px-4 py-3">
+                      {/* <td className="w-[48px] px-4 py-3">
                         <Checkbox
                           checked={selectedUsers.includes(user.id)}
                           onChange={() => handleSelectUser(user.id)}
                         />
-                      </td>
+                      </td> */}
                       <td className="w-[200px] px-3 py-3">
                         <div className="flex items-center gap-3">
                           {user.profile_pic ? (
