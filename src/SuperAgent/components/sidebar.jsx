@@ -439,12 +439,21 @@ const Sidebar = () => {
           }`}
         >
           <button
-            className={`flex items-center gap-2 text-[#141414] hover:opacity-80 transition-opacity ${
+            onClick={() => navigate("/super-agent/settings")}
+            className={`flex items-center gap-2 text-[#141414] hover:opacity-80 transition-opacity cursor-pointer ${
               isSiderbarOpen ? "" : "justify-center"
+            } ${
+              location.pathname.startsWith("/super-agent/settings")
+                ? "bg-[#F1FCF6] rounded-[4px] p-1.5"
+                : ""
             }`}
           >
-            <div className="w-6 h-6 flex items-center justify-center shrink-0">
-              <UserRounded weight={"Linear"} className="w-6 h-6 #1C274C" />
+            <div className={`w-6 h-6 flex items-center justify-center shrink-0 ${
+              location.pathname.startsWith("/super-agent/settings")
+                ? ""
+                : ""
+            }`}>
+              <UserRounded weight={"Linear"} className="w-6 h-6" color={location.pathname.startsWith("/super-agent/settings") ? "#1C274C" : "#6D6D6D"} />
             </div>
             {isSiderbarOpen && (
               <span className="font-urbanist font-medium text-[16px] whitespace-nowrap">

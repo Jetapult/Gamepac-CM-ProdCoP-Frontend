@@ -1,25 +1,27 @@
 import React from "react";
+import { CheckSquare, Stop } from "@solar-icons/react";
 
-const Checkbox = ({ checked, onChange, className = "" }) => (
-  <div
-    className={`w-4 h-4 border rounded ${
-      checked ? "bg-[#1f6744] border-[#1f6744]" : "border-[#d9dee4] bg-white"
-    } flex items-center justify-center cursor-pointer ${className}`}
-    onClick={() => onChange?.(!checked)}
-  >
-    {checked && (
-      <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-        <path
-          d="M1 4L3.5 6.5L9 1"
-          stroke="white"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    )}
-  </div>
-);
+const Checkbox = ({ checked, onChange, className = "" }) => {
+  if (checked) {
+    return (
+      <div
+        onClick={() => onChange?.(!checked)}
+        className={`cursor-pointer ${className}`}
+      >
+        <CheckSquare weight="Bold" size={20} color="#1f6744" />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onClick={() => onChange?.(!checked)}
+      className={`cursor-pointer ${className}`}
+    >
+      <Stop weight="Linear" size={20} color="#d9dee2" />
+    </div>
+  );
+};
 
 export default Checkbox;
 

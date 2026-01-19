@@ -1,6 +1,7 @@
 import React from "react";
 import { AltArrowDown } from "@solar-icons/react";
 import FilterTag from "./FilterTag";
+import Checkbox from "./Checkbox";
 
 const MultiSelectDropdown = ({
   label,
@@ -61,38 +62,13 @@ const MultiSelectDropdown = ({
                       className="px-4 py-2 hover:bg-[#f6f7f8] cursor-pointer transition-colors flex items-center gap-2"
                       onClick={() => {
                         if (isSelected) {
-                          // If already selected, remove it (uncheck)
                           onRemove(option);
                         } else {
-                          // If not selected, add it (check)
                           onSelect(option);
                         }
                       }}
                     >
-                      <div
-                        className={`w-4 h-4 border rounded flex items-center justify-center ${
-                          isSelected
-                            ? "bg-[#1f6744] border-[#1f6744]"
-                            : "border-[#d9dee4] bg-white"
-                        }`}
-                      >
-                        {isSelected && (
-                          <svg
-                            width="10"
-                            height="8"
-                            viewBox="0 0 10 8"
-                            fill="none"
-                          >
-                            <path
-                              d="M1 4L3.5 6.5L9 1"
-                              stroke="white"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        )}
-                      </div>
+                      <Checkbox checked={isSelected} />
                       <span className="font-urbanist text-sm text-[#141414]">
                         {option.label || option.name}
                       </span>
