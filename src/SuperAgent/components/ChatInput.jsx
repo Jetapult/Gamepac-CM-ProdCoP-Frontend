@@ -19,8 +19,11 @@ import {
   getFileTypeFromName,
   isImageFile,
   isVideoFile,
+  isLiveopsSupported,
   MAX_ATTACHMENTS,
   ALLOWED_EXTENSIONS,
+  LIVEOPS_SUPPORTED_EXTENSIONS,
+  FINOPS_SUPPORTED_EXTENSIONS,
 } from "../../services/superAgentApi";
 import { useSelector, useDispatch } from "react-redux";
 import { setSelectedTemplate } from "../../store/reducer/superAgent";
@@ -386,11 +389,22 @@ const ChatInput = ({
     }
 
     for (const file of filesToUpload) {
+      const ext = file.name.split(".").pop()?.toLowerCase();
+
       // For finops agent, only allow CSV files
       if (agentSlug === "finops") {
-        const ext = file.name.split(".").pop()?.toLowerCase();
         if (ext !== "csv") {
           setUploadError("FinOps agent only accepts CSV files.");
+          continue;
+        }
+      }
+
+      // For liveops agent, only allow supported file types
+      if (agentSlug === "liveops") {
+        if (!isLiveopsSupported(ext)) {
+          setUploadError(
+            `LiveOps agent only accepts: ${LIVEOPS_SUPPORTED_EXTENSIONS.join(", ")}`,
+          );
           continue;
         }
       }
@@ -777,7 +791,13 @@ const ChatInput = ({
                       accept={
                         agentSlug === "finops"
                           ? ".csv"
-                          : ALLOWED_EXTENSIONS.map((ext) => `.${ext}`).join(",")
+                          : agentSlug === "liveops"
+                            ? LIVEOPS_SUPPORTED_EXTENSIONS.map(
+                                (ext) => `.${ext}`,
+                              ).join(",")
+                            : ALLOWED_EXTENSIONS.map((ext) => `.${ext}`).join(
+                                ",",
+                              )
                       }
                       multiple
                     />

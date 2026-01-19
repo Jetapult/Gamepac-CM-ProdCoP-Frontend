@@ -98,7 +98,7 @@ export const isVideoFile = (fileType) => {
 };
 
 // Liveops agent supported file types (forwarded directly to liveops agent)
-const LIVEOPS_SUPPORTED_EXTENSIONS = [
+export const LIVEOPS_SUPPORTED_EXTENSIONS = [
   "pdf",
   "docx",
   "doc",
@@ -114,7 +114,7 @@ export const isLiveopsSupported = (fileType) => {
 };
 
 // Finops agent only accepts CSV files
-const FINOPS_SUPPORTED_EXTENSIONS = ["csv"];
+export const FINOPS_SUPPORTED_EXTENSIONS = ["csv"];
 
 export const isFinopsSupported = (fileType) => {
   return FINOPS_SUPPORTED_EXTENSIONS.includes(fileType?.toLowerCase());
