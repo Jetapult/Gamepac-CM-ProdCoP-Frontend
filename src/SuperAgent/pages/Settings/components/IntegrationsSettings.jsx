@@ -758,7 +758,7 @@ const IntegrationsSettings = ({ studioData }) => {
           {[1, 2].map((item) => (
             <div
               key={item}
-              className="border border-[#f6f6f6] rounded-lg p-6 animate-pulse"
+              className="border border-[#f6f6f6] rounded-lg p-6"
             >
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-3">
