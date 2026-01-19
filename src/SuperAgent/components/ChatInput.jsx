@@ -11,6 +11,8 @@ import {
 } from "@solar-icons/react";
 import {
   uploadAttachment,
+  uploadLiveopsAttachment,
+  createLiveopsSession,
   validateFile,
   getFileTypeFromName,
   isImageFile,
@@ -295,7 +297,14 @@ const AttachmentPreview = ({ attachment, onRemove }) => {
   );
 };
 
-const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
+const ChatInput = ({
+  onSendMessage,
+  isThinking = false,
+  onStop,
+  agentSlug = "",
+  liveopsSessionId = null,
+  onLiveopsSessionCreated = null,
+}) => {
   const dispatch = useDispatch();
   const [inputValue, setInputValue] = useState("");
   const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
@@ -308,7 +317,7 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
   const selectedTemplate = useSelector(
-    (state) => state.superAgent.selectedTemplate
+    (state) => state.superAgent.selectedTemplate,
   );
   const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
   const userRef = useRef(null);
@@ -368,7 +377,7 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
     const filesToUpload = files.slice(0, remainingSlots);
     if (files.length > remainingSlots) {
       setUploadError(
-        `Only ${remainingSlots} more file(s) can be added. Max ${MAX_ATTACHMENTS} attachments.`
+        `Only ${remainingSlots} more file(s) can be added. Max ${MAX_ATTACHMENTS} attachments.`,
       );
     }
 
@@ -412,34 +421,90 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
 
     setIsUploading(true);
 
+    // For liveops agent, ensure we have a session before uploading
+    let currentSessionId = liveopsSessionId;
+    if (agentSlug === "liveops" && !currentSessionId) {
+      try {
+        const sessionResponse = await createLiveopsSession();
+        if (sessionResponse.success && sessionResponse.data?.session_id) {
+          currentSessionId = sessionResponse.data.session_id;
+          if (onLiveopsSessionCreated) {
+            onLiveopsSessionCreated(currentSessionId);
+          }
+          console.log(
+            "[Liveops] Created session for upload:",
+            currentSessionId,
+          );
+        }
+      } catch (err) {
+        console.error("[Liveops] Failed to create session:", err);
+        setUploadError("Failed to create liveops session for upload");
+        setIsUploading(false);
+        return;
+      }
+    }
+
     while (uploadQueueRef.current.length > 0) {
       const { tempId, file } = uploadQueueRef.current.shift();
 
       try {
-        const response = await uploadAttachment(file, (progress) => {
+        let response;
+        const progressCallback = (progress) => {
           setAttachments((prev) =>
             prev.map((att) =>
-              att.tempId === tempId ? { ...att, progress } : att
-            )
+              att.tempId === tempId ? { ...att, progress } : att,
+            ),
           );
-        });
+        };
 
-        if (response.success && response.data) {
-          setAttachments((prev) =>
-            prev.map((att) =>
-              att.tempId === tempId
-                ? {
-                    ...att,
-                    status: "uploaded",
-                    progress: 100,
-                    id: response.data.id,
-                    file_url: response.data.file_url,
-                  }
-                : att
-            )
+        // Use liveops upload endpoint for liveops agent
+        if (agentSlug === "liveops" && currentSessionId) {
+          response = await uploadLiveopsAttachment(
+            file,
+            currentSessionId,
+            progressCallback,
           );
+          // Liveops response has different structure: { attachment, liveops_uploaded, description }
+          if (response.success && response.data) {
+            const { attachment, liveops_uploaded, description } = response.data;
+            setAttachments((prev) =>
+              prev.map((att) =>
+                att.tempId === tempId
+                  ? {
+                      ...att,
+                      status: "uploaded",
+                      progress: 100,
+                      id: attachment.id,
+                      file_url: attachment.file_url,
+                      liveops_uploaded,
+                      description, // Description for non-liveops-supported files
+                    }
+                  : att,
+              ),
+            );
+          } else {
+            throw new Error("Upload failed");
+          }
         } else {
-          throw new Error("Upload failed");
+          // Standard upload for other agents
+          response = await uploadAttachment(file, progressCallback);
+          if (response.success && response.data) {
+            setAttachments((prev) =>
+              prev.map((att) =>
+                att.tempId === tempId
+                  ? {
+                      ...att,
+                      status: "uploaded",
+                      progress: 100,
+                      id: response.data.id,
+                      file_url: response.data.file_url,
+                    }
+                  : att,
+              ),
+            );
+          } else {
+            throw new Error("Upload failed");
+          }
         }
       } catch (error) {
         console.error("Upload error:", error);
@@ -447,11 +512,11 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
           prev.map((att) =>
             att.tempId === tempId
               ? { ...att, status: "error", progress: 0 }
-              : att
-          )
+              : att,
+          ),
         );
         setUploadError(
-          error.response?.data?.message || "Failed to upload file"
+          error.response?.data?.message || "Failed to upload file",
         );
       }
     }
@@ -468,7 +533,7 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
       return prev.filter((att) => att.tempId !== tempId);
     });
     uploadQueueRef.current = uploadQueueRef.current.filter(
-      (item) => item.tempId !== tempId
+      (item) => item.tempId !== tempId,
     );
   };
 
@@ -476,7 +541,7 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
     const hasContent =
       inputValue.trim() || attachments.some((att) => att.status === "uploaded");
     const allUploaded = attachments.every(
-      (att) => att.status === "uploaded" || att.status === "error"
+      (att) => att.status === "uploaded" || att.status === "error",
     );
 
     if (
@@ -637,7 +702,7 @@ const ChatInput = ({ onSendMessage, isThinking = false, onStop }) => {
                       className="hidden"
                       onChange={handleFileSelect}
                       accept={ALLOWED_EXTENSIONS.map((ext) => `.${ext}`).join(
-                        ","
+                        ",",
                       )}
                       multiple
                     />

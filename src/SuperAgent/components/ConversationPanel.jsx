@@ -11,6 +11,7 @@ import {
   getAgentDisplayName,
 } from "../utils/eventHandlers";
 import api from "@/api";
+import { createLiveopsSession } from "../../services/superAgentApi";
 
 const ConversationPanel = ({
   chatId,
@@ -35,10 +36,11 @@ const ConversationPanel = ({
   const [chatNotFound, setChatNotFound] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [messageVersions, setMessageVersions] = useState({}); // { parentId: { versions: [msg1, msg2], activeIndex: 1 } }
+  const [liveopsSessionId, setLiveopsSessionId] = useState(null); // Liveops agent session ID
   const messagesEndRef = useRef(null);
   const selectedGame = useSelector((state) => state.superAgent.selectedGame);
   const ContextStudioData = useSelector(
-    (state) => state.admin.ContextStudioData
+    (state) => state.admin.ContextStudioData,
   );
   const initialQuerySentRef = useRef(false);
   const abortControllerRef = useRef(null);
@@ -57,15 +59,18 @@ const ConversationPanel = ({
   }, [onThinkingChange]);
 
   // Fetch chat details to get agent_slug for existing chats
+  // Returns the agent_slug so it can be used by fetchChatHistory
   const fetchChatDetails = useCallback(async () => {
-    if (!chatId || propAgentSlug) return; // Skip if we already have agent slug from prop
+    if (!chatId) return null;
+    if (propAgentSlug) return propAgentSlug; // Return prop if available
 
     try {
       const response = await api.get(`/v1/superagent/chats/${chatId}`);
       const result = response.data;
       if (result.success && result.data) {
-        if (result.data.data?.agent_slug) {
-          setFetchedAgentSlug(result.data.data.agent_slug);
+        const agentSlugFromApi = result.data.data?.agent_slug || "";
+        if (agentSlugFromApi) {
+          setFetchedAgentSlug(agentSlugFromApi);
         }
         if (result.data.title && onTitleUpdate) {
           onTitleUpdate(result.data.title);
@@ -73,6 +78,7 @@ const ConversationPanel = ({
         if (onPublicUpdate) {
           onPublicUpdate(result.data.is_public || false);
         }
+        return agentSlugFromApi;
       }
     } catch (error) {
       if (error.response?.status === 404) {
@@ -83,85 +89,95 @@ const ConversationPanel = ({
         console.error("Failed to fetch chat details:", error);
       }
     }
+    return null;
   }, [chatId, propAgentSlug]);
 
   // Fetch chat history on mount
-  const fetchChatHistory = useCallback(async () => {
-    if (!chatId || historyFetchedRef.current) return;
+  // Accepts agentSlugOverride to ensure we have the correct agent slug from fetchChatDetails
+  const fetchChatHistory = useCallback(
+    async (agentSlugOverride) => {
+      if (!chatId || historyFetchedRef.current) return;
 
-    setIsLoadingHistory(true);
-    try {
-      const response = await api.get(
-        `/v1/superagent/chats/${chatId}/messages`,
-        { params: { limit: 50, offset: 0 } }
-      );
+      const effectiveAgentSlug = agentSlugOverride || agentSlug;
 
-      const result = response.data;
-      if (result.success && result.data) {
-        // Track the latest artifact to restore in preview panel
-        let latestArtifact = null;
+      setIsLoadingHistory(true);
+      try {
+        const response = await api.get(
+          `/v1/superagent/chats/${chatId}/messages`,
+          { params: { limit: 50, offset: 0 } },
+        );
 
-        // Transform API messages to our format
-        const transformedMessages = result.data
-          .map((msg) => {
-            if (msg.sender === "user") {
-              return {
-                id: msg.id,
-                sender: "user",
-                type: "text",
-                data: {
-                  content: msg.data?.content || "",
-                  attachments: msg.data?.attachments || [],
-                },
-              };
-            } else if (msg.sender === "agent") {
-              // For agent messages, process raw_events using the same handlers as streaming
-              const rawEvents = msg.data?.raw_events || [];
-              const processedMessages = [];
+        const result = response.data;
+        if (result.success && result.data) {
+          // Track the latest artifact to restore in preview panel
+          let latestArtifact = null;
 
-              for (const event of rawEvents) {
-                const message = processEventHandler(event, {
-                  agentSlug,
-                  onStructuredArtifactUpdate: (type, data) => {
-                    // Capture the latest artifact for restoration
-                    latestArtifact = { type, data };
+          // Transform API messages to our format
+          const transformedMessages = result.data
+            .map((msg) => {
+              if (msg.sender === "user") {
+                return {
+                  id: msg.id,
+                  sender: "user",
+                  type: "text",
+                  data: {
+                    content: msg.data?.content || "",
+                    attachments: msg.data?.attachments || [],
                   },
-                });
-                if (message) {
-                  processedMessages.push({
-                    ...message,
-                    id: `${msg.id}-${processedMessages.length}`,
-                    apiMessageId: msg.id, // Store original API message ID for regenerate
+                };
+              } else if (msg.sender === "agent") {
+                // For agent messages, process raw_events using the same handlers as streaming
+                const rawEvents = msg.data?.raw_events || [];
+                const processedMessages = [];
+
+                for (const event of rawEvents) {
+                  const message = processEventHandler(event, {
+                    agentSlug: effectiveAgentSlug,
+                    onStructuredArtifactUpdate: (type, data) => {
+                      // Capture the latest artifact for restoration
+                      latestArtifact = { type, data };
+                    },
                   });
+                  if (message) {
+                    processedMessages.push({
+                      ...message,
+                      id: `${msg.id}-${processedMessages.length}`,
+                      apiMessageId: msg.id, // Store original API message ID for regenerate
+                    });
+                  }
                 }
+
+                // Return array of messages (will be flattened later)
+                return processedMessages.length > 0 ? processedMessages : null;
               }
+              return null;
+            })
+            .filter(Boolean)
+            .flat(); // Flatten arrays from agent messages
 
-              // Return array of messages (will be flattened later)
-              return processedMessages.length > 0 ? processedMessages : null;
-            }
-            return null;
-          })
-          .filter(Boolean)
-          .flat(); // Flatten arrays from agent messages
+          setMessages(transformedMessages);
+          historyFetchedRef.current = true;
 
-        setMessages(transformedMessages);
-        historyFetchedRef.current = true;
-
-        // Restore the latest artifact in the preview panel
-        if (latestArtifact && onStructuredArtifactUpdate) {
-          onStructuredArtifactUpdate(latestArtifact.type, latestArtifact.data);
+          // Restore the latest artifact in the preview panel
+          if (latestArtifact && onStructuredArtifactUpdate) {
+            onStructuredArtifactUpdate(
+              latestArtifact.type,
+              latestArtifact.data,
+            );
+          }
         }
+      } catch (error) {
+        if (error.response?.status === 403) {
+          if (onAccessDenied) onAccessDenied();
+        } else {
+          console.error("Failed to fetch chat history:", error);
+        }
+      } finally {
+        setIsLoadingHistory(false);
       }
-    } catch (error) {
-      if (error.response?.status === 403) {
-        if (onAccessDenied) onAccessDenied();
-      } else {
-        console.error("Failed to fetch chat history:", error);
-      }
-    } finally {
-      setIsLoadingHistory(false);
-    }
-  }, [chatId, agentSlug, onStructuredArtifactUpdate]);
+    },
+    [chatId, agentSlug, onStructuredArtifactUpdate],
+  );
 
   // Helper to process raw_events into a task structure
   const processRawEventsToTask = (rawEvents) => {
@@ -198,7 +214,7 @@ const ConversationPanel = ({
       if (eventType === "action") {
         const toolName = event.tool_name || "action";
         const existingAction = actions.find(
-          (action) => action.toolName === toolName
+          (action) => action.toolName === toolName,
         );
         if (!existingAction) {
           actions.push({
@@ -241,14 +257,19 @@ const ConversationPanel = ({
     setChatNotFound(false);
     setAccessDenied(false);
     setMessageVersions({});
+    setLiveopsSessionId(null);
     historyFetchedRef.current = false;
     initialQuerySentRef.current = false;
   }, [chatId]);
 
   // Fetch chat details and history on mount or chatId change
+  // Chain the calls to ensure agent slug is available before fetching history
   useEffect(() => {
-    fetchChatDetails();
-    fetchChatHistory();
+    const loadChat = async () => {
+      const agentSlugFromDetails = await fetchChatDetails();
+      await fetchChatHistory(agentSlugFromDetails);
+    };
+    loadChat();
   }, [fetchChatDetails, fetchChatHistory]);
 
   const sendMessage = useCallback(
@@ -258,6 +279,23 @@ const ConversationPanel = ({
       if (!selectedGame) {
         setError("Please select a game to continue.");
         return;
+      }
+
+      // For liveops agent, create session if not exists
+      let currentLiveopsSessionId = liveopsSessionId;
+      if (agentSlug === "liveops" && !currentLiveopsSessionId) {
+        try {
+          const sessionResponse = await createLiveopsSession();
+          if (sessionResponse.success && sessionResponse.data?.session_id) {
+            currentLiveopsSessionId = sessionResponse.data.session_id;
+            setLiveopsSessionId(currentLiveopsSessionId);
+            console.log("[Liveops] Created session:", currentLiveopsSessionId);
+          }
+        } catch (err) {
+          console.error("[Liveops] Failed to create session:", err);
+          setError("Failed to create liveops session. Please try again.");
+          return;
+        }
       }
 
       const trimmedContent = content.trim();
@@ -372,9 +410,14 @@ const ConversationPanel = ({
               ...(attachmentIds.length > 0 && {
                 attachment_ids: attachmentIds,
               }),
+              // Liveops-specific: include session ID
+              ...(agentSlug === "liveops" &&
+                currentLiveopsSessionId && {
+                  liveops_session_id: currentLiveopsSessionId,
+                }),
             }),
             signal: abortControllerRef.current.signal,
-          }
+          },
         );
 
         if (!response.ok) {
@@ -386,7 +429,7 @@ const ConversationPanel = ({
           }
           const errorData = await response.json().catch(() => ({}));
           throw new Error(
-            errorData.message || `Request failed. Please try again.`
+            errorData.message || `Request failed. Please try again.`,
           );
         }
 
@@ -447,7 +490,7 @@ const ConversationPanel = ({
         } else {
           console.error("Failed to send message:", error);
           setError(
-            error.message || "Failed to send message. Please try again."
+            error.message || "Failed to send message. Please try again.",
           );
         }
         setIsThinking(false);
@@ -456,7 +499,14 @@ const ConversationPanel = ({
         abortControllerRef.current = null;
       }
     },
-    [chatId, agentSlug, onThinkingChange, selectedGame, ContextStudioData?.slug]
+    [
+      chatId,
+      agentSlug,
+      onThinkingChange,
+      selectedGame,
+      ContextStudioData?.slug,
+      liveopsSessionId,
+    ],
   );
 
   // Regenerate a message
@@ -517,7 +567,7 @@ const ConversationPanel = ({
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
             signal: abortControllerRef.current.signal,
-          }
+          },
         );
 
         if (!response.ok) {
@@ -528,7 +578,7 @@ const ConversationPanel = ({
           }
           const errorData = await response.json().catch(() => ({}));
           throw new Error(
-            errorData.message || `Regenerate failed. Please try again.`
+            errorData.message || `Regenerate failed. Please try again.`,
           );
         }
 
@@ -605,7 +655,7 @@ const ConversationPanel = ({
         } else {
           console.error("Failed to regenerate message:", error);
           setError(
-            error.message || "Failed to regenerate message. Please try again."
+            error.message || "Failed to regenerate message. Please try again.",
           );
         }
         setIsThinking(false);
@@ -614,7 +664,7 @@ const ConversationPanel = ({
         abortControllerRef.current = null;
       }
     },
-    [agentSlug, isThinking, onThinkingChange, onArtifactUpdate]
+    [agentSlug, isThinking, onThinkingChange, onArtifactUpdate],
   );
 
   // Auto-scroll to bottom when messages change
@@ -780,6 +830,9 @@ const ConversationPanel = ({
           onSendMessage={handleSendMessage}
           isThinking={isThinking}
           onStop={stopRequest}
+          agentSlug={agentSlug}
+          liveopsSessionId={liveopsSessionId}
+          onLiveopsSessionCreated={setLiveopsSessionId}
         />
       </div>
     </div>
