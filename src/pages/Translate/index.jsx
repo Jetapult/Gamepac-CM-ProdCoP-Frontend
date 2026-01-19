@@ -103,6 +103,38 @@ const Translate = () => {
   const [uploadHistory, setUploadHistory] = useState([]);
   const [activeTab, setActiveTab] = useState("Text");
 
+  const [wrapperRef, setWrapperRef] = useState(null);
+  useOutsideAlerter(wrapperRef);
+  function useOutsideAlerter(ref) {
+    useEffect(() => {
+      function handleClickOutside(event) {
+        if (ref.current && !ref.current.contains(event.target)) {
+          setShowLanguages(false);
+        }
+      }
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [ref]);
+  }
+  const [selectedGender, setSelectedGender] = useState(genders[0]);
+  const [showGender, setShowGender] = useState(false);
+  const [selectedContextType, setSelectedContextType] = useState(
+    contextTypes[0]
+  );
+  const [showContextType, setShowContextType] = useState(false);
+  const [showAdditionalInstructions, setShowAdditionalInstructions] =
+    useState(false);
+  const [additionalInstructions, setAdditionalInstructions] = useState("");
+  const [showLLMs, setShowLLMs] = useState(false);
+  const [selectedLLM, setSelectedLLM] = useState(LLM[0]);
+  const [showLanguages, setShowLanguages] = useState(false);
+  const [search, setSearch] = useState("");
+  const filteredLanguages = languages.filter((language) =>
+    language.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -125,7 +157,15 @@ const Translate = () => {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("targetLanguage", targetLanguage.code);
-      const response = await api.post("/v1/gen-ai/translate-csv", formData);
+      formData.append("content_type", selectedContextType.code);
+      formData.append("narrator_gender", selectedGender.code);
+      formData.append("additional_context", additionalInstructions);
+  
+      const response = await api.post("/v1/gen-ai/translate-csv", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       setTranslatedData(response.data);
       setTranslating(false);
       if (response?.data?.data) {
@@ -188,15 +228,51 @@ const Translate = () => {
         ))}
       </div>
       <>
-        {activeTab === "CSV" && (
-          <div className="flex gap-4 mb-2">
-            <LanguageSelect
-              languages={languages}
-              targetLanguage={targetLanguage}
-              setTargetLanguage={setTargetLanguage}
-            />
-          </div>
-        )}
+      {activeTab === "CSV" && (
+          <>
+            <div className="flex flex-row items-end gap-2 mb-2" ref={wrapperRef}>
+              <GenderSelect
+                selectedGender={selectedGender}
+                setSelectedGender={setSelectedGender}
+                wrapperRef={wrapperRef}
+                showGender={showGender}
+                setShowGender={setShowGender}
+              />
+              <ContextTypeSelect
+                selectedContextType={selectedContextType}
+                setSelectedContextType={setSelectedContextType}
+                wrapperRef={wrapperRef}
+                showContextType={showContextType}
+                setShowContextType={setShowContextType}
+              />
+              <LanguageSelect
+                languages={languages}
+                targetLanguage={targetLanguage}
+                setTargetLanguage={setTargetLanguage}
+              />
+              {!showAdditionalInstructions && (
+                <div className="mb-[8px]">
+                  <span
+                    className="text-sm text-gray-500 cursor-pointer "
+                    onClick={() => setShowAdditionalInstructions(true)}
+                  >
+                    <PlusCircleIcon className="w-4 h-4 inline mb-[1px]" /> Additional context
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {showAdditionalInstructions && (
+              <textarea
+                className="w-full border border-gray-300 rounded p-2 mb-2 outline-none text-sm"
+                value={additionalInstructions}
+                onChange={(e) => setAdditionalInstructions(e.target.value)}
+                placeholder="Additional context"
+              />
+            )}
+          </>
+       )}
+
         {activeTab === "CSV" ? (
           <div className="border border-gray-300 rounded-md">
             <div className="w-2/4 py-5 mx-auto">
@@ -306,6 +382,96 @@ const Translate = () => {
     </div>
   );
 };
+
+const GenderSelect = ({ selectedGender, setSelectedGender, wrapperRef, showGender, setShowGender }) => (
+  <div className="relative mt-2 min-w-28">
+    <button
+      type="button"
+      className="relative w-full cursor-default rounded-md bg-white py-1.5 px-2 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-[#f3f3f3]"
+      onClick={() => setShowGender(!showGender)}
+    >
+      <span className="flex items-center justify-between">
+        <span className="block truncate">{selectedGender?.name}</span>
+        <ChevronDownIcon className="w-6 h-6 text-gray-500 inline ml-3" />
+      </span>
+    </button>
+    {showGender && (
+      <ul
+        className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5"
+        ref={wrapperRef}
+      >
+        {genders.map((gender) => (
+          <li
+            key={gender.id}
+            className="cursor-pointer select-none py-2 px-3 hover:bg-[#f3f3f3]"
+            onClick={() => {
+              setSelectedGender(gender);
+              setShowGender(false);
+            }}
+          >
+            {gender.name}
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+);
+
+const ContextTypeSelect = ({ selectedContextType, setSelectedContextType, wrapperRef, showContextType, setShowContextType }) => (
+  <div className="relative mt-2 min-w-28">
+    <button
+      type="button"
+      className="relative w-full cursor-default rounded-md bg-white py-1.5 px-2 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-[#f3f3f3]"
+      onClick={() => setShowContextType(!showContextType)}
+    >
+      <span className="flex items-center justify-between">
+        <span className="block truncate">{selectedContextType?.name}</span>
+        <ChevronDownIcon className="w-6 h-6 text-gray-500 inline ml-3" />
+      </span>
+    </button>
+    {showContextType && (
+      <ul
+        className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5"
+        ref={wrapperRef}
+      >
+        {contextTypes.map((contextType) => (
+          <li
+            key={contextType.id}
+            className="cursor-pointer select-none py-2 px-3 hover:bg-[#f3f3f3]"
+            onClick={() => {
+              setSelectedContextType(contextType);
+              setShowContextType(false);
+            }}
+          >
+            {contextType.name}
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+);
+
+const AdditionalContext = ({ show, setShow, value, setValue }) => (
+  <>
+    {!show && (
+    <span
+      className="text-sm text-gray-500 cursor-pointer"
+      onClick={() => setShow(true)}
+    >
+      <PlusCircleIcon className="w-4 h-4 inline mb-[2px]" /> Additional context
+    </span>
+  )}
+    {show && (
+      <textarea
+        className="w-full border border-gray-300 rounded p-2 mb-2 outline-none text-sm"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Additional context"
+      />
+    )}
+  </>
+);
+
 
 const LanguageSelect = ({ languages, targetLanguage, setTargetLanguage }) => {
   const [showLanguages, setShowLanguages] = useState(false);
@@ -498,6 +664,7 @@ const TextTranslate = ({
     return () =>
       textareaRef?.current?.removeEventListener("input", adjustHeight);
   }, []);
+
   const handleTranslate = async () => {
     try {
       setTranslatedData({});
