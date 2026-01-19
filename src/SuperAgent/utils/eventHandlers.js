@@ -12,7 +12,7 @@ const agentNameMap = {
   gamepac: "GamePac",
   commpac: "CommPac",
   liveops: "LiveOps",
-  "financial-reporting": "FinOps",
+  finops: "FinOps",
 };
 
 // Helper to get agent display name
@@ -104,6 +104,14 @@ const toolTitleMap = {
   update_event: "Updating Event",
   delete_event: "Deleting Event",
   list_events: "Listing Events",
+  // FinOps agent tools
+  generate_financial_report: "Generating Financial Report",
+  analyze_budget_variance: "Analyzing Budget Variance",
+  analyze_ua_performance: "Analyzing UA Performance",
+  calculate_runway: "Calculating Runway",
+  check_financial_alerts: "Checking Financial Alerts",
+  generate_slack_summary: "Generating Slack Summary",
+  load_financial_data: "Loading Financial Data",
 };
 
 // Report tool name to artifact type mapping

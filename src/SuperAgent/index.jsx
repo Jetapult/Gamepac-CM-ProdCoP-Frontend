@@ -64,7 +64,7 @@ export const agents = [
   {
     id: "4",
     name: "Finanacial Reporting",
-    slug: "financial-reporting",
+    slug: "finops",
     icon: <Book2 weight={"Linear"} className="size-[24px]" />,
   },
   {

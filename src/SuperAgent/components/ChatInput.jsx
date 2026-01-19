@@ -12,7 +12,9 @@ import {
 import {
   uploadAttachment,
   uploadLiveopsAttachment,
+  uploadFinopsAttachment,
   createLiveopsSession,
+  createFinopsSession,
   validateFile,
   getFileTypeFromName,
   isImageFile,
@@ -304,6 +306,8 @@ const ChatInput = ({
   agentSlug = "",
   liveopsSessionId = null,
   onLiveopsSessionCreated = null,
+  finopsSessionId = null,
+  onFinopsSessionCreated = null,
 }) => {
   const dispatch = useDispatch();
   const [inputValue, setInputValue] = useState("");
@@ -382,6 +386,15 @@ const ChatInput = ({
     }
 
     for (const file of filesToUpload) {
+      // For finops agent, only allow CSV files
+      if (agentSlug === "finops") {
+        const ext = file.name.split(".").pop()?.toLowerCase();
+        if (ext !== "csv") {
+          setUploadError("FinOps agent only accepts CSV files.");
+          continue;
+        }
+      }
+
       const validation = validateFile(file);
       if (!validation.valid) {
         setUploadError(validation.error);
@@ -422,23 +435,46 @@ const ChatInput = ({
     setIsUploading(true);
 
     // For liveops agent, ensure we have a session before uploading
-    let currentSessionId = liveopsSessionId;
-    if (agentSlug === "liveops" && !currentSessionId) {
+    let currentLiveopsSession = liveopsSessionId;
+    if (agentSlug === "liveops" && !currentLiveopsSession) {
       try {
         const sessionResponse = await createLiveopsSession();
         if (sessionResponse.success && sessionResponse.data?.session_id) {
-          currentSessionId = sessionResponse.data.session_id;
+          currentLiveopsSession = sessionResponse.data.session_id;
           if (onLiveopsSessionCreated) {
-            onLiveopsSessionCreated(currentSessionId);
+            onLiveopsSessionCreated(currentLiveopsSession);
           }
           console.log(
             "[Liveops] Created session for upload:",
-            currentSessionId,
+            currentLiveopsSession,
           );
         }
       } catch (err) {
         console.error("[Liveops] Failed to create session:", err);
         setUploadError("Failed to create liveops session for upload");
+        setIsUploading(false);
+        return;
+      }
+    }
+
+    // For finops agent, ensure we have a session before uploading
+    let currentFinopsSession = finopsSessionId;
+    if (agentSlug === "finops" && !currentFinopsSession) {
+      try {
+        const sessionResponse = await createFinopsSession();
+        if (sessionResponse.success && sessionResponse.data?.session_id) {
+          currentFinopsSession = sessionResponse.data.session_id;
+          if (onFinopsSessionCreated) {
+            onFinopsSessionCreated(currentFinopsSession);
+          }
+          console.log(
+            "[Finops] Created session for upload:",
+            currentFinopsSession,
+          );
+        }
+      } catch (err) {
+        console.error("[Finops] Failed to create session:", err);
+        setUploadError("Failed to create finops session for upload");
         setIsUploading(false);
         return;
       }
@@ -458,13 +494,12 @@ const ChatInput = ({
         };
 
         // Use liveops upload endpoint for liveops agent
-        if (agentSlug === "liveops" && currentSessionId) {
+        if (agentSlug === "liveops" && currentLiveopsSession) {
           response = await uploadLiveopsAttachment(
             file,
-            currentSessionId,
+            currentLiveopsSession,
             progressCallback,
           );
-          // Liveops response has different structure: { attachment, liveops_uploaded, description }
           if (response.success && response.data) {
             const { attachment, liveops_uploaded, description } = response.data;
             setAttachments((prev) =>
@@ -477,7 +512,34 @@ const ChatInput = ({
                       id: attachment.id,
                       file_url: attachment.file_url,
                       liveops_uploaded,
-                      description, // Description for non-liveops-supported files
+                      description,
+                    }
+                  : att,
+              ),
+            );
+          } else {
+            throw new Error("Upload failed");
+          }
+        } else if (agentSlug === "finops" && currentFinopsSession) {
+          // Use finops upload endpoint for finops agent (CSV only)
+          response = await uploadFinopsAttachment(
+            file,
+            currentFinopsSession,
+            progressCallback,
+          );
+          if (response.success && response.data) {
+            const { attachment, finops_uploaded, finops_files } = response.data;
+            setAttachments((prev) =>
+              prev.map((att) =>
+                att.tempId === tempId
+                  ? {
+                      ...att,
+                      status: "uploaded",
+                      progress: 100,
+                      id: attachment.id,
+                      file_url: attachment.file_url,
+                      finops_uploaded,
+                      finops_files,
                     }
                   : att,
               ),
@@ -543,6 +605,17 @@ const ChatInput = ({
     const allUploaded = attachments.every(
       (att) => att.status === "uploaded" || att.status === "error",
     );
+    const hasUploadedFiles = attachments.some(
+      (att) => att.status === "uploaded",
+    );
+
+    // For finops agent, require at least one CSV file to be uploaded
+    if (agentSlug === "finops" && !hasUploadedFiles) {
+      setUploadError(
+        "FinOps agent requires a CSV file to be uploaded before sending a message.",
+      );
+      return;
+    }
 
     if (
       hasContent &&
@@ -701,9 +774,11 @@ const ChatInput = ({
                       ref={userRef}
                       className="hidden"
                       onChange={handleFileSelect}
-                      accept={ALLOWED_EXTENSIONS.map((ext) => `.${ext}`).join(
-                        ",",
-                      )}
+                      accept={
+                        agentSlug === "finops"
+                          ? ".csv"
+                          : ALLOWED_EXTENSIONS.map((ext) => `.${ext}`).join(",")
+                      }
                       multiple
                     />
                   </button>
@@ -780,7 +855,9 @@ const ChatInput = ({
               (!inputValue.trim() &&
                 !attachments.some((att) => att.status === "uploaded")) ||
               !selectedAgent?.id ||
-              isUploading
+              isUploading ||
+              (agentSlug === "finops" &&
+                !attachments.some((att) => att.status === "uploaded"))
                 ? "bg-[#E6E6E6]"
                 : "bg-[linear-gradient(333deg,#11A85F_13.46%,#1F6744_103.63%)]"
             }`}
@@ -788,7 +865,9 @@ const ChatInput = ({
               (!inputValue.trim() &&
                 !attachments.some((att) => att.status === "uploaded")) ||
               !selectedAgent?.id ||
-              isUploading
+              isUploading ||
+              (agentSlug === "finops" &&
+                !attachments.some((att) => att.status === "uploaded"))
             }
           >
             <Plain
@@ -798,7 +877,9 @@ const ChatInput = ({
                 (!inputValue.trim() &&
                   !attachments.some((att) => att.status === "uploaded")) ||
                 !selectedAgent?.id ||
-                isUploading
+                isUploading ||
+                (agentSlug === "finops" &&
+                  !attachments.some((att) => att.status === "uploaded"))
                   ? "#B0B0B0"
                   : "#FFFFFF"
               }

@@ -11,7 +11,10 @@ import {
   getAgentDisplayName,
 } from "../utils/eventHandlers";
 import api from "@/api";
-import { createLiveopsSession } from "../../services/superAgentApi";
+import {
+  createLiveopsSession,
+  createFinopsSession,
+} from "../../services/superAgentApi";
 
 const ConversationPanel = ({
   chatId,
@@ -37,6 +40,8 @@ const ConversationPanel = ({
   const [accessDenied, setAccessDenied] = useState(false);
   const [messageVersions, setMessageVersions] = useState({}); // { parentId: { versions: [msg1, msg2], activeIndex: 1 } }
   const [liveopsSessionId, setLiveopsSessionId] = useState(null); // Liveops agent session ID
+  const [finopsSessionId, setFinopsSessionId] = useState(null); // Finops agent session ID
+  const [cashBalance, setCashBalance] = useState(425000.0); // Finops cash balance
   const messagesEndRef = useRef(null);
   const selectedGame = useSelector((state) => state.superAgent.selectedGame);
   const ContextStudioData = useSelector(
@@ -258,6 +263,8 @@ const ConversationPanel = ({
     setAccessDenied(false);
     setMessageVersions({});
     setLiveopsSessionId(null);
+    setFinopsSessionId(null);
+    setCashBalance(425000.0);
     historyFetchedRef.current = false;
     initialQuerySentRef.current = false;
   }, [chatId]);
@@ -294,6 +301,23 @@ const ConversationPanel = ({
         } catch (err) {
           console.error("[Liveops] Failed to create session:", err);
           setError("Failed to create liveops session. Please try again.");
+          return;
+        }
+      }
+
+      // For finops agent, create session if not exists
+      let currentFinopsSessionId = finopsSessionId;
+      if (agentSlug === "finops" && !currentFinopsSessionId) {
+        try {
+          const sessionResponse = await createFinopsSession();
+          if (sessionResponse.success && sessionResponse.data?.session_id) {
+            currentFinopsSessionId = sessionResponse.data.session_id;
+            setFinopsSessionId(currentFinopsSessionId);
+            console.log("[Finops] Created session:", currentFinopsSessionId);
+          }
+        } catch (err) {
+          console.error("[Finops] Failed to create session:", err);
+          setError("Failed to create finops session. Please try again.");
           return;
         }
       }
@@ -415,6 +439,12 @@ const ConversationPanel = ({
                 currentLiveopsSessionId && {
                   liveops_session_id: currentLiveopsSessionId,
                 }),
+              // Finops-specific: include session ID and cash balance
+              ...(agentSlug === "finops" &&
+                currentFinopsSessionId && {
+                  finops_session_id: currentFinopsSessionId,
+                  cash_balance: cashBalance,
+                }),
             }),
             signal: abortControllerRef.current.signal,
           },
@@ -506,6 +536,8 @@ const ConversationPanel = ({
       selectedGame,
       ContextStudioData?.slug,
       liveopsSessionId,
+      finopsSessionId,
+      cashBalance,
     ],
   );
 
@@ -833,6 +865,8 @@ const ConversationPanel = ({
           agentSlug={agentSlug}
           liveopsSessionId={liveopsSessionId}
           onLiveopsSessionCreated={setLiveopsSessionId}
+          finopsSessionId={finopsSessionId}
+          onFinopsSessionCreated={setFinopsSessionId}
         />
       </div>
     </div>
