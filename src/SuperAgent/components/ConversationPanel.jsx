@@ -710,7 +710,7 @@ const ConversationPanel = ({
     sendMessageRef.current = sendMessage;
   }, [sendMessage]);
 
-  // Send initial query on mount if present (wait for agentSlug)
+  // Send initial query on mount if present (wait for agentSlug and history loading to complete)
   useEffect(() => {
     if (
       (!initialQuery && initialAttachments.length === 0) ||
@@ -719,6 +719,8 @@ const ConversationPanel = ({
     )
       return;
     if (initialQuerySentRef.current) return;
+    // Wait for history loading to complete before sending initial query
+    if (isLoadingHistory) return;
 
     initialQuerySentRef.current = true;
 
@@ -728,7 +730,7 @@ const ConversationPanel = ({
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [initialQuery, initialAttachments, chatId, agentSlug]);
+  }, [initialQuery, initialAttachments, chatId, agentSlug, isLoadingHistory]);
 
   const handleSendMessage = (content, attachments = []) => {
     setError(null);
@@ -798,12 +800,19 @@ const ConversationPanel = ({
             }
           }
 
+          // Check if this is the latest LLM message and we're still streaming
+          const isStreamingMessage =
+            isThinking &&
+            message.sender === "llm" &&
+            index === lastLLMMessageIndex;
+
           return (
             <Message
               key={message.id}
               message={message}
               isLatest={isLatestUserMessage || isLatestLLMMessage}
               isFirstLLMAfterUser={isFirstLLMAfterUser}
+              isStreaming={isStreamingMessage}
               onSendMessage={handleSendMessage}
               onRegenerate={regenerateMessage}
             />

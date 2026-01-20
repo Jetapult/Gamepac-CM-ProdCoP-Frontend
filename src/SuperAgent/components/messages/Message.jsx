@@ -21,6 +21,7 @@ const Message = ({
   message,
   isLatest,
   isFirstLLMAfterUser,
+  isStreaming = false,
   onSendMessage,
   onRegenerate,
   versionInfo,
@@ -43,6 +44,7 @@ const Message = ({
             content={data.content}
             thinking={data.thinking}
             isLatest={isLatest}
+            isStreaming={isStreaming}
             relatedActions={data.relatedActions || []}
             onSendMessage={onSendMessage}
             onRegenerate={() =>

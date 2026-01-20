@@ -29,6 +29,7 @@ const PreviewPanel = ({
   artifactContent = null,
   artifactType = null,
   artifactData = null,
+  agentName = "GamePac",
 }) => {
   const hasArtifact = artifactContent && isMarkdown(artifactContent);
   const hasStructuredArtifact = artifactType && artifactData;
@@ -49,7 +50,7 @@ const PreviewPanel = ({
             className="text-sm text-black"
             style={{ fontFamily: "Urbanist, sans-serif", lineHeight: "21px" }}
           >
-            GamePac is building the document. Hang tight ✌️
+            {agentName} is building the document. Hang tight ✌️
           </p>
         </div>
       </div>

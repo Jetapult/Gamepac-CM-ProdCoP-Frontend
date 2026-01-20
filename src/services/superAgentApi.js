@@ -267,10 +267,4 @@ export const uploadFinopsAttachment = async (
   return response.data;
 };
 
-export {
-  MAX_ATTACHMENTS,
-  MAX_FILE_SIZE,
-  ALLOWED_EXTENSIONS,
-  LIVEOPS_SUPPORTED_EXTENSIONS,
-  FINOPS_SUPPORTED_EXTENSIONS,
-};
+export { MAX_ATTACHMENTS, MAX_FILE_SIZE, ALLOWED_EXTENSIONS };
