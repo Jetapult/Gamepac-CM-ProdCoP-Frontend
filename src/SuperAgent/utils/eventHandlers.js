@@ -11,6 +11,8 @@ const getUniqueId = () => `${Date.now()}-${++messageIdCounter}`;
 const agentNameMap = {
   gamepac: "GamePac",
   commpac: "CommPac",
+  liveops: "LiveOps",
+  finops: "FinOps",
 };
 
 // Helper to get agent display name
@@ -88,6 +90,28 @@ const toolTitleMap = {
   generate_review_report_short: "Generating Review Report Summary",
   get_google_play_reviews: "Loading Google Play Reviews",
   get_app_store_reviews: "Loading App Store Reviews",
+  // LiveOps agent tools
+  catalogue_event: "Cataloguing Event",
+  clone_event: "Cloning Event",
+  search_events: "Searching Events",
+  analyze_event_performance: "Analyzing Event Performance",
+  get_calendar: "Loading Calendar",
+  check_conflicts: "Checking Conflicts",
+  generate_faq: "Generating FAQ",
+  generate_patch_notes: "Generating Patch Notes",
+  generate_jira_ticket: "Generating JIRA Ticket",
+  get_event_details: "Loading Event Details",
+  update_event: "Updating Event",
+  delete_event: "Deleting Event",
+  list_events: "Listing Events",
+  // FinOps agent tools
+  generate_financial_report: "Generating Financial Report",
+  analyze_budget_variance: "Analyzing Budget Variance",
+  analyze_ua_performance: "Analyzing UA Performance",
+  calculate_runway: "Calculating Runway",
+  check_financial_alerts: "Checking Financial Alerts",
+  generate_slack_summary: "Generating Slack Summary",
+  load_financial_data: "Loading Financial Data",
 };
 
 // Report tool name to artifact type mapping

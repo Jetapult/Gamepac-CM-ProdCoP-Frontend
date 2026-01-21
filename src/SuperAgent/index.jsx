@@ -16,6 +16,7 @@ import ChatInput from "./components/ChatInput";
 import { useDispatch, useSelector } from "react-redux";
 import MegaphoneIcon from "../assets/super-agents/megaphone-icon.svg";
 import ActiveMegaphoneIcon from "../assets/super-agents/megaphone-active.svg";
+import GamepacLogo from "../assets/super-agents/gamepac-logo.svg";
 import {
   setSelectedAgent,
   setSelectedTemplate,
@@ -24,6 +25,15 @@ import api from "../api";
 import GameDropdown from "./components/GameDropdown";
 
 export const agents = [
+  {
+    id: "0",
+    name: "GamePac",
+    slug: "gamepac",
+    icon: <img src={GamepacLogo} alt="GamePac Icon" className="size-[24px]" />,
+    activeIcon: (
+      <img src={GamepacLogo} alt="GamePac Icon" className="size-[24px]" />
+    ),
+  },
   {
     id: "1",
     name: "CommPac",
@@ -54,7 +64,7 @@ export const agents = [
   {
     id: "4",
     name: "Finanacial Reporting",
-    slug: "financial-reporting",
+    slug: "finops",
     icon: <Book2 weight={"Linear"} className="size-[24px]" />,
   },
   {
@@ -103,14 +113,14 @@ const SuperAgent = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isSiderbarOpen = useSelector(
-    (state) => state.superAgent.isSiderbarOpen
+    (state) => state.superAgent.isSiderbarOpen,
   );
   const [activeTab, setActiveTab] = useState("chat");
   const [activeFilter, setActiveFilter] = useState("recommended");
   const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
   const selectedGame = useSelector((state) => state.superAgent.selectedGame);
   const ContextStudioData = useSelector(
-    (state) => state.admin.ContextStudioData
+    (state) => state.admin.ContextStudioData,
   );
 
   const onSendMessage = async (query, attachments = []) => {
@@ -251,7 +261,7 @@ const SuperAgent = () => {
                     id: action.id,
                     name: action.name,
                     slug: action.slug,
-                  })
+                  }),
                 )
               }
             >

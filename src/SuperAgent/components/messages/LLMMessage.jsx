@@ -50,7 +50,7 @@ const Tooltip = ({ children, text }) => {
           >
             {text}
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );
@@ -60,6 +60,7 @@ const LLMMessage = ({
   content,
   thinking,
   isLatest = false,
+  isStreaming = false,
   relatedActions = [],
   onSendMessage,
   onRegenerate,
@@ -69,7 +70,25 @@ const LLMMessage = ({
   const [copiedTooltip, setCopiedTooltip] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [feedback, setFeedback] = useState(null); // 'liked' | 'disliked' | null
-  const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
+  // Expand thinking by default while streaming, collapse when done
+  const [isThinkingExpanded, setIsThinkingExpanded] = useState(isStreaming);
+  const [wasStreaming, setWasStreaming] = useState(isStreaming);
+
+  // Auto-collapse thinking when streaming completes
+  React.useEffect(() => {
+    if (wasStreaming && !isStreaming) {
+      // Streaming just finished, collapse thinking
+      setIsThinkingExpanded(false);
+    }
+    setWasStreaming(isStreaming);
+  }, [isStreaming, wasStreaming]);
+
+  // Expand thinking when streaming starts
+  React.useEffect(() => {
+    if (isStreaming && thinking) {
+      setIsThinkingExpanded(true);
+    }
+  }, [isStreaming, thinking]);
 
   const handleCopy = async () => {
     try {
