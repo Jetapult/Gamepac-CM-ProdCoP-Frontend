@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ChatHeader from "./ChatHeader";
 import ConversationPanel from "./ConversationPanel";
 import PreviewPanel from "./PreviewPanel";
+import { getAgentDisplayName } from "../utils/eventHandlers";
 
 const ChatScreen = ({
   chatId,
@@ -71,7 +72,7 @@ const ChatScreen = ({
         onDelete={() => {
           // Dispatch event to refresh sidebar
           window.dispatchEvent(
-            new CustomEvent("chat-deleted", { detail: { chatId } })
+            new CustomEvent("chat-deleted", { detail: { chatId } }),
           );
           // Navigate to dashboard
           navigate("/super-agent");
@@ -115,6 +116,7 @@ const ChatScreen = ({
           artifactContent={artifactContent}
           artifactType={artifactType}
           artifactData={artifactData}
+          agentName={getAgentDisplayName(agentSlug)}
         />
       </div>
     </div>
