@@ -11,16 +11,15 @@ import {
   getAgentDisplayName,
 } from "../utils/eventHandlers";
 import api from "@/api";
-import {
-  createLiveopsSession,
-  createFinopsSession,
-} from "../../services/superAgentApi";
+import { updateChat } from "../../services/superAgentApi";
 
 const ConversationPanel = ({
   chatId,
   initialQuery,
   initialAttachments = [],
   agentSlug: propAgentSlug = "",
+  initialFinopsSessionId = null,
+  initialLiveopsSessionId = null,
   onTaskUpdate,
   onThinkingChange,
   onArtifactUpdate,
@@ -39,8 +38,12 @@ const ConversationPanel = ({
   const [chatNotFound, setChatNotFound] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [messageVersions, setMessageVersions] = useState({}); // { parentId: { versions: [msg1, msg2], activeIndex: 1 } }
-  const [liveopsSessionId, setLiveopsSessionId] = useState(null); // Liveops agent session ID
-  const [finopsSessionId, setFinopsSessionId] = useState(null); // Finops agent session ID
+  const [liveopsSessionId, setLiveopsSessionId] = useState(
+    initialLiveopsSessionId,
+  ); // Liveops agent session ID
+  const [finopsSessionId, setFinopsSessionId] = useState(
+    initialFinopsSessionId,
+  ); // Finops agent session ID
   const [cashBalance, setCashBalance] = useState(425000.0); // Finops cash balance
   const messagesEndRef = useRef(null);
   const selectedGame = useSelector((state) => state.superAgent.selectedGame);
@@ -80,9 +83,18 @@ const ConversationPanel = ({
         if (result.data.title && onTitleUpdate) {
           onTitleUpdate(result.data.title);
         }
-        if (onPublicUpdate) {
+        if (result.data.is_public && onPublicUpdate) {
           onPublicUpdate(result.data.is_public || false);
         }
+        
+        // Restore session IDs if available
+        if (result.data.finops_session_id) setFinopsSessionId(result.data.finops_session_id);
+        if (result.data.liveops_session_id) setLiveopsSessionId(result.data.liveops_session_id);
+        
+        // Also check inside data bag just in case
+        if (result.data.data?.finops_session_id) setFinopsSessionId(result.data.data.finops_session_id);
+        if (result.data.data?.liveops_session_id) setLiveopsSessionId(result.data.data.liveops_session_id);
+
         return agentSlugFromApi;
       }
     } catch (error) {
@@ -262,12 +274,13 @@ const ConversationPanel = ({
     setChatNotFound(false);
     setAccessDenied(false);
     setMessageVersions({});
-    setLiveopsSessionId(null);
-    setFinopsSessionId(null);
+    // Preserve initial session IDs passed via navigation state, don't reset to null
+    setLiveopsSessionId(initialLiveopsSessionId);
+    setFinopsSessionId(initialFinopsSessionId);
     setCashBalance(425000.0);
     historyFetchedRef.current = false;
     initialQuerySentRef.current = false;
-  }, [chatId]);
+  }, [chatId, initialLiveopsSessionId, initialFinopsSessionId]);
 
   // Fetch chat details and history on mount or chatId change
   // Chain the calls to ensure agent slug is available before fetching history
@@ -288,39 +301,8 @@ const ConversationPanel = ({
         return;
       }
 
-      // For liveops agent, create session if not exists
-      let currentLiveopsSessionId = liveopsSessionId;
-      if (agentSlug === "liveops" && !currentLiveopsSessionId) {
-        try {
-          const sessionResponse = await createLiveopsSession();
-          if (sessionResponse.success && sessionResponse.data?.session_id) {
-            currentLiveopsSessionId = sessionResponse.data.session_id;
-            setLiveopsSessionId(currentLiveopsSessionId);
-            console.log("[Liveops] Created session:", currentLiveopsSessionId);
-          }
-        } catch (err) {
-          console.error("[Liveops] Failed to create session:", err);
-          setError("Failed to create liveops session. Please try again.");
-          return;
-        }
-      }
-
-      // For finops agent, create session if not exists
-      let currentFinopsSessionId = finopsSessionId;
-      if (agentSlug === "finops" && !currentFinopsSessionId) {
-        try {
-          const sessionResponse = await createFinopsSession();
-          if (sessionResponse.success && sessionResponse.data?.session_id) {
-            currentFinopsSessionId = sessionResponse.data.session_id;
-            setFinopsSessionId(currentFinopsSessionId);
-            console.log("[Finops] Created session:", currentFinopsSessionId);
-          }
-        } catch (err) {
-          console.error("[Finops] Failed to create session:", err);
-          setError("Failed to create finops session. Please try again.");
-          return;
-        }
-      }
+      // Session IDs are auto-fetched from chat data by the backend using chatId
+      // No need to create or pass session IDs here
 
       const trimmedContent = content.trim();
       const messageToSend = trimmedContent;
@@ -434,17 +416,11 @@ const ConversationPanel = ({
               ...(attachmentIds.length > 0 && {
                 attachment_ids: attachmentIds,
               }),
-              // Liveops-specific: include session ID
-              ...(agentSlug === "liveops" &&
-                currentLiveopsSessionId && {
-                  liveops_session_id: currentLiveopsSessionId,
-                }),
-              // Finops-specific: include session ID and cash balance
-              ...(agentSlug === "finops" &&
-                currentFinopsSessionId && {
-                  finops_session_id: currentFinopsSessionId,
-                  cash_balance: cashBalance,
-                }),
+              // Backend will auto-fetch session IDs from chat data using chatId
+              // Only pass cash_balance for finops if needed
+              ...(agentSlug === "finops" && {
+                cash_balance: cashBalance,
+              }),
             }),
             signal: abortControllerRef.current.signal,
           },
@@ -535,8 +511,6 @@ const ConversationPanel = ({
       onThinkingChange,
       selectedGame,
       ContextStudioData?.slug,
-      liveopsSessionId,
-      finopsSessionId,
       cashBalance,
     ],
   );
@@ -872,10 +846,12 @@ const ConversationPanel = ({
           isThinking={isThinking}
           onStop={stopRequest}
           agentSlug={agentSlug}
+          chatId={chatId}
           liveopsSessionId={liveopsSessionId}
           onLiveopsSessionCreated={setLiveopsSessionId}
           finopsSessionId={finopsSessionId}
           onFinopsSessionCreated={setFinopsSessionId}
+          hasMessages={messages.length > 0}
         />
       </div>
     </div>

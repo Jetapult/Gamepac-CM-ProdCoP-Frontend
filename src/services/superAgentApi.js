@@ -121,6 +121,21 @@ export const isFinopsSupported = (fileType) => {
 };
 
 // ============================================================
+// CHAT MANAGEMENT
+// ============================================================
+
+/**
+ * Update chat data (e.g., to store session IDs)
+ * @param {string} chatId - The chat ID
+ * @param {object} data - The data to update (merged with existing data)
+ * @returns {Promise<object>}
+ */
+export const updateChat = async (chatId, data) => {
+  const response = await api.patch(`/v1/superagent/chats/${chatId}`, { data });
+  return response.data;
+};
+
+// ============================================================
 // LIVEOPS SESSION MANAGEMENT
 // ============================================================
 
@@ -160,18 +175,23 @@ export const deleteLiveopsSession = async (sessionId) => {
  * - Other files: uploaded to S3, description generated to append to message
  *
  * @param {File} file - The file to upload
- * @param {string} liveopsSessionId - The liveops session ID
+ * @param {object} options - Either { chatId } or { sessionId }
  * @param {function} onProgress - Progress callback
  * @returns {Promise<{attachment: object, liveops_uploaded: boolean, liveops_files: string[], description?: string}>}
  */
 export const uploadLiveopsAttachment = async (
   file,
-  liveopsSessionId,
+  { chatId, sessionId },
   onProgress,
 ) => {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("liveops_session_id", liveopsSessionId);
+  // Use chatId if available (chat page), otherwise use sessionId directly (index page)
+  if (chatId) {
+    formData.append("chat_id", chatId);
+  } else if (sessionId) {
+    formData.append("liveops_session_id", sessionId);
+  }
 
   const response = await api.post(
     "/v1/superagent/liveops/attachments",
@@ -233,18 +253,23 @@ export const deleteFinopsSession = async (sessionId) => {
  * Only CSV files are supported
  *
  * @param {File} file - The CSV file to upload
- * @param {string} finopsSessionId - The finops session ID
+ * @param {object} options - Either { chatId } or { sessionId }
  * @param {function} onProgress - Progress callback
  * @returns {Promise<{attachment: object, finops_uploaded: boolean, finops_files: string[]}>}
  */
 export const uploadFinopsAttachment = async (
   file,
-  finopsSessionId,
+  { chatId, sessionId },
   onProgress,
 ) => {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("finops_session_id", finopsSessionId);
+  // Use chatId if available (chat page), otherwise use sessionId directly (index page)
+  if (chatId) {
+    formData.append("chat_id", chatId);
+  } else if (sessionId) {
+    formData.append("finops_session_id", sessionId);
+  }
 
   const response = await api.post(
     "/v1/superagent/finops/attachments",

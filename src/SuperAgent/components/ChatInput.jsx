@@ -307,10 +307,12 @@ const ChatInput = ({
   isThinking = false,
   onStop,
   agentSlug = "",
+  chatId = null,
   liveopsSessionId = null,
   onLiveopsSessionCreated = null,
   finopsSessionId = null,
   onFinopsSessionCreated = null,
+  hasMessages = false,
 }) => {
   const dispatch = useDispatch();
   const [inputValue, setInputValue] = useState("");
@@ -331,6 +333,22 @@ const ChatInput = ({
   const dropdownRef = useRef(null);
   const integrationDropdownRef = useRef(null);
   const uploadQueueRef = useRef([]);
+  // Track session IDs locally to avoid React prop timing issues
+  const liveopsSessionRef = useRef(liveopsSessionId);
+  const finopsSessionRef = useRef(finopsSessionId);
+
+  // Keep refs in sync with props when they change from parent
+  useEffect(() => {
+    if (liveopsSessionId) {
+      liveopsSessionRef.current = liveopsSessionId;
+    }
+  }, [liveopsSessionId]);
+
+  useEffect(() => {
+    if (finopsSessionId) {
+      finopsSessionRef.current = finopsSessionId;
+    }
+  }, [finopsSessionId]);
 
   const handleIntegrationClick = (integration) => {
     setSelectedIntegration(integration);
@@ -448,49 +466,49 @@ const ChatInput = ({
 
     setIsUploading(true);
 
-    // For liveops agent, ensure we have a session before uploading
-    let currentLiveopsSession = liveopsSessionId;
-    if (agentSlug === "liveops" && !currentLiveopsSession) {
-      try {
-        const sessionResponse = await createLiveopsSession();
-        if (sessionResponse.success && sessionResponse.data?.session_id) {
-          currentLiveopsSession = sessionResponse.data.session_id;
-          if (onLiveopsSessionCreated) {
-            onLiveopsSessionCreated(currentLiveopsSession);
-          }
-          console.log(
-            "[Liveops] Created session for upload:",
-            currentLiveopsSession,
-          );
-        }
-      } catch (err) {
-        console.error("[Liveops] Failed to create session:", err);
-        setUploadError("Failed to create liveops session for upload");
-        setIsUploading(false);
-        return;
-      }
-    }
+    // If chatId exists (chat page), backend will auto-fetch session from chat data
+    // Only create session on index page (no chatId) when uploading for first time
+    let currentLiveopsSession = liveopsSessionId || liveopsSessionRef.current;
+    let currentFinopsSession = finopsSessionId || finopsSessionRef.current;
 
-    // For finops agent, ensure we have a session before uploading
-    let currentFinopsSession = finopsSessionId;
-    if (agentSlug === "finops" && !currentFinopsSession) {
-      try {
-        const sessionResponse = await createFinopsSession();
-        if (sessionResponse.success && sessionResponse.data?.session_id) {
-          currentFinopsSession = sessionResponse.data.session_id;
-          if (onFinopsSessionCreated) {
-            onFinopsSessionCreated(currentFinopsSession);
+    // Only create sessions if we're on the index page (no chatId) and no session exists yet
+    if (!chatId) {
+      if (agentSlug === "liveops" && !currentLiveopsSession) {
+        try {
+          const sessionResponse = await createLiveopsSession();
+          if (sessionResponse.success && sessionResponse.data?.session_id) {
+            currentLiveopsSession = sessionResponse.data.session_id;
+            liveopsSessionRef.current = currentLiveopsSession;
+            if (onLiveopsSessionCreated) {
+              onLiveopsSessionCreated(currentLiveopsSession);
+            }
+            console.log("[Liveops] Created session for upload:", currentLiveopsSession);
           }
-          console.log(
-            "[Finops] Created session for upload:",
-            currentFinopsSession,
-          );
+        } catch (err) {
+          console.error("[Liveops] Failed to create session:", err);
+          setUploadError("Failed to create liveops session for upload");
+          setIsUploading(false);
+          return;
         }
-      } catch (err) {
-        console.error("[Finops] Failed to create session:", err);
-        setUploadError("Failed to create finops session for upload");
-        setIsUploading(false);
-        return;
+      }
+
+      if (agentSlug === "finops" && !currentFinopsSession) {
+        try {
+          const sessionResponse = await createFinopsSession();
+          if (sessionResponse.success && sessionResponse.data?.session_id) {
+            currentFinopsSession = sessionResponse.data.session_id;
+            finopsSessionRef.current = currentFinopsSession;
+            if (onFinopsSessionCreated) {
+              onFinopsSessionCreated(currentFinopsSession);
+            }
+            console.log("[Finops] Created session for upload:", currentFinopsSession);
+          }
+        } catch (err) {
+          console.error("[Finops] Failed to create session:", err);
+          setUploadError("Failed to create finops session for upload");
+          setIsUploading(false);
+          return;
+        }
       }
     }
 
@@ -508,10 +526,11 @@ const ChatInput = ({
         };
 
         // Use liveops upload endpoint for liveops agent
-        if (agentSlug === "liveops" && currentLiveopsSession) {
+        // Pass chatId if available (backend fetches session), otherwise pass sessionId
+        if (agentSlug === "liveops" && (chatId || currentLiveopsSession)) {
           response = await uploadLiveopsAttachment(
             file,
-            currentLiveopsSession,
+            { chatId, sessionId: currentLiveopsSession },
             progressCallback,
           );
           if (response.success && response.data) {
@@ -534,11 +553,12 @@ const ChatInput = ({
           } else {
             throw new Error("Upload failed");
           }
-        } else if (agentSlug === "finops" && currentFinopsSession) {
+        } else if (agentSlug === "finops" && (chatId || currentFinopsSession)) {
           // Use finops upload endpoint for finops agent (CSV only)
+          // Pass chatId if available (backend fetches session), otherwise pass sessionId
           response = await uploadFinopsAttachment(
             file,
-            currentFinopsSession,
+            { chatId, sessionId: currentFinopsSession },
             progressCallback,
           );
           if (response.success && response.data) {
@@ -623,8 +643,14 @@ const ChatInput = ({
       (att) => att.status === "uploaded",
     );
 
-    // For finops agent, require at least one CSV file to be uploaded
-    if (agentSlug === "finops" && !hasUploadedFiles) {
+    // For finops agent, require CSV only if no session exists yet (first message)
+    // Check ref instead of prop to avoid timing issues
+    if (
+      agentSlug === "finops" &&
+      !finopsSessionRef.current &&
+      !hasUploadedFiles &&
+      !hasMessages
+    ) {
       setUploadError(
         "FinOps agent requires a CSV file to be uploaded before sending a message.",
       );
@@ -649,7 +675,11 @@ const ChatInput = ({
           size: att.size,
         }));
 
-      onSendMessage(inputValue, uploadedAttachments);
+      // Pass session IDs from refs (not props) to avoid React state timing issues
+      onSendMessage(inputValue, uploadedAttachments, {
+        liveopsSessionId: liveopsSessionRef.current,
+        finopsSessionId: finopsSessionRef.current,
+      });
       setInputValue("");
       attachments.forEach((att) => {
         if (att.previewUrl) URL.revokeObjectURL(att.previewUrl);
@@ -750,6 +780,15 @@ const ChatInput = ({
         rows={selectedTemplate.id || attachments.length > 0 ? 2 : 4}
         autoFocus
       />
+
+      {agentSlug === "finops" &&
+        !finopsSessionId &&
+        !attachments.some((att) => att.status === "uploaded") &&
+        !hasMessages && (
+          <p className="text-xs text-amber-600 font-urbanist mb-2">
+            FinOps requires a CSV file to start chatting
+          </p>
+        )}
 
       <div className="flex items-center justify-between">
         <div className="flex gap-4">
@@ -877,6 +916,7 @@ const ChatInput = ({
               !selectedAgent?.id ||
               isUploading ||
               (agentSlug === "finops" &&
+                !finopsSessionId &&
                 !attachments.some((att) => att.status === "uploaded"))
                 ? "bg-[#E6E6E6]"
                 : "bg-[linear-gradient(333deg,#11A85F_13.46%,#1F6744_103.63%)]"
@@ -887,6 +927,7 @@ const ChatInput = ({
               !selectedAgent?.id ||
               isUploading ||
               (agentSlug === "finops" &&
+                !finopsSessionId &&
                 !attachments.some((att) => att.status === "uploaded"))
             }
           >
@@ -899,6 +940,7 @@ const ChatInput = ({
                 !selectedAgent?.id ||
                 isUploading ||
                 (agentSlug === "finops" &&
+                  !finopsSessionId &&
                   !attachments.some((att) => att.status === "uploaded"))
                   ? "#B0B0B0"
                   : "#FFFFFF"
