@@ -32,7 +32,7 @@ import { fetchAllgames } from "../../services/games.service";
 const Sidebar = () => {
   const dispatch = useDispatch();
   const isSiderbarOpen = useSelector(
-    (state) => state.superAgent.isSiderbarOpen
+    (state) => state.superAgent.isSiderbarOpen,
   );
   const [isLogoHovered, setIsLogoHovered] = useState(false);
   const [chats, setChats] = useState([]);
@@ -73,7 +73,7 @@ const Sidebar = () => {
         setIsLoadingChats(false);
       }
     },
-    [chatFilter]
+    [chatFilter],
   );
 
   // Fetch chats on mount and when filter changes
@@ -119,7 +119,7 @@ const Sidebar = () => {
   const toggleFavourite = async (chatId) => {
     try {
       const response = await api.post(
-        `/v1/superagent/chats/${chatId}/favourite`
+        `/v1/superagent/chats/${chatId}/favourite`,
       );
 
       const result = response.data;
@@ -129,8 +129,8 @@ const Sidebar = () => {
           prev.map((chat) =>
             chat.id === chatId
               ? { ...chat, is_favourite: result.data.is_favourite }
-              : chat
-          )
+              : chat,
+          ),
         );
         // If we're viewing favourites and unfavourited, remove from list
         if (chatFilter === "favourites" && !result.data.is_favourite) {
@@ -168,7 +168,7 @@ const Sidebar = () => {
 
   const handleAgentSelect = (agent) => {
     dispatch(
-      setSelectedAgent({ id: agent.id, name: agent.name, slug: agent.slug })
+      setSelectedAgent({ id: agent.id, name: agent.name, slug: agent.slug }),
     );
     navigate(`/super-agent/${agent.slug}`);
   };
@@ -227,9 +227,7 @@ const Sidebar = () => {
               </div>
             ) : (
               <div
-                className={`cursor-pointer size-[38px] flex items-center justify-center ${
-                  isSiderbarOpen ? "" : "m-1"
-                }`}
+                className={`cursor-pointer size-[38px] flex items-center justify-center ${isSiderbarOpen ? "" : "m-1"}`}
               >
                 <img
                   src={gamepacLogo}
@@ -407,7 +405,11 @@ const Sidebar = () => {
                     chatId={chat.id}
                     text={chat.title || "Untitled Chat"}
                     active={selectedTask?.id === chat.id}
-                    slug={chat.data?.agent_slug}
+                    slug={
+                      chat.data?.agent_slug ||
+                      chat.agent_slug ||
+                      chat.data?.data?.agent_slug
+                    }
                     isFavourite={chat.is_favourite}
                     onToggleFavourite={toggleFavourite}
                     onDelete={handleDeleteChat}
