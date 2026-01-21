@@ -23,17 +23,12 @@ import {
 } from "../store/reducer/superAgent";
 import api from "../api";
 import GameDropdown from "./components/GameDropdown";
+import {
+  createLiveopsSession,
+  createFinopsSession,
+} from "../services/superAgentApi";
 
 export const agents = [
-  {
-    id: "0",
-    name: "GamePac",
-    slug: "gamepac",
-    icon: <img src={GamepacLogo} alt="GamePac Icon" className="size-[24px]" />,
-    activeIcon: (
-      <img src={GamepacLogo} alt="GamePac Icon" className="size-[24px]" />
-    ),
-  },
   {
     id: "1",
     name: "CommPac",
@@ -117,25 +112,56 @@ const SuperAgent = () => {
   );
   const [activeTab, setActiveTab] = useState("chat");
   const [activeFilter, setActiveFilter] = useState("recommended");
+  const [finopsSessionId, setFinopsSessionId] = useState(null);
+  const [liveopsSessionId, setLiveopsSessionId] = useState(null);
   const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
   const selectedGame = useSelector((state) => state.superAgent.selectedGame);
   const ContextStudioData = useSelector(
     (state) => state.admin.ContextStudioData,
   );
 
-  const onSendMessage = async (query, attachments = []) => {
+  const onSendMessage = async (query, attachments = [], sessionIds = {}) => {
     if (!selectedGame) {
       alert("Please select a game to continue.");
       return;
     }
     try {
       const title = query?.trim().slice(0, 50) || "";
+
+      // Use session IDs passed from ChatInput (more reliable than state due to async updates)
+      // Fall back to state if not provided
+      let currentLiveopsSessionId = sessionIds.liveopsSessionId || liveopsSessionId;
+      let currentFinopsSessionId = sessionIds.finopsSessionId || finopsSessionId;
+
+      // Create session for liveops/finops agents if not exists
+      if (selectedAgent.slug === "liveops" && !currentLiveopsSessionId) {
+        const sessionResponse = await createLiveopsSession();
+        if (sessionResponse.success && sessionResponse.data?.session_id) {
+          currentLiveopsSessionId = sessionResponse.data.session_id;
+          setLiveopsSessionId(currentLiveopsSessionId);
+        }
+      }
+
+      if (selectedAgent.slug === "finops" && !currentFinopsSessionId) {
+        const sessionResponse = await createFinopsSession();
+        if (sessionResponse.success && sessionResponse.data?.session_id) {
+          currentFinopsSessionId = sessionResponse.data.session_id;
+          setFinopsSessionId(currentFinopsSessionId);
+        }
+      }
+
+      // Build chat data with session ID included
+      const chatData = {
+        agent_slug: selectedAgent.slug,
+        ...(currentLiveopsSessionId && { liveops_session_id: currentLiveopsSessionId }),
+        ...(currentFinopsSessionId && { finops_session_id: currentFinopsSessionId }),
+      };
+
       const response = await api.post("/v1/superagent/chats", {
-        data: {
-          agent_slug: selectedAgent.slug,
-          game_id: selectedGame?.id,
-          studio_slug: ContextStudioData?.slug,
-        },
+        agent_slug: selectedAgent.slug,
+        game_id: selectedGame?.id,
+        studio_slug: ContextStudioData?.slug,
+        data: chatData,
       });
       if (response.data?.success && response.data?.data?.id) {
         const chatId = response.data.data.id;
@@ -150,6 +176,8 @@ const SuperAgent = () => {
             initialAttachments: attachments,
             agentSlug: selectedAgent.slug,
             gameId: selectedGame?.id,
+            finopsSessionId: currentFinopsSessionId,
+            liveopsSessionId: currentLiveopsSessionId,
           },
         });
       }
@@ -243,7 +271,14 @@ const SuperAgent = () => {
 
         {/* Chat Input Area */}
         <div className="flex flex-col items-center px-8 w-full max-w-[800px] mx-auto">
-          <ChatInput onSendMessage={onSendMessage} />
+          <ChatInput
+            onSendMessage={onSendMessage}
+            agentSlug={selectedAgent?.slug}
+            finopsSessionId={finopsSessionId}
+            onFinopsSessionCreated={setFinopsSessionId}
+            liveopsSessionId={liveopsSessionId}
+            onLiveopsSessionCreated={setLiveopsSessionId}
+          />
         </div>
         {/* Quick Action Buttons */}
         <div className="flex flex-wrap gap-5 justify-center">
