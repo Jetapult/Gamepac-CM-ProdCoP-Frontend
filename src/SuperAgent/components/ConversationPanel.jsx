@@ -37,6 +37,7 @@ const ConversationPanel = ({
   const [needsClarification, setNeedsClarification] = useState(false);
   const [chatNotFound, setChatNotFound] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [chatPermission, setChatPermission] = useState(null); // "read" or "write"
   const [messageVersions, setMessageVersions] = useState({}); // { parentId: { versions: [msg1, msg2], activeIndex: 1 } }
   const [liveopsSessionId, setLiveopsSessionId] = useState(
     initialLiveopsSessionId,
@@ -94,6 +95,11 @@ const ConversationPanel = ({
         // Also check inside data bag just in case
         if (result.data.data?.finops_session_id) setFinopsSessionId(result.data.data.finops_session_id);
         if (result.data.data?.liveops_session_id) setLiveopsSessionId(result.data.data.liveops_session_id);
+
+        // Track permission for shared chats
+        if (result.data.permission) {
+          setChatPermission(result.data.permission);
+        }
 
         return agentSlugFromApi;
       }
@@ -273,6 +279,7 @@ const ConversationPanel = ({
     setNeedsClarification(false);
     setChatNotFound(false);
     setAccessDenied(false);
+    setChatPermission(null);
     setMessageVersions({});
     // Preserve initial session IDs passed via navigation state, don't reset to null
     setLiveopsSessionId(initialLiveopsSessionId);
@@ -841,18 +848,27 @@ const ConversationPanel = ({
 
       {/* Input Area */}
       <div className="px-4 pb-4">
-        <ChatInput
-          onSendMessage={handleSendMessage}
-          isThinking={isThinking}
-          onStop={stopRequest}
-          agentSlug={agentSlug}
-          chatId={chatId}
-          liveopsSessionId={liveopsSessionId}
-          onLiveopsSessionCreated={setLiveopsSessionId}
-          finopsSessionId={finopsSessionId}
-          onFinopsSessionCreated={setFinopsSessionId}
-          hasMessages={messages.length > 0}
-        />
+        {chatPermission === "read" ? (
+          <div
+            className="text-center py-3 text-[#6d6d6d] text-sm bg-[#f6f6f6] rounded-lg"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            You're not the owner of this chat.
+          </div>
+        ) : (
+          <ChatInput
+            onSendMessage={handleSendMessage}
+            isThinking={isThinking}
+            onStop={stopRequest}
+            agentSlug={agentSlug}
+            chatId={chatId}
+            liveopsSessionId={liveopsSessionId}
+            onLiveopsSessionCreated={setLiveopsSessionId}
+            finopsSessionId={finopsSessionId}
+            onFinopsSessionCreated={setFinopsSessionId}
+            hasMessages={messages.length > 0}
+          />
+        )}
       </div>
     </div>
   );
