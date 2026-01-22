@@ -377,43 +377,6 @@ const ConversationPanel = ({
       const processEvent = (eventData) => {
         const eventType = eventData.event || eventData.type;
 
-        // Handle tool_call events by updating streamingTask for real-time display
-        if (eventType === "tool_call") {
-          const toolName = eventData.tool || eventData.tool_name || "action";
-          const title = getToolLabel(toolName);
-          const toolType = getToolType(toolName);
-
-          setStreamingTask((prev) => ({
-            ...prev,
-            actions: [
-              ...(prev?.actions || []),
-              {
-                id: `action-${Date.now()}-${toolName}`,
-                toolName: toolName,
-                type: toolType,
-                text: title,
-                detail: "",
-                status: "in_progress",
-              },
-            ],
-          }));
-          return; // Don't add to messages, just update streaming task
-        }
-
-        // Handle tool_result events by marking the tool as completed
-        if (eventType === "tool_result") {
-          const toolName = eventData.tool || eventData.tool_name || "";
-          setStreamingTask((prev) => ({
-            ...prev,
-            actions: (prev?.actions || []).map((action) =>
-              action.toolName === toolName
-                ? { ...action, status: "completed" }
-                : action
-            ),
-          }));
-          // Continue to process for artifact updates
-        }
-
         const message = processEventHandler(eventData, {
           setMessages,
           setStreamingTask,
@@ -432,7 +395,6 @@ const ConversationPanel = ({
 
         // Stop thinking on complete or error
         if (shouldStopThinking(eventType)) {
-          setStreamingTask(null);
           setIsThinking(false);
           if (onThinkingChange) onThinkingChange(false);
         }
@@ -608,42 +570,6 @@ const ConversationPanel = ({
       const processEvent = (eventData) => {
         const eventType = eventData.event || eventData.type;
 
-        // Handle tool_call events by updating streamingTask for real-time display
-        if (eventType === "tool_call") {
-          const toolName = eventData.tool || eventData.tool_name || "action";
-          const title = getToolLabel(toolName);
-          const toolType = getToolType(toolName);
-
-          setStreamingTask((prev) => ({
-            ...prev,
-            actions: [
-              ...(prev?.actions || []),
-              {
-                id: `action-${Date.now()}-${toolName}`,
-                toolName: toolName,
-                type: toolType,
-                text: title,
-                detail: "",
-                status: "in_progress",
-              },
-            ],
-          }));
-          return;
-        }
-
-        // Handle tool_result events by marking the tool as completed
-        if (eventType === "tool_result") {
-          const toolName = eventData.tool || eventData.tool_name || "";
-          setStreamingTask((prev) => ({
-            ...prev,
-            actions: (prev?.actions || []).map((action) =>
-              action.toolName === toolName
-                ? { ...action, status: "completed" }
-                : action
-            ),
-          }));
-        }
-
         const message = processEventHandler(eventData, {
           setMessages,
           setStreamingTask,
@@ -662,7 +588,6 @@ const ConversationPanel = ({
 
         // Stop thinking on complete or error
         if (shouldStopThinking(eventType)) {
-          setStreamingTask(null);
           setIsThinking(false);
           if (onThinkingChange) onThinkingChange(false);
         }
@@ -903,15 +828,7 @@ const ConversationPanel = ({
           );
         })}
 
-        {/* Streaming Task Display */}
-        {streamingTask &&
-          (streamingTask.description || streamingTask.actions?.length > 0) && (
-            <TaskMessage
-              task={streamingTask}
-              isLatest={false}
-              onSendMessage={handleSendMessage}
-            />
-          )}
+        {/* Streaming Task Display - disabled since tool calls are now added directly to messages */}
 
         {/* Error Message */}
         {error && (
