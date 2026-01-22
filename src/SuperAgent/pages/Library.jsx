@@ -26,7 +26,7 @@ const placeholderImages = {
 const Library = () => {
   const [activeFilter, setActiveFilter] = useState("recommended");
   const isSiderbarOpen = useSelector(
-    (state) => state.superAgent.isSiderbarOpen
+    (state) => state.superAgent.isSiderbarOpen,
   );
 
   const filters = [
@@ -34,7 +34,7 @@ const Library = () => {
     "ComPac",
     "ScalePac",
     "LiveOps",
-    "UA Playbook",
+    "DataPac",
     "Financial Reporting",
   ];
 
@@ -162,7 +162,9 @@ const Library = () => {
 
       {/* Main Content */}
       <div className="h-full overflow-y-auto w-full">
-        <div className={`${isSiderbarOpen ? "max-w-[1100px] 2xl:max-w-[1300px]" : "max-w-[1300px]"} mx-auto px-8`}>
+        <div
+          className={`${isSiderbarOpen ? "max-w-[1100px] 2xl:max-w-[1300px]" : "max-w-[1300px]"} mx-auto px-8`}
+        >
           {/* Header Section */}
           <div className="flex flex-col items-center pt-[66px] pb-[24px]">
             <p className="font-urbanist text-[20px] text-[#898989] mb-6 text-center">
@@ -218,10 +220,7 @@ const Library = () => {
             } gap-5`}
           >
             {libraryItems.map((libraryItem) => (
-              <LibraryCard
-                key={libraryItem.id}
-                {...libraryItem}
-              />
+              <LibraryCard key={libraryItem.id} {...libraryItem} />
             ))}
           </div>
         </div>

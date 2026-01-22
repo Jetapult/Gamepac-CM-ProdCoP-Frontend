@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import InfiniteScroll from "react-infinite-scroll-component";
 import {
   AltArrowDown,
   Copy,
@@ -37,6 +38,7 @@ const Sidebar = () => {
   const [isLogoHovered, setIsLogoHovered] = useState(false);
   const [chats, setChats] = useState([]);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [chatFilter, setChatFilter] = useState("all"); // "all" or "favourites"
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -54,10 +56,13 @@ const Sidebar = () => {
 
   // Fetch chats from API
   const fetchChats = useCallback(
-    async (filter = chatFilter) => {
-      setIsLoadingChats(true);
+    async (filter = chatFilter, reset = true) => {
+      if (reset) {
+        setIsLoadingChats(true);
+      }
       try {
-        const params = { limit: 10, offset: 0 };
+        const offset = reset ? 0 : chats.length;
+        const params = { limit: 10, offset };
         if (filter === "favourites") {
           params.favourite = true;
         }
@@ -65,16 +70,29 @@ const Sidebar = () => {
 
         const result = response.data;
         if (result.success && result.data) {
-          setChats(result.data);
+          if (reset) {
+            setChats(result.data);
+          } else {
+            setChats((prev) => [...prev, ...result.data]);
+          }
+          setHasMore(result.data.length === 10);
+        } else {
+          setHasMore(false);
         }
       } catch (error) {
         console.error("Failed to fetch chats:", error);
+        setHasMore(false);
       } finally {
         setIsLoadingChats(false);
       }
     },
-    [chatFilter],
+    [chatFilter, chats.length],
   );
+
+  // Load more chats for infinite scroll
+  const loadMoreChats = useCallback(() => {
+    fetchChats(chatFilter, false);
+  }, [fetchChats, chatFilter]);
 
   // Fetch chats on mount and when filter changes
   useEffect(() => {
@@ -345,7 +363,7 @@ const Sidebar = () => {
 
         {/* Chat List - Only when expanded */}
         {isSiderbarOpen ? (
-          <div className="flex-1 overflow-y-auto w-full">
+          <div id="sidebar-chat-list" className="flex-1 overflow-y-auto w-full">
             <div className="relative mb-2" ref={filterDropdownRef}>
               <button
                 className="flex items-center gap-[5px] hover:opacity-80 transition-opacity"
@@ -398,7 +416,18 @@ const Sidebar = () => {
                 Loading...
               </div>
             ) : chats.length > 0 ? (
-              <div className="space-y-2">
+              <InfiniteScroll
+                dataLength={chats.length}
+                next={loadMoreChats}
+                hasMore={hasMore}
+                loader={
+                  <div className="text-center py-2 text-[#b0b0b0] text-sm">
+                    Loading...
+                  </div>
+                }
+                scrollableTarget="sidebar-chat-list"
+                className="space-y-2"
+              >
                 {chats.map((chat) => (
                   <TaskItem
                     key={chat.id}
@@ -419,7 +448,7 @@ const Sidebar = () => {
                     }}
                   />
                 ))}
-              </div>
+              </InfiniteScroll>
             ) : (
               <div className="text-center py-4 text-[#b0b0b0] text-sm">
                 {chatFilter === "favourites" ? "No favourites" : "No chats"}

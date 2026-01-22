@@ -11,7 +11,7 @@ import {
   getAgentDisplayName,
 } from "../utils/eventHandlers";
 import api from "@/api";
-import { updateChat } from "../../services/superAgentApi";
+import { updateChat, getAttachment } from "../../services/superAgentApi";
 
 const ConversationPanel = ({
   chatId,
@@ -37,6 +37,7 @@ const ConversationPanel = ({
   const [needsClarification, setNeedsClarification] = useState(false);
   const [chatNotFound, setChatNotFound] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [chatPermission, setChatPermission] = useState(null); // "read" or "write"
   const [messageVersions, setMessageVersions] = useState({}); // { parentId: { versions: [msg1, msg2], activeIndex: 1 } }
   const [liveopsSessionId, setLiveopsSessionId] = useState(
     initialLiveopsSessionId,
@@ -94,6 +95,11 @@ const ConversationPanel = ({
         // Also check inside data bag just in case
         if (result.data.data?.finops_session_id) setFinopsSessionId(result.data.data.finops_session_id);
         if (result.data.data?.liveops_session_id) setLiveopsSessionId(result.data.data.liveops_session_id);
+
+        // Track permission for shared chats
+        if (result.data.permission) {
+          setChatPermission(result.data.permission);
+        }
 
         return agentSlugFromApi;
       }
@@ -172,7 +178,19 @@ const ConversationPanel = ({
             .filter(Boolean)
             .flat(); // Flatten arrays from agent messages
 
-          setMessages(transformedMessages);
+          // Only update messages if the content has changed (compare by first user message id)
+          setMessages((prevMessages) => {
+            // If we already have messages and the first message IDs match, skip update
+            if (prevMessages.length > 0 && transformedMessages.length > 0) {
+              const prevFirstUserMsg = prevMessages.find(m => m.sender === "user");
+              const newFirstUserMsg = transformedMessages.find(m => m.sender === "user");
+              if (prevFirstUserMsg && newFirstUserMsg && prevFirstUserMsg.id === newFirstUserMsg.id) {
+                // Messages already loaded, skip update to prevent flicker
+                return prevMessages;
+              }
+            }
+            return transformedMessages;
+          });
           historyFetchedRef.current = true;
 
           // Restore the latest artifact in the preview panel
@@ -262,35 +280,43 @@ const ConversationPanel = ({
     };
   };
 
-  // Reset state when chatId changes
-  useEffect(() => {
-    // Reset all state for new chat
-    setMessages([]);
-    setStreamingTask(null);
-    setIsThinking(false);
-    setError(null);
-    setFetchedAgentSlug("");
-    setNeedsClarification(false);
-    setChatNotFound(false);
-    setAccessDenied(false);
-    setMessageVersions({});
-    // Preserve initial session IDs passed via navigation state, don't reset to null
-    setLiveopsSessionId(initialLiveopsSessionId);
-    setFinopsSessionId(initialFinopsSessionId);
-    setCashBalance(425000.0);
-    historyFetchedRef.current = false;
-    initialQuerySentRef.current = false;
-  }, [chatId, initialLiveopsSessionId, initialFinopsSessionId]);
+  // Track previous chatId to detect actual changes
+  const prevChatIdRef = useRef(chatId);
 
-  // Fetch chat details and history on mount or chatId change
-  // Chain the calls to ensure agent slug is available before fetching history
+  // Reset state and fetch history when chatId changes
   useEffect(() => {
+    if (!chatId) return;
+
+    const chatIdChanged = prevChatIdRef.current !== chatId;
+    prevChatIdRef.current = chatId;
+
+    // Only reset state if chatId actually changed (not on initial mount with same chatId)
+    if (chatIdChanged) {
+      setMessages([]);
+      setStreamingTask(null);
+      setIsThinking(false);
+      setError(null);
+      setFetchedAgentSlug("");
+      setNeedsClarification(false);
+      setChatNotFound(false);
+      setAccessDenied(false);
+      setChatPermission(null);
+      setMessageVersions({});
+      setLiveopsSessionId(initialLiveopsSessionId);
+      setFinopsSessionId(initialFinopsSessionId);
+      setCashBalance(425000.0);
+      historyFetchedRef.current = false;
+      initialQuerySentRef.current = false;
+    }
+
+    // Fetch chat details and history
     const loadChat = async () => {
       const agentSlugFromDetails = await fetchChatDetails();
       await fetchChatHistory(agentSlugFromDetails);
     };
     loadChat();
-  }, [fetchChatDetails, fetchChatHistory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId]);
 
   const sendMessage = useCallback(
     async (content, attachments = []) => {
@@ -368,6 +394,8 @@ const ConversationPanel = ({
       };
 
       const processEvent = (eventData) => {
+        const eventType = eventData.event || eventData.type;
+
         const message = processEventHandler(eventData, {
           setMessages,
           setStreamingTask,
@@ -384,10 +412,8 @@ const ConversationPanel = ({
           setMessages((prev) => [...prev, message]);
         }
 
-        // Stop thinking on complete or error (check both 'event' and 'type' fields)
-        const eventType = eventData.event || eventData.type;
+        // Stop thinking on complete or error
         if (shouldStopThinking(eventType)) {
-          setStreamingTask(null);
           setIsThinking(false);
           if (onThinkingChange) onThinkingChange(false);
         }
@@ -532,7 +558,37 @@ const ConversationPanel = ({
         relatedActions: [],
       });
 
+      // Tool label mapping for regenerate
+      const getToolLabel = (toolName) => {
+        const labels = {
+          market_search: "Executing market research",
+          synthesize: "Synthesizing findings",
+          jira_validate: "Validating Jira ticket",
+          jira_create: "Creating Jira ticket",
+          request_clarification: "Requesting clarification",
+          finish: "Completing workflow",
+          get_google_play_reviews: "Loading Google Play Reviews",
+          get_app_store_reviews: "Loading App Store Reviews",
+        };
+        return labels[toolName] || `Executing ${toolName}`;
+      };
+
+      // Tool type mapping for regenerate
+      const getToolType = (toolName) => {
+        const types = {
+          market_search: "reading",
+          synthesize: "executing",
+          jira_validate: "creating",
+          jira_create: "creating",
+          request_clarification: "executing",
+          finish: "executing",
+        };
+        return types[toolName] || "executing";
+      };
+
       const processEvent = (eventData) => {
+        const eventType = eventData.event || eventData.type;
+
         const message = processEventHandler(eventData, {
           setMessages,
           setStreamingTask,
@@ -549,10 +605,8 @@ const ConversationPanel = ({
           setMessages((prev) => [...prev, message]);
         }
 
-        // Stop thinking on complete or error (check both 'event' and 'type' fields)
-        const eventType = eventData.event || eventData.type;
+        // Stop thinking on complete or error
         if (shouldStopThinking(eventType)) {
-          setStreamingTask(null);
           setIsThinking(false);
           if (onThinkingChange) onThinkingChange(false);
         }
@@ -793,15 +847,7 @@ const ConversationPanel = ({
           );
         })}
 
-        {/* Streaming Task Display */}
-        {streamingTask &&
-          (streamingTask.description || streamingTask.actions?.length > 0) && (
-            <TaskMessage
-              task={streamingTask}
-              isLatest={false}
-              onSendMessage={handleSendMessage}
-            />
-          )}
+        {/* Streaming Task Display - disabled since tool calls are now added directly to messages */}
 
         {/* Error Message */}
         {error && (
@@ -841,18 +887,27 @@ const ConversationPanel = ({
 
       {/* Input Area */}
       <div className="px-4 pb-4">
-        <ChatInput
-          onSendMessage={handleSendMessage}
-          isThinking={isThinking}
-          onStop={stopRequest}
-          agentSlug={agentSlug}
-          chatId={chatId}
-          liveopsSessionId={liveopsSessionId}
-          onLiveopsSessionCreated={setLiveopsSessionId}
-          finopsSessionId={finopsSessionId}
-          onFinopsSessionCreated={setFinopsSessionId}
-          hasMessages={messages.length > 0}
-        />
+        {chatPermission === "read" ? (
+          <div
+            className="text-center py-3 text-[#6d6d6d] text-sm bg-[#f6f6f6] rounded-lg"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            You're not the owner of this chat.
+          </div>
+        ) : (
+          <ChatInput
+            onSendMessage={handleSendMessage}
+            isThinking={isThinking}
+            onStop={stopRequest}
+            agentSlug={agentSlug}
+            chatId={chatId}
+            liveopsSessionId={liveopsSessionId}
+            onLiveopsSessionCreated={setLiveopsSessionId}
+            finopsSessionId={finopsSessionId}
+            onFinopsSessionCreated={setFinopsSessionId}
+            hasMessages={messages.length > 0}
+          />
+        )}
       </div>
     </div>
   );
