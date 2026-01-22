@@ -13,6 +13,7 @@ import {
 import appStoreIcon from "../../../../assets/super-agents/app-store-icon.svg";
 import playStoreIcon from "../../../../assets/super-agents/google-play-store-icon.svg";
 import api from "../../../../api";
+import ToastMessage from "../../../../components/ToastMessage";
 
 // Integration status types
 const INTEGRATION_STATUS = {
@@ -708,16 +709,6 @@ const IntegrationsSettings = ({ studioData }) => {
     handleBack();
   };
 
-  // Auto-hide toast message
-  useEffect(() => {
-    if (toastMessage?.show) {
-      const timer = setTimeout(() => {
-        setToastMessage(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toastMessage]);
-
   // Render configuration form for App Store
   if (currentView === "configure" && selectedIntegration?.id === "app_store") {
     return (
@@ -730,17 +721,11 @@ const IntegrationsSettings = ({ studioData }) => {
           onSave={handleSaveConfig}
           setToastMessage={setToastMessage}
         />
-        {/* Toast Message */}
         {toastMessage?.show && (
-          <div
-            className={`fixed bottom-5 right-5 px-4 py-3 rounded-lg shadow-lg z-50 ${
-              toastMessage.type === "success"
-                ? "bg-green-50 border border-green-200 text-green-800"
-                : "bg-red-50 border border-red-200 text-red-800"
-            }`}
-          >
-            <p className="font-urbanist text-[14px]">{toastMessage.message}</p>
-          </div>
+          <ToastMessage
+            message={toastMessage}
+            setToastMessage={() => setToastMessage(null)}
+          />
         )}
       </>
     );
@@ -808,17 +793,11 @@ const IntegrationsSettings = ({ studioData }) => {
         ))}
       </div>
 
-      {/* Toast Message */}
       {toastMessage?.show && (
-        <div
-          className={`fixed bottom-5 right-5 px-4 py-3 rounded-lg shadow-lg z-50 ${
-            toastMessage.type === "success"
-              ? "bg-green-50 border border-green-200 text-green-800"
-              : "bg-red-50 border border-red-200 text-red-800"
-          }`}
-        >
-          <p className="font-urbanist text-[14px]">{toastMessage.message}</p>
-        </div>
+        <ToastMessage
+          message={toastMessage}
+          setToastMessage={() => setToastMessage(null)}
+        />
       )}
     </div>
   );
