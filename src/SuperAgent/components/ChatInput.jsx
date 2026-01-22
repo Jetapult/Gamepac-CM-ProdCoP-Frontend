@@ -482,10 +482,7 @@ const ChatInput = ({
             if (onLiveopsSessionCreated) {
               onLiveopsSessionCreated(currentLiveopsSession);
             }
-            console.log(
-              "[Liveops] Created session for upload:",
-              currentLiveopsSession,
-            );
+            console.log("[Liveops] Created session for upload:", currentLiveopsSession);
           }
         } catch (err) {
           console.error("[Liveops] Failed to create session:", err);
@@ -504,10 +501,7 @@ const ChatInput = ({
             if (onFinopsSessionCreated) {
               onFinopsSessionCreated(currentFinopsSession);
             }
-            console.log(
-              "[Finops] Created session for upload:",
-              currentFinopsSession,
-            );
+            console.log("[Finops] Created session for upload:", currentFinopsSession);
           }
         } catch (err) {
           console.error("[Finops] Failed to create session:", err);
@@ -911,7 +905,7 @@ const ChatInput = ({
                 "linear-gradient(0deg, #E6E6E6 0%, #E6E6E6 100%), radial-gradient(50% 50% at 50% 50%, rgba(255, 255, 255, 0.00) 12%, rgba(255, 255, 255, 0.20) 24%)",
             }}
           >
-            <StopCircle weight={"Bold"} size={20} color="#6D6D6D" />
+            <StopCircle weight={"Bold"} size={20} color="#0f4159" />
           </button>
         ) : (
           <button

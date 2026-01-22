@@ -64,7 +64,7 @@ export const agents = [
   },
   {
     id: "5",
-    name: "DataPac",
+    name: "UA Playbook",
     slug: "ua-playbook",
     icon: <Lightbulb weight={"Linear"} className="size-[24px]" />,
   },
@@ -130,10 +130,8 @@ const SuperAgent = () => {
 
       // Use session IDs passed from ChatInput (more reliable than state due to async updates)
       // Fall back to state if not provided
-      let currentLiveopsSessionId =
-        sessionIds.liveopsSessionId || liveopsSessionId;
-      let currentFinopsSessionId =
-        sessionIds.finopsSessionId || finopsSessionId;
+      let currentLiveopsSessionId = sessionIds.liveopsSessionId || liveopsSessionId;
+      let currentFinopsSessionId = sessionIds.finopsSessionId || finopsSessionId;
 
       // Create session for liveops/finops agents if not exists
       if (selectedAgent.slug === "liveops" && !currentLiveopsSessionId) {
@@ -155,12 +153,8 @@ const SuperAgent = () => {
       // Build chat data with session ID included
       const chatData = {
         agent_slug: selectedAgent.slug,
-        ...(currentLiveopsSessionId && {
-          liveops_session_id: currentLiveopsSessionId,
-        }),
-        ...(currentFinopsSessionId && {
-          finops_session_id: currentFinopsSessionId,
-        }),
+        ...(currentLiveopsSessionId && { liveops_session_id: currentLiveopsSessionId }),
+        ...(currentFinopsSessionId && { finops_session_id: currentFinopsSessionId }),
       };
 
       const response = await api.post("/v1/superagent/chats", {
