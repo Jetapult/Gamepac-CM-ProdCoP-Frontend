@@ -375,6 +375,45 @@ const ConversationPanel = ({
       };
 
       const processEvent = (eventData) => {
+        const eventType = eventData.event || eventData.type;
+
+        // Handle tool_call events by updating streamingTask for real-time display
+        if (eventType === "tool_call") {
+          const toolName = eventData.tool || eventData.tool_name || "action";
+          const title = getToolLabel(toolName);
+          const toolType = getToolType(toolName);
+
+          setStreamingTask((prev) => ({
+            ...prev,
+            actions: [
+              ...(prev?.actions || []),
+              {
+                id: `action-${Date.now()}-${toolName}`,
+                toolName: toolName,
+                type: toolType,
+                text: title,
+                detail: "",
+                status: "in_progress",
+              },
+            ],
+          }));
+          return; // Don't add to messages, just update streaming task
+        }
+
+        // Handle tool_result events by marking the tool as completed
+        if (eventType === "tool_result") {
+          const toolName = eventData.tool || eventData.tool_name || "";
+          setStreamingTask((prev) => ({
+            ...prev,
+            actions: (prev?.actions || []).map((action) =>
+              action.toolName === toolName
+                ? { ...action, status: "completed" }
+                : action
+            ),
+          }));
+          // Continue to process for artifact updates
+        }
+
         const message = processEventHandler(eventData, {
           setMessages,
           setStreamingTask,
@@ -391,8 +430,7 @@ const ConversationPanel = ({
           setMessages((prev) => [...prev, message]);
         }
 
-        // Stop thinking on complete or error (check both 'event' and 'type' fields)
-        const eventType = eventData.event || eventData.type;
+        // Stop thinking on complete or error
         if (shouldStopThinking(eventType)) {
           setStreamingTask(null);
           setIsThinking(false);
@@ -539,7 +577,73 @@ const ConversationPanel = ({
         relatedActions: [],
       });
 
+      // Tool label mapping for regenerate
+      const getToolLabel = (toolName) => {
+        const labels = {
+          market_search: "Executing market research",
+          synthesize: "Synthesizing findings",
+          jira_validate: "Validating Jira ticket",
+          jira_create: "Creating Jira ticket",
+          request_clarification: "Requesting clarification",
+          finish: "Completing workflow",
+          get_google_play_reviews: "Loading Google Play Reviews",
+          get_app_store_reviews: "Loading App Store Reviews",
+        };
+        return labels[toolName] || `Executing ${toolName}`;
+      };
+
+      // Tool type mapping for regenerate
+      const getToolType = (toolName) => {
+        const types = {
+          market_search: "reading",
+          synthesize: "executing",
+          jira_validate: "creating",
+          jira_create: "creating",
+          request_clarification: "executing",
+          finish: "executing",
+        };
+        return types[toolName] || "executing";
+      };
+
       const processEvent = (eventData) => {
+        const eventType = eventData.event || eventData.type;
+
+        // Handle tool_call events by updating streamingTask for real-time display
+        if (eventType === "tool_call") {
+          const toolName = eventData.tool || eventData.tool_name || "action";
+          const title = getToolLabel(toolName);
+          const toolType = getToolType(toolName);
+
+          setStreamingTask((prev) => ({
+            ...prev,
+            actions: [
+              ...(prev?.actions || []),
+              {
+                id: `action-${Date.now()}-${toolName}`,
+                toolName: toolName,
+                type: toolType,
+                text: title,
+                detail: "",
+                status: "in_progress",
+              },
+            ],
+          }));
+          return;
+        }
+
+        // Handle tool_result events by marking the tool as completed
+        if (eventType === "tool_result") {
+          const toolName = eventData.tool || eventData.tool_name || "";
+          setStreamingTask((prev) => ({
+            ...prev,
+            actions: (prev?.actions || []).map((action) =>
+              action.toolName === toolName
+                ? { ...action, status: "completed" }
+                : action
+            ),
+          }));
+        }
+
         const message = processEventHandler(eventData, {
           setMessages,
           setStreamingTask,
@@ -556,8 +660,7 @@ const ConversationPanel = ({
           setMessages((prev) => [...prev, message]);
         }
 
-        // Stop thinking on complete or error (check both 'event' and 'type' fields)
-        const eventType = eventData.event || eventData.type;
+        // Stop thinking on complete or error
         if (shouldStopThinking(eventType)) {
           setStreamingTask(null);
           setIsThinking(false);
