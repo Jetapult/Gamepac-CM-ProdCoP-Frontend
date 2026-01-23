@@ -158,6 +158,7 @@ const SmartFeedback = () => {
 
       // Period filter
       if (period) {
+        paramData.period = period;
         if (period === "custom") {
           if (
             customDates[0]?.startDate === null &&
@@ -172,8 +173,6 @@ const SmartFeedback = () => {
               "YYYY-MM-DD"
             );
           }
-        } else {
-          paramData.period = period;
         }
       }
 
