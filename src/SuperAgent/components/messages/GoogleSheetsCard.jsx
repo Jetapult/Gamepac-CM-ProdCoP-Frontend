@@ -11,6 +11,7 @@ const GoogleSheetsCard = ({
   isConnected = false,
   onConnect,
   isLoading = false,
+  isConnecting = false,
 }) => {
   const [sheetTitle, setSheetTitle] = useState(initialSheetTitle);
   const [dataSummary, setDataSummary] = useState(initialDataSummary);
@@ -113,15 +114,21 @@ const GoogleSheetsCard = ({
         ) : (
           <button
             onClick={onConnect}
-            disabled={isLoading}
+            disabled={isLoading || isConnecting}
             className="px-4 py-2 text-[14px] font-medium text-white bg-[#3b82f6] rounded-lg hover:bg-[#2563eb] transition-colors disabled:opacity-50 flex items-center gap-1"
             style={{ fontFamily: "Urbanist, sans-serif" }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-            </svg>
-            Connect Google Sheets
+            {isConnecting ? (
+              "Connecting..."
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                Connect Google Sheets
+              </>
+            )}
           </button>
         )}
       </div>
