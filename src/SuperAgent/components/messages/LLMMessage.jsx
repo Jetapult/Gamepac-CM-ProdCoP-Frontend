@@ -157,7 +157,65 @@ const LLMMessage = ({
         className="text-base text-black prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-strong:font-semibold"
         style={{ fontFamily: "Urbanist, sans-serif", lineHeight: "24px" }}
       >
-        <ReactMarkdown>{content}</ReactMarkdown>
+        {(() => {
+          // Strip XML-like tags (e.g., <final_answer>, </final_answer>, etc.)
+          const stripXmlTags = (text) => {
+            if (!text) return "";
+            return text.replace(/<\/?[a-zA-Z_][a-zA-Z0-9_]*>/g, "").trim();
+          };
+
+          // Check if content is JSON
+          const strippedContent = stripXmlTags(content);
+          const trimmedContent = strippedContent?.trim() || "";
+          if (trimmedContent.startsWith("{") || trimmedContent.startsWith("[")) {
+            try {
+              const parsed = JSON.parse(trimmedContent);
+              
+              // Render JSON as user-friendly key-value pairs
+              const renderValue = (value, depth = 0) => {
+                if (value === null || value === undefined) return <span className="text-[#6d6d6d]">—</span>;
+                if (typeof value === "boolean") return <span>{value ? "Yes" : "No"}</span>;
+                if (typeof value === "number") return <span>{value}</span>;
+                if (typeof value === "string") return <span>{value}</span>;
+                if (Array.isArray(value)) {
+                  if (value.length === 0) return <span className="text-[#6d6d6d]">None</span>;
+                  return (
+                    <ul className="list-disc list-inside ml-2">
+                      {value.map((item, i) => (
+                        <li key={i}>{renderValue(item, depth + 1)}</li>
+                      ))}
+                    </ul>
+                  );
+                }
+                if (typeof value === "object") {
+                  return (
+                    <div className={depth > 0 ? "ml-4 mt-1" : ""}>
+                      {Object.entries(value).map(([k, v]) => (
+                        <div key={k} className="mb-2">
+                          <span className="font-semibold text-[#141414]">
+                            {k.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}:
+                          </span>{" "}
+                          {renderValue(v, depth + 1)}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+                return <span>{String(value)}</span>;
+              };
+
+              return (
+                <div className="bg-[#f9f9f9] p-4 rounded-lg">
+                  {renderValue(parsed)}
+                </div>
+              );
+            } catch (e) {
+              // Not valid JSON, render as markdown
+              return <ReactMarkdown>{strippedContent}</ReactMarkdown>;
+            }
+          }
+          return <ReactMarkdown>{strippedContent}</ReactMarkdown>;
+        })()}
       </div>
 
       {/* Related Actions - Only show for latest LLM message */}
