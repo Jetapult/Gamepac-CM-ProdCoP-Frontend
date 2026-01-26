@@ -131,7 +131,7 @@ const IntegrationDropdown = ({
   };
 
   return (
-    <div className="absolute top-full left-0 mt-2 w-[250px] bg-white border border-[#f1f1f1] rounded-[8px] shadow-lg z-50">
+    <div className="absolute bottom-full left-0 mb-2 w-[250px] bg-white border border-[#f1f1f1] rounded-[8px] shadow-lg z-50">
       <div className="p-1.5">
         {integrations.map((integration) => {
           const isConnected = connectedIntegrations?.length

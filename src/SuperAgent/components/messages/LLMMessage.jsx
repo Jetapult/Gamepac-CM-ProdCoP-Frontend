@@ -64,12 +64,14 @@ const LLMMessage = ({
   relatedActions = [],
   onSendMessage,
   onRegenerate,
+  onFeedback,
   versionInfo,
   canRegenerate = true,
+  initialFeedback = null,
 }) => {
   const [copiedTooltip, setCopiedTooltip] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [feedback, setFeedback] = useState(null); // 'liked' | 'disliked' | null
+  const [feedback, setFeedback] = useState(initialFeedback); // 'like' | 'dislike' | null
   // Expand thinking by default while streaming, collapse when done
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(isStreaming);
   const [wasStreaming, setWasStreaming] = useState(isStreaming);
@@ -101,11 +103,15 @@ const LLMMessage = ({
   };
 
   const handleLike = () => {
-    setFeedback(feedback === "liked" ? null : "liked");
+    const newFeedback = feedback === "like" ? null : "like";
+    setFeedback(newFeedback);
+    onFeedback?.(newFeedback);
   };
 
   const handleDislike = () => {
-    setFeedback(feedback === "disliked" ? null : "disliked");
+    const newFeedback = feedback === "dislike" ? null : "dislike";
+    setFeedback(newFeedback);
+    onFeedback?.(newFeedback);
   };
 
   const ActionIcon = ({ icon: Icon, tooltip, onClick }) => (
@@ -262,7 +268,7 @@ const LLMMessage = ({
           <button
             onClick={handleLike}
             className={`p-[4px] rounded-[8px] transition-all ${
-              feedback === "liked"
+              feedback === "like"
                 ? "bg-[#f1fcf6] border border-[#1f6744] text-[#1f6744]"
                 : "text-[#6d6d6d] hover:bg-[#f6f6f6]"
             }`}
@@ -274,7 +280,7 @@ const LLMMessage = ({
           <button
             onClick={handleDislike}
             className={`p-[4px] rounded-[8px] transition-all ${
-              feedback === "disliked"
+              feedback === "dislike"
                 ? "bg-[#fef1f1] border border-[#dc2626] text-[#dc2626]"
                 : "text-[#6d6d6d] hover:bg-[#f6f6f6]"
             }`}
@@ -339,6 +345,7 @@ const LLMMessage = ({
           />
         )}
       </div>
+
     </div>
   );
 };

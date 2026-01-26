@@ -212,6 +212,7 @@ export const handleActionEvent = (eventData, context) => {
 export const handleResponseEvent = (eventData, context) => {
   let content = eventData.content || "";
   const messageId = eventData.message_id || null;
+  const actions = eventData.actions || [];
 
   // Extract thinking content from <think>...</think> tags
   const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/);
@@ -222,12 +223,38 @@ export const handleResponseEvent = (eventData, context) => {
     .replace(/<think>[\s\S]*?<\/think>\s*/g, "")
     .trim();
 
-  // If no content at all, return null
-  if (!mainContent && !thinkingContent) {
+  // If actions exist but no content, merge actions into the last LLM message
+  if (actions.length > 0 && !mainContent && !thinkingContent) {
+    if (context.setMessages) {
+      context.setMessages((prevMessages) => {
+        // Find the last LLM text message
+        const lastLLMIndex = [...prevMessages].reverse().findIndex(
+          (msg) => msg.sender === "llm" && msg.type === "text"
+        );
+        if (lastLLMIndex !== -1) {
+          const actualIndex = prevMessages.length - 1 - lastLLMIndex;
+          const updatedMessages = [...prevMessages];
+          updatedMessages[actualIndex] = {
+            ...updatedMessages[actualIndex],
+            data: {
+              ...updatedMessages[actualIndex].data,
+              actions: actions,
+            },
+          };
+          return updatedMessages;
+        }
+        return prevMessages;
+      });
+    }
+    return null; // Don't create a new message
+  }
+
+  // If no content and no actions, return null
+  if (!mainContent && !thinkingContent && actions.length === 0) {
     return null;
   }
 
-  // Return as LLM text message with optional thinking
+  // Return as LLM text message with optional thinking and actions
   return {
     id: getUniqueId(),
     sender: "llm",
@@ -236,6 +263,7 @@ export const handleResponseEvent = (eventData, context) => {
     data: {
       content: mainContent,
       thinking: thinkingContent,
+      actions: actions.length > 0 ? actions : undefined,
     },
   };
 };
