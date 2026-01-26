@@ -71,7 +71,11 @@ const Message = ({
 
     case "thinking":
       return (
-        <ThinkingMessage content={data.content} nextAction={data.nextAction} />
+        <ThinkingMessage
+          content={data.content}
+          nextAction={data.nextAction}
+          isStreaming={data.isStreaming}
+        />
       );
 
     case "agent_header":

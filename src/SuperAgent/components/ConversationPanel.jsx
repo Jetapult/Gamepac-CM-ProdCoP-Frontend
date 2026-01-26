@@ -9,6 +9,8 @@ import {
   processEvent as processEventHandler,
   shouldStopThinking,
   getAgentDisplayName,
+  flushContentChunkState,
+  resetContentChunkState,
 } from "../utils/eventHandlers";
 import api from "@/api";
 import { updateChat, getAttachment } from "../../services/superAgentApi";
@@ -149,23 +151,86 @@ const ConversationPanel = ({
                   },
                 };
               } else if (msg.sender === "agent") {
-                // For agent messages, process raw_events using the same handlers as streaming
+                // For agent messages, process raw_events
                 const rawEvents = msg.data?.raw_events || [];
                 const processedMessages = [];
 
+                // For history loading: accumulate all content_chunk content first,
+                // then parse think tags manually (don't use streaming handler)
+                let allContent = "";
                 for (const event of rawEvents) {
-                  const message = processEventHandler(event, {
+                  const eventType = event.type || event.event;
+                  
+                  if (eventType === "content_chunk") {
+                    // Accumulate content chunks
+                    allContent += event.content || "";
+                    continue;
+                  }
+
+                  const result = processEventHandler(event, {
                     agentSlug: effectiveAgentSlug,
                     onStructuredArtifactUpdate: (type, data) => {
                       // Capture the latest artifact for restoration
                       latestArtifact = { type, data };
                     },
                   });
-                  if (message) {
+                  if (result) {
+                    // Handle both single message and array of messages
+                    const messages = Array.isArray(result) ? result : [result];
+                    for (const message of messages) {
+                      if (message && message.type) {
+                        processedMessages.push({
+                          ...message,
+                          id: `${msg.id}-${processedMessages.length}`,
+                          apiMessageId: msg.id, // Store original API message ID for regenerate
+                        });
+                      }
+                    }
+                  }
+                }
+
+                // Parse accumulated content for think tags
+                if (allContent) {
+                  // Extract think blocks and regular content
+                  const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
+                  let thinkMatch;
+                  let lastIndex = 0;
+                  let regularContent = "";
+
+                  while ((thinkMatch = thinkRegex.exec(allContent)) !== null) {
+                    // Add content before this think block to regular content
+                    regularContent += allContent.slice(lastIndex, thinkMatch.index);
+                    lastIndex = thinkRegex.lastIndex;
+
+                    // Add thinking message
+                    const thinkContent = thinkMatch[1].trim();
+                    if (thinkContent) {
+                      processedMessages.push({
+                        id: `${msg.id}-${processedMessages.length}`,
+                        sender: "llm",
+                        type: "thinking",
+                        apiMessageId: msg.id,
+                        data: {
+                          content: thinkContent,
+                          isStreaming: false,
+                        },
+                      });
+                    }
+                  }
+
+                  // Add remaining content after last think block
+                  regularContent += allContent.slice(lastIndex);
+
+                  // Add regular content message if any
+                  if (regularContent.trim()) {
                     processedMessages.push({
-                      ...message,
                       id: `${msg.id}-${processedMessages.length}`,
-                      apiMessageId: msg.id, // Store original API message ID for regenerate
+                      sender: "llm",
+                      type: "text",
+                      apiMessageId: msg.id,
+                      data: {
+                        content: regularContent.trim(),
+                      },
                     });
                   }
                 }
@@ -393,10 +458,37 @@ const ConversationPanel = ({
         return types[toolName] || "executing";
       };
 
+      // Reset content chunk state before starting
+      resetContentChunkState();
+
+      // Helper to update or add messages by ID (for streaming updates)
+      const updateOrAddMessages = (messagesToProcess) => {
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          for (const msg of messagesToProcess) {
+            const existingIdx = newMessages.findIndex((m) => m.id === msg.id);
+            if (existingIdx !== -1) {
+              newMessages[existingIdx] = msg;
+            } else {
+              newMessages.push(msg);
+            }
+          }
+          return newMessages;
+        });
+      };
+
       const processEvent = (eventData) => {
         const eventType = eventData.event || eventData.type;
 
-        const message = processEventHandler(eventData, {
+        // On complete event, flush any remaining content
+        if (eventType === "complete") {
+          const flushedMessages = flushContentChunkState(eventData.steps);
+          if (flushedMessages) {
+            updateOrAddMessages(flushedMessages);
+          }
+        }
+
+        const result = processEventHandler(eventData, {
           setMessages,
           setStreamingTask,
           setIsThinking,
@@ -408,8 +500,11 @@ const ConversationPanel = ({
           agentSlug,
         });
 
-        if (message) {
-          setMessages((prev) => [...prev, message]);
+        // Handle both single message and array of messages (from content_chunk)
+        // Update existing messages by ID for streaming updates
+        if (result) {
+          const msgs = Array.isArray(result) ? result : [result];
+          updateOrAddMessages(msgs);
         }
 
         // Stop thinking on complete or error
@@ -586,10 +681,37 @@ const ConversationPanel = ({
         return types[toolName] || "executing";
       };
 
+      // Reset content chunk state before starting
+      resetContentChunkState();
+
+      // Helper to update or add messages by ID (for streaming updates)
+      const updateOrAddMessages = (messagesToProcess) => {
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          for (const msg of messagesToProcess) {
+            const existingIdx = newMessages.findIndex((m) => m.id === msg.id);
+            if (existingIdx !== -1) {
+              newMessages[existingIdx] = msg;
+            } else {
+              newMessages.push(msg);
+            }
+          }
+          return newMessages;
+        });
+      };
+
       const processEvent = (eventData) => {
         const eventType = eventData.event || eventData.type;
 
-        const message = processEventHandler(eventData, {
+        // On complete event, flush any remaining content
+        if (eventType === "complete") {
+          const flushedMessages = flushContentChunkState(eventData.steps);
+          if (flushedMessages) {
+            updateOrAddMessages(flushedMessages);
+          }
+        }
+
+        const result = processEventHandler(eventData, {
           setMessages,
           setStreamingTask,
           setIsThinking,
@@ -601,8 +723,11 @@ const ConversationPanel = ({
           agentSlug,
         });
 
-        if (message) {
-          setMessages((prev) => [...prev, message]);
+        // Handle both single message and array of messages (from content_chunk)
+        // Update existing messages by ID for streaming updates
+        if (result) {
+          const msgs = Array.isArray(result) ? result : [result];
+          updateOrAddMessages(msgs);
         }
 
         // Stop thinking on complete or error
@@ -751,14 +876,8 @@ const ConversationPanel = ({
     if (isLoadingHistory) return;
 
     initialQuerySentRef.current = true;
-
-    // Use setTimeout to defer execution and prevent StrictMode double-send
-    const timer = setTimeout(() => {
-      sendMessageRef.current(initialQuery, initialAttachments);
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, [initialQuery, initialAttachments, chatId, agentSlug, isLoadingHistory]);
+    sendMessage(initialQuery, initialAttachments);
+  }, [initialQuery, initialAttachments, chatId, agentSlug, isLoadingHistory, sendMessage]);
 
   const handleSendMessage = (content, attachments = []) => {
     setError(null);
