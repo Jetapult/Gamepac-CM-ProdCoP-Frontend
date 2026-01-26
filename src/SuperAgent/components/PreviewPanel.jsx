@@ -32,7 +32,8 @@ const PreviewPanel = ({
   agentName = "GamePac",
 }) => {
   const hasArtifact = artifactContent && isMarkdown(artifactContent);
-  const hasStructuredArtifact = artifactType && artifactData;
+  // Exclude "markdown" type from structured artifacts - it's handled by artifactContent
+  const hasStructuredArtifact = artifactType && artifactData && artifactType !== "markdown";
 
   return (
     <div className="flex-1 bg-[#f8f8f7] border-l border-[#f6f6f6] flex flex-col relative">

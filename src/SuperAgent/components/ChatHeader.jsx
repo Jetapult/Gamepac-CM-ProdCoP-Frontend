@@ -52,12 +52,16 @@ const ChatHeader = ({
   onTitleChange,
   isPublic = false,
   onPublicChange,
+  isFavourite = false,
+  onToggleFavourite,
+  onFavouriteChange,
   onDelete,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(chatTitle);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTogglingFavourite, setIsTogglingFavourite] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const menuRef = useRef(null);
@@ -156,15 +160,22 @@ const ChatHeader = ({
           {showMenu && (
             <div className="absolute top-full right-0 mt-2 bg-white border border-[#f1f1f1] rounded-[8px] shadow-lg z-50 py-2 min-w-[140px]">
               <button
-                className="w-full flex items-center gap-3 px-4 py-2 hover:bg-[#f6f7f8] transition-colors"
-                onClick={() => {
-                  // Handle favourite
+                className="w-full flex items-center gap-3 px-4 py-2 hover:bg-[#f6f7f8] transition-colors disabled:opacity-50"
+                disabled={isTogglingFavourite}
+                onClick={async () => {
+                  setIsTogglingFavourite(true);
+                  await onToggleFavourite?.();
+                  setIsTogglingFavourite(false);
                   setShowMenu(false);
                 }}
               >
-                <Star weight="Linear" size={20} color="#6d6d6d" />
+                <Star 
+                  weight={isFavourite ? "Bold" : "Linear"} 
+                  size={20} 
+                  color={isFavourite ? "#f59e0b" : "#6d6d6d"} 
+                />
                 <span className="text-[14px] text-[#141414] font-medium font-urbanist">
-                  Favourite
+                  {isFavourite ? "Unfavourite" : "Favourite"}
                 </span>
               </button>
               <button
