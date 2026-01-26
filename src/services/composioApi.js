@@ -105,20 +105,26 @@ export const disconnectConnection = async (connectionId) => {
 
 /**
  * Map API connection response to UI format
- * Based on actual API response structure:
+ * Based on Composio v3 API response structure:
  * {
- *   id: "uuid",
- *   appUniqueId: "gmail",
- *   appName: "gmail",
+ *   id: "ca_D0oQDOIhyNwo",
+ *   toolkit: { slug: "gmail" },
+ *   auth_config: { id: "ac_...", auth_scheme: "OAUTH2", ... },
  *   status: "ACTIVE",
- *   createdAt: "2026-01-23T11:28:32.686Z",
- *   updatedAt: "2026-01-25T09:45:22.116Z",
+ *   is_disabled: false,
+ *   created_at: "2026-01-26T13:02:03.311Z",
+ *   updated_at: "2026-01-26T13:02:16.552Z",
  *   ...
  * }
  */
 export const mapConnectionToUI = (connection) => {
-  // Use appUniqueId or appName to get the app identifier
-  const appId = (connection.appUniqueId || connection.appName || "").toLowerCase();
+  // v3 uses toolkit.slug; fall back to legacy appUniqueId/appName for safety
+  const appId = (
+    connection.toolkit?.slug ||
+    connection.appUniqueId ||
+    connection.appName ||
+    ""
+  ).toLowerCase();
 
   // Map to UI slug
   const slug = APP_TO_SLUG_MAP[appId] || appId;
@@ -130,12 +136,12 @@ export const mapConnectionToUI = (connection) => {
   return {
     connectionId: connection.id,
     appId: appId,
-    appName: connection.appName,
+    appName: connection.toolkit?.slug || connection.appName,
     slug,
     status,
-    enabled: connection.enabled,
-    connectedAt: connection.createdAt,
-    updatedAt: connection.updatedAt,
+    enabled: connection.is_disabled === undefined ? connection.enabled : !connection.is_disabled,
+    connectedAt: connection.created_at || connection.createdAt,
+    updatedAt: connection.updated_at || connection.updatedAt,
   };
 };
 
