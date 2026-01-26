@@ -9,6 +9,8 @@ const allIntegrations = [
     icon: "https://www.gstatic.com/images/branding/product/1x/gmail_2020q4_48dp.png",
     description:
       "Draft replies, search your inbox, and summarize email threads instantly",
+    website: "https://mail.google.com",
+    privacyPolicy: "https://policies.google.com/privacy",
   },
   {
     id: 2,
@@ -17,6 +19,8 @@ const allIntegrations = [
     icon: "https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png",
     description:
       "Understand your schedule, manage events, and optimize your time effectively",
+    website: "https://calendar.google.com",
+    privacyPolicy: "https://policies.google.com/privacy",
   },
   {
     id: 3,
@@ -25,6 +29,8 @@ const allIntegrations = [
     icon: "https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png",
     description:
       "Store files securely, share documents, and collaborate in real-time",
+    website: "https://drive.google.com",
+    privacyPolicy: "https://policies.google.com/privacy",
   },
   {
     id: 4,
@@ -33,6 +39,8 @@ const allIntegrations = [
     icon: "https://ssl.gstatic.com/images/branding/product/1x/docs_2020q4_48dp.png",
     description:
       "Create, edit, and format documents with ease while working with others",
+    website: "https://docs.google.com",
+    privacyPolicy: "https://policies.google.com/privacy",
   },
   {
     id: 5,
@@ -41,30 +49,28 @@ const allIntegrations = [
     icon: "https://ssl.gstatic.com/images/branding/product/1x/sheets_2020q4_48dp.png",
     description:
       "Analyze data, create spreadsheets, and visualize information efficiently",
+    website: "https://sheets.google.com",
+    privacyPolicy: "https://policies.google.com/privacy",
   },
   {
     id: 6,
-    name: "Google Slides",
-    slug: "google-slides",
-    icon: "https://ssl.gstatic.com/images/branding/product/1x/slides_2020q4_48dp.png",
-    description:
-      "Connect GamePac and automate workflows across thousands of apps",
-  },
-  {
-    id: 7,
     name: "Jira",
     slug: "jira",
     icon: "https://cdn.worldvectorlogo.com/logos/jira-1.svg",
     description:
       "Host video conferences, connect with colleagues, and share screens effortlessly",
+    website: "https://www.atlassian.com/software/jira",
+    privacyPolicy: "https://www.atlassian.com/legal/privacy-policy",
   },
   {
-    id: 8,
+    id: 7,
     name: "Slack",
     slug: "slack",
     icon: "https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png",
     description:
       "Organize notes, set reminders, and share lists to stay productive",
+    website: "https://slack.com",
+    privacyPolicy: "https://slack.com/trust/privacy/privacy-policy",
   },
 ];
 

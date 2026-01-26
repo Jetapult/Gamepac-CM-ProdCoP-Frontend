@@ -29,47 +29,77 @@ import { useSelector, useDispatch } from "react-redux";
 import { setSelectedTemplate } from "../../store/reducer/superAgent";
 import ConnectorModal from "./ConnectorModal";
 import AddConnectorsModal from "./AddConnectorsModal";
+import useComposioConnections from "../../hooks/useComposioConnections";
 import pdfIcon from "../../assets/file-icons/pdf.png";
 import wordIcon from "../../assets/file-icons/word.png";
 import excelIcon from "../../assets/file-icons/excel.png";
 import mediaIcon from "../../assets/file-icons/media.png";
 import codeIcon from "../../assets/file-icons/code.png";
 
+// Available integrations for the dropdown
 const integrations = [
   {
     id: 1,
     name: "Gmail",
     slug: "gmail",
     icon: "https://www.gstatic.com/images/branding/product/1x/gmail_2020q4_48dp.png",
-    connected: false,
-  },
-  {
-    id: 3,
-    name: "Google Drive",
-    slug: "google-drive",
-    icon: "https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png",
-    connected: false,
-  },
-  {
-    id: 5,
-    name: "Google Calendar",
-    slug: "google-calendar",
-    icon: "https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png",
-    connected: false,
+    description: "Search, create, and manage your emails across your studio",
+    website: "https://mail.google.com",
+    privacyPolicy: "https://policies.google.com/privacy",
   },
   {
     id: 2,
-    name: "Jira",
-    slug: "jira",
-    icon: "https://cdn.worldvectorlogo.com/logos/jira-1.svg",
-    connected: false,
+    name: "Google Drive",
+    slug: "google-drive",
+    icon: "https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png",
+    description: "Store, share, and access files from anywhere",
+    website: "https://drive.google.com",
+    privacyPolicy: "https://policies.google.com/privacy",
+  },
+  {
+    id: 3,
+    name: "Google Calendar",
+    slug: "google-calendar",
+    icon: "https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png",
+    description: "Schedule meetings and manage your calendar events",
+    website: "https://calendar.google.com",
+    privacyPolicy: "https://policies.google.com/privacy",
   },
   {
     id: 4,
+    name: "Google Docs",
+    slug: "google-docs",
+    icon: "https://ssl.gstatic.com/images/branding/product/1x/docs_2020q4_48dp.png",
+    description: "Create, edit, and collaborate on documents",
+    website: "https://docs.google.com",
+    privacyPolicy: "https://policies.google.com/privacy",
+  },
+  {
+    id: 5,
+    name: "Google Sheets",
+    slug: "google-sheets",
+    icon: "https://ssl.gstatic.com/images/branding/product/1x/sheets_2020q4_48dp.png",
+    description: "Create and edit spreadsheets, analyze data",
+    website: "https://sheets.google.com",
+    privacyPolicy: "https://policies.google.com/privacy",
+  },
+  {
+    id: 6,
+    name: "Jira",
+    slug: "jira",
+    icon: "https://cdn.worldvectorlogo.com/logos/jira-1.svg",
+    description: "Plan and track projects, tasks, and team workflows in Jira",
+    website: "https://www.atlassian.com/software/jira",
+    privacyPolicy: "https://www.atlassian.com/legal/privacy-policy",
+  },
+  {
+    id: 7,
     name: "Slack",
     slug: "slack",
     icon: "https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png",
-    connected: false,
+    description: "Search and post messages across your Slack workspace",
+    website: "https://slack.com",
+    privacyPolicy: "https://slack.com/trust/privacy/privacy-policy",
   },
 ];
 
@@ -83,6 +113,7 @@ const IntegrationDropdown = ({
   connectedIntegrations,
   onToggleConnection,
   onAddConnectors,
+  isLoading = false,
 }) => {
   const handleConnect = (integration) => {
     const isConnected = connectedIntegrations?.length
@@ -102,7 +133,7 @@ const IntegrationDropdown = ({
   return (
     <div className="absolute top-full left-0 mt-2 w-[250px] bg-white border border-[#f1f1f1] rounded-[8px] shadow-lg z-50">
       <div className="p-1.5">
-        {integrations.map((integration, index) => {
+        {integrations.map((integration) => {
           const isConnected = connectedIntegrations?.length
             ? connectedIntegrations?.includes(integration.slug)
             : false;
@@ -111,6 +142,7 @@ const IntegrationDropdown = ({
               key={integration.id}
               className={`w-full flex items-center justify-between p-3 transition-colors hover:bg-[#f6f7f8] hover:rounded-[4px]`}
               onClick={() => handleConnect(integration)}
+              disabled={isLoading}
             >
               <div className="flex items-center gap-2">
                 <img
@@ -171,7 +203,7 @@ const IntegrationDropdown = ({
               />
             </div>
             <div className="size-[28px] bg-white rounded-full border border-[#dfdfdf] flex items-center justify-center text-[10px] font-urbanist font-medium text-[#575757]">
-              +10
+              +5
             </div>
           </div>
         </button>
@@ -321,10 +353,22 @@ const ChatInput = ({
   const [showConnectorModal, setShowConnectorModal] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState(null);
   const [showAddConnectorsModal, setShowAddConnectorsModal] = useState(false);
-  const [connectedIntegrations, setConnectedIntegrations] = useState();
   const [attachments, setAttachments] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
+
+  // Use Composio connections hook for API integration
+  const {
+    isConnecting,
+    connect,
+    disconnect,
+    getConnectedSlugs,
+    getConnection,
+  } = useComposioConnections();
+
+  // Get connected integration slugs from API
+  const connectedIntegrations = getConnectedSlugs();
+
   const selectedTemplate = useSelector(
     (state) => state.superAgent.selectedTemplate,
   );
@@ -360,24 +404,20 @@ const ChatInput = ({
     setSelectedIntegration(null);
   };
 
-  const handleToggleConnection = (integrationSlug) => {
-    setConnectedIntegrations((prev) => {
-      if (prev.includes(integrationSlug)) {
-        return prev.filter((slug) => slug !== integrationSlug);
-      } else {
-        return [...prev, integrationSlug];
-      }
-    });
+  const handleToggleConnection = async (integrationSlug) => {
+    // If connected, disconnect; otherwise this shouldn't be called
+    const connection = getConnection(integrationSlug);
+    if (connection?.connectionId) {
+      await disconnect(connection.connectionId);
+    }
   };
 
-  const handleConnectSuccess = (integrationSlug) => {
-    setConnectedIntegrations((prev) => {
-      if (!prev?.includes(integrationSlug)) {
-        return [...(prev || []), integrationSlug];
-      }
-      return prev;
-    });
-    handleCloseModal();
+  const handleConnectSuccess = async (integrationSlug) => {
+    // Initiate OAuth flow via Composio API
+    const result = await connect(integrationSlug);
+    if (result.success) {
+      handleCloseModal();
+    }
   };
 
   const handleAddIntegration = (integration) => {
@@ -862,7 +902,9 @@ const ChatInput = ({
 
           <div className="relative" ref={integrationDropdownRef}>
             <button
-              className={`w-9 h-9 border border-[#e6e6e6] rounded-lg flex items-center justify-center text-[#6d6d6d] hover:text-[#1f6744] transition-colors ${
+              className={`h-9 border border-[#e6e6e6] rounded-lg flex items-center justify-center text-[#6d6d6d] hover:text-[#1f6744] transition-colors ${
+                connectedIntegrations?.length ? "px-2" : "w-9"
+              } ${
                 showIntegrationDropdown
                   ? "bg-[#f1f1f1]"
                   : "bg-white hover:bg-[#E6E6E6]"
@@ -872,16 +914,25 @@ const ChatInput = ({
               }
             >
               {connectedIntegrations?.length ? (
-                <>
-                  {connectedIntegrations.map((integration) => (
-                    <img
-                      key={integration}
-                      src={getIntegrationBySlug(integration).icon}
-                      alt={integration}
-                      className="size-[16px] object-contain"
-                    />
-                  ))}
-                </>
+                <div className="flex items-center gap-1">
+                  {connectedIntegrations.slice(0, 3).map((slug) => {
+                    const integration = getIntegrationBySlug(slug);
+                    if (!integration) return null;
+                    return (
+                      <img
+                        key={slug}
+                        src={integration.icon}
+                        alt={integration.name}
+                        className="size-[18px] object-contain shrink-0"
+                      />
+                    );
+                  })}
+                  {connectedIntegrations.length > 3 && (
+                    <span className="text-[10px] font-urbanist font-medium text-[#575757]">
+                      +{connectedIntegrations.length - 3}
+                    </span>
+                  )}
+                </div>
               ) : (
                 <PlugCircle weight={"Linear"} size={16} color="#6D6D6D" />
               )}
@@ -897,6 +948,7 @@ const ChatInput = ({
                   setShowIntegrationDropdown(false);
                   setShowAddConnectorsModal(true);
                 }}
+                isLoading={isConnecting}
               />
             )}
           </div>
@@ -962,6 +1014,7 @@ const ChatInput = ({
         isOpen={showConnectorModal}
         onClose={handleCloseModal}
         onConnect={handleConnectSuccess}
+        isConnecting={isConnecting}
       />
 
       {/* Add Connectors Modal */}
