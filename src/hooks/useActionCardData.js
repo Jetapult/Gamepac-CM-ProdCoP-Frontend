@@ -1,11 +1,18 @@
-import { useState, useEffect, useCallback } from "react";
-import api from "../api";
+import { useState, useCallback } from "react";
+import {
+  getSlackChannels as fetchSlackChannelsApi,
+  getSlackUsers as fetchSlackUsersApi,
+  getJiraProjects as fetchJiraProjectsApi,
+  getJiraUsers as fetchJiraUsersApi,
+  getGoogleDocs as fetchGoogleDocsApi,
+  getGoogleSheets as fetchGoogleSheetsApi,
+} from "../services/composioApi";
 
 /**
  * Custom hook for fetching action card dropdown data
  * Fetches channels, projects, users etc. for action cards
  */
-const useActionCardData = (userId) => {
+const useActionCardData = () => {
   const [slackChannels, setSlackChannels] = useState([]);
   const [slackUsers, setSlackUsers] = useState([]);
   const [jiraProjects, setJiraProjects] = useState([]);
@@ -28,11 +35,11 @@ const useActionCardData = (userId) => {
    * Fetch Slack channels
    */
   const fetchSlackChannels = useCallback(async () => {
-    if (!userId) return;
     setIsLoading(prev => ({ ...prev, slackChannels: true }));
     try {
-      const response = await api.get(`/v1/composio/slack/channels/${userId}`);
-      const channels = response.data?.channels || response.data?.data?.channels || [];
+      const response = await fetchSlackChannelsApi({ limit: 100 });
+      // API returns { data: { data: { channels: [...] } } }
+      const channels = response?.data?.data?.channels || response?.data?.channels || response?.channels || [];
       setSlackChannels(channels);
       setErrors(prev => ({ ...prev, slackChannels: null }));
     } catch (err) {
@@ -42,17 +49,17 @@ const useActionCardData = (userId) => {
     } finally {
       setIsLoading(prev => ({ ...prev, slackChannels: false }));
     }
-  }, [userId]);
+  }, []);
 
   /**
    * Fetch Slack users for @mentions
    */
   const fetchSlackUsers = useCallback(async () => {
-    if (!userId) return;
     setIsLoading(prev => ({ ...prev, slackUsers: true }));
     try {
-      const response = await api.get(`/v1/composio/slack/users/${userId}`);
-      const users = response.data?.users || response.data?.data?.users || [];
+      const response = await fetchSlackUsersApi({ limit: 100 });
+      // API returns { data: { data: { members: [...] } } }
+      const users = response?.data?.data?.members || response?.data?.members || response?.members || [];
       setSlackUsers(users);
       setErrors(prev => ({ ...prev, slackUsers: null }));
     } catch (err) {
@@ -62,17 +69,16 @@ const useActionCardData = (userId) => {
     } finally {
       setIsLoading(prev => ({ ...prev, slackUsers: false }));
     }
-  }, [userId]);
+  }, []);
 
   /**
    * Fetch Jira projects
    */
   const fetchJiraProjects = useCallback(async () => {
-    if (!userId) return;
     setIsLoading(prev => ({ ...prev, jiraProjects: true }));
     try {
-      const response = await api.get(`/v1/composio/jira/projects/${userId}`);
-      const projects = response.data?.projects || response.data?.data?.projects || [];
+      const response = await fetchJiraProjectsApi({ maxResults: 50 });
+      const projects = response?.data?.projects || response?.projects || [];
       setJiraProjects(projects);
       setErrors(prev => ({ ...prev, jiraProjects: null }));
     } catch (err) {
@@ -82,17 +88,16 @@ const useActionCardData = (userId) => {
     } finally {
       setIsLoading(prev => ({ ...prev, jiraProjects: false }));
     }
-  }, [userId]);
+  }, []);
 
   /**
    * Fetch Jira users for assignee suggestions
    */
   const fetchJiraUsers = useCallback(async () => {
-    if (!userId) return;
     setIsLoading(prev => ({ ...prev, jiraUsers: true }));
     try {
-      const response = await api.get(`/v1/composio/jira/users/${userId}`);
-      const users = response.data?.users || response.data?.data?.users || [];
+      const response = await fetchJiraUsersApi({ maxResults: 50 });
+      const users = response?.data?.users || response?.users || [];
       setJiraUsers(users);
       setErrors(prev => ({ ...prev, jiraUsers: null }));
     } catch (err) {
@@ -102,17 +107,16 @@ const useActionCardData = (userId) => {
     } finally {
       setIsLoading(prev => ({ ...prev, jiraUsers: false }));
     }
-  }, [userId]);
+  }, []);
 
   /**
    * Fetch Google Docs list (optional)
    */
   const fetchGoogleDocs = useCallback(async () => {
-    if (!userId) return;
     setIsLoading(prev => ({ ...prev, googleDocs: true }));
     try {
-      const response = await api.get(`/v1/composio/docs/${userId}`);
-      const docs = response.data?.docs || response.data?.data?.docs || [];
+      const response = await fetchGoogleDocsApi({ maxResults: 20 });
+      const docs = response?.data?.files || response?.files || [];
       setGoogleDocs(docs);
       setErrors(prev => ({ ...prev, googleDocs: null }));
     } catch (err) {
@@ -122,17 +126,16 @@ const useActionCardData = (userId) => {
     } finally {
       setIsLoading(prev => ({ ...prev, googleDocs: false }));
     }
-  }, [userId]);
+  }, []);
 
   /**
    * Fetch Google Sheets list (optional)
    */
   const fetchGoogleSheets = useCallback(async () => {
-    if (!userId) return;
     setIsLoading(prev => ({ ...prev, googleSheets: true }));
     try {
-      const response = await api.get(`/v1/composio/sheets/${userId}`);
-      const sheets = response.data?.sheets || response.data?.data?.sheets || [];
+      const response = await fetchGoogleSheetsApi({ maxResults: 20 });
+      const sheets = response?.data?.files || response?.files || [];
       setGoogleSheets(sheets);
       setErrors(prev => ({ ...prev, googleSheets: null }));
     } catch (err) {
@@ -142,7 +145,7 @@ const useActionCardData = (userId) => {
     } finally {
       setIsLoading(prev => ({ ...prev, googleSheets: false }));
     }
-  }, [userId]);
+  }, []);
 
   /**
    * Fetch all Slack data

@@ -6,6 +6,7 @@ const SlackMessageCard = ({
   channel: initialChannel = "#liveops",
   text: initialText = "",
   channels = [],
+  users = [],
   onSend,
   onCancel,
   onChange,
@@ -13,6 +14,7 @@ const SlackMessageCard = ({
   isConnected = false,
   onConnect,
   isLoading = false,
+  isConnecting = false,
   isLoadingChannels = false,
 }) => {
   const [channel, setChannel] = useState(initialChannel);
@@ -22,9 +24,13 @@ const SlackMessageCard = ({
   const channelInputRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  // Filter channels based on input
+  // Merge channels and users, filter based on input
+  const filterText = channelFilter.toLowerCase().replace(/^[#@]/, "");
   const filteredChannels = channels.filter((ch) =>
-    (ch.name || ch).toLowerCase().includes(channelFilter.toLowerCase().replace("#", ""))
+    (ch.name || ch).toLowerCase().includes(filterText)
+  );
+  const filteredUsers = users.filter((u) =>
+    (u.name || u.real_name || u).toLowerCase().includes(filterText)
   );
 
   const handleChannelChange = (e) => {
@@ -41,6 +47,14 @@ const SlackMessageCard = ({
     setChannelFilter("");
     setShowChannelDropdown(false);
     onChange?.({ channel: channelName, text });
+  };
+
+  const handleUserSelect = (u) => {
+    const userName = `@${u.name || u.real_name || u}`;
+    setChannel(userName);
+    setChannelFilter("");
+    setShowChannelDropdown(false);
+    onChange?.({ channel: userName, text });
   };
 
   const handleChannelFocus = () => {
@@ -97,31 +111,43 @@ const SlackMessageCard = ({
             className={`w-full text-[14px] text-[#141414] outline-none bg-transparent ${!isConnected ? "opacity-50 cursor-not-allowed" : ""}`}
             style={{ fontFamily: "Urbanist, sans-serif" }}
           />
-          {/* Channel Dropdown */}
+          {/* Channel/User Dropdown */}
           {showChannelDropdown && isConnected && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#e6e6e6] rounded-lg shadow-lg z-50 max-h-[200px] overflow-y-auto">
               {isLoadingChannels ? (
                 <div className="px-3 py-2 text-[13px] text-[#9ca3af]" style={{ fontFamily: "Urbanist, sans-serif" }}>
-                  Loading channels...
+                  Loading...
                 </div>
-              ) : filteredChannels.length > 0 ? (
-                filteredChannels.map((ch) => (
-                  <button
-                    key={ch.id || ch.name || ch}
-                    onClick={() => handleChannelSelect(ch)}
-                    className="w-full px-3 py-2 text-left text-[14px] text-[#141414] hover:bg-[#f6f7f8] transition-colors"
-                    style={{ fontFamily: "Urbanist, sans-serif" }}
-                  >
-                    #{ch.name || ch}
-                  </button>
-                ))
-              ) : channels.length === 0 ? (
+              ) : (filteredChannels.length > 0 || filteredUsers.length > 0) ? (
+                <>
+                  {filteredChannels.map((ch) => (
+                    <button
+                      key={`ch-${ch.id || ch.name || ch}`}
+                      onClick={() => handleChannelSelect(ch)}
+                      className="w-full px-3 py-2 text-left text-[14px] text-[#141414] hover:bg-[#f6f7f8] transition-colors"
+                      style={{ fontFamily: "Urbanist, sans-serif" }}
+                    >
+                      #{ch.name || ch}
+                    </button>
+                  ))}
+                  {filteredUsers.map((u) => (
+                    <button
+                      key={`u-${u.id || u.name || u}`}
+                      onClick={() => handleUserSelect(u)}
+                      className="w-full px-3 py-2 text-left text-[14px] text-[#141414] hover:bg-[#f6f7f8] transition-colors"
+                      style={{ fontFamily: "Urbanist, sans-serif" }}
+                    >
+                      @{u.name || u.real_name || u}
+                    </button>
+                  ))}
+                </>
+              ) : (channels.length === 0 && users.length === 0) ? (
                 <div className="px-3 py-2 text-[13px] text-[#9ca3af]" style={{ fontFamily: "Urbanist, sans-serif" }}>
-                  No channels available
+                  No channels or users available
                 </div>
               ) : (
                 <div className="px-3 py-2 text-[13px] text-[#9ca3af]" style={{ fontFamily: "Urbanist, sans-serif" }}>
-                  No matching channels
+                  No matches found
                 </div>
               )}
             </div>
@@ -187,15 +213,21 @@ const SlackMessageCard = ({
         ) : (
           <button
             onClick={onConnect}
-            disabled={isLoading}
+            disabled={isLoading || isConnecting}
             className="px-4 py-2 text-[14px] font-medium text-white bg-[#3b82f6] rounded-lg hover:bg-[#2563eb] transition-colors disabled:opacity-50 flex items-center gap-1"
             style={{ fontFamily: "Urbanist, sans-serif" }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-            </svg>
-            Connect Slack
+            {isConnecting ? (
+              "Connecting..."
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                Connect Slack
+              </>
+            )}
           </button>
         )}
       </div>

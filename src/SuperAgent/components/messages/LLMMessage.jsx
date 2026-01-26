@@ -170,56 +170,110 @@ const LLMMessage = ({
             return text.replace(/<\/?[a-zA-Z_][a-zA-Z0-9_]*>/g, "").trim();
           };
 
-          // Check if content is JSON
-          const strippedContent = stripXmlTags(content);
-          const trimmedContent = strippedContent?.trim() || "";
-          if (trimmedContent.startsWith("{") || trimmedContent.startsWith("[")) {
-            try {
-              const parsed = JSON.parse(trimmedContent);
-              
-              // Render JSON as user-friendly key-value pairs
-              const renderValue = (value, depth = 0) => {
-                if (value === null || value === undefined) return <span className="text-[#6d6d6d]">—</span>;
-                if (typeof value === "boolean") return <span>{value ? "Yes" : "No"}</span>;
-                if (typeof value === "number") return <span>{value}</span>;
-                if (typeof value === "string") return <span>{value}</span>;
-                if (Array.isArray(value)) {
-                  if (value.length === 0) return <span className="text-[#6d6d6d]">None</span>;
-                  return (
-                    <ul className="list-disc list-inside ml-2">
-                      {value.map((item, i) => (
-                        <li key={i}>{renderValue(item, depth + 1)}</li>
-                      ))}
-                    </ul>
-                  );
-                }
-                if (typeof value === "object") {
-                  return (
-                    <div className={depth > 0 ? "ml-4 mt-1" : ""}>
-                      {Object.entries(value).map(([k, v]) => (
-                        <div key={k} className="mb-2">
-                          <span className="font-semibold text-[#141414]">
-                            {k.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}:
-                          </span>{" "}
-                          {renderValue(v, depth + 1)}
-                        </div>
-                      ))}
-                    </div>
-                  );
-                }
-                return <span>{String(value)}</span>;
-              };
+          // Render JSON array as bullet list with key-value pairs
+          const renderJsonArray = (arr) => {
+            return (
+              <ul className="list-disc list-outside ml-4 space-y-3 my-3">
+                {arr.map((item, i) => (
+                  <li key={i}>
+                    {typeof item === "object" && item !== null ? (
+                      <div className="space-y-1">
+                        {Object.entries(item).map(([key, value]) => (
+                          <div key={key}>
+                            <strong>{key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</strong>: {String(value)}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span>{String(item)}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            );
+          };
 
-              return (
-                <div className="bg-[#f9f9f9] p-4 rounded-lg">
-                  {renderValue(parsed)}
-                </div>
-              );
-            } catch (e) {
-              // Not valid JSON, render as markdown
-              return <ReactMarkdown>{strippedContent}</ReactMarkdown>;
+          // Try to extract and parse a JSON array from text
+          const extractJsonArray = (text) => {
+            // Find [ that's followed by { (indicating array of objects)
+            const startMatch = text.match(/\[\s*\n?\s*\{/);
+            if (!startMatch) return null;
+            
+            const startIndex = startMatch.index;
+            
+            // Find matching ] by counting brackets
+            let depth = 0;
+            let endIndex = -1;
+            let inString = false;
+            let escapeNext = false;
+            
+            for (let i = startIndex; i < text.length; i++) {
+              const char = text[i];
+              
+              if (escapeNext) {
+                escapeNext = false;
+                continue;
+              }
+              
+              if (char === '\\' && inString) {
+                escapeNext = true;
+                continue;
+              }
+              
+              if (char === '"') {
+                inString = !inString;
+                continue;
+              }
+              
+              if (inString) continue;
+              
+              if (char === '[') depth++;
+              if (char === ']') {
+                depth--;
+                if (depth === 0) {
+                  endIndex = i;
+                  break;
+                }
+              }
             }
+            
+            if (endIndex === -1) return null;
+            
+            const jsonStr = text.slice(startIndex, endIndex + 1);
+            
+            try {
+              const parsed = JSON.parse(jsonStr);
+              if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === "object") {
+                return {
+                  array: parsed,
+                  startIndex,
+                  endIndex: endIndex + 1
+                };
+              }
+            } catch (e) {
+              // Not valid JSON
+            }
+            return null;
+          };
+
+          const strippedContent = stripXmlTags(content);
+          
+          // Check if content contains a JSON array
+          const jsonResult = extractJsonArray(strippedContent);
+          
+          if (jsonResult) {
+            const beforeJson = strippedContent.slice(0, jsonResult.startIndex).trim();
+            const afterJson = strippedContent.slice(jsonResult.endIndex).trim();
+            
+            return (
+              <>
+                {beforeJson && <ReactMarkdown>{beforeJson}</ReactMarkdown>}
+                {renderJsonArray(jsonResult.array)}
+                {afterJson && <ReactMarkdown>{afterJson}</ReactMarkdown>}
+              </>
+            );
           }
+          
           return <ReactMarkdown>{strippedContent}</ReactMarkdown>;
         })()}
       </div>
