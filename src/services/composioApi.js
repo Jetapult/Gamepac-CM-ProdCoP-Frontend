@@ -167,4 +167,289 @@ export const getConnectionBySlug = (connections, integrationSlug) => {
   return connections.find((conn) => conn.slug === integrationSlug) || null;
 };
 
+// ============================================
+// ACTION CARD API FUNCTIONS
+// ============================================
+
+// --- SLACK ---
+
+/**
+ * Get Slack channels for the current user
+ * @param {Object} options - Query options
+ * @param {number} options.limit - Max channels to return (default 100)
+ * @param {string} options.types - Channel types (default "public_channel,private_channel")
+ * @returns {Promise<{success: boolean, data: {channels: Array}}>}
+ */
+export const getSlackChannels = async (options = {}) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const params = new URLSearchParams();
+  if (options.limit) params.append("limit", options.limit);
+  if (options.types) params.append("types", options.types);
+
+  const queryString = params.toString();
+  const url = `/v1/composio/slack/channels/${userId}${queryString ? `?${queryString}` : ""}`;
+  const response = await api.get(url);
+  return response.data;
+};
+
+/**
+ * Get Slack users for @mentions
+ * @param {Object} options - Query options
+ * @param {number} options.limit - Max users to return (default 100)
+ * @returns {Promise<{success: boolean, data: {members: Array}}>}
+ */
+export const getSlackUsers = async (options = {}) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const params = new URLSearchParams();
+  if (options.limit) params.append("limit", options.limit);
+
+  const queryString = params.toString();
+  const url = `/v1/composio/slack/users/${userId}${queryString ? `?${queryString}` : ""}`;
+  const response = await api.get(url);
+  return response.data;
+};
+
+/**
+ * Send a Slack message
+ * @param {Object} data - Message data
+ * @param {string} data.channel - Channel ID (e.g., "C123ABC")
+ * @param {string} data.text - Message text
+ * @param {string} data.threadTs - Optional thread timestamp for replies
+ * @returns {Promise<{success: boolean, data: {ok: boolean, ts: string, channel: string}}>}
+ */
+export const sendSlackMessage = async (data) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const response = await api.post("/v1/composio/slack/message", {
+    userId,
+    channel: data.channel,
+    text: data.text,
+    ...(data.threadTs && { threadTs: data.threadTs }),
+  });
+  return response.data;
+};
+
+/**
+ * Send a Slack task notification
+ * @param {Object} data - Task data
+ * @param {string} data.channel - Channel ID
+ * @param {string} data.taskTitle - Task title
+ * @param {string} data.taskDescription - Task description
+ * @param {string} data.priority - Priority (Critical/High/Medium/Low)
+ * @param {string} data.assignee - Assignee name or email
+ * @param {string} data.dueDate - Due date (ISO format)
+ * @param {string} data.additionalMessage - Extra message content
+ * @returns {Promise<{success: boolean, data: {ok: boolean, ts: string}}>}
+ */
+export const sendSlackTaskNotification = async (data) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const response = await api.post("/v1/composio/slack/task-notification", {
+    userId,
+    channel: data.channel,
+    taskTitle: data.taskTitle,
+    taskDescription: data.taskDescription,
+    taskOrigination: data.taskOrigination || "chat",
+    ...(data.priority && { priority: data.priority }),
+    ...(data.assignee && { assignee: data.assignee }),
+    ...(data.dueDate && { dueDate: data.dueDate }),
+    ...(data.additionalMessage && { additionalMessage: data.additionalMessage }),
+    ...(data.sendInThread !== undefined && { sendInThread: data.sendInThread }),
+    ...(data.threadTs && { threadTs: data.threadTs }),
+  });
+  return response.data;
+};
+
+// --- JIRA ---
+
+/**
+ * Get Jira projects
+ * @param {Object} options - Query options
+ * @param {number} options.maxResults - Max projects to return (default 50)
+ * @param {string} options.query - Search query
+ * @returns {Promise<{success: boolean, data: {projects: Array}}>}
+ */
+export const getJiraProjects = async (options = {}) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const params = new URLSearchParams();
+  if (options.maxResults) params.append("maxResults", options.maxResults);
+  if (options.query) params.append("query", options.query);
+
+  const queryString = params.toString();
+  const url = `/v1/composio/jira/projects/${userId}${queryString ? `?${queryString}` : ""}`;
+  const response = await api.get(url);
+  return response.data;
+};
+
+/**
+ * Get Jira users
+ * @param {Object} options - Query options
+ * @param {number} options.maxResults - Max users to return (default 50)
+ * @returns {Promise<{success: boolean, data: {users: Array}}>}
+ */
+export const getJiraUsers = async (options = {}) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const params = new URLSearchParams();
+  if (options.maxResults) params.append("maxResults", options.maxResults);
+
+  const queryString = params.toString();
+  const url = `/v1/composio/jira/users/${userId}${queryString ? `?${queryString}` : ""}`;
+  const response = await api.get(url);
+  return response.data;
+};
+
+/**
+ * Create a Jira issue
+ * @param {Object} data - Issue data
+ * @param {string} data.projectKey - Jira project key (e.g., "PROJ")
+ * @param {string} data.summary - Issue title
+ * @param {string} data.description - Issue description
+ * @param {string} data.issueType - Issue type (Bug/Task/Story/Epic)
+ * @param {string} data.priority - Priority (Highest/High/Medium/Low/Lowest)
+ * @param {string} data.assignee - Assignee accountId
+ * @param {string[]} data.labels - Array of labels
+ * @returns {Promise<{success: boolean, data: {id: string, key: string, self: string}}>}
+ */
+export const createJiraIssue = async (data) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const response = await api.post("/v1/composio/jira/issue", {
+    userId,
+    projectKey: data.projectKey,
+    summary: data.summary,
+    description: data.description,
+    issueType: data.issueType,
+    ...(data.priority && { priority: data.priority }),
+    ...(data.assignee && { assignee: data.assignee }),
+    ...(data.labels?.length > 0 && { labels: data.labels }),
+  });
+  return response.data;
+};
+
+// --- GOOGLE CALENDAR ---
+
+/**
+ * Create a Google Calendar event
+ * @param {Object} data - Event data
+ * @param {string} data.summary - Event title
+ * @param {string} data.description - Event description
+ * @param {string} data.startDateTime - Start time (ISO 8601)
+ * @param {string} data.endDateTime - End time (ISO 8601)
+ * @param {string} data.timeZone - Timezone (e.g., "America/New_York")
+ * @param {string[]} data.attendees - Array of attendee emails
+ * @param {string} data.location - Event location
+ * @returns {Promise<{success: boolean, data: {id: string, htmlLink: string, status: string}}>}
+ */
+export const createCalendarEvent = async (data) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const response = await api.post("/v1/composio/calendar/events", {
+    userId,
+    summary: data.summary,
+    startDateTime: data.startDateTime,
+    endDateTime: data.endDateTime,
+    ...(data.description && { description: data.description }),
+    ...(data.timeZone && { timeZone: data.timeZone }),
+    ...(data.attendees?.length > 0 && { attendees: data.attendees }),
+    ...(data.location && { location: data.location }),
+  });
+  return response.data;
+};
+
+// --- GOOGLE DOCS ---
+
+/**
+ * List Google Docs
+ * @param {Object} options - Query options
+ * @param {number} options.maxResults - Max docs to return (default 20)
+ * @param {string} options.query - Search query
+ * @returns {Promise<{success: boolean, data: {files: Array}}>}
+ */
+export const getGoogleDocs = async (options = {}) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const params = new URLSearchParams();
+  if (options.maxResults) params.append("maxResults", options.maxResults);
+  if (options.query) params.append("query", options.query);
+
+  const queryString = params.toString();
+  const url = `/v1/composio/docs/${userId}${queryString ? `?${queryString}` : ""}`;
+  const response = await api.get(url);
+  return response.data;
+};
+
+/**
+ * Create a Google Doc
+ * @param {Object} data - Document data
+ * @param {string} data.title - Document title
+ * @param {string} data.content - Initial document content
+ * @param {string} data.folderId - Parent folder ID in Drive
+ * @returns {Promise<{success: boolean, data: {documentId: string, title: string}}>}
+ */
+export const createGoogleDoc = async (data) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const response = await api.post("/v1/composio/docs/create", {
+    userId,
+    title: data.title,
+    ...(data.content && { content: data.content }),
+    ...(data.folderId && { folderId: data.folderId }),
+  });
+  return response.data;
+};
+
+// --- GOOGLE SHEETS ---
+
+/**
+ * List Google Sheets
+ * @param {Object} options - Query options
+ * @param {number} options.maxResults - Max sheets to return (default 20)
+ * @param {string} options.query - Search query
+ * @returns {Promise<{success: boolean, data: {files: Array}}>}
+ */
+export const getGoogleSheets = async (options = {}) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const params = new URLSearchParams();
+  if (options.maxResults) params.append("maxResults", options.maxResults);
+  if (options.query) params.append("query", options.query);
+
+  const queryString = params.toString();
+  const url = `/v1/composio/sheets/${userId}${queryString ? `?${queryString}` : ""}`;
+  const response = await api.get(url);
+  return response.data;
+};
+
+/**
+ * Create a Google Sheet
+ * @param {Object} data - Spreadsheet data
+ * @param {string} data.title - Spreadsheet title
+ * @returns {Promise<{success: boolean, data: {spreadsheetId: string, spreadsheetUrl: string}}>}
+ */
+export const createGoogleSheet = async (data) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const response = await api.post("/v1/composio/sheets/create", {
+    userId,
+    title: data.title,
+  });
+  return response.data;
+};
+
 export { INTEGRATION_NAME_MAP, APP_TO_SLUG_MAP };

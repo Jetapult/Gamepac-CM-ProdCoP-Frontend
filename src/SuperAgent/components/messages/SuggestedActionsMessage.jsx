@@ -55,12 +55,15 @@ const SuggestedActionsMessage = ({
   onConnect,
   // Data for dropdowns
   slackChannels = [],
+  slackUsers = [],
   jiraProjects = [],
   // Loading states
   isLoadingChannels = false,
+  isLoadingUsers = false,
   isLoadingProjects = false,
   // Fetch functions
   onFetchSlackChannels,
+  onFetchSlackUsers,
   onFetchJiraProjects,
   // Action handlers
   onSend,
@@ -68,14 +71,47 @@ const SuggestedActionsMessage = ({
 }) => {
   const [dismissedActions, setDismissedActions] = useState([]);
   const [expandedActions, setExpandedActions] = useState([]);
+  const [loadingActions, setLoadingActions] = useState({});
+  const [connectingActions, setConnectingActions] = useState({});
+  const [completedActions, setCompletedActions] = useState({});
 
   const handleCancel = (actionIndex) => {
     setDismissedActions((prev) => [...prev, actionIndex]);
   };
 
-  const handleSend = (action, payload) => {
+  const handleConnect = async (integrationSlug, index) => {
+    console.log("[SuggestedActions] Connecting:", integrationSlug);
+    setConnectingActions((prev) => ({ ...prev, [index]: true }));
+    try {
+      await onConnect?.(integrationSlug);
+    } catch (err) {
+      console.error("[SuggestedActions] Connect failed:", err);
+    } finally {
+      setConnectingActions((prev) => ({ ...prev, [index]: false }));
+    }
+  };
+
+  const handleSend = async (action, payload, index) => {
     console.log("[SuggestedActions] Sending action:", action.action_type, payload);
-    onSend?.(action, payload);
+    setLoadingActions((prev) => ({ ...prev, [index]: true }));
+    
+    try {
+      const result = await onSend?.(action, payload);
+      console.log("[SuggestedActions] Action completed:", result);
+      setCompletedActions((prev) => ({ ...prev, [index]: { success: true, result } }));
+      // Auto-collapse after success
+      setTimeout(() => {
+        setExpandedActions((prev) => prev.filter((i) => i !== index));
+      }, 1500);
+    } catch (err) {
+      console.error("[SuggestedActions] Action failed:", err);
+      setCompletedActions((prev) => ({ 
+        ...prev, 
+        [index]: { success: false, error: err.message || "Action failed" } 
+      }));
+    } finally {
+      setLoadingActions((prev) => ({ ...prev, [index]: false }));
+    }
   };
 
   const toggleExpand = (index) => {
@@ -135,11 +171,60 @@ const SuggestedActionsMessage = ({
 
   const renderExpandedCard = (action, index) => {
     const { action_type, payload } = action;
+    const isActionLoading = loadingActions[index] || false;
+    const isActionConnecting = connectingActions[index] || false;
+    const actionResult = completedActions[index];
 
     // Common props for all cards
     const commonProps = {
       onCancel: () => toggleExpand(index),
+      isLoading: isActionLoading,
+      isConnecting: isActionConnecting,
     };
+
+    // Show success message if action completed
+    if (actionResult?.success) {
+      const config = actionTypeConfig[action_type] || { icon: null, label: action_type };
+      return (
+        <div key={index} className="bg-[#f0fdf4] border border-[#86efac] rounded-xl p-4 flex items-center gap-3">
+          {config.icon && <img src={config.icon} alt={config.label} className="w-6 h-6 object-contain" />}
+          <span className="text-[14px] text-[#166534] font-medium" style={{ fontFamily: "Urbanist, sans-serif" }}>
+            {action.title || config.label} completed successfully!
+          </span>
+        </div>
+      );
+    }
+
+    // Show error message if action failed
+    if (actionResult && !actionResult.success) {
+      const config = actionTypeConfig[action_type] || { icon: null, label: action_type };
+      return (
+        <div key={index} className="bg-[#fef2f2] border border-[#fecaca] rounded-xl p-4">
+          <div className="flex items-center gap-3 mb-2">
+            {config.icon && <img src={config.icon} alt={config.label} className="w-6 h-6 object-contain" />}
+            <span className="text-[14px] text-[#dc2626] font-medium" style={{ fontFamily: "Urbanist, sans-serif" }}>
+              {action.title || config.label} failed
+            </span>
+          </div>
+          <p className="text-[13px] text-[#991b1b]" style={{ fontFamily: "Urbanist, sans-serif" }}>
+            {actionResult.error}
+          </p>
+          <button
+            onClick={() => {
+              setCompletedActions((prev) => {
+                const updated = { ...prev };
+                delete updated[index];
+                return updated;
+              });
+            }}
+            className="mt-2 text-[13px] text-[#dc2626] underline"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            Try again
+          </button>
+        </div>
+      );
+    }
 
     switch (action_type) {
       case "slack_message":
@@ -149,11 +234,12 @@ const SuggestedActionsMessage = ({
             channel={payload?.channel || "#general"}
             text={payload?.text || ""}
             channels={slackChannels}
-            onSend={(data) => handleSend(action, data)}
-            onFocus={onFetchSlackChannels}
+            users={slackUsers}
+            onSend={(data) => handleSend(action, data, index)}
+            onFocus={() => { onFetchSlackChannels?.(); onFetchSlackUsers?.(); }}
             isConnected={isConnected?.("slack")}
-            onConnect={() => onConnect?.("slack")}
-            isLoadingChannels={isLoadingChannels}
+            onConnect={() => handleConnect("slack", index)}
+            isLoadingChannels={isLoadingChannels || isLoadingUsers}
             {...commonProps}
           />
         );
@@ -167,11 +253,12 @@ const SuggestedActionsMessage = ({
             task_description={payload?.task_description || ""}
             priority={payload?.priority || "Medium"}
             channels={slackChannels}
-            onSend={(data) => handleSend(action, data)}
-            onFocus={onFetchSlackChannels}
+            users={slackUsers}
+            onSend={(data) => handleSend(action, data, index)}
+            onFocus={() => { onFetchSlackChannels?.(); onFetchSlackUsers?.(); }}
             isConnected={isConnected?.("slack")}
-            onConnect={() => onConnect?.("slack")}
-            isLoadingChannels={isLoadingChannels}
+            onConnect={() => handleConnect("slack", index)}
+            isLoadingChannels={isLoadingChannels || isLoadingUsers}
             {...commonProps}
           />
         );
@@ -187,10 +274,10 @@ const SuggestedActionsMessage = ({
             priority={payload?.priority || "Medium"}
             labels={payload?.labels || []}
             projects={jiraProjects}
-            onSend={(data) => handleSend(action, data)}
+            onSend={(data) => handleSend(action, data, index)}
             onFocus={onFetchJiraProjects}
             isConnected={isConnected?.("jira")}
-            onConnect={() => onConnect?.("jira")}
+            onConnect={() => handleConnect("jira", index)}
             isLoadingProjects={isLoadingProjects}
             {...commonProps}
           />
@@ -207,9 +294,9 @@ const SuggestedActionsMessage = ({
             duration_hours={payload?.duration_hours || 1}
             attendees={payload?.attendees || []}
             time_zone={payload?.time_zone || "UTC"}
-            onSend={(data) => handleSend(action, data)}
+            onSend={(data) => handleSend(action, data, index)}
             isConnected={isConnected?.("google-calendar")}
-            onConnect={() => onConnect?.("google-calendar")}
+            onConnect={() => handleConnect("google-calendar", index)}
             {...commonProps}
           />
         );
@@ -220,9 +307,9 @@ const SuggestedActionsMessage = ({
             key={index}
             doc_title={payload?.doc_title || ""}
             content_summary={payload?.content_summary || ""}
-            onSend={(data) => handleSend(action, data)}
+            onSend={(data) => handleSend(action, data, index)}
             isConnected={isConnected?.("google-docs")}
-            onConnect={() => onConnect?.("google-docs")}
+            onConnect={() => handleConnect("google-docs", index)}
             {...commonProps}
           />
         );
@@ -233,9 +320,9 @@ const SuggestedActionsMessage = ({
             key={index}
             sheet_title={payload?.sheet_title || ""}
             data_summary={payload?.data_summary || ""}
-            onSend={(data) => handleSend(action, data)}
+            onSend={(data) => handleSend(action, data, index)}
             isConnected={isConnected?.("google-sheets")}
-            onConnect={() => onConnect?.("google-sheets")}
+            onConnect={() => handleConnect("google-sheets", index)}
             {...commonProps}
           />
         );
@@ -251,9 +338,9 @@ const SuggestedActionsMessage = ({
             subject={payload?.subject || ""}
             body={payload?.body || ""}
             attachments={payload?.attachments || []}
-            onSend={(data) => handleSend(action, data)}
+            onSend={(data) => handleSend(action, data, index)}
             isConnected={isConnected?.("gmail")}
-            onConnect={() => onConnect?.("gmail")}
+            onConnect={() => handleConnect("gmail", index)}
             {...commonProps}
           />
         );

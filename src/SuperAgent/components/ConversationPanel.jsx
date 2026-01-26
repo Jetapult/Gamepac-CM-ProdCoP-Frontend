@@ -17,6 +17,14 @@ import api from "@/api";
 import { updateChat, getAttachment } from "../../services/superAgentApi";
 import useComposioConnections from "../../hooks/useComposioConnections";
 import useActionCardData from "../../hooks/useActionCardData";
+import {
+  sendSlackMessage,
+  sendSlackTaskNotification,
+  createJiraIssue,
+  createCalendarEvent,
+  createGoogleDoc,
+  createGoogleSheet,
+} from "../../services/composioApi";
 
 const ConversationPanel = ({
   chatId,
@@ -63,26 +71,102 @@ const ConversationPanel = ({
   // Use prop if available, otherwise use fetched value (for existing chats)
   const agentSlug = propAgentSlug || fetchedAgentSlug;
 
-  // Get user ID for action card data
-  const user = useSelector((state) => state.auth?.user);
-  const userId = user?.id;
-
   // Composio connections for action cards
   const { isConnected, connect } = useComposioConnections();
 
   // Action card data (channels, projects, etc.)
   const {
     slackChannels,
+    slackUsers,
     jiraProjects,
     isLoading: actionDataLoading,
     fetchSlackChannels,
+    fetchSlackUsers,
     fetchJiraProjects,
-  } = useActionCardData(userId);
+  } = useActionCardData();
 
   // Handle action card send
-  const handleActionSend = useCallback((action, payload) => {
+  const handleActionSend = useCallback(async (action, payload) => {
     console.log("[ConversationPanel] Action send:", action.action_type, payload);
-    // TODO: Implement actual action execution via API
+    
+    try {
+      let result;
+      const actionType = action.action_type;
+      
+      switch (actionType) {
+        case "slack_message":
+          result = await sendSlackMessage({
+            channel: payload.channel,
+            text: payload.text,
+          });
+          break;
+          
+        case "slack_task":
+          result = await sendSlackTaskNotification({
+            channel: payload.channel,
+            taskTitle: payload.task_title,
+            taskDescription: payload.task_description,
+            priority: payload.priority,
+            assignee: payload.assignee,
+            dueDate: payload.due_date,
+          });
+          break;
+          
+        case "jira_issue":
+          result = await createJiraIssue({
+            projectKey: payload.project_key,
+            summary: payload.summary,
+            description: payload.description,
+            issueType: payload.issue_type,
+            priority: payload.priority,
+            assignee: payload.assignee,
+            labels: payload.labels,
+          });
+          break;
+          
+        case "calendar_event":
+          // Calculate end time from duration
+          const startDateTime = `${payload.start_date}T${payload.start_time}:00`;
+          const startDate = new Date(startDateTime);
+          const endDate = new Date(startDate.getTime() + (payload.duration_hours || 1) * 60 * 60 * 1000);
+          const endDateTime = endDate.toISOString().slice(0, 19);
+          
+          result = await createCalendarEvent({
+            summary: payload.summary,
+            description: payload.description,
+            startDateTime,
+            endDateTime,
+            timeZone: payload.time_zone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+            attendees: payload.attendees,
+          });
+          break;
+          
+        case "google_doc":
+        case "google_docs":
+          result = await createGoogleDoc({
+            title: payload.doc_title,
+            content: payload.content_summary,
+          });
+          break;
+          
+        case "google_sheet":
+        case "google_sheets":
+          result = await createGoogleSheet({
+            title: payload.sheet_title,
+          });
+          break;
+          
+        default:
+          console.warn("[ConversationPanel] Unknown action type:", actionType);
+          return { success: false, error: `Unknown action type: ${actionType}` };
+      }
+      
+      console.log("[ConversationPanel] Action result:", result);
+      return result;
+    } catch (err) {
+      console.error("[ConversationPanel] Action failed:", err);
+      throw err;
+    }
   }, []);
 
   const stopRequest = useCallback(() => {
@@ -1056,10 +1140,13 @@ const ConversationPanel = ({
                 isConnected={isConnected}
                 onConnect={connect}
                 slackChannels={slackChannels}
+                slackUsers={slackUsers}
                 jiraProjects={jiraProjects}
                 isLoadingChannels={actionDataLoading.slackChannels}
+                isLoadingUsers={actionDataLoading.slackUsers}
                 isLoadingProjects={actionDataLoading.jiraProjects}
                 onFetchSlackChannels={fetchSlackChannels}
+                onFetchSlackUsers={fetchSlackUsers}
                 onFetchJiraProjects={fetchJiraProjects}
                 onSend={handleActionSend}
               />
