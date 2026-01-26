@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import Message from "./messages/Message";
 import TaskMessage from "./messages/TaskMessage";
 import ChatInput from "./ChatInput";
+import SuggestedActionsMessage from "./messages/SuggestedActionsMessage";
 import thinkingSphere from "../../assets/thinking_sphere.gif";
 import { getAuthToken } from "../../utils";
 import {
@@ -14,6 +15,8 @@ import {
 } from "../utils/eventHandlers";
 import api from "@/api";
 import { updateChat, getAttachment } from "../../services/superAgentApi";
+import useComposioConnections from "../../hooks/useComposioConnections";
+import useActionCardData from "../../hooks/useActionCardData";
 
 const ConversationPanel = ({
   chatId,
@@ -59,6 +62,28 @@ const ConversationPanel = ({
 
   // Use prop if available, otherwise use fetched value (for existing chats)
   const agentSlug = propAgentSlug || fetchedAgentSlug;
+
+  // Get user ID for action card data
+  const user = useSelector((state) => state.auth?.user);
+  const userId = user?.id;
+
+  // Composio connections for action cards
+  const { isConnected, connect } = useComposioConnections();
+
+  // Action card data (channels, projects, etc.)
+  const {
+    slackChannels,
+    jiraProjects,
+    isLoading: actionDataLoading,
+    fetchSlackChannels,
+    fetchJiraProjects,
+  } = useActionCardData(userId);
+
+  // Handle action card send
+  const handleActionSend = useCallback((action, payload) => {
+    console.log("[ConversationPanel] Action send:", action.action_type, payload);
+    // TODO: Implement actual action execution via API
+  }, []);
 
   const stopRequest = useCallback(() => {
     if (abortControllerRef.current) {
@@ -158,6 +183,8 @@ const ConversationPanel = ({
                 // For history loading: accumulate all content_chunk content first,
                 // then parse think tags manually (don't use streaming handler)
                 let allContent = "";
+                let actionsFromEvents = []; // Collect actions from response events
+                
                 for (const event of rawEvents) {
                   const eventType = event.type || event.event;
                   
@@ -165,6 +192,11 @@ const ConversationPanel = ({
                     // Accumulate content chunks
                     allContent += event.content || "";
                     continue;
+                  }
+                  
+                  // Extract actions from response events
+                  if (eventType === "response" && event.actions?.length > 0) {
+                    actionsFromEvents = event.actions;
                   }
 
                   const result = processEventHandler(event, {
@@ -230,8 +262,18 @@ const ConversationPanel = ({
                       apiMessageId: msg.id,
                       data: {
                         content: regularContent.trim(),
+                        feedback: msg.data?.feedback || null,
+                        actions: actionsFromEvents.length > 0 ? actionsFromEvents : undefined,
                       },
                     });
+                  }
+                }
+                
+                // If we have actions but no text message was created, add them to the last text message
+                if (actionsFromEvents.length > 0 && processedMessages.length > 0) {
+                  const lastTextMsg = [...processedMessages].reverse().find(m => m.type === "text");
+                  if (lastTextMsg && !lastTextMsg.data.actions) {
+                    lastTextMsg.data.actions = actionsFromEvents;
                   }
                 }
 
@@ -636,6 +678,28 @@ const ConversationPanel = ({
     ],
   );
 
+  // Handle feedback (like/dislike) for a message
+  const handleFeedback = useCallback(async (messageId, feedback) => {
+    if (!messageId) return;
+    
+    try {
+      await api.post(`/v1/superagent/messages/${messageId}/feedback`, {
+        feedback: feedback, // 'like' | 'dislike' | null
+      });
+      
+      // Update local message state with new feedback
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.apiMessageId === messageId
+            ? { ...msg, data: { ...msg.data, feedback } }
+            : msg
+        )
+      );
+    } catch (error) {
+      console.error("Failed to submit feedback:", error);
+    }
+  }, []);
+
   // Regenerate a message
   const regenerateMessage = useCallback(
     async (messageId) => {
@@ -962,11 +1026,47 @@ const ConversationPanel = ({
               isStreaming={isStreamingMessage}
               onSendMessage={handleSendMessage}
               onRegenerate={regenerateMessage}
+              onFeedback={handleFeedback}
+              // Action card props
+              isConnected={isConnected}
+              onConnect={connect}
+              slackChannels={slackChannels}
+              jiraProjects={jiraProjects}
+              isLoadingChannels={actionDataLoading.slackChannels}
+              isLoadingProjects={actionDataLoading.jiraProjects}
+              onFetchSlackChannels={fetchSlackChannels}
+              onFetchJiraProjects={fetchJiraProjects}
+              onActionSend={handleActionSend}
             />
           );
         })}
 
         {/* Streaming Task Display - disabled since tool calls are now added directly to messages */}
+
+        {/* Suggested Actions - Rendered at bottom so user sees them immediately */}
+        {(() => {
+          // Find the latest LLM message with actions
+          const lastLLMWithActions = [...messages].reverse().find(
+            (msg) => msg.sender === "llm" && msg.type === "text" && msg.data?.actions?.length > 0
+          );
+          if (lastLLMWithActions && !isThinking) {
+            return (
+              <SuggestedActionsMessage
+                actions={lastLLMWithActions.data.actions}
+                isConnected={isConnected}
+                onConnect={connect}
+                slackChannels={slackChannels}
+                jiraProjects={jiraProjects}
+                isLoadingChannels={actionDataLoading.slackChannels}
+                isLoadingProjects={actionDataLoading.jiraProjects}
+                onFetchSlackChannels={fetchSlackChannels}
+                onFetchJiraProjects={fetchJiraProjects}
+                onSend={handleActionSend}
+              />
+            );
+          }
+          return null;
+        })()}
 
         {/* Error Message */}
         {error && (
