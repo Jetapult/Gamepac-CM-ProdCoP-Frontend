@@ -151,23 +151,86 @@ const ConversationPanel = ({
                   },
                 };
               } else if (msg.sender === "agent") {
-                // For agent messages, process raw_events using the same handlers as streaming
+                // For agent messages, process raw_events
                 const rawEvents = msg.data?.raw_events || [];
                 const processedMessages = [];
 
+                // For history loading: accumulate all content_chunk content first,
+                // then parse think tags manually (don't use streaming handler)
+                let allContent = "";
                 for (const event of rawEvents) {
-                  const message = processEventHandler(event, {
+                  const eventType = event.type || event.event;
+                  
+                  if (eventType === "content_chunk") {
+                    // Accumulate content chunks
+                    allContent += event.content || "";
+                    continue;
+                  }
+
+                  const result = processEventHandler(event, {
                     agentSlug: effectiveAgentSlug,
                     onStructuredArtifactUpdate: (type, data) => {
                       // Capture the latest artifact for restoration
                       latestArtifact = { type, data };
                     },
                   });
-                  if (message) {
+                  if (result) {
+                    // Handle both single message and array of messages
+                    const messages = Array.isArray(result) ? result : [result];
+                    for (const message of messages) {
+                      if (message && message.type) {
+                        processedMessages.push({
+                          ...message,
+                          id: `${msg.id}-${processedMessages.length}`,
+                          apiMessageId: msg.id, // Store original API message ID for regenerate
+                        });
+                      }
+                    }
+                  }
+                }
+
+                // Parse accumulated content for think tags
+                if (allContent) {
+                  // Extract think blocks and regular content
+                  const thinkRegex = /<think>([\s\S]*?)<\/think>/g;
+                  let thinkMatch;
+                  let lastIndex = 0;
+                  let regularContent = "";
+
+                  while ((thinkMatch = thinkRegex.exec(allContent)) !== null) {
+                    // Add content before this think block to regular content
+                    regularContent += allContent.slice(lastIndex, thinkMatch.index);
+                    lastIndex = thinkRegex.lastIndex;
+
+                    // Add thinking message
+                    const thinkContent = thinkMatch[1].trim();
+                    if (thinkContent) {
+                      processedMessages.push({
+                        id: `${msg.id}-${processedMessages.length}`,
+                        sender: "llm",
+                        type: "thinking",
+                        apiMessageId: msg.id,
+                        data: {
+                          content: thinkContent,
+                          isStreaming: false,
+                        },
+                      });
+                    }
+                  }
+
+                  // Add remaining content after last think block
+                  regularContent += allContent.slice(lastIndex);
+
+                  // Add regular content message if any
+                  if (regularContent.trim()) {
                     processedMessages.push({
-                      ...message,
                       id: `${msg.id}-${processedMessages.length}`,
-                      apiMessageId: msg.id, // Store original API message ID for regenerate
+                      sender: "llm",
+                      type: "text",
+                      apiMessageId: msg.id,
+                      data: {
+                        content: regularContent.trim(),
+                      },
                     });
                   }
                 }
@@ -322,15 +385,9 @@ const ConversationPanel = ({
 
   const sendMessage = useCallback(
     async (content, attachments = []) => {
-      console.log("[sendMessage] Called with:", { content, attachments, chatId, selectedGame });
-      
-      if ((!content.trim() && attachments.length === 0) || !chatId) {
-        console.log("[sendMessage] Skipping - no content or chatId");
-        return;
-      }
+      if ((!content.trim() && attachments.length === 0) || !chatId) return;
 
       if (!selectedGame) {
-        console.log("[sendMessage] Skipping - no selectedGame");
         setError("Please select a game to continue.");
         return;
       }
@@ -808,37 +865,17 @@ const ConversationPanel = ({
 
   // Send initial query on mount if present (wait for agentSlug and history loading to complete)
   useEffect(() => {
-    console.log("[InitialQuery] Check:", {
-      initialQuery,
-      initialAttachments,
-      chatId,
-      agentSlug,
-      isLoadingHistory,
-      initialQuerySentRef: initialQuerySentRef.current,
-    });
-
     if (
       (!initialQuery && initialAttachments.length === 0) ||
       !chatId ||
       !agentSlug
-    ) {
-      console.log("[InitialQuery] Skipping - missing required params");
+    )
       return;
-    }
-    if (initialQuerySentRef.current) {
-      console.log("[InitialQuery] Skipping - already sent");
-      return;
-    }
+    if (initialQuerySentRef.current) return;
     // Wait for history loading to complete before sending initial query
-    if (isLoadingHistory) {
-      console.log("[InitialQuery] Skipping - still loading history");
-      return;
-    }
+    if (isLoadingHistory) return;
 
-    console.log("[InitialQuery] Sending initial query:", initialQuery);
     initialQuerySentRef.current = true;
-
-    // Call sendMessage directly (sendMessage is stable due to useCallback)
     sendMessage(initialQuery, initialAttachments);
   }, [initialQuery, initialAttachments, chatId, agentSlug, isLoadingHistory, sendMessage]);
 

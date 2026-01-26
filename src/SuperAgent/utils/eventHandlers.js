@@ -113,6 +113,9 @@ const toolTitleMap = {
   generate_review_report_short: "Generating Review Report Summary",
   get_google_play_reviews: "Loading Google Play Reviews",
   get_app_store_reviews: "Loading App Store Reviews",
+  analyze_reviews: "Analyzing Reviews",
+  get_reviews: "Fetching Reviews",
+  action: "Suggesting Actions",
   // LiveOps agent tools
   catalogue_event: "Cataloguing Event",
   clone_event: "Cloning Event",
@@ -147,6 +150,8 @@ const reportToolToArtifactType = {
 
 // Handler for 'action' event
 export const handleActionEvent = (eventData, context) => {
+  console.log("[Action Event]", eventData);
+  
   const toolName = eventData.tool_name || "action";
   const toolArgs = eventData.tool_args || {};
 
