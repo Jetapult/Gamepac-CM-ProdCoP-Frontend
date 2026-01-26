@@ -39,6 +39,7 @@ const ConversationPanel = ({
   onStructuredArtifactUpdate,
   onTitleUpdate,
   onPublicUpdate,
+  onFavouriteUpdate,
   onAccessDenied,
 }) => {
   const [messages, setMessages] = useState([]);
@@ -195,8 +196,11 @@ const ConversationPanel = ({
         if (result.data.title && onTitleUpdate) {
           onTitleUpdate(result.data.title);
         }
-        if (result.data.is_public && onPublicUpdate) {
+        if (onPublicUpdate) {
           onPublicUpdate(result.data.is_public || false);
+        }
+        if (onFavouriteUpdate) {
+          onFavouriteUpdate(result.data.is_favourite || false);
         }
         
         // Restore session IDs if available
