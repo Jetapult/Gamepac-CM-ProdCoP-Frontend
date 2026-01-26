@@ -4,6 +4,7 @@ import ChatHeader from "./ChatHeader";
 import ConversationPanel from "./ConversationPanel";
 import PreviewPanel from "./PreviewPanel";
 import { getAgentDisplayName } from "../utils/eventHandlers";
+import api from "../../api";
 
 const ChatScreen = ({
   chatId,
@@ -17,6 +18,9 @@ const ChatScreen = ({
 
   // Chat title state
   const [chatTitle, setChatTitle] = useState("");
+
+  // Favourite state
+  const [isFavourite, setIsFavourite] = useState(false);
 
   // Task progress state
   const [currentTask, setCurrentTask] = useState(null);
@@ -38,6 +42,25 @@ const ChatScreen = ({
 
   const handleTitleChange = (newTitle) => {
     setChatTitle(newTitle);
+  };
+
+  // Toggle favourite for the chat
+  const toggleFavourite = async () => {
+    if (!chatId) return;
+    try {
+      const response = await api.post(`/v1/superagent/chats/${chatId}/favourite`);
+      const result = response.data;
+      if (result.success) {
+        const newFavState = result.data.is_favourite;
+        setIsFavourite(newFavState);
+        // Dispatch event to refresh sidebar
+        window.dispatchEvent(
+          new CustomEvent("chat-favourite-toggled", { detail: { chatId, isFavourite: newFavState } })
+        );
+      }
+    } catch (error) {
+      console.error("Failed to toggle favourite:", error);
+    }
   };
 
   // Show access denied message for the whole page
@@ -71,6 +94,9 @@ const ChatScreen = ({
         onTitleChange={handleTitleChange}
         isPublic={isPublic}
         onPublicChange={setIsPublic}
+        isFavourite={isFavourite}
+        onToggleFavourite={toggleFavourite}
+        onFavouriteChange={setIsFavourite}
         onDelete={() => {
           // Dispatch event to refresh sidebar
           window.dispatchEvent(
@@ -107,6 +133,7 @@ const ChatScreen = ({
           }}
           onTitleUpdate={handleTitleChange}
           onPublicUpdate={setIsPublic}
+          onFavouriteUpdate={setIsFavourite}
           onAccessDenied={() => setAccessDenied(true)}
         />
 

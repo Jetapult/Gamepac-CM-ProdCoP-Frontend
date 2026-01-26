@@ -391,6 +391,7 @@ const LLMMessage = ({
             </button>
           </div>
         )}
+        {/* Regenerate button - hidden for now
         {canRegenerate && (
           <ActionIcon
             icon={Restart}
@@ -398,6 +399,7 @@ const LLMMessage = ({
             onClick={onRegenerate}
           />
         )}
+        */}
       </div>
 
     </div>

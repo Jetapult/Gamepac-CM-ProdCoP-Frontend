@@ -213,6 +213,20 @@ export const handleResponseEvent = (eventData, context) => {
   let content = eventData.content || "";
   const messageId = eventData.message_id || null;
   const actions = eventData.actions || [];
+  const isArtifact = eventData.is_artifact || false;
+  const artifact = eventData.artifact || null;
+
+  // Handle artifact markdown - display in right panel (for liveops/finops agents)
+  if (isArtifact && artifact && artifact.format === "markdown" && artifact.data?.markdown) {
+    // Send markdown to the artifact panel on the right
+    if (context.onArtifactUpdate) {
+      context.onArtifactUpdate(artifact.data.markdown);
+    }
+    // Also pass structured data if needed
+    if (context.onStructuredArtifactUpdate) {
+      context.onStructuredArtifactUpdate("markdown", artifact.data);
+    }
+  }
 
   // Extract thinking content from <think>...</think> tags
   const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/);
