@@ -7,6 +7,29 @@
 let messageIdCounter = 0;
 const getUniqueId = () => `${Date.now()}-${++messageIdCounter}`;
 
+// State for content_chunk processing
+let contentChunkState = {
+  isInsideThinkTag: false,
+  currentThinkContent: "",
+  currentMessageContent: "",
+  currentStep: null,
+  // Stable IDs for streaming messages (so they can be updated in place)
+  streamingThinkId: null,
+  streamingMessageId: null,
+};
+
+// Reset content chunk state (call on new conversation or complete)
+export const resetContentChunkState = () => {
+  contentChunkState = {
+    isInsideThinkTag: false,
+    currentThinkContent: "",
+    currentMessageContent: "",
+    currentStep: null,
+    streamingThinkId: null,
+    streamingMessageId: null,
+  };
+};
+
 // Agent name mapping from slug
 const agentNameMap = {
   gamepac: "GamePac",
@@ -407,6 +430,163 @@ export const handleArtifactEvent = (eventData, context) => {
   return null;
 };
 
+// Handler for 'content_chunk' event - accumulates streaming content
+// Separates think blocks from regular messages
+// Returns an array of messages (think blocks and/or text messages) or null
+// Uses stable IDs for streaming messages so they can be updated in place
+export const handleContentChunkEvent = (eventData, context) => {
+  const content = eventData.content || "";
+  const step = eventData.step;
+
+  if (!content) {
+    return null;
+  }
+
+  const messages = [];
+  let remaining = content;
+
+  // Process the content, looking for think tags
+  while (remaining.length > 0) {
+    if (contentChunkState.isInsideThinkTag) {
+      // We're inside a think tag, look for closing </think>
+      const closeIdx = remaining.indexOf("</think>");
+      if (closeIdx !== -1) {
+        // Found closing tag - complete this think block
+        contentChunkState.currentThinkContent += remaining.slice(0, closeIdx);
+        remaining = remaining.slice(closeIdx + 8); // Skip </think>
+        contentChunkState.isInsideThinkTag = false;
+
+        // Create a completed think message
+        if (contentChunkState.currentThinkContent.trim()) {
+          messages.push({
+            id: contentChunkState.streamingThinkId || getUniqueId(),
+            sender: "llm",
+            type: "thinking",
+            data: {
+              content: contentChunkState.currentThinkContent.trim(),
+              step: step,
+              isStreaming: false,
+            },
+          });
+        }
+        contentChunkState.currentThinkContent = "";
+        contentChunkState.streamingThinkId = null; // Reset for next think block
+      } else {
+        // No closing tag yet, accumulate and emit streaming update
+        contentChunkState.currentThinkContent += remaining;
+        remaining = "";
+
+        // Emit streaming think message with stable ID
+        if (contentChunkState.currentThinkContent.trim()) {
+          if (!contentChunkState.streamingThinkId) {
+            contentChunkState.streamingThinkId = getUniqueId();
+          }
+          messages.push({
+            id: contentChunkState.streamingThinkId,
+            sender: "llm",
+            type: "thinking",
+            data: {
+              content: contentChunkState.currentThinkContent.trim(),
+              step: step,
+              isStreaming: true,
+            },
+          });
+        }
+      }
+    } else {
+      // We're outside a think tag, look for opening <think>
+      const openIdx = remaining.indexOf("<think>");
+      if (openIdx !== -1) {
+        // Found opening tag
+        // First, emit any accumulated content before the tag as a completed message
+        const beforeThink = remaining.slice(0, openIdx);
+        contentChunkState.currentMessageContent += beforeThink;
+        if (contentChunkState.currentMessageContent.trim()) {
+          messages.push({
+            id: contentChunkState.streamingMessageId || getUniqueId(),
+            sender: "llm",
+            type: "text",
+            data: {
+              content: contentChunkState.currentMessageContent.trim(),
+              step: step,
+            },
+          });
+          contentChunkState.currentMessageContent = "";
+          contentChunkState.streamingMessageId = null; // Reset for next message
+        }
+
+        remaining = remaining.slice(openIdx + 7); // Skip <think>
+        contentChunkState.isInsideThinkTag = true;
+        contentChunkState.currentThinkContent = "";
+      } else {
+        // No think tag, accumulate and emit streaming update
+        contentChunkState.currentMessageContent += remaining;
+        remaining = "";
+
+        // Emit streaming message with stable ID
+        if (contentChunkState.currentMessageContent.trim()) {
+          if (!contentChunkState.streamingMessageId) {
+            contentChunkState.streamingMessageId = getUniqueId();
+          }
+          messages.push({
+            id: contentChunkState.streamingMessageId,
+            sender: "llm",
+            type: "text",
+            data: {
+              content: contentChunkState.currentMessageContent.trim(),
+              step: step,
+              isStreaming: true,
+            },
+          });
+        }
+      }
+    }
+  }
+
+  contentChunkState.currentStep = step;
+
+  // Return array of messages, or null if empty
+  return messages.length > 0 ? messages : null;
+};
+
+// Flush any remaining content as a final message (call on complete event)
+// Uses the existing stable streaming IDs to update in place
+export const flushContentChunkState = (step) => {
+  const messages = [];
+
+  // Flush any remaining think content (use existing streaming ID)
+  if (contentChunkState.currentThinkContent.trim()) {
+    messages.push({
+      id: contentChunkState.streamingThinkId || getUniqueId(),
+      sender: "llm",
+      type: "thinking",
+      data: {
+        content: contentChunkState.currentThinkContent.trim(),
+        step: step,
+        isStreaming: false,
+      },
+    });
+  }
+
+  // Flush any remaining message content (use existing streaming ID)
+  if (contentChunkState.currentMessageContent.trim()) {
+    messages.push({
+      id: contentChunkState.streamingMessageId || getUniqueId(),
+      sender: "llm",
+      type: "text",
+      data: {
+        content: contentChunkState.currentMessageContent.trim(),
+        step: step,
+      },
+    });
+  }
+
+  // Reset state
+  resetContentChunkState();
+
+  return messages.length > 0 ? messages : null;
+};
+
 // Handler for 'cancelled' event - request was cancelled
 // New format: { type: "cancelled", reason: "client_disconnect" }
 export const handleCancelledEvent = (eventData, context) => {
@@ -433,6 +613,7 @@ const eventHandlers = {
   error: handleErrorEvent,
   tool_result: handleToolResultEvent,
   artifact: handleArtifactEvent,
+  content_chunk: handleContentChunkEvent,
   cancelled: handleCancelledEvent,
 };
 
@@ -440,7 +621,7 @@ const eventHandlers = {
  * Process an SSE event and return a message object (or null to ignore)
  * @param {Object} eventData - The event data from the API
  * @param {Object} context - Context object with callbacks and state setters
- * @returns {Object|null} - Message object to add to messages, or null to ignore
+ * @returns {Object|Object[]|null} - Message object, array of messages (for content_chunk), or null to ignore
  */
 export const processEvent = (eventData, context) => {
   // Handle both 'event' and 'type' fields for event type

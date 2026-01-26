@@ -9,6 +9,8 @@ import {
   processEvent as processEventHandler,
   shouldStopThinking,
   getAgentDisplayName,
+  flushContentChunkState,
+  resetContentChunkState,
 } from "../utils/eventHandlers";
 import api from "@/api";
 import { updateChat, getAttachment } from "../../services/superAgentApi";
@@ -393,10 +395,37 @@ const ConversationPanel = ({
         return types[toolName] || "executing";
       };
 
+      // Reset content chunk state before starting
+      resetContentChunkState();
+
+      // Helper to update or add messages by ID (for streaming updates)
+      const updateOrAddMessages = (messagesToProcess) => {
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          for (const msg of messagesToProcess) {
+            const existingIdx = newMessages.findIndex((m) => m.id === msg.id);
+            if (existingIdx !== -1) {
+              newMessages[existingIdx] = msg;
+            } else {
+              newMessages.push(msg);
+            }
+          }
+          return newMessages;
+        });
+      };
+
       const processEvent = (eventData) => {
         const eventType = eventData.event || eventData.type;
 
-        const message = processEventHandler(eventData, {
+        // On complete event, flush any remaining content
+        if (eventType === "complete") {
+          const flushedMessages = flushContentChunkState(eventData.steps);
+          if (flushedMessages) {
+            updateOrAddMessages(flushedMessages);
+          }
+        }
+
+        const result = processEventHandler(eventData, {
           setMessages,
           setStreamingTask,
           setIsThinking,
@@ -408,8 +437,11 @@ const ConversationPanel = ({
           agentSlug,
         });
 
-        if (message) {
-          setMessages((prev) => [...prev, message]);
+        // Handle both single message and array of messages (from content_chunk)
+        // Update existing messages by ID for streaming updates
+        if (result) {
+          const msgs = Array.isArray(result) ? result : [result];
+          updateOrAddMessages(msgs);
         }
 
         // Stop thinking on complete or error
@@ -586,10 +618,37 @@ const ConversationPanel = ({
         return types[toolName] || "executing";
       };
 
+      // Reset content chunk state before starting
+      resetContentChunkState();
+
+      // Helper to update or add messages by ID (for streaming updates)
+      const updateOrAddMessages = (messagesToProcess) => {
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          for (const msg of messagesToProcess) {
+            const existingIdx = newMessages.findIndex((m) => m.id === msg.id);
+            if (existingIdx !== -1) {
+              newMessages[existingIdx] = msg;
+            } else {
+              newMessages.push(msg);
+            }
+          }
+          return newMessages;
+        });
+      };
+
       const processEvent = (eventData) => {
         const eventType = eventData.event || eventData.type;
 
-        const message = processEventHandler(eventData, {
+        // On complete event, flush any remaining content
+        if (eventType === "complete") {
+          const flushedMessages = flushContentChunkState(eventData.steps);
+          if (flushedMessages) {
+            updateOrAddMessages(flushedMessages);
+          }
+        }
+
+        const result = processEventHandler(eventData, {
           setMessages,
           setStreamingTask,
           setIsThinking,
@@ -601,8 +660,11 @@ const ConversationPanel = ({
           agentSlug,
         });
 
-        if (message) {
-          setMessages((prev) => [...prev, message]);
+        // Handle both single message and array of messages (from content_chunk)
+        // Update existing messages by ID for streaming updates
+        if (result) {
+          const msgs = Array.isArray(result) ? result : [result];
+          updateOrAddMessages(msgs);
         }
 
         // Stop thinking on complete or error
