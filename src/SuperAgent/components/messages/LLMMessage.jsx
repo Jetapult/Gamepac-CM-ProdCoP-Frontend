@@ -158,8 +158,15 @@ const LLMMessage = ({
         style={{ fontFamily: "Urbanist, sans-serif", lineHeight: "24px" }}
       >
         {(() => {
+          // Strip XML-like tags (e.g., <final_answer>, </final_answer>, etc.)
+          const stripXmlTags = (text) => {
+            if (!text) return "";
+            return text.replace(/<\/?[a-zA-Z_][a-zA-Z0-9_]*>/g, "").trim();
+          };
+
           // Check if content is JSON
-          const trimmedContent = content?.trim() || "";
+          const strippedContent = stripXmlTags(content);
+          const trimmedContent = strippedContent?.trim() || "";
           if (trimmedContent.startsWith("{") || trimmedContent.startsWith("[")) {
             try {
               const parsed = JSON.parse(trimmedContent);
@@ -204,10 +211,10 @@ const LLMMessage = ({
               );
             } catch (e) {
               // Not valid JSON, render as markdown
-              return <ReactMarkdown>{content}</ReactMarkdown>;
+              return <ReactMarkdown>{strippedContent}</ReactMarkdown>;
             }
           }
-          return <ReactMarkdown>{content}</ReactMarkdown>;
+          return <ReactMarkdown>{strippedContent}</ReactMarkdown>;
         })()}
       </div>
 

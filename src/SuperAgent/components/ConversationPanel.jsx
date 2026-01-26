@@ -322,9 +322,15 @@ const ConversationPanel = ({
 
   const sendMessage = useCallback(
     async (content, attachments = []) => {
-      if ((!content.trim() && attachments.length === 0) || !chatId) return;
+      console.log("[sendMessage] Called with:", { content, attachments, chatId, selectedGame });
+      
+      if ((!content.trim() && attachments.length === 0) || !chatId) {
+        console.log("[sendMessage] Skipping - no content or chatId");
+        return;
+      }
 
       if (!selectedGame) {
+        console.log("[sendMessage] Skipping - no selectedGame");
         setError("Please select a game to continue.");
         return;
       }
@@ -802,25 +808,39 @@ const ConversationPanel = ({
 
   // Send initial query on mount if present (wait for agentSlug and history loading to complete)
   useEffect(() => {
+    console.log("[InitialQuery] Check:", {
+      initialQuery,
+      initialAttachments,
+      chatId,
+      agentSlug,
+      isLoadingHistory,
+      initialQuerySentRef: initialQuerySentRef.current,
+    });
+
     if (
       (!initialQuery && initialAttachments.length === 0) ||
       !chatId ||
       !agentSlug
-    )
+    ) {
+      console.log("[InitialQuery] Skipping - missing required params");
       return;
-    if (initialQuerySentRef.current) return;
+    }
+    if (initialQuerySentRef.current) {
+      console.log("[InitialQuery] Skipping - already sent");
+      return;
+    }
     // Wait for history loading to complete before sending initial query
-    if (isLoadingHistory) return;
+    if (isLoadingHistory) {
+      console.log("[InitialQuery] Skipping - still loading history");
+      return;
+    }
 
+    console.log("[InitialQuery] Sending initial query:", initialQuery);
     initialQuerySentRef.current = true;
 
-    // Use setTimeout to defer execution and prevent StrictMode double-send
-    const timer = setTimeout(() => {
-      sendMessageRef.current(initialQuery, initialAttachments);
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, [initialQuery, initialAttachments, chatId, agentSlug, isLoadingHistory]);
+    // Call sendMessage directly (sendMessage is stable due to useCallback)
+    sendMessage(initialQuery, initialAttachments);
+  }, [initialQuery, initialAttachments, chatId, agentSlug, isLoadingHistory, sendMessage]);
 
   const handleSendMessage = (content, attachments = []) => {
     setError(null);
