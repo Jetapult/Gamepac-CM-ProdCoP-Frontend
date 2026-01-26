@@ -5,6 +5,7 @@ import AttachmentMessage from "./AttachmentMessage";
 import TaskMessage from "./TaskMessage";
 import ThinkingMessage from "./ThinkingMessage";
 import AgentHeader from "./AgentHeader";
+import SuggestedActionsMessage from "./SuggestedActionsMessage";
 
 /**
  * Message component that renders different message types based on the message object
@@ -24,7 +25,18 @@ const Message = ({
   isStreaming = false,
   onSendMessage,
   onRegenerate,
+  onFeedback,
   versionInfo,
+  // Action card props
+  isConnected,
+  onConnect,
+  slackChannels,
+  jiraProjects,
+  isLoadingChannels,
+  isLoadingProjects,
+  onFetchSlackChannels,
+  onFetchJiraProjects,
+  onActionSend,
 }) => {
   const { sender, type, data } = message;
 
@@ -50,8 +62,12 @@ const Message = ({
             onRegenerate={() =>
               onRegenerate && onRegenerate(message.apiMessageId)
             }
+            onFeedback={(feedback) =>
+              onFeedback && onFeedback(message.apiMessageId, feedback)
+            }
             versionInfo={versionInfo}
             canRegenerate={!!message.apiMessageId}
+            initialFeedback={data.feedback}
           />
         );
       }
@@ -96,6 +112,22 @@ const Message = ({
     case "report_artifact":
       // Report shows in preview panel, no message needed
       return null;
+
+    case "suggested_actions":
+      return (
+        <SuggestedActionsMessage
+          actions={data.actions || []}
+          isConnected={isConnected}
+          onConnect={onConnect}
+          slackChannels={slackChannels}
+          jiraProjects={jiraProjects}
+          isLoadingChannels={isLoadingChannels}
+          isLoadingProjects={isLoadingProjects}
+          onFetchSlackChannels={onFetchSlackChannels}
+          onFetchJiraProjects={onFetchJiraProjects}
+          onSend={onActionSend}
+        />
+      );
 
     default:
       console.warn(`Unknown message type: ${type}`);
