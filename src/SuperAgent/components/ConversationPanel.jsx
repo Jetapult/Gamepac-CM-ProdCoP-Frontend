@@ -1137,7 +1137,7 @@ const ConversationPanel = ({
           const lastLLMWithActions = [...messages].reverse().find(
             (msg) => msg.sender === "llm" && msg.type === "text" && msg.data?.actions?.length > 0
           );
-          if (lastLLMWithActions && !isThinking) {
+          if (lastLLMWithActions && !isThinking && chatPermission !== "read") {
             return (
               <SuggestedActionsMessage
                 actions={lastLLMWithActions.data.actions}
