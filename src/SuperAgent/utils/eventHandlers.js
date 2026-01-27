@@ -115,7 +115,6 @@ const toolTitleMap = {
   get_app_store_reviews: "Loading App Store Reviews",
   analyze_reviews: "Analyzing Reviews",
   get_reviews: "Fetching Reviews",
-  action: "Suggesting Actions",
   // LiveOps agent tools
   catalogue_event: "Cataloguing Event",
   clone_event: "Cloning Event",
