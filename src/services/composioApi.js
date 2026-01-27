@@ -23,9 +23,6 @@ const APP_TO_SLUG_MAP = {
   "jira": "jira",
 };
 
-// Jira requires an integrationId from Composio dashboard
-const JIRA_INTEGRATION_ID = "ac_B8RLkt1HAIKW";
-
 /**
  * Get the current user ID from JWT token
  */
@@ -59,11 +56,6 @@ export const initiateConnection = async (integrationSlug, redirectUrl = null) =>
     userId,
     integrationName,
   };
-
-  // Jira requires an integrationId
-  if (integrationSlug === "jira") {
-    payload.integrationId = JIRA_INTEGRATION_ID;
-  }
 
   // Add redirect URL if provided
   if (redirectUrl) {
