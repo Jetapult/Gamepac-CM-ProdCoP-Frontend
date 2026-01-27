@@ -1,8 +1,8 @@
 import React from "react";
 
-const TemplateCard = ({ icon, title, description, image, iconBg, onClick }) => {
+const TemplateCard = ({ icon, title, description, image, iconBg }) => {
   return (
-    <div className="bg-[#f1f1f1] border border-[#e6e6e6] rounded-[12px] hover:shadow-md transition-shadow cursor-pointer" onClick={onClick}>
+    <div className="bg-[#f1f1f1] border border-[#e6e6e6] rounded-[12px] transition-shadow">
       <div className="p-4">
         {/* Icon */}
         <div className="mb-3.5 inline-flex">
