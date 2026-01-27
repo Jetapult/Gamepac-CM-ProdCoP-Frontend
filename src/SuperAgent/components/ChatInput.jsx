@@ -345,6 +345,7 @@ const ChatInput = ({
   finopsSessionId = null,
   onFinopsSessionCreated = null,
   hasMessages = false,
+  hideConnectors = false,
 }) => {
   const dispatch = useDispatch();
   const [inputValue, setInputValue] = useState("");
@@ -900,58 +901,61 @@ const ChatInput = ({
             )}
           </div>
 
-          <div className="relative" ref={integrationDropdownRef}>
-            <button
-              className={`h-9 border border-[#e6e6e6] rounded-lg flex items-center justify-center text-[#6d6d6d] hover:text-[#1f6744] transition-colors ${
-                connectedIntegrations?.length ? "px-2" : "w-9"
-              } ${
-                showIntegrationDropdown
-                  ? "bg-[#f1f1f1]"
-                  : "bg-white hover:bg-[#E6E6E6]"
-              }`}
-              onClick={() =>
-                setShowIntegrationDropdown(!showIntegrationDropdown)
-              }
-            >
-              {connectedIntegrations?.length ? (
-                <div className="flex items-center gap-1">
-                  {connectedIntegrations.slice(0, 3).map((slug) => {
-                    const integration = getIntegrationBySlug(slug);
-                    if (!integration) return null;
-                    return (
-                      <img
-                        key={slug}
-                        src={integration.icon}
-                        alt={integration.name}
-                        className="size-[18px] object-contain shrink-0"
-                      />
-                    );
-                  })}
-                  {connectedIntegrations.length > 3 && (
-                    <span className="text-[10px] font-urbanist font-medium text-[#575757]">
-                      +{connectedIntegrations.length - 3}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <PlugCircle weight={"Linear"} size={16} color="#6D6D6D" />
-              )}
-            </button>
+          {/* Integration button - hidden on index page */}
+          {!hideConnectors && (
+            <div className="relative" ref={integrationDropdownRef}>
+              <button
+                className={`h-9 border border-[#e6e6e6] rounded-lg flex items-center justify-center text-[#6d6d6d] hover:text-[#1f6744] transition-colors ${
+                  connectedIntegrations?.length ? "px-2" : "w-9"
+                } ${
+                  showIntegrationDropdown
+                    ? "bg-[#f1f1f1]"
+                    : "bg-white hover:bg-[#E6E6E6]"
+                }`}
+                onClick={() =>
+                  setShowIntegrationDropdown(!showIntegrationDropdown)
+                }
+              >
+                {connectedIntegrations?.length ? (
+                  <div className="flex items-center gap-1">
+                    {connectedIntegrations.slice(0, 3).map((slug) => {
+                      const integration = getIntegrationBySlug(slug);
+                      if (!integration) return null;
+                      return (
+                        <img
+                          key={slug}
+                          src={integration.icon}
+                          alt={integration.name}
+                          className="size-[18px] object-contain shrink-0"
+                        />
+                      );
+                    })}
+                    {connectedIntegrations.length > 3 && (
+                      <span className="text-[10px] font-urbanist font-medium text-[#575757]">
+                        +{connectedIntegrations.length - 3}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <PlugCircle weight={"Linear"} size={16} color="#6D6D6D" />
+                )}
+              </button>
 
-            {showIntegrationDropdown && (
-              <IntegrationDropdown
-                onClose={() => setShowIntegrationDropdown(false)}
-                onIntegrationClick={handleIntegrationClick}
-                connectedIntegrations={connectedIntegrations}
-                onToggleConnection={handleToggleConnection}
-                onAddConnectors={() => {
-                  setShowIntegrationDropdown(false);
-                  setShowAddConnectorsModal(true);
-                }}
-                isLoading={isConnecting}
-              />
-            )}
-          </div>
+              {showIntegrationDropdown && (
+                <IntegrationDropdown
+                  onClose={() => setShowIntegrationDropdown(false)}
+                  onIntegrationClick={handleIntegrationClick}
+                  connectedIntegrations={connectedIntegrations}
+                  onToggleConnection={handleToggleConnection}
+                  onAddConnectors={() => {
+                    setShowIntegrationDropdown(false);
+                    setShowAddConnectorsModal(true);
+                  }}
+                  isLoading={isConnecting}
+                />
+              )}
+            </div>
+          )}
         </div>
 
         {isThinking ? (
@@ -1008,22 +1012,26 @@ const ChatInput = ({
         )}
       </div>
 
-      {/* Connector Modal */}
-      <ConnectorModal
-        integration={selectedIntegration}
-        isOpen={showConnectorModal}
-        onClose={handleCloseModal}
-        onConnect={handleConnectSuccess}
-        isConnecting={isConnecting}
-      />
+      {/* Connector Modal - hidden on index page */}
+      {!hideConnectors && (
+        <ConnectorModal
+          integration={selectedIntegration}
+          isOpen={showConnectorModal}
+          onClose={handleCloseModal}
+          onConnect={handleConnectSuccess}
+          isConnecting={isConnecting}
+        />
+      )}
 
-      {/* Add Connectors Modal */}
-      <AddConnectorsModal
-        isOpen={showAddConnectorsModal}
-        onClose={() => setShowAddConnectorsModal(false)}
-        connectedIntegrations={connectedIntegrations}
-        onAddIntegration={handleAddIntegration}
-      />
+      {/* Add Connectors Modal - hidden on index page */}
+      {!hideConnectors && (
+        <AddConnectorsModal
+          isOpen={showAddConnectorsModal}
+          onClose={() => setShowAddConnectorsModal(false)}
+          connectedIntegrations={connectedIntegrations}
+          onAddIntegration={handleAddIntegration}
+        />
+      )}
     </div>
   );
 };

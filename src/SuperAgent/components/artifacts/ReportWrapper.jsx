@@ -2,6 +2,8 @@ import React, { useRef, useState, useEffect } from "react";
 import { Download, Loader2 } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import pdfIcon from "@/assets/file-icons/pdf.png";
+import docsIcon from "@/assets/docs.png";
 
 const A4_WIDTH_PX = 794; // 210mm at 96 DPI
 const A4_WIDTH_MM = 210;
@@ -15,9 +17,23 @@ const ReportWrapper = ({
 }) => {
   const containerRef = useRef(null);
   const contentRef = useRef(null);
+  const dropdownRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [contentHeight, setContentHeight] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [downloadType, setDownloadType] = useState(null); // 'pdf' | 'markdown' | 'drive'
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const findPageBreaks = (container, pageHeightPx, canvasScale) => {
     const breakPoints = [0];
@@ -80,10 +96,19 @@ const ReportWrapper = ({
     return breakPoints;
   };
 
-  const handleDownload = async () => {
+  // Save to Google Docs (placeholder - shows coming soon)
+  const handleSaveToGoogleDocs = () => {
+    setShowDropdown(false);
+    alert("Save to Google Docs coming soon!");
+  };
+
+  // Download as PDF
+  const handlePdfDownload = async () => {
     if (!contentRef.current || isDownloading) return;
 
     setIsDownloading(true);
+    setDownloadType('pdf');
+    setShowDropdown(false);
     try {
       const canvasScale = 2;
       const canvas = await html2canvas(contentRef.current, {
@@ -144,9 +169,10 @@ const ReportWrapper = ({
       const filename = `${title?.replace(/[^a-z0-9]/gi, "_") || "report"}.pdf`;
       pdf.save(filename);
     } catch (error) {
-      console.error("Download failed:", error);
+      console.error("PDF download failed:", error);
     } finally {
       setIsDownloading(false);
+      setDownloadType(null);
     }
   };
 
@@ -189,18 +215,50 @@ const ReportWrapper = ({
       {/* Toolbar Header */}
       <div className="h-14 bg-white border-b border-[#e0e0e0] px-4 flex items-center justify-between shrink-0 z-10">
         <span className="font-semibold text-gray-700">{title}</span>
-        <button
-          onClick={handleDownload}
-          disabled={isDownloading}
-          className="flex items-center gap-2 px-3 py-1.5 bg-black text-white text-sm rounded hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isDownloading ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Download size={16} />
+        
+        {/* Download Dropdown */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setShowDropdown(!showDropdown)}
+            disabled={isDownloading}
+            className="p-2 text-[#6d6d6d] hover:bg-[#f6f6f6] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isDownloading ? (
+              <Loader2 size={20} className="animate-spin" />
+            ) : (
+              <Download size={20} />
+            )}
+          </button>
+          
+          {/* Dropdown Menu */}
+          {showDropdown && (
+            <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-[#e0e0e0] py-2 z-50">
+              <button
+                onClick={handlePdfDownload}
+                disabled={isDownloading}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f6f6f6] transition-colors disabled:opacity-50"
+              >
+                <img src={pdfIcon} alt="PDF" className="w-5 h-5 object-contain" />
+                <span className="text-[15px] text-[#141414]" style={{ fontFamily: "Urbanist, sans-serif" }}>
+                  PDF
+                </span>
+              </button>
+              
+              {/* Save to Google Docs - hidden for now
+              <button
+                onClick={handleSaveToGoogleDocs}
+                disabled={isDownloading}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f6f6f6] transition-colors disabled:opacity-50"
+              >
+                <img src={docsIcon} alt="Google Docs" className="w-5 h-5 object-contain" />
+                <span className="text-[15px] text-[#141414]" style={{ fontFamily: "Urbanist, sans-serif" }}>
+                  Save to Google Docs
+                </span>
+              </button>
+              */}
+            </div>
           )}
-          {isDownloading ? "Generating..." : "Download PDF"}
-        </button>
+        </div>
       </div>
 
       {/* Scrollable Report Content */}

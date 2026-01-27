@@ -3,14 +3,31 @@ import { X } from "lucide-react";
 
 const calendarIcon = "https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_31_2x.png";
 
+// Get current date in YYYY-MM-DD format
+const getCurrentDate = () => {
+  const now = new Date();
+  return now.toISOString().split('T')[0];
+};
+
+// Get current time in HH:MM format
+const getCurrentTime = () => {
+  const now = new Date();
+  return now.toTimeString().slice(0, 5);
+};
+
+// Get browser timezone
+const getBrowserTimezone = () => {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+};
+
 const CalendarEventCard = ({
   summary: initialSummary = "",
   description: initialDescription = "",
-  start_date: initialStartDate = "",
-  start_time: initialStartTime = "09:00",
+  start_date: initialStartDate,
+  start_time: initialStartTime,
   duration_hours: initialDuration = 1,
   attendees: initialAttendees = [],
-  time_zone: initialTimeZone = "UTC",
+  time_zone: initialTimeZone,
   onSend,
   onCancel,
   onChange,
@@ -21,12 +38,13 @@ const CalendarEventCard = ({
 }) => {
   const [summary, setSummary] = useState(initialSummary);
   const [description, setDescription] = useState(initialDescription);
-  const [startDate, setStartDate] = useState(initialStartDate);
-  const [startTime, setStartTime] = useState(initialStartTime);
+  // Always use current date/time/timezone, ignore payload values
+  const [startDate, setStartDate] = useState(getCurrentDate());
+  const [startTime, setStartTime] = useState(getCurrentTime());
   const [duration, setDuration] = useState(initialDuration);
-  const [attendees, setAttendees] = useState(initialAttendees);
+  const [attendees, setAttendees] = useState([]); // Don't use prefilled attendees from payload
   const [attendeeInput, setAttendeeInput] = useState("");
-  const [timeZone, setTimeZone] = useState(initialTimeZone);
+  const [timeZone, setTimeZone] = useState(getBrowserTimezone());
 
   const handleChange = (updates) => {
     onChange?.({
@@ -156,20 +174,12 @@ const CalendarEventCard = ({
           >
             Timezone
           </span>
-          <select
-            value={timeZone}
-            onChange={(e) => { setTimeZone(e.target.value); handleChange({ time_zone: e.target.value }); }}
-            disabled={!isConnected}
-            className={`flex-1 text-[14px] text-[#141414] outline-none bg-transparent ${!isConnected ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+          <span
+            className={`flex-1 text-[14px] text-[#141414] ${!isConnected ? "opacity-50" : ""}`}
             style={{ fontFamily: "Urbanist, sans-serif" }}
           >
-            <option value="UTC">UTC</option>
-            <option value="America/New_York">Eastern Time</option>
-            <option value="America/Los_Angeles">Pacific Time</option>
-            <option value="Europe/London">London</option>
-            <option value="Asia/Kolkata">India (IST)</option>
-            <option value="Asia/Tokyo">Tokyo</option>
-          </select>
+            {getBrowserTimezone()}
+          </span>
         </div>
       </div>
 

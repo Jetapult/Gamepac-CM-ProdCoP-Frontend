@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ChatHeader from "./ChatHeader";
 import ConversationPanel from "./ConversationPanel";
@@ -39,6 +39,20 @@ const ChatScreen = ({
 
   // Access denied state
   const [accessDenied, setAccessDenied] = useState(false);
+
+  // Reset state when chatId changes (switching between chats)
+  useEffect(() => {
+    setArtifactContent(null);
+    setArtifactType(null);
+    setArtifactData(null);
+    setChatTitle("");
+    setIsFavourite(false);
+    setIsPublic(false);
+    setAccessDenied(false);
+    setCurrentTask(null);
+    setAllTasks([]);
+    setIsThinking(false);
+  }, [chatId]);
 
   const handleTitleChange = (newTitle) => {
     setChatTitle(newTitle);
