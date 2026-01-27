@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 const slackIcon = "https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png";
 
 const SlackMessageCard = ({
-  channel: initialChannel = "#liveops",
+  channel: initialChannel = "",
   text: initialText = "",
   channels = [],
   users = [],
