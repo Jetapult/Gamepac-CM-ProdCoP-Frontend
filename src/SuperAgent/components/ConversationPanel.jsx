@@ -237,6 +237,13 @@ const ConversationPanel = ({
   const fetchChatHistory = useCallback(
     async (agentSlugOverride) => {
       if (!chatId || historyFetchedRef.current) return;
+      
+      // Skip fetching history for new chats (when initialQuery is present)
+      // This prevents overwriting the first message with empty history
+      if (initialQuery) {
+        historyFetchedRef.current = true;
+        return;
+      }
 
       const effectiveAgentSlug = agentSlugOverride || agentSlug;
 
@@ -450,7 +457,7 @@ const ConversationPanel = ({
         setIsLoadingHistory(false);
       }
     },
-    [chatId, agentSlug, onStructuredArtifactUpdate],
+    [chatId, agentSlug, onStructuredArtifactUpdate, initialQuery],
   );
 
   // Helper to process raw_events into a task structure

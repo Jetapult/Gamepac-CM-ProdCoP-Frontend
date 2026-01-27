@@ -177,8 +177,7 @@ export const getSlackChannels = async (options = {}) => {
   if (!userId) throw new Error("User not authenticated");
 
   const params = new URLSearchParams();
-  if (options.limit) params.append("limit", options.limit);
-  if (options.types) params.append("types", options.types);
+  params.append("limit", options.limit || 500);
 
   const queryString = params.toString();
   const url = `/v1/composio/slack/channels/${userId}${queryString ? `?${queryString}` : ""}`;
