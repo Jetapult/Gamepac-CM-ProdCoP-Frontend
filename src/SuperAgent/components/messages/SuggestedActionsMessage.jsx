@@ -314,18 +314,19 @@ const SuggestedActionsMessage = ({
           />
         );
 
-      case "google_sheets":
-        return (
-          <GoogleSheetsCard
-            key={index}
-            sheet_title={payload?.sheet_title || ""}
-            data_summary={payload?.data_summary || ""}
-            onSend={(data) => handleSend(action, data, index)}
-            isConnected={isConnected?.("google-sheets")}
-            onConnect={() => handleConnect("google-sheets", index)}
-            {...commonProps}
-          />
-        );
+      // Google Sheets action hidden for now
+      // case "google_sheets":
+      //   return (
+      //     <GoogleSheetsCard
+      //       key={index}
+      //       sheet_title={payload?.sheet_title || ""}
+      //       data_summary={payload?.data_summary || ""}
+      //       onSend={(data) => handleSend(action, data, index)}
+      //       isConnected={isConnected?.("google-sheets")}
+      //       onConnect={() => handleConnect("google-sheets", index)}
+      //       {...commonProps}
+      //     />
+      //   );
 
       case "gmail":
       case "email":
@@ -351,8 +352,11 @@ const SuggestedActionsMessage = ({
     }
   };
 
-  // Filter out dismissed actions
-  const visibleActions = actions.filter((_, index) => !dismissedActions.includes(index));
+  // Filter out dismissed actions and hidden action types (google_sheets)
+  const hiddenActionTypes = ["google_sheets"];
+  const visibleActions = actions.filter((action, index) => 
+    !dismissedActions.includes(index) && !hiddenActionTypes.includes(action.action_type)
+  );
 
   if (visibleActions.length === 0) {
     return null;
@@ -368,6 +372,7 @@ const SuggestedActionsMessage = ({
       </div>
       {actions.map((action, index) => {
         if (dismissedActions.includes(index)) return null;
+        if (hiddenActionTypes.includes(action.action_type)) return null;
         return expandedActions.includes(index)
           ? renderExpandedCard(action, index)
           : renderCollapsedCard(action, index);
