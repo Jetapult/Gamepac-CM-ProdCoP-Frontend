@@ -248,11 +248,14 @@ export const handleResponseEvent = (eventData, context) => {
         if (lastLLMIndex !== -1) {
           const actualIndex = prevMessages.length - 1 - lastLLMIndex;
           const updatedMessages = [...prevMessages];
+          // Create a completely new message object to ensure React detects the change
           updatedMessages[actualIndex] = {
             ...updatedMessages[actualIndex],
+            id: updatedMessages[actualIndex].id, // Keep same ID
+            _actionsUpdatedAt: Date.now(), // Force new reference detection
             data: {
               ...updatedMessages[actualIndex].data,
-              actions: actions,
+              actions: [...actions], // Create new array reference
             },
           };
           return updatedMessages;
