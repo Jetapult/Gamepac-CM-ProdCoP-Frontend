@@ -268,10 +268,10 @@ const SuperAgent = () => {
         {/* Header Section */}
         <div className="flex flex-col items-center py-12">
           <h1 className="text-4xl font-semibold text-[#1f6744] mb-3 font-urbanist">
-            Ask GamePac to trigger in-game events
+            Hi I'm GamePac
           </h1>
           <p className="text-lg text-[#b0b0b0] font-urbanist">
-            where Ideas come to reality
+            your AI coworker
           </p>
         </div>
 
