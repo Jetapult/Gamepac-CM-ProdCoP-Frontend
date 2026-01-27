@@ -16,6 +16,8 @@ let contentChunkState = {
   // Stable IDs for streaming messages (so they can be updated in place)
   streamingThinkId: null,
   streamingMessageId: null,
+  // Flag to track if current response is an artifact (to prevent flushing)
+  isArtifactResponse: false,
 };
 
 // Reset content chunk state (call on new conversation or complete)
@@ -27,6 +29,7 @@ export const resetContentChunkState = () => {
     currentStep: null,
     streamingThinkId: null,
     streamingMessageId: null,
+    isArtifactResponse: false,
   };
 };
 
@@ -222,6 +225,9 @@ export const handleResponseEvent = (eventData, context) => {
 
   // Handle artifact responses - display in right panel and remove streamed content from conversation
   if (isArtifact && artifact) {
+    // Mark this as an artifact response to prevent flushContentChunkState from re-adding the message
+    contentChunkState.isArtifactResponse = true;
+    
     // Remove the last streaming text message since it contains artifact content, not conversation content
     // This happens because content_chunk events stream the artifact text before we know it's an artifact
     if (context.setMessages && contentChunkState.streamingMessageId) {
@@ -229,10 +235,10 @@ export const handleResponseEvent = (eventData, context) => {
         // Remove the streaming message that was built from content chunks
         return prevMessages.filter(msg => msg.id !== contentChunkState.streamingMessageId);
       });
-      // Reset the streaming message ID since we removed it
-      contentChunkState.streamingMessageId = null;
-      contentChunkState.currentMessageContent = "";
     }
+    // Reset the streaming message state since we removed it (or don't want to flush it)
+    contentChunkState.streamingMessageId = null;
+    contentChunkState.currentMessageContent = "";
 
     // Handle markdown format artifacts
     if (artifact.format === "markdown" && artifact.data?.markdown) {
@@ -660,6 +666,7 @@ export const flushContentChunkState = (step) => {
   const messages = [];
 
   // Flush any remaining think content (use existing streaming ID)
+  // Think content is always flushed, even for artifact responses
   if (contentChunkState.currentThinkContent.trim()) {
     messages.push({
       id: contentChunkState.streamingThinkId || getUniqueId(),
@@ -674,7 +681,8 @@ export const flushContentChunkState = (step) => {
   }
 
   // Flush any remaining message content (use existing streaming ID)
-  if (contentChunkState.currentMessageContent.trim()) {
+  // Skip flushing message content if this was an artifact response (content was already removed)
+  if (contentChunkState.currentMessageContent.trim() && !contentChunkState.isArtifactResponse) {
     messages.push({
       id: contentChunkState.streamingMessageId || getUniqueId(),
       sender: "llm",
