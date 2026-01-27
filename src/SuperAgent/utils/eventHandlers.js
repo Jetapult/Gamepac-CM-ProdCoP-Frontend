@@ -152,8 +152,13 @@ const reportToolToArtifactType = {
 export const handleActionEvent = (eventData, context) => {
   console.log("[Action Event]", eventData);
   
-  const toolName = eventData.tool_name || "action";
+  const toolName = eventData.tool_name || "";
   const toolArgs = eventData.tool_args || {};
+
+  // Skip if no tool name
+  if (!toolName) {
+    return null;
+  }
 
   // Get title from mapping or use tool name
   const title = toolTitleMap[toolName] || toolName;
@@ -216,16 +221,62 @@ export const handleResponseEvent = (eventData, context) => {
   const isArtifact = eventData.is_artifact || false;
   const artifact = eventData.artifact || null;
 
-  // Handle artifact markdown - display in right panel (for liveops/finops agents)
-  if (isArtifact && artifact && artifact.format === "markdown" && artifact.data?.markdown) {
-    // Send markdown to the artifact panel on the right
-    if (context.onArtifactUpdate) {
-      context.onArtifactUpdate(artifact.data.markdown);
+  // Handle artifact responses - display in right panel and remove streamed content from conversation
+  if (isArtifact && artifact) {
+    // Remove the last streaming text message since it contains artifact content, not conversation content
+    // This happens because content_chunk events stream the artifact text before we know it's an artifact
+    if (context.setMessages && contentChunkState.streamingMessageId) {
+      context.setMessages((prevMessages) => {
+        // Remove the streaming message that was built from content chunks
+        return prevMessages.filter(msg => msg.id !== contentChunkState.streamingMessageId);
+      });
+      // Reset the streaming message ID since we removed it
+      contentChunkState.streamingMessageId = null;
+      contentChunkState.currentMessageContent = "";
     }
-    // Also pass structured data if needed
-    if (context.onStructuredArtifactUpdate) {
-      context.onStructuredArtifactUpdate("markdown", artifact.data);
+
+    // Handle markdown format artifacts
+    if (artifact.format === "markdown" && artifact.data?.markdown) {
+      if (context.onArtifactUpdate) {
+        context.onArtifactUpdate(artifact.data.markdown);
+      }
+      if (context.onStructuredArtifactUpdate) {
+        context.onStructuredArtifactUpdate("markdown", artifact.data);
+      }
     }
+    
+    // Handle structured report artifacts (review_report_short, etc.)
+    if (artifact.artifact_type && artifact.data) {
+      const reportTypeToArtifactType = {
+        review_report_short: "review-report-short",
+        review_report_detailed: "review-report",
+        bug_report_short: "bug-report-short",
+        bug_report_detailed: "bug-report",
+      };
+      const mappedType = reportTypeToArtifactType[artifact.artifact_type] || artifact.artifact_type;
+      
+      if (context.onStructuredArtifactUpdate) {
+        context.onStructuredArtifactUpdate(mappedType, artifact.data);
+      }
+    }
+    
+    // If artifact response has actions, return a message to hold them
+    // (since we removed the streaming message, we need a new one for actions)
+    if (actions.length > 0) {
+      return {
+        id: getUniqueId(),
+        sender: "llm",
+        type: "text",
+        apiMessageId: messageId,
+        data: {
+          content: "", // No content, just actions
+          actions: [...actions],
+        },
+      };
+    }
+    
+    // Artifact handled, no message to return
+    return null;
   }
 
   // Extract thinking content from <think>...</think> tags
@@ -248,11 +299,14 @@ export const handleResponseEvent = (eventData, context) => {
         if (lastLLMIndex !== -1) {
           const actualIndex = prevMessages.length - 1 - lastLLMIndex;
           const updatedMessages = [...prevMessages];
+          // Create a completely new message object to ensure React detects the change
           updatedMessages[actualIndex] = {
             ...updatedMessages[actualIndex],
+            id: updatedMessages[actualIndex].id, // Keep same ID
+            _actionsUpdatedAt: Date.now(), // Force new reference detection
             data: {
               ...updatedMessages[actualIndex].data,
-              actions: actions,
+              actions: [...actions], // Create new array reference
             },
           };
           return updatedMessages;
@@ -333,9 +387,14 @@ export const handleErrorEvent = (eventData, context) => {
 // Handler for 'tool_call' event - shows tool being called
 // New format: { type: "tool_call", step: 2, tool: "get_google_play_reviews", args: {...} }
 export const handleToolCallEvent = (eventData, context) => {
-  const toolName = eventData.tool || eventData.tool_name || "action";
+  const toolName = eventData.tool || eventData.tool_name || "";
   const toolArgs = eventData.args || eventData.tool_args || {};
   const step = eventData.step || null;
+
+  // Skip if no tool name (malformed event)
+  if (!toolName) {
+    return null;
+  }
 
   // Get title from mapping or use tool name
   const title = toolTitleMap[toolName] || toolName;

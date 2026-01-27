@@ -51,6 +51,10 @@ const Message = ({
           />
         );
       } else if (sender === "llm") {
+        // Skip rendering if no content and no thinking (actions-only message)
+        if (!data.content && !data.thinking) {
+          return null;
+        }
         return (
           <LLMMessage
             content={data.content}

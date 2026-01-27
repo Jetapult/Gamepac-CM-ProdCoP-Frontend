@@ -61,6 +61,8 @@ const ConversationPanel = ({
   ); // Finops agent session ID
   const [cashBalance, setCashBalance] = useState(425000.0); // Finops cash balance
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const userHasScrolledUpRef = useRef(false);
   const selectedGame = useSelector((state) => state.superAgent.selectedGame);
   const ContextStudioData = useSelector(
     (state) => state.admin.ContextStudioData,
@@ -272,12 +274,41 @@ const ConversationPanel = ({
                 // then parse think tags manually (don't use streaming handler)
                 let allContent = "";
                 let actionsFromEvents = []; // Collect actions from response events
+                let isArtifactResponse = false; // Track if response has is_artifact: true
+                
+                // First pass: check if this is an artifact response
+                for (const event of rawEvents) {
+                  const eventType = event.type || event.event;
+                  if (eventType === "response" && event.is_artifact) {
+                    isArtifactResponse = true;
+                    // Handle artifact data for right panel
+                    if (event.artifact) {
+                      const artifact = event.artifact;
+                      // Handle structured report artifacts
+                      if (artifact.artifact_type && artifact.data) {
+                        const reportTypeMap = {
+                          review_report_short: "review-report-short",
+                          review_report_detailed: "review-report",
+                          bug_report_short: "bug-report-short",
+                          bug_report_detailed: "bug-report",
+                        };
+                        const mappedType = reportTypeMap[artifact.artifact_type] || artifact.artifact_type;
+                        latestArtifact = { type: mappedType, data: artifact.data };
+                      }
+                      // Handle markdown artifacts
+                      if (artifact.format === "markdown" && artifact.data?.markdown) {
+                        latestArtifact = { type: "markdown", data: artifact.data };
+                      }
+                    }
+                    break;
+                  }
+                }
                 
                 for (const event of rawEvents) {
                   const eventType = event.type || event.event;
                   
                   if (eventType === "content_chunk") {
-                    // Accumulate content chunks
+                    // Always accumulate content chunks (we need them for thinking blocks)
                     allContent += event.content || "";
                     continue;
                   }
@@ -341,8 +372,8 @@ const ConversationPanel = ({
                   // Add remaining content after last think block
                   regularContent += allContent.slice(lastIndex);
 
-                  // Add regular content message if any
-                  if (regularContent.trim()) {
+                  // Add regular content message if any (skip for artifact responses)
+                  if (regularContent.trim() && !isArtifactResponse) {
                     processedMessages.push({
                       id: `${msg.id}-${processedMessages.length}`,
                       sender: "llm",
@@ -358,10 +389,23 @@ const ConversationPanel = ({
                 }
                 
                 // If we have actions but no text message was created, add them to the last text message
-                if (actionsFromEvents.length > 0 && processedMessages.length > 0) {
+                // or create a new message to hold the actions (for artifact responses)
+                if (actionsFromEvents.length > 0) {
                   const lastTextMsg = [...processedMessages].reverse().find(m => m.type === "text");
                   if (lastTextMsg && !lastTextMsg.data.actions) {
                     lastTextMsg.data.actions = actionsFromEvents;
+                  } else if (!lastTextMsg) {
+                    // No text message exists (artifact response), create one to hold actions
+                    processedMessages.push({
+                      id: `${msg.id}-actions`,
+                      sender: "llm",
+                      type: "text",
+                      apiMessageId: msg.id,
+                      data: {
+                        content: "",
+                        actions: actionsFromEvents,
+                      },
+                    });
                   }
                 }
 
@@ -1004,10 +1048,29 @@ const ConversationPanel = ({
     [agentSlug, isThinking, onThinkingChange, onArtifactUpdate],
   );
 
-  // Auto-scroll to bottom when messages change
+  // Handle scroll events to detect if user has scrolled up
+  const handleScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    
+    // Check if user is near the bottom (within 100px)
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    userHasScrolledUpRef.current = !isNearBottom;
+  }, []);
+
+  // Auto-scroll to bottom when messages change, but only if user hasn't scrolled up
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!userHasScrolledUpRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages, isThinking, streamingTask]);
+
+  // Reset scroll lock when streaming completes
+  useEffect(() => {
+    if (!isThinking) {
+      userHasScrolledUpRef.current = false;
+    }
+  }, [isThinking]);
 
   // Keep sendMessage ref up to date
   const sendMessageRef = useRef(sendMessage);
@@ -1061,7 +1124,11 @@ const ConversationPanel = ({
   return (
     <div className="flex-1 flex flex-col">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4">
+      <div 
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-5 space-y-4"
+      >
         {messages.map((message, index) => {
           // Find the last user message index
           const lastUserMessageIndex = messages
@@ -1137,7 +1204,7 @@ const ConversationPanel = ({
           const lastLLMWithActions = [...messages].reverse().find(
             (msg) => msg.sender === "llm" && msg.type === "text" && msg.data?.actions?.length > 0
           );
-          if (lastLLMWithActions && !isThinking) {
+          if (lastLLMWithActions && !isThinking && chatPermission !== "read") {
             return (
               <SuggestedActionsMessage
                 actions={lastLLMWithActions.data.actions}
