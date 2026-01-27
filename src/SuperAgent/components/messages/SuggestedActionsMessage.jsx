@@ -99,8 +99,8 @@ const SuggestedActionsMessage = ({
       const result = await onSend?.(action, payload);
       console.log("[SuggestedActions] Action completed:", result);
       
-      // Check if status is null (indicates failure)
-      if (result?.status === null || result?.status === undefined) {
+      // Check if successful is false or null (indicates failure)
+      if (result?.successful === false || result?.successful === null) {
         setCompletedActions((prev) => ({ 
           ...prev, 
           [index]: { success: false, error: result?.error || result?.message || "Action failed" } 
