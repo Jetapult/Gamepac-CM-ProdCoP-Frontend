@@ -379,8 +379,11 @@ const ConversationPanel = ({
                   // Add remaining content after last think block
                   regularContent += allContent.slice(lastIndex);
 
-                  // Add regular content message if any (skip for artifact responses)
-                  if (regularContent.trim() && !isArtifactResponse) {
+                  // Strip ```json...``` blocks from content (artifact JSON that shouldn't be displayed)
+                  regularContent = regularContent.replace(/```json[\s\S]*?```/g, "").trim();
+
+                  // Add regular content message if any
+                  if (regularContent.trim()) {
                     processedMessages.push({
                       id: `${msg.id}-${processedMessages.length}`,
                       sender: "llm",
