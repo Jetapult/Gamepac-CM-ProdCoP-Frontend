@@ -24,7 +24,7 @@ const CalendarEventCard = ({
   const [startDate, setStartDate] = useState(initialStartDate);
   const [startTime, setStartTime] = useState(initialStartTime);
   const [duration, setDuration] = useState(initialDuration);
-  const [attendees, setAttendees] = useState(initialAttendees);
+  const [attendees, setAttendees] = useState([]); // Don't use prefilled attendees from payload
   const [attendeeInput, setAttendeeInput] = useState("");
   const [timeZone, setTimeZone] = useState(initialTimeZone);
 
