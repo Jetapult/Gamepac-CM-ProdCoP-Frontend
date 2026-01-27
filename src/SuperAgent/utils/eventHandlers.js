@@ -18,6 +18,8 @@ let contentChunkState = {
   streamingMessageId: null,
   // Flag to track if current response is an artifact (to prevent flushing)
   isArtifactResponse: false,
+  // Flag to track if we're inside a ```json block (artifact content to skip)
+  isInsideJsonBlock: false,
 };
 
 // Reset content chunk state (call on new conversation or complete)
@@ -30,8 +32,15 @@ export const resetContentChunkState = () => {
     streamingThinkId: null,
     streamingMessageId: null,
     isArtifactResponse: false,
+    isInsideJsonBlock: false,
   };
 };
+
+// Get current streaming message ID (for removal when artifact is detected)
+export const getStreamingMessageId = () => contentChunkState.streamingMessageId;
+
+// Check if current response is an artifact
+export const isCurrentResponseArtifact = () => contentChunkState.isArtifactResponse;
 
 // Agent name mapping from slug
 const agentNameMap = {
@@ -550,6 +559,30 @@ export const handleContentChunkEvent = (eventData, context) => {
   const step = eventData.step;
 
   if (!content) {
+    return null;
+  }
+
+  // If we're inside a JSON block, skip content until we find closing ```
+  if (contentChunkState.isInsideJsonBlock) {
+    // Check if this chunk contains the closing ```
+    if (content.includes("```") && !content.includes("```json")) {
+      contentChunkState.isInsideJsonBlock = false;
+    }
+    // Skip this content - don't accumulate or emit
+    return null;
+  }
+
+  // Check if we're entering a ```json block (artifact content to skip)
+  // This can happen across chunks, so check accumulated content + new content
+  const combinedContent = contentChunkState.currentMessageContent + content;
+  if (combinedContent.includes("```json")) {
+    contentChunkState.isInsideJsonBlock = true;
+    // Keep any content before the json block, discard the rest
+    const jsonIdx = combinedContent.indexOf("```json");
+    const contentBeforeJson = combinedContent.slice(0, jsonIdx).trim();
+    // Reset message content to only what was before the JSON
+    contentChunkState.currentMessageContent = contentBeforeJson;
+    // Don't process this chunk further
     return null;
   }
 

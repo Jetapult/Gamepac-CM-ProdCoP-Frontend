@@ -78,7 +78,8 @@ const useActionCardData = () => {
     setIsLoading(prev => ({ ...prev, jiraProjects: true }));
     try {
       const response = await fetchJiraProjectsApi({ maxResults: 50 });
-      const projects = response?.data?.projects || response?.projects || [];
+      // Handle Composio API response structure: data.data.values contains the projects array
+      const projects = response?.data?.data?.values || response?.data?.values || response?.data?.projects || response?.projects || [];
       setJiraProjects(projects);
       setErrors(prev => ({ ...prev, jiraProjects: null }));
     } catch (err) {
