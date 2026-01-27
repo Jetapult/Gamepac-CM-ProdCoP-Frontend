@@ -284,6 +284,7 @@ const SuperAgent = () => {
             onFinopsSessionCreated={setFinopsSessionId}
             liveopsSessionId={liveopsSessionId}
             onLiveopsSessionCreated={setLiveopsSessionId}
+            hideConnectors={true}
           />
         </div>
         {/* Quick Action Buttons */}

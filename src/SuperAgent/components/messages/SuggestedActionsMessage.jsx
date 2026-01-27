@@ -98,6 +98,16 @@ const SuggestedActionsMessage = ({
     try {
       const result = await onSend?.(action, payload);
       console.log("[SuggestedActions] Action completed:", result);
+      
+      // Check if successful is false or null (indicates failure)
+      if (result?.successful === false || result?.successful === null) {
+        setCompletedActions((prev) => ({ 
+          ...prev, 
+          [index]: { success: false, error: result?.error || result?.message || "Action failed" } 
+        }));
+        return;
+      }
+      
       setCompletedActions((prev) => ({ ...prev, [index]: { success: true, result } }));
       // Auto-collapse after success
       setTimeout(() => {
@@ -314,18 +324,19 @@ const SuggestedActionsMessage = ({
           />
         );
 
-      case "google_sheets":
-        return (
-          <GoogleSheetsCard
-            key={index}
-            sheet_title={payload?.sheet_title || ""}
-            data_summary={payload?.data_summary || ""}
-            onSend={(data) => handleSend(action, data, index)}
-            isConnected={isConnected?.("google-sheets")}
-            onConnect={() => handleConnect("google-sheets", index)}
-            {...commonProps}
-          />
-        );
+      // Google Sheets action hidden for now
+      // case "google_sheets":
+      //   return (
+      //     <GoogleSheetsCard
+      //       key={index}
+      //       sheet_title={payload?.sheet_title || ""}
+      //       data_summary={payload?.data_summary || ""}
+      //       onSend={(data) => handleSend(action, data, index)}
+      //       isConnected={isConnected?.("google-sheets")}
+      //       onConnect={() => handleConnect("google-sheets", index)}
+      //       {...commonProps}
+      //     />
+      //   );
 
       case "gmail":
       case "email":
@@ -351,8 +362,46 @@ const SuggestedActionsMessage = ({
     }
   };
 
-  // Filter out dismissed actions
-  const visibleActions = actions.filter((_, index) => !dismissedActions.includes(index));
+  // Check if payload is empty or has no meaningful content for the action type
+  const isPayloadEmpty = (payload, actionType) => {
+    if (!payload || payload === null) return true;
+    if (typeof payload !== 'object') return false;
+    
+    // Check specific required fields based on action type
+    switch (actionType) {
+      case "google_docs":
+        // Docs needs content_summary to be meaningful
+        return !payload.content_summary || payload.content_summary.trim() === "";
+      case "google_sheets":
+        return !payload.data_summary || payload.data_summary.trim() === "";
+      case "slack":
+      case "slack_message":
+        return !payload.message || payload.message.trim() === "";
+      case "jira":
+      case "jira_ticket":
+        return !payload.summary || payload.summary.trim() === "";
+      case "calendar":
+      case "google_calendar":
+        return !payload.summary || payload.summary.trim() === "";
+      case "gmail":
+      case "email":
+        return !payload.body || payload.body.trim() === "";
+      default:
+        // For unknown types, check if all values are empty
+        return Object.values(payload).every(v => 
+          v === null || v === undefined || v === '' || 
+          (Array.isArray(v) && v.length === 0)
+        );
+    }
+  };
+
+  // Filter out dismissed actions, hidden action types, and actions with empty payloads
+  const hiddenActionTypes = ["google_sheets"];
+  const visibleActions = actions.filter((action, index) => 
+    !dismissedActions.includes(index) && 
+    !hiddenActionTypes.includes(action.action_type) &&
+    !isPayloadEmpty(action.payload, action.action_type)
+  );
 
   if (visibleActions.length === 0) {
     return null;
@@ -368,6 +417,8 @@ const SuggestedActionsMessage = ({
       </div>
       {actions.map((action, index) => {
         if (dismissedActions.includes(index)) return null;
+        if (hiddenActionTypes.includes(action.action_type)) return null;
+        if (isPayloadEmpty(action.payload, action.action_type)) return null;
         return expandedActions.includes(index)
           ? renderExpandedCard(action, index)
           : renderCollapsedCard(action, index);
