@@ -81,16 +81,6 @@ const TemplateSection = ({ activeFilter, setActiveFilter }) => {
           <TemplateCard
             key={useCase.id}
             {...useCase}
-            onClick={() =>
-              dispatch(
-                setSelectedTemplate({
-                  id: useCase.id,
-                  title: useCase.title,
-                  description: useCase.description,
-                  image: useCase.image,
-                })
-              )
-            }
           />
         ))}
       </div>
