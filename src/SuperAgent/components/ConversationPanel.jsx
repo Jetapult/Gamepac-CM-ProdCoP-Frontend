@@ -61,6 +61,8 @@ const ConversationPanel = ({
   ); // Finops agent session ID
   const [cashBalance, setCashBalance] = useState(425000.0); // Finops cash balance
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const userHasScrolledUpRef = useRef(false);
   const selectedGame = useSelector((state) => state.superAgent.selectedGame);
   const ContextStudioData = useSelector(
     (state) => state.admin.ContextStudioData,
@@ -1046,10 +1048,29 @@ const ConversationPanel = ({
     [agentSlug, isThinking, onThinkingChange, onArtifactUpdate],
   );
 
-  // Auto-scroll to bottom when messages change
+  // Handle scroll events to detect if user has scrolled up
+  const handleScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    
+    // Check if user is near the bottom (within 100px)
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    userHasScrolledUpRef.current = !isNearBottom;
+  }, []);
+
+  // Auto-scroll to bottom when messages change, but only if user hasn't scrolled up
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!userHasScrolledUpRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages, isThinking, streamingTask]);
+
+  // Reset scroll lock when streaming completes
+  useEffect(() => {
+    if (!isThinking) {
+      userHasScrolledUpRef.current = false;
+    }
+  }, [isThinking]);
 
   // Keep sendMessage ref up to date
   const sendMessageRef = useRef(sendMessage);
@@ -1103,7 +1124,11 @@ const ConversationPanel = ({
   return (
     <div className="flex-1 flex flex-col">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4">
+      <div 
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-5 space-y-4"
+      >
         {messages.map((message, index) => {
           // Find the last user message index
           const lastUserMessageIndex = messages
