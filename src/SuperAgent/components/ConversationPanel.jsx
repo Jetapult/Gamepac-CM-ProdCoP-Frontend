@@ -272,12 +272,41 @@ const ConversationPanel = ({
                 // then parse think tags manually (don't use streaming handler)
                 let allContent = "";
                 let actionsFromEvents = []; // Collect actions from response events
+                let isArtifactResponse = false; // Track if response has is_artifact: true
+                
+                // First pass: check if this is an artifact response
+                for (const event of rawEvents) {
+                  const eventType = event.type || event.event;
+                  if (eventType === "response" && event.is_artifact) {
+                    isArtifactResponse = true;
+                    // Handle artifact data for right panel
+                    if (event.artifact) {
+                      const artifact = event.artifact;
+                      // Handle structured report artifacts
+                      if (artifact.artifact_type && artifact.data) {
+                        const reportTypeMap = {
+                          review_report_short: "review-report-short",
+                          review_report_detailed: "review-report",
+                          bug_report_short: "bug-report-short",
+                          bug_report_detailed: "bug-report",
+                        };
+                        const mappedType = reportTypeMap[artifact.artifact_type] || artifact.artifact_type;
+                        latestArtifact = { type: mappedType, data: artifact.data };
+                      }
+                      // Handle markdown artifacts
+                      if (artifact.format === "markdown" && artifact.data?.markdown) {
+                        latestArtifact = { type: "markdown", data: artifact.data };
+                      }
+                    }
+                    break;
+                  }
+                }
                 
                 for (const event of rawEvents) {
                   const eventType = event.type || event.event;
                   
                   if (eventType === "content_chunk") {
-                    // Accumulate content chunks
+                    // Always accumulate content chunks (we need them for thinking blocks)
                     allContent += event.content || "";
                     continue;
                   }
@@ -341,8 +370,8 @@ const ConversationPanel = ({
                   // Add remaining content after last think block
                   regularContent += allContent.slice(lastIndex);
 
-                  // Add regular content message if any
-                  if (regularContent.trim()) {
+                  // Add regular content message if any (skip for artifact responses)
+                  if (regularContent.trim() && !isArtifactResponse) {
                     processedMessages.push({
                       id: `${msg.id}-${processedMessages.length}`,
                       sender: "llm",
@@ -358,10 +387,23 @@ const ConversationPanel = ({
                 }
                 
                 // If we have actions but no text message was created, add them to the last text message
-                if (actionsFromEvents.length > 0 && processedMessages.length > 0) {
+                // or create a new message to hold the actions (for artifact responses)
+                if (actionsFromEvents.length > 0) {
                   const lastTextMsg = [...processedMessages].reverse().find(m => m.type === "text");
                   if (lastTextMsg && !lastTextMsg.data.actions) {
                     lastTextMsg.data.actions = actionsFromEvents;
+                  } else if (!lastTextMsg) {
+                    // No text message exists (artifact response), create one to hold actions
+                    processedMessages.push({
+                      id: `${msg.id}-actions`,
+                      sender: "llm",
+                      type: "text",
+                      apiMessageId: msg.id,
+                      data: {
+                        content: "",
+                        actions: actionsFromEvents,
+                      },
+                    });
                   }
                 }
 
