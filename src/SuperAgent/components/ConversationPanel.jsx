@@ -283,16 +283,26 @@ const ConversationPanel = ({
                 let actionsFromEvents = []; // Collect actions from response events
                 let isArtifactResponse = false; // Track if response has is_artifact: true
                 
-                // First pass: check if this is an artifact response
+                // First pass: check if this is an artifact response and accumulate content
                 for (const event of rawEvents) {
                   const eventType = event.type || event.event;
+                  
+                  // Accumulate content chunks first (needed for artifact content)
+                  if (eventType === "content_chunk") {
+                    allContent += event.content || "";
+                  }
+                  
                   if (eventType === "response" && event.is_artifact) {
                     isArtifactResponse = true;
                     // Handle artifact data for right panel
                     if (event.artifact) {
                       const artifact = event.artifact;
-                      // Handle structured report artifacts
-                      if (artifact.artifact_type && artifact.data) {
+                      // Handle markdown artifacts first (higher priority)
+                      if (artifact.format === "markdown" && artifact.data?.markdown) {
+                        latestArtifact = { type: "markdown", data: artifact.data };
+                      }
+                      // Handle structured report artifacts (only if not already set as markdown)
+                      else if (artifact.artifact_type && artifact.data) {
                         const reportTypeMap = {
                           review_report_short: "review-report-short",
                           review_report_detailed: "review-report",
@@ -302,12 +312,16 @@ const ConversationPanel = ({
                         const mappedType = reportTypeMap[artifact.artifact_type] || artifact.artifact_type;
                         latestArtifact = { type: mappedType, data: artifact.data };
                       }
-                      // Handle markdown artifacts
-                      if (artifact.format === "markdown" && artifact.data?.markdown) {
-                        latestArtifact = { type: "markdown", data: artifact.data };
-                      }
                     }
-                    break;
+                  }
+                }
+                
+                // If is_artifact is true but no structured artifact, use accumulated content as markdown
+                if (isArtifactResponse && !latestArtifact && allContent.trim()) {
+                  // Strip think tags from content for artifact display
+                  const artifactContent = allContent.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+                  if (artifactContent) {
+                    latestArtifact = { type: "markdown", data: { markdown: artifactContent } };
                   }
                 }
                 
@@ -327,10 +341,7 @@ const ConversationPanel = ({
 
                   const result = processEventHandler(event, {
                     agentSlug: effectiveAgentSlug,
-                    onStructuredArtifactUpdate: (type, data) => {
-                      // Capture the latest artifact for restoration
-                      latestArtifact = { type, data };
-                    },
+                    // Don't pass onStructuredArtifactUpdate here - we handle artifacts in the first pass above
                   });
                   if (result) {
                     // Handle both single message and array of messages
@@ -443,11 +454,17 @@ const ConversationPanel = ({
           historyFetchedRef.current = true;
 
           // Restore the latest artifact in the preview panel
-          if (latestArtifact && onStructuredArtifactUpdate) {
-            onStructuredArtifactUpdate(
-              latestArtifact.type,
-              latestArtifact.data,
-            );
+          if (latestArtifact) {
+            // For markdown artifacts, also call onArtifactUpdate with the markdown content
+            if (latestArtifact.type === "markdown" && latestArtifact.data?.markdown && onArtifactUpdate) {
+              onArtifactUpdate(latestArtifact.data.markdown);
+            }
+            if (onStructuredArtifactUpdate) {
+              onStructuredArtifactUpdate(
+                latestArtifact.type,
+                latestArtifact.data,
+              );
+            }
           }
         }
       } catch (error) {
@@ -460,7 +477,7 @@ const ConversationPanel = ({
         setIsLoadingHistory(false);
       }
     },
-    [chatId, agentSlug, onStructuredArtifactUpdate, initialQuery],
+    [chatId, agentSlug, onArtifactUpdate, onStructuredArtifactUpdate, initialQuery],
   );
 
   // Helper to process raw_events into a task structure

@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 const jiraIcon = "https://cdn.worldvectorlogo.com/logos/jira-1.svg";
 
 const JiraIssueCard = ({
-  project_key: initialProjectKey = "LIVEOPS",
+  project_key: initialProjectKey = "",
   issue_type: initialIssueType = "Task",
   summary: initialSummary = "",
   description: initialDescription = "",
