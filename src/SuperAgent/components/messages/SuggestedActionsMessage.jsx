@@ -241,7 +241,7 @@ const SuggestedActionsMessage = ({
         return (
           <SlackMessageCard
             key={index}
-            channel={payload?.channel || "#general"}
+            channel=""
             text={payload?.text || ""}
             channels={slackChannels}
             users={slackUsers}
@@ -258,7 +258,7 @@ const SuggestedActionsMessage = ({
         return (
           <SlackTaskCard
             key={index}
-            channel={payload?.channel || "#general"}
+            channel=""
             task_title={payload?.task_title || ""}
             task_description={payload?.task_description || ""}
             priority={payload?.priority || "Medium"}
