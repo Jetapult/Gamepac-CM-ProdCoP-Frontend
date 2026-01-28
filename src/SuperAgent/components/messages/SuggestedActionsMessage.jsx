@@ -277,7 +277,7 @@ const SuggestedActionsMessage = ({
         return (
           <JiraIssueCard
             key={index}
-            project_key={payload?.project_key || ""}
+            project_key=""
             issue_type={payload?.issue_type || "Task"}
             summary={payload?.summary || ""}
             description={payload?.description || ""}
