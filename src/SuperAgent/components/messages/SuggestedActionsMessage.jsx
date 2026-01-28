@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown, X, ExternalLink } from "lucide-react";
 import SlackMessageCard from "./SlackMessageCard";
 import SlackTaskCard from "./SlackTaskCard";
 import JiraIssueCard from "./JiraIssueCard";
@@ -7,6 +7,73 @@ import CalendarEventCard from "./CalendarEventCard";
 import GoogleDocsCard from "./GoogleDocsCard";
 import GoogleSheetsCard from "./GoogleSheetsCard";
 import EmailDraftCard from "./EmailDraftCard";
+
+// Helper to extract link from action result based on action type
+const getActionResultLink = (actionType, result) => {
+  if (!result?.data) return null;
+  
+  const data = result.data;
+  
+  switch (actionType) {
+    case "google_doc":
+    case "google_docs":
+      // Construct link from document_id
+      if (data.document_id) {
+        return {
+          url: `https://docs.google.com/document/d/${data.document_id}/edit`,
+          label: "Open Document",
+        };
+      }
+      break;
+      
+    case "google_sheet":
+    case "google_sheets":
+      // Construct link from spreadsheet_id
+      const spreadsheetId = data.response_data?.spreadsheet_id || data.spreadsheet_id;
+      if (spreadsheetId) {
+        return {
+          url: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`,
+          label: "Open Spreadsheet",
+        };
+      }
+      break;
+      
+    case "jira_issue":
+      // Direct from response
+      if (data.browser_url) {
+        return {
+          url: data.browser_url,
+          label: "View Issue",
+        };
+      }
+      break;
+      
+    case "calendar_event":
+      // Calendar links don't work reliably, show note instead
+      return {
+        url: null,
+        label: "Please check your calendar",
+      };
+      break;
+      
+    case "slack_message":
+    case "slack_task":
+      // Slack links require workspace ID which isn't in response
+      // Just show channel info instead
+      if (data.channel && data.ts) {
+        return {
+          url: null, // No direct link available
+          label: `Sent to ${data.channel}`,
+        };
+      }
+      break;
+      
+    default:
+      return null;
+  }
+  
+  return null;
+};
 
 // Action type config for icons and labels
 const actionTypeConfig = {
@@ -109,10 +176,6 @@ const SuggestedActionsMessage = ({
       }
       
       setCompletedActions((prev) => ({ ...prev, [index]: { success: true, result } }));
-      // Auto-collapse after success
-      setTimeout(() => {
-        setExpandedActions((prev) => prev.filter((i) => i !== index));
-      }, 1500);
     } catch (err) {
       console.error("[SuggestedActions] Action failed:", err);
       setCompletedActions((prev) => ({ 
@@ -195,12 +258,41 @@ const SuggestedActionsMessage = ({
     // Show success message if action completed
     if (actionResult?.success) {
       const config = actionTypeConfig[action_type] || { icon: null, label: action_type };
+      const linkInfo = getActionResultLink(action_type, actionResult.result);
+      
       return (
-        <div key={index} className="bg-[#f0fdf4] border border-[#86efac] rounded-xl p-4 flex items-center gap-3">
-          {config.icon && <img src={config.icon} alt={config.label} className="w-6 h-6 object-contain" />}
-          <span className="text-[14px] text-[#166534] font-medium" style={{ fontFamily: "Urbanist, sans-serif" }}>
-            {action.title || config.label} completed successfully!
-          </span>
+        <div key={index} className="bg-[#f0fdf4] border border-[#86efac] rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            {config.icon && <img src={config.icon} alt={config.label} className="w-6 h-6 object-contain" />}
+            <span className="text-[14px] text-[#166534] font-medium" style={{ fontFamily: "Urbanist, sans-serif" }}>
+              {action.title || config.label} completed successfully!
+            </span>
+          </div>
+          {linkInfo && (
+            <div className="mt-2 ml-9">
+              {linkInfo.url ? (
+                <a
+                  href={linkInfo.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[13px] text-[#166534] hover:text-[#14532d] underline"
+                  style={{ fontFamily: "Urbanist, sans-serif" }}
+                >
+                  {linkInfo.label}
+                  <ExternalLink size={14} />
+                </a>
+              ) : (
+                <span className="text-[13px] text-[#166534]" style={{ fontFamily: "Urbanist, sans-serif" }}>
+                  {linkInfo.label}
+                </span>
+              )}
+              {linkInfo.note && (
+                <p className="text-[12px] text-[#6d6d6d] mt-1" style={{ fontFamily: "Urbanist, sans-serif" }}>
+                  {linkInfo.note}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       );
     }
