@@ -33,6 +33,7 @@ const ChatScreen = ({
   const [artifactContent, setArtifactContent] = useState(null);
   const [artifactType, setArtifactType] = useState(null);
   const [artifactData, setArtifactData] = useState(null);
+  const [currentArtifactMessageId, setCurrentArtifactMessageId] = useState(null);
 
   // Google Docs action data for preview panel
   const [googleDocsActionData, setGoogleDocsActionData] = useState(null);
@@ -145,15 +146,17 @@ const ChatScreen = ({
           }}
           onThinkingChange={setIsThinking}
           onArtifactUpdate={setArtifactContent}
-          onStructuredArtifactUpdate={(type, data) => {
+          onStructuredArtifactUpdate={(type, data, messageId) => {
             setArtifactType(type);
             setArtifactData(data);
+            setCurrentArtifactMessageId(messageId);
           }}
           onGoogleDocsActionUpdate={(data) => setGoogleDocsActionData(data)}
           onTitleUpdate={handleTitleChange}
           onPublicUpdate={setIsPublic}
           onFavouriteUpdate={setIsFavourite}
           onAccessDenied={() => setAccessDenied(true)}
+          currentArtifactMessageId={currentArtifactMessageId}
         />
 
         {/* Right Side - Preview */}

@@ -4,6 +4,7 @@ import Message from "./messages/Message";
 import TaskMessage from "./messages/TaskMessage";
 import ChatInput from "./ChatInput";
 import SuggestedActionsMessage from "./messages/SuggestedActionsMessage";
+import ArtifactMessage from "./messages/ArtifactMessage";
 import thinkingSphere from "../../assets/thinking_sphere.gif";
 import { getAuthToken } from "../../utils";
 import {
@@ -42,6 +43,7 @@ const ConversationPanel = ({
   onFavouriteUpdate,
   onAccessDenied,
   onGoogleDocsActionUpdate,
+  currentArtifactMessageId = null,
 }) => {
   const [messages, setMessages] = useState([]);
   const [streamingTask, setStreamingTask] = useState(null);
@@ -181,6 +183,13 @@ const ConversationPanel = ({
     setIsThinking(false);
     if (onThinkingChange) onThinkingChange(false);
   }, [onThinkingChange]);
+
+  // Handle artifact click to open in preview panel
+  const handleArtifactClick = useCallback((reportType, reportData, messageId) => {
+    if (onStructuredArtifactUpdate) {
+      onStructuredArtifactUpdate(reportType, reportData, messageId);
+    }
+  }, [onStructuredArtifactUpdate]);
 
   // Fetch chat details to get agent_slug for existing chats
   // Returns the agent_slug so it can be used by fetchChatHistory
@@ -429,6 +438,20 @@ const ConversationPanel = ({
                       },
                     });
                   }
+                }
+
+                // Add report_artifact message at the end (after text content) for proper ordering
+                if (latestArtifact && latestArtifact.type !== "markdown") {
+                  processedMessages.push({
+                    id: `${msg.id}-artifact`,
+                    sender: "llm",
+                    type: "report_artifact",
+                    apiMessageId: msg.id,
+                    data: {
+                      reportType: latestArtifact.type,
+                      reportData: latestArtifact.data,
+                    },
+                  });
                 }
 
                 // Return array of messages (will be flattened later)
@@ -1228,6 +1251,22 @@ const ConversationPanel = ({
             message.sender === "llm" &&
             index === lastLLMMessageIndex;
 
+          // Find artifact that belongs to this message (same apiMessageId)
+          let artifactData = null;
+          if (message.sender === "llm" && message.type === "text") {
+            const relatedArtifact = messages.find(
+              (m) => m.type === "report_artifact" && m.apiMessageId === message.apiMessageId
+            );
+            if (relatedArtifact) {
+              artifactData = {
+                reportType: relatedArtifact.data?.reportType,
+                reportData: relatedArtifact.data?.reportData,
+                isOpen: message.apiMessageId === currentArtifactMessageId,
+                messageId: message.apiMessageId,
+              };
+            }
+          }
+
           return (
             <Message
               key={message.id}
@@ -1248,6 +1287,9 @@ const ConversationPanel = ({
               onFetchSlackChannels={fetchSlackChannels}
               onFetchJiraProjects={fetchJiraProjects}
               onActionSend={handleActionSend}
+              // Artifact props
+              artifactData={artifactData}
+              onArtifactClick={handleArtifactClick}
             />
           );
         })}

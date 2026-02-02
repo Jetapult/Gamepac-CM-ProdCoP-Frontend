@@ -489,7 +489,7 @@ const SuggestedActionsMessage = ({
   };
 
   // Filter out dismissed actions, hidden action types, and actions with empty payloads
-  const hiddenActionTypes = ["google_sheets"];
+  const hiddenActionTypes = ["google_sheets", "google_docs"];
   const visibleActions = actions.filter((action, index) => 
     !dismissedActions.includes(index) && 
     !hiddenActionTypes.includes(action.action_type) &&

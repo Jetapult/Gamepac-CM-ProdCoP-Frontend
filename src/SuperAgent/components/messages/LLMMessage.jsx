@@ -68,6 +68,8 @@ const LLMMessage = ({
   versionInfo,
   canRegenerate = true,
   initialFeedback = null,
+  artifactData = null,
+  onArtifactClick,
 }) => {
   const [copiedTooltip, setCopiedTooltip] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -277,6 +279,85 @@ const LLMMessage = ({
           return <ReactMarkdown>{strippedContent}</ReactMarkdown>;
         })()}
       </div>
+
+      {/* Artifact Card - Show if this message has an artifact */}
+      {artifactData && (
+        <div
+          onClick={() => onArtifactClick?.(artifactData.reportType, artifactData.reportData, artifactData.messageId)}
+          className={`
+            bg-white border rounded-xl overflow-hidden cursor-pointer transition-all max-w-[480px] w-full mt-2
+            ${artifactData.isOpen 
+              ? "border-[#86efac] shadow-sm" 
+              : "border-[#f1f1f1] hover:border-[#e0e0e0]"
+            }
+          `}
+        >
+          <div className="flex items-center justify-between p-3">
+            <div className="flex items-center gap-3">
+              <div
+                className={`
+                  w-8 h-8 rounded-lg flex items-center justify-center shrink-0
+                  ${artifactData.isOpen ? "bg-[#dcfce7]" : "bg-[#f6f6f6]"}
+                `}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={artifactData.isOpen ? "#16a34a" : "#6d6d6d"}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span
+                  className="text-[14px] font-medium text-[#141414] truncate"
+                  style={{ fontFamily: "Urbanist, sans-serif" }}
+                >
+                  {artifactData.reportData?.header?.reportTitle || "Report"}
+                </span>
+                <span
+                  className="text-[12px] text-[#6d6d6d]"
+                  style={{ fontFamily: "Urbanist, sans-serif" }}
+                >
+                  {artifactData.reportData?.header?.analysisPeriodStart && artifactData.reportData?.header?.analysisPeriodEnd
+                    ? `${artifactData.reportData.header.analysisPeriodStart} - ${artifactData.reportData.header.analysisPeriodEnd}`
+                    : "Report"}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {artifactData.isOpen && (
+                <div className="w-2 h-2 rounded-full bg-[#16a34a] shrink-0" />
+              )}
+              <div className="p-1.5 text-[#6d6d6d]">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Related Actions - Only show for latest LLM message */}
       {isLatest && relatedActions.length > 0 && (

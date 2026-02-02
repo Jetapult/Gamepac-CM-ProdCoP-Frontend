@@ -6,6 +6,7 @@ import TaskMessage from "./TaskMessage";
 import ThinkingMessage from "./ThinkingMessage";
 import AgentHeader from "./AgentHeader";
 import SuggestedActionsMessage from "./SuggestedActionsMessage";
+import ArtifactMessage from "./ArtifactMessage";
 
 /**
  * Message component that renders different message types based on the message object
@@ -37,6 +38,9 @@ const Message = ({
   onFetchSlackChannels,
   onFetchJiraProjects,
   onActionSend,
+  // Artifact props
+  artifactData = null,
+  onArtifactClick,
 }) => {
   const { sender, type, data } = message;
 
@@ -72,6 +76,8 @@ const Message = ({
             versionInfo={versionInfo}
             canRegenerate={!!message.apiMessageId}
             initialFeedback={data.feedback}
+            artifactData={artifactData}
+            onArtifactClick={onArtifactClick}
           />
         );
       }
@@ -114,7 +120,7 @@ const Message = ({
       return <div>Artifact message (to be implemented)</div>;
 
     case "report_artifact":
-      // Report shows in preview panel, no message needed
+      // Rendered separately at bottom of chat, above suggested actions
       return null;
 
     case "suggested_actions":
