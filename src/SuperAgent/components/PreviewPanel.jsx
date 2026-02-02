@@ -38,14 +38,18 @@ const PreviewPanel = ({
   }
   const hasArtifact = artifactContent && isMarkdown(artifactContent);
   // Exclude "markdown" type from structured artifacts - it's handled by artifactContent
+  // Also ensure data exists before showing structured artifact
   const hasStructuredArtifact = artifactType && artifactData && artifactType !== "markdown";
+  
+  // Show loading if thinking OR if we have artifact type but no data yet (still loading)
+  const isLoading = isThinking || (artifactType && !artifactData && artifactType !== "markdown");
 
   return (
     <div className="flex-1 bg-[#f8f8f7] border-l border-[#f6f6f6] flex flex-col relative">
       {/* Building State - Show animation */}
       <div
         className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 pointer-events-none ${
-          isThinking ? "opacity-100" : "opacity-0"
+          isLoading ? "opacity-100" : "opacity-0"
         }`}
       >
         <div className="text-center">
@@ -62,7 +66,7 @@ const PreviewPanel = ({
       </div>
 
       {/* Artifact Content - Rendered Markdown */}
-      {hasArtifact && !isThinking && (
+      {hasArtifact && !isLoading && (
         <div className="absolute inset-0 overflow-y-auto p-6 pb-24">
           <div
             className="prose prose-sm max-w-none"
@@ -123,8 +127,8 @@ const PreviewPanel = ({
       )}
 
       {/* Structured Artifact (Review Reports) */}
-      {hasStructuredArtifact && !isThinking && (
-        <div className="absolute inset-0">
+      {hasStructuredArtifact && !isLoading && (
+        <div className="absolute inset-0 z-10">
           <ArtifactPlaceholder
             type={artifactType}
             data={artifactData}
