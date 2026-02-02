@@ -404,17 +404,18 @@ const SuggestedActionsMessage = ({
         );
 
       case "google_docs":
-        return (
-          <GoogleDocsCard
-            key={index}
-            doc_title={payload?.doc_title || ""}
-            content_summary={payload?.content_summary || ""}
-            onSend={(data) => handleSend(action, data, index)}
-            isConnected={isConnected?.("google-docs")}
-            onConnect={() => handleConnect("google-docs", index)}
-            {...commonProps}
-          />
-        );
+        return <></>
+        // return (
+        //   <GoogleDocsCard
+        //     key={index}
+        //     doc_title={payload?.doc_title || ""}
+        //     content_summary={payload?.content_summary || ""}
+        //     onSend={(data) => handleSend(action, data, index)}
+        //     isConnected={isConnected?.("google-docs")}
+        //     onConnect={() => handleConnect("google-docs", index)}
+        //     {...commonProps}
+        //   />
+        // );
 
       // Google Sheets action hidden for now
       // case "google_sheets":
