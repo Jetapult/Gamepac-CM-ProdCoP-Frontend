@@ -7,10 +7,10 @@ import BugReportShortContent from "@/SuperAgent/components/artifacts/BugReportSh
 import ReviewReportContent from "@/SuperAgent/components/artifacts/ReviewReportContent";
 import ReviewReportShortContent from "@/SuperAgent/components/artifacts/ReviewReportShortContent";
 
-const ArtifactPlaceholder = ({ type = "bug-report-short", data }) => {
+const ArtifactPlaceholder = ({ type = "bug-report-short", data, googleDocsActionData }) => {
   if (type === "bug-report" && data) {
     return (
-      <ReportWrapper title="Bug Report v1">
+      <ReportWrapper title="Bug Report v1" googleDocsActionData={googleDocsActionData}>
         <BugReportContent data={data} />
       </ReportWrapper>
     );
@@ -18,7 +18,7 @@ const ArtifactPlaceholder = ({ type = "bug-report-short", data }) => {
 
   if (type === "bug-report-short" && data) {
     return (
-      <ReportWrapper title="Bug Report Short v1" containerClassName="">
+      <ReportWrapper title="Bug Report Short v1" containerClassName="" googleDocsActionData={googleDocsActionData}>
         <BugReportShortContent data={data} />
       </ReportWrapper>
     );
@@ -26,7 +26,7 @@ const ArtifactPlaceholder = ({ type = "bug-report-short", data }) => {
 
   if (type === "review-report-short" && data) {
     return (
-      <ReportWrapper title="Review Report Short v1">
+      <ReportWrapper title="Review Report Short v1" googleDocsActionData={googleDocsActionData}>
         <ReviewReportShortContent data={data} />
       </ReportWrapper>
     );
@@ -34,7 +34,7 @@ const ArtifactPlaceholder = ({ type = "bug-report-short", data }) => {
 
   if (type === "review-report" && data) {
     return (
-      <ReportWrapper title="Review Report v1">
+      <ReportWrapper title="Review Report v1" googleDocsActionData={googleDocsActionData}>
         <ReviewReportContent data={data} />
       </ReportWrapper>
     );

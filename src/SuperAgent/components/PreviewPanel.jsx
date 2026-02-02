@@ -30,7 +30,12 @@ const PreviewPanel = ({
   artifactType = null,
   artifactData = null,
   agentName = "GamePac",
+  googleDocsActionData = null,
 }) => {
+  // Log Google Docs action data for verification
+  if (googleDocsActionData) {
+    console.log("[PreviewPanel] Google Docs Action Data:", googleDocsActionData);
+  }
   const hasArtifact = artifactContent && isMarkdown(artifactContent);
   // Exclude "markdown" type from structured artifacts - it's handled by artifactContent
   const hasStructuredArtifact = artifactType && artifactData && artifactType !== "markdown";
@@ -120,7 +125,11 @@ const PreviewPanel = ({
       {/* Structured Artifact (Review Reports) */}
       {hasStructuredArtifact && !isThinking && (
         <div className="absolute inset-0">
-          <ArtifactPlaceholder type={artifactType} data={artifactData} />
+          <ArtifactPlaceholder
+            type={artifactType}
+            data={artifactData}
+            googleDocsActionData={googleDocsActionData}
+          />
         </div>
       )}
 

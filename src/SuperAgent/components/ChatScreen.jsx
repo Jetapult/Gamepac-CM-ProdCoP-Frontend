@@ -34,6 +34,9 @@ const ChatScreen = ({
   const [artifactType, setArtifactType] = useState(null);
   const [artifactData, setArtifactData] = useState(null);
 
+  // Google Docs action data for preview panel
+  const [googleDocsActionData, setGoogleDocsActionData] = useState(null);
+
   // Chat public/private state
   const [isPublic, setIsPublic] = useState(false);
 
@@ -45,6 +48,7 @@ const ChatScreen = ({
     setArtifactContent(null);
     setArtifactType(null);
     setArtifactData(null);
+    setGoogleDocsActionData(null);
     setChatTitle("");
     setIsFavourite(false);
     setIsPublic(false);
@@ -145,6 +149,7 @@ const ChatScreen = ({
             setArtifactType(type);
             setArtifactData(data);
           }}
+          onGoogleDocsActionUpdate={(data) => setGoogleDocsActionData(data)}
           onTitleUpdate={handleTitleChange}
           onPublicUpdate={setIsPublic}
           onFavouriteUpdate={setIsFavourite}
@@ -162,6 +167,7 @@ const ChatScreen = ({
           artifactType={artifactType}
           artifactData={artifactData}
           agentName={getAgentDisplayName(agentSlug)}
+          googleDocsActionData={googleDocsActionData}
         />
       </div>
     </div>

@@ -41,6 +41,7 @@ const ConversationPanel = ({
   onPublicUpdate,
   onFavouriteUpdate,
   onAccessDenied,
+  onGoogleDocsActionUpdate,
 }) => {
   const [messages, setMessages] = useState([]);
   const [streamingTask, setStreamingTask] = useState(null);
@@ -583,6 +584,34 @@ const ConversationPanel = ({
     loadChat();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId]);
+
+  // Extract Google Docs action data and pass to parent when messages change
+  const prevGoogleDocsDataRef = useRef(null);
+  useEffect(() => {
+    if (!onGoogleDocsActionUpdate) return;
+    
+    const lastLLMWithActions = [...messages].reverse().find(
+      (msg) => msg.sender === "llm" && msg.type === "text" && msg.data?.actions?.length > 0
+    );
+    
+    if (lastLLMWithActions && !isThinking) {
+      const googleDocsAction = lastLLMWithActions.data.actions?.find(
+        (a) => a.action_type === "google_docs"
+      );
+      if (googleDocsAction?.payload) {
+        const newData = {
+          doc_title: googleDocsAction.payload.doc_title || "",
+          content_summary: googleDocsAction.payload.content_summary || "",
+        };
+        // Only call if data actually changed
+        if (JSON.stringify(newData) !== JSON.stringify(prevGoogleDocsDataRef.current)) {
+          prevGoogleDocsDataRef.current = newData;
+          onGoogleDocsActionUpdate(newData);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, isThinking]);
 
   const sendMessage = useCallback(
     async (content, attachments = []) => {
