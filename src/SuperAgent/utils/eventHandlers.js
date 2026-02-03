@@ -227,10 +227,13 @@ export const handleActionEvent = (eventData, context) => {
 // Handler for 'response' event - the actual LLM response
 export const handleResponseEvent = (eventData, context) => {
   let content = eventData.content || "";
-  const messageId = eventData.message_id || null;
+  // Generate a unique message ID if not provided by backend
+  const messageId = eventData.message_id || `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const actions = eventData.actions || [];
   const isArtifact = eventData.is_artifact || false;
   const artifact = eventData.artifact || null;
+
+  console.log("[handleResponseEvent] Entry:", { isArtifact, hasArtifact: !!artifact, messageId });
 
   // Handle artifact responses - display in right panel and remove streamed content from conversation
   if (isArtifact && artifact) {
@@ -260,6 +263,7 @@ export const handleResponseEvent = (eventData, context) => {
     }
     
     // Handle structured report artifacts (review_report_short, etc.)
+    console.log("[handleResponseEvent] artifact check:", { artifact_type: artifact.artifact_type, hasData: !!artifact.data });
     if (artifact.artifact_type && artifact.data) {
       const reportTypeToArtifactType = {
         review_report_short: "review-report-short",
@@ -270,8 +274,36 @@ export const handleResponseEvent = (eventData, context) => {
       const mappedType = reportTypeToArtifactType[artifact.artifact_type] || artifact.artifact_type;
       
       if (context.onStructuredArtifactUpdate) {
-        context.onStructuredArtifactUpdate(mappedType, artifact.data);
+        context.onStructuredArtifactUpdate(mappedType, artifact.data, messageId);
       }
+      
+      // Return both an LLM text message AND a report_artifact message
+      // The text message is needed for the artifact card to attach to
+      const textMsg = {
+        id: getUniqueId(),
+        sender: "llm",
+        type: "text",
+        apiMessageId: messageId,
+        data: {
+          content: "",
+          actions: actions.length > 0 ? [...actions] : undefined,
+        },
+      };
+      
+      const reportArtifactMsg = {
+        id: `${messageId}-artifact`,
+        sender: "llm",
+        type: "report_artifact",
+        apiMessageId: messageId,
+        data: {
+          reportType: mappedType,
+          reportData: artifact.data,
+        },
+      };
+      
+      const result = [textMsg, reportArtifactMsg];
+      console.log("[handleResponseEvent] Returning artifact messages:", result);
+      return result;
     }
     
     // If artifact response has actions, return a message to hold them

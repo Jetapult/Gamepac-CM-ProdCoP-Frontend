@@ -5,6 +5,7 @@ import BugReportContent from "@/SuperAgent/components/artifacts/BugReportContent
 import BugReportShortContent from "@/SuperAgent/components/artifacts/BugReportShortContent";
 import ReviewReportContent from "@/SuperAgent/components/artifacts/ReviewReportContent";
 import ReviewReportShortContent from "@/SuperAgent/components/artifacts/ReviewReportShortContent";
+import MarkdownContent from "@/SuperAgent/components/artifacts/MarkdownContent";
 
 const ArtifactPlaceholder = ({ type, data, googleDocsActionData }) => {
   // Don't render anything if no type or no data
@@ -44,8 +45,12 @@ const ArtifactPlaceholder = ({ type, data, googleDocsActionData }) => {
     );
   }
 
-  // Unknown type - return null instead of placeholder
-  return null;
+  // Unknown type - render as markdown content
+  return (
+    <ReportWrapper title="Report" googleDocsActionData={googleDocsActionData}>
+      <MarkdownContent data={data} />
+    </ReportWrapper>
+  );
 };
 
 export default ArtifactPlaceholder;

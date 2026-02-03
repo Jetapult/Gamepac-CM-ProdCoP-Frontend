@@ -55,8 +55,8 @@ const Message = ({
           />
         );
       } else if (sender === "llm") {
-        // Skip rendering if no content and no thinking (actions-only message)
-        if (!data.content && !data.thinking) {
+        // Skip rendering if no content, no thinking, and no artifact (actions-only message)
+        if (!data.content && !data.thinking && !artifactData) {
           return null;
         }
         return (
