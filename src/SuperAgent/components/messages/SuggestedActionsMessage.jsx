@@ -404,17 +404,18 @@ const SuggestedActionsMessage = ({
         );
 
       case "google_docs":
-        return (
-          <GoogleDocsCard
-            key={index}
-            doc_title={payload?.doc_title || ""}
-            content_summary={payload?.content_summary || ""}
-            onSend={(data) => handleSend(action, data, index)}
-            isConnected={isConnected?.("google-docs")}
-            onConnect={() => handleConnect("google-docs", index)}
-            {...commonProps}
-          />
-        );
+        return <></>
+        // return (
+        //   <GoogleDocsCard
+        //     key={index}
+        //     doc_title={payload?.doc_title || ""}
+        //     content_summary={payload?.content_summary || ""}
+        //     onSend={(data) => handleSend(action, data, index)}
+        //     isConnected={isConnected?.("google-docs")}
+        //     onConnect={() => handleConnect("google-docs", index)}
+        //     {...commonProps}
+        //   />
+        // );
 
       // Google Sheets action hidden for now
       // case "google_sheets":
@@ -488,7 +489,7 @@ const SuggestedActionsMessage = ({
   };
 
   // Filter out dismissed actions, hidden action types, and actions with empty payloads
-  const hiddenActionTypes = ["google_sheets"];
+  const hiddenActionTypes = ["google_sheets", "google_docs"];
   const visibleActions = actions.filter((action, index) => 
     !dismissedActions.includes(index) && 
     !hiddenActionTypes.includes(action.action_type) &&

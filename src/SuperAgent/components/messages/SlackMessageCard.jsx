@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { searchSlackChannels, searchSlackUsers } from "../../../services/composioApi";
 
 const slackIcon = "https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png";
 
@@ -20,40 +21,87 @@ const SlackMessageCard = ({
   const [channel, setChannel] = useState(initialChannel);
   const [text, setText] = useState(initialText);
   const [showChannelDropdown, setShowChannelDropdown] = useState(false);
-  const [channelFilter, setChannelFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState({ channels: [], users: [] });
+  const [isSearching, setIsSearching] = useState(false);
   const channelInputRef = useRef(null);
   const dropdownRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
 
-  // Merge channels and users, filter based on input
-  const filterText = channelFilter.toLowerCase().replace(/^[#@]/, "");
-  const filteredChannels = channels.filter((ch) =>
-    (ch.name || ch).toLowerCase().includes(filterText)
-  );
-  const filteredUsers = users.filter((u) =>
-    (u.name || u.real_name || u).toLowerCase().includes(filterText)
-  );
+  // Debounced search function
+  const performSearch = useCallback(async (query) => {
+    if (!query || query.length < 1) {
+      setSearchResults({ channels: [], users: [] });
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const cleanQuery = query.replace(/^[#@]/, "").toLowerCase();
+
+    try {
+      // Search channels via API
+      const channelsResult = await searchSlackChannels({ searchQuery: cleanQuery, limit: 10 }).catch(() => null);
+      const searchedChannels = channelsResult?.data?.data?.channels || [];
+
+      // Filter users locally by name (API only supports email search)
+      const filteredUsers = users.filter((u) =>
+        (u.name || u.real_name || u).toLowerCase().includes(cleanQuery)
+      );
+
+      setSearchResults({ channels: searchedChannels, users: filteredUsers });
+    } catch (error) {
+      console.error("Slack search error:", error);
+      setSearchResults({ channels: [], users: [] });
+    } finally {
+      setIsSearching(false);
+    }
+  }, [users]);
+
+  // Debounce search input
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (searchQuery) {
+      searchTimeoutRef.current = setTimeout(() => {
+        performSearch(searchQuery);
+      }, 300);
+    } else {
+      setSearchResults({ channels: [], users: [] });
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, performSearch]);
 
   const handleChannelChange = (e) => {
     const value = e.target.value;
     setChannel(value);
-    setChannelFilter(value);
+    setSearchQuery(value);
     setShowChannelDropdown(true);
     onChange?.({ channel: value, text });
   };
 
   const handleChannelSelect = (ch) => {
-    const channelName = `#${ch.name || ch}`;
+    const channelName = `#${ch.channel_name || ch.name || ch}`;
     setChannel(channelName);
-    setChannelFilter("");
+    setSearchQuery("");
     setShowChannelDropdown(false);
+    setSearchResults({ channels: [], users: [] });
     onChange?.({ channel: channelName, text });
   };
 
   const handleUserSelect = (u) => {
     const userName = `@${u.name || u.real_name || u}`;
     setChannel(userName);
-    setChannelFilter("");
+    setSearchQuery("");
     setShowChannelDropdown(false);
+    setSearchResults({ channels: [], users: [] });
     onChange?.({ channel: userName, text });
   };
 
@@ -114,41 +162,74 @@ const SlackMessageCard = ({
           {/* Channel/User Dropdown */}
           {showChannelDropdown && isConnected && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#e6e6e6] rounded-lg shadow-lg z-50 max-h-[200px] overflow-y-auto">
-              {isLoadingChannels ? (
+              {isSearching ? (
                 <div className="px-3 py-2 text-[13px] text-[#9ca3af]" style={{ fontFamily: "Urbanist, sans-serif" }}>
-                  Loading...
+                  Searching...
                 </div>
-              ) : (filteredChannels.length > 0 || filteredUsers.length > 0) ? (
-                <>
-                  {filteredChannels.map((ch) => (
-                    <button
-                      key={`ch-${ch.id || ch.name || ch}`}
-                      onClick={() => handleChannelSelect(ch)}
-                      className="w-full px-3 py-2 text-left text-[14px] text-[#141414] hover:bg-[#f6f7f8] transition-colors"
-                      style={{ fontFamily: "Urbanist, sans-serif" }}
-                    >
-                      #{ch.name || ch}
-                    </button>
-                  ))}
-                  {filteredUsers.map((u) => (
-                    <button
-                      key={`u-${u.id || u.name || u}`}
-                      onClick={() => handleUserSelect(u)}
-                      className="w-full px-3 py-2 text-left text-[14px] text-[#141414] hover:bg-[#f6f7f8] transition-colors"
-                      style={{ fontFamily: "Urbanist, sans-serif" }}
-                    >
-                      @{u.name || u.real_name || u}
-                    </button>
-                  ))}
-                </>
-              ) : (channels.length === 0 && users.length === 0) ? (
-                <div className="px-3 py-2 text-[13px] text-[#9ca3af]" style={{ fontFamily: "Urbanist, sans-serif" }}>
-                  No channels or users available
-                </div>
+              ) : searchQuery ? (
+                // Show search results when there's a search query
+                (searchResults.channels.length > 0 || searchResults.users.length > 0) ? (
+                  <>
+                    {searchResults.channels.map((ch) => (
+                      <button
+                        key={`ch-${ch.channel_id || ch.channel_name}`}
+                        onClick={() => handleChannelSelect(ch)}
+                        className="w-full px-3 py-2 text-left text-[14px] text-[#141414] hover:bg-[#f6f7f8] transition-colors"
+                        style={{ fontFamily: "Urbanist, sans-serif" }}
+                      >
+                        #{ch.channel_name}
+                      </button>
+                    ))}
+                    {searchResults.users.map((u) => (
+                      <button
+                        key={`u-${u.id || u.name}`}
+                        onClick={() => handleUserSelect(u)}
+                        className="w-full px-3 py-2 text-left text-[14px] text-[#141414] hover:bg-[#f6f7f8] transition-colors"
+                        style={{ fontFamily: "Urbanist, sans-serif" }}
+                      >
+                        @{u.name || u.real_name}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <div className="px-3 py-2 text-[13px] text-[#9ca3af]" style={{ fontFamily: "Urbanist, sans-serif" }}>
+                    No matches found
+                  </div>
+                )
               ) : (
-                <div className="px-3 py-2 text-[13px] text-[#9ca3af]" style={{ fontFamily: "Urbanist, sans-serif" }}>
-                  No matches found
-                </div>
+                // Show initial list when search is empty
+                isLoadingChannels ? (
+                  <div className="px-3 py-2 text-[13px] text-[#9ca3af]" style={{ fontFamily: "Urbanist, sans-serif" }}>
+                    Loading...
+                  </div>
+                ) : (channels.length > 0 || users.length > 0) ? (
+                  <>
+                    {channels.map((ch) => (
+                      <button
+                        key={`ch-${ch.id || ch.name || ch}`}
+                        onClick={() => handleChannelSelect(ch)}
+                        className="w-full px-3 py-2 text-left text-[14px] text-[#141414] hover:bg-[#f6f7f8] transition-colors"
+                        style={{ fontFamily: "Urbanist, sans-serif" }}
+                      >
+                        #{ch.name || ch}
+                      </button>
+                    ))}
+                    {users.map((u) => (
+                      <button
+                        key={`u-${u.id || u.name || u}`}
+                        onClick={() => handleUserSelect(u)}
+                        className="w-full px-3 py-2 text-left text-[14px] text-[#141414] hover:bg-[#f6f7f8] transition-colors"
+                        style={{ fontFamily: "Urbanist, sans-serif" }}
+                      >
+                        @{u.name || u.real_name || u}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <div className="px-3 py-2 text-[13px] text-[#9ca3af]" style={{ fontFamily: "Urbanist, sans-serif" }}>
+                    No channels or users available
+                  </div>
+                )
               )}
             </div>
           )}

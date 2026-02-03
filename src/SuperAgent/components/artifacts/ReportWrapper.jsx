@@ -1,9 +1,12 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, X } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import pdfIcon from "@/assets/file-icons/pdf.png";
 import docsIcon from "@/assets/docs.png";
+import GoogleDocsExportCard from "../ExportToGoogleDocs";
+import { createGoogleDoc } from "@/services/composioApi";
+import useComposioConnections from "@/hooks/useComposioConnections";
 
 const A4_WIDTH_PX = 794; // 210mm at 96 DPI
 const A4_WIDTH_MM = 210;
@@ -14,7 +17,9 @@ const ReportWrapper = ({
   title,
   children,
   containerClassName = "review-report-container bg-white shadow-xl",
+  googleDocsActionData = null,
 }) => {
+  const { isConnected, connect } = useComposioConnections();
   const containerRef = useRef(null);
   const contentRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -23,6 +28,47 @@ const ReportWrapper = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [downloadType, setDownloadType] = useState(null); // 'pdf' | 'markdown' | 'drive'
+  const [showDocsDialog, setShowDocsDialog] = useState(false);
+  const [isCreatingDoc, setIsCreatingDoc] = useState(false);
+  const [isConnectingDocs, setIsConnectingDocs] = useState(false);
+  const [docsSuccessData, setDocsSuccessData] = useState(null);
+
+  // Handle Google Docs export send
+  const handleDocsSend = async (data) => {
+    console.log("[ReportWrapper] Creating Google Doc:", data);
+    setIsCreatingDoc(true);
+    try {
+      const result = await createGoogleDoc({
+        title: data.doc_title,
+        content: data.content_summary,
+      });
+      console.log("[ReportWrapper] Google Doc created:", result);
+      // Show success state with link - construct from document_id
+      const documentId = result?.data?.document_id;
+      const url = documentId ? `https://docs.google.com/document/d/${documentId}/edit` : "";
+      setDocsSuccessData({
+        title: data.doc_title,
+        url,
+      });
+    } catch (err) {
+      console.error("[ReportWrapper] Failed to create Google Doc:", err);
+    } finally {
+      setIsCreatingDoc(false);
+    }
+  };
+
+  // Handle Google Docs connect
+  const handleDocsConnect = async () => {
+    console.log("[ReportWrapper] Connecting to Google Docs");
+    setIsConnectingDocs(true);
+    try {
+      await connect("google-docs");
+    } catch (err) {
+      console.error("[ReportWrapper] Failed to connect Google Docs:", err);
+    } finally {
+      setIsConnectingDocs(false);
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -50,7 +96,7 @@ const ReportWrapper = ({
     });
 
     const avoidBreakElements = container.querySelectorAll(
-      ".data-table, .metadata-table, table, .metric-card, .chart-container"
+      ".data-table, .metadata-table, table, .metric-card, .chart-container",
     );
     const elementBounds = [];
     avoidBreakElements.forEach((el) => {
@@ -96,10 +142,10 @@ const ReportWrapper = ({
     return breakPoints;
   };
 
-  // Save to Google Docs (placeholder - shows coming soon)
+  // Save to Google Docs
   const handleSaveToGoogleDocs = () => {
     setShowDropdown(false);
-    alert("Save to Google Docs coming soon!");
+    setShowDocsDialog(true);
   };
 
   // Download as PDF
@@ -107,7 +153,7 @@ const ReportWrapper = ({
     if (!contentRef.current || isDownloading) return;
 
     setIsDownloading(true);
-    setDownloadType('pdf');
+    setDownloadType("pdf");
     setShowDropdown(false);
     try {
       const canvasScale = 2;
@@ -126,7 +172,7 @@ const ReportWrapper = ({
       const breakPoints = findPageBreaks(
         contentRef.current,
         pageHeightPx,
-        canvasScale
+        canvasScale,
       );
 
       for (let i = 0; i < breakPoints.length - 1; i++) {
@@ -155,7 +201,7 @@ const ReportWrapper = ({
           0,
           0,
           canvas.width,
-          Math.min(sourceHeight, pageHeightPx)
+          Math.min(sourceHeight, pageHeightPx),
         );
 
         const pageImgData = pageCanvas.toDataURL("image/png");
@@ -215,7 +261,7 @@ const ReportWrapper = ({
       {/* Toolbar Header */}
       <div className="h-14 bg-white border-b border-[#e0e0e0] px-4 flex items-center justify-between shrink-0 z-10">
         <span className="font-semibold text-gray-700">{title}</span>
-        
+
         {/* Download Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
@@ -229,7 +275,7 @@ const ReportWrapper = ({
               <Download size={20} />
             )}
           </button>
-          
+
           {/* Dropdown Menu */}
           {showDropdown && (
             <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-[#e0e0e0] py-2 z-50">
@@ -238,28 +284,85 @@ const ReportWrapper = ({
                 disabled={isDownloading}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f6f6f6] transition-colors disabled:opacity-50"
               >
-                <img src={pdfIcon} alt="PDF" className="w-5 h-5 object-contain" />
-                <span className="text-[15px] text-[#141414]" style={{ fontFamily: "Urbanist, sans-serif" }}>
+                <img
+                  src={pdfIcon}
+                  alt="PDF"
+                  className="w-5 h-5 object-contain"
+                />
+                <span
+                  className="text-[15px] text-[#141414]"
+                  style={{ fontFamily: "Urbanist, sans-serif" }}
+                >
                   PDF
                 </span>
               </button>
-              
-              {/* Save to Google Docs - hidden for now
+
               <button
                 onClick={handleSaveToGoogleDocs}
                 disabled={isDownloading}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f6f6f6] transition-colors disabled:opacity-50"
               >
-                <img src={docsIcon} alt="Google Docs" className="w-5 h-5 object-contain" />
-                <span className="text-[15px] text-[#141414]" style={{ fontFamily: "Urbanist, sans-serif" }}>
-                  Save to Google Docs
+                <img
+                  src={docsIcon}
+                  alt="Google Docs"
+                  className="w-5 h-5 object-contain"
+                />
+                <span
+                  className="text-[15px] text-[#141414]"
+                  style={{ fontFamily: "Urbanist, sans-serif" }}
+                >
+                  Export to Google Docs
                 </span>
               </button>
-              */}
             </div>
           )}
         </div>
       </div>
+
+      {/* Google Docs Dialog */}
+      {showDocsDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-[480px] max-w-[90vw] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-[#f1f1f1]">
+              <div className="flex items-center gap-3">
+                <img
+                  src={docsIcon}
+                  alt="Google Docs"
+                  className="w-8 h-8 object-contain"
+                />
+                <span
+                  className="text-[16px] font-medium text-[#141414]"
+                  style={{ fontFamily: "Urbanist, sans-serif" }}
+                >
+                  Export to Google Docs
+                </span>
+              </div>
+              <button
+                onClick={() => setShowDocsDialog(false)}
+                className="p-1.5 text-[#6d6d6d] hover:bg-[#f6f6f6] rounded-lg transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-4">
+              <GoogleDocsExportCard
+                doc_title={googleDocsActionData?.doc_title || ""}
+                content_summary={googleDocsActionData?.content_summary || ""}
+                onSend={handleDocsSend}
+                onCancel={() => {
+                  setShowDocsDialog(false);
+                  setDocsSuccessData(null);
+                }}
+                isConnected={isConnected?.("google-docs")}
+                onConnect={handleDocsConnect}
+                isLoading={isCreatingDoc}
+                isConnecting={isConnectingDocs}
+                successData={docsSuccessData}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Scrollable Report Content */}
       <div
