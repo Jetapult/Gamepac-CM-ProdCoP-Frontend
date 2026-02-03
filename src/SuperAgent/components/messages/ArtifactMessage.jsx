@@ -17,8 +17,6 @@ const ArtifactMessage = ({
 }) => {
   const title = reportData?.header?.reportTitle || "Report";
   
-  // Extract date range from reportData - check multiple possible locations
-  console.log("dsdfsdfsfsd", reportData);
   
   const dateRange = reportData?.header?.analysisPeriodStart + " - " + reportData?.header?.analysisPeriodEnd || "";
   const subtitle = dateRange ? `${dateRange}` : label;

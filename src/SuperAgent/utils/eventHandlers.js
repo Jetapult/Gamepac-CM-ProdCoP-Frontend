@@ -233,22 +233,15 @@ export const handleResponseEvent = (eventData, context) => {
   const isArtifact = eventData.is_artifact || false;
   const artifact = eventData.artifact || null;
 
-  console.log("[handleResponseEvent] Entry:", { isArtifact, hasArtifact: !!artifact, messageId });
-
-  // Handle artifact responses - display in right panel and remove streamed content from conversation
+  // Handle artifact responses - display in right panel
   if (isArtifact && artifact) {
     // Mark this as an artifact response to prevent flushContentChunkState from re-adding the message
     contentChunkState.isArtifactResponse = true;
     
-    // Remove the last streaming text message since it contains artifact content, not conversation content
-    // This happens because content_chunk events stream the artifact text before we know it's an artifact
-    if (context.setMessages && contentChunkState.streamingMessageId) {
-      context.setMessages((prevMessages) => {
-        // Remove the streaming message that was built from content chunks
-        return prevMessages.filter(msg => msg.id !== contentChunkState.streamingMessageId);
-      });
-    }
-    // Reset the streaming message state since we removed it (or don't want to flush it)
+    // Get the streaming message ID before resetting state
+    const streamingMsgId = contentChunkState.streamingMessageId;
+    
+    // Reset the streaming message state
     contentChunkState.streamingMessageId = null;
     contentChunkState.currentMessageContent = "";
 
@@ -262,8 +255,7 @@ export const handleResponseEvent = (eventData, context) => {
       }
     }
     
-    // Handle structured report artifacts (review_report_short, etc.)
-    console.log("[handleResponseEvent] artifact check:", { artifact_type: artifact.artifact_type, hasData: !!artifact.data });
+    // Handle structured report artifacts
     if (artifact.artifact_type && artifact.data) {
       const reportTypeToArtifactType = {
         review_report_short: "review-report-short",
@@ -277,20 +269,28 @@ export const handleResponseEvent = (eventData, context) => {
         context.onStructuredArtifactUpdate(mappedType, artifact.data, messageId);
       }
       
-      // Return both an LLM text message AND a report_artifact message
-      // The text message is needed for the artifact card to attach to
-      const textMsg = {
-        id: getUniqueId(),
-        sender: "llm",
-        type: "text",
-        apiMessageId: messageId,
-        data: {
-          content: "",
-          actions: actions.length > 0 ? [...actions] : undefined,
-        },
-      };
+      // Update the existing streaming message to add apiMessageId (for artifact card lookup)
+      // This preserves the streamed content instead of creating an empty message
+      if (context.setMessages && streamingMsgId) {
+        context.setMessages((prevMessages) => {
+          return prevMessages.map(msg => {
+            if (msg.id === streamingMsgId) {
+              return {
+                ...msg,
+                apiMessageId: messageId,
+                data: {
+                  ...msg.data,
+                  actions: actions.length > 0 ? [...actions] : msg.data?.actions,
+                },
+              };
+            }
+            return msg;
+          });
+        });
+      }
       
-      const reportArtifactMsg = {
+      // Return ONLY the report_artifact message (text message already exists from streaming)
+      return {
         id: `${messageId}-artifact`,
         sender: "llm",
         type: "report_artifact",
@@ -300,10 +300,6 @@ export const handleResponseEvent = (eventData, context) => {
           reportData: artifact.data,
         },
       };
-      
-      const result = [textMsg, reportArtifactMsg];
-      console.log("[handleResponseEvent] Returning artifact messages:", result);
-      return result;
     }
     
     // If artifact response has actions, return a message to hold them
