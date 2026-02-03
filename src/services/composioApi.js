@@ -213,6 +213,54 @@ export const getSlackUsers = async (options = {}) => {
 };
 
 /**
+ * Search Slack channels by name
+ * @param {Object} options - Search options
+ * @param {string} options.searchQuery - Channel name to search for
+ * @param {number} options.limit - Max results to return
+ * @param {string} options.types - Channel types (default "public_channel,private_channel")
+ * @param {boolean} options.exactMatch - Exact name match only
+ * @param {boolean} options.excludeArchived - Exclude archived channels
+ * @param {boolean} options.memberOnly - Only channels user is a member of
+ * @returns {Promise<{data: {data: {channels: Array}}, successful: boolean}>}
+ */
+export const searchSlackChannels = async (options = {}) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const params = new URLSearchParams();
+  if (options.searchQuery) params.append("searchQuery", options.searchQuery);
+  if (options.limit) params.append("limit", options.limit);
+  if (options.types) params.append("types", options.types);
+  if (options.exactMatch !== undefined) params.append("exactMatch", options.exactMatch);
+  if (options.excludeArchived !== undefined) params.append("excludeArchived", options.excludeArchived);
+  if (options.memberOnly !== undefined) params.append("memberOnly", options.memberOnly);
+
+  const queryString = params.toString();
+  const url = `/v1/composio/slack/channels/${userId}/search${queryString ? `?${queryString}` : ""}`;
+  const response = await api.get(url);
+  return response.data;
+};
+
+/**
+ * Search Slack user by email
+ * @param {Object} options - Search options
+ * @param {string} options.email - Email address to search for
+ * @returns {Promise<{data: {data: {user: Object}}, successful: boolean}>}
+ */
+export const searchSlackUsers = async (options = {}) => {
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+
+  const params = new URLSearchParams();
+  if (options.email) params.append("email", options.email);
+
+  const queryString = params.toString();
+  const url = `/v1/composio/slack/users/${userId}/search${queryString ? `?${queryString}` : ""}`;
+  const response = await api.get(url);
+  return response.data;
+};
+
+/**
  * Send a Slack message
  * @param {Object} data - Message data
  * @param {string} data.channel - Channel ID (e.g., "C123ABC")
