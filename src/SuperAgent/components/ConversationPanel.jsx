@@ -4,6 +4,7 @@ import Message from "./messages/Message";
 import TaskMessage from "./messages/TaskMessage";
 import ChatInput from "./ChatInput";
 import SuggestedActionsMessage from "./messages/SuggestedActionsMessage";
+import ArtifactMessage from "./messages/ArtifactMessage";
 import thinkingSphere from "../../assets/thinking_sphere.gif";
 import { getAuthToken } from "../../utils";
 import {
@@ -41,6 +42,8 @@ const ConversationPanel = ({
   onPublicUpdate,
   onFavouriteUpdate,
   onAccessDenied,
+  onGoogleDocsActionUpdate,
+  currentArtifactMessageId = null,
 }) => {
   const [messages, setMessages] = useState([]);
   const [streamingTask, setStreamingTask] = useState(null);
@@ -181,6 +184,13 @@ const ConversationPanel = ({
     if (onThinkingChange) onThinkingChange(false);
   }, [onThinkingChange]);
 
+  // Handle artifact click to open in preview panel
+  const handleArtifactClick = useCallback((reportType, reportData, messageId) => {
+    if (onStructuredArtifactUpdate) {
+      onStructuredArtifactUpdate(reportType, reportData, messageId);
+    }
+  }, [onStructuredArtifactUpdate]);
+
   // Fetch chat details to get agent_slug for existing chats
   // Returns the agent_slug so it can be used by fetchChatHistory
   const fetchChatDetails = useCallback(async () => {
@@ -256,8 +266,8 @@ const ConversationPanel = ({
 
         const result = response.data;
         if (result.success && result.data) {
-          // Track the latest artifact to restore in preview panel
-          let latestArtifact = null;
+          // Track artifacts found during processing - we'll pick the latest one after
+          let artifactsFound = [];
 
           // Transform API messages to our format
           const transformedMessages = result.data
@@ -297,12 +307,8 @@ const ConversationPanel = ({
                     // Handle artifact data for right panel
                     if (event.artifact) {
                       const artifact = event.artifact;
-                      // Handle markdown artifacts first (higher priority)
-                      if (artifact.format === "markdown" && artifact.data?.markdown) {
-                        latestArtifact = { type: "markdown", data: artifact.data };
-                      }
-                      // Handle structured report artifacts (only if not already set as markdown)
-                      else if (artifact.artifact_type && artifact.data) {
+                      // Handle structured report artifacts FIRST (higher priority than plain markdown)
+                      if (artifact.artifact_type && artifact.data) {
                         const reportTypeMap = {
                           review_report_short: "review-report-short",
                           review_report_detailed: "review-report",
@@ -310,18 +316,26 @@ const ConversationPanel = ({
                           bug_report_detailed: "bug-report",
                         };
                         const mappedType = reportTypeMap[artifact.artifact_type] || artifact.artifact_type;
-                        latestArtifact = { type: mappedType, data: artifact.data };
+                        artifactsFound.push({ type: mappedType, data: artifact.data, messageId: msg.id });
+                      }
+                      // Fall back to markdown format if no artifact_type
+                      else if (artifact.format === "markdown" && artifact.data?.markdown) {
+                        artifactsFound.push({ type: "markdown", data: artifact.data, messageId: msg.id });
                       }
                     }
                   }
                 }
                 
-                // If is_artifact is true but no structured artifact, use accumulated content as markdown
-                if (isArtifactResponse && !latestArtifact && allContent.trim()) {
-                  // Strip think tags from content for artifact display
-                  const artifactContent = allContent.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-                  if (artifactContent) {
-                    latestArtifact = { type: "markdown", data: { markdown: artifactContent } };
+                // If is_artifact is true but no structured artifact found for this message, use accumulated content as markdown
+                if (isArtifactResponse && allContent.trim()) {
+                  // Check if we already found an artifact for this message
+                  const hasArtifactForThisMsg = artifactsFound.some(a => a.messageId === msg.id);
+                  if (!hasArtifactForThisMsg) {
+                    // Strip think tags from content for artifact display
+                    const artifactContent = allContent.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+                    if (artifactContent) {
+                      artifactsFound.push({ type: "markdown", data: { markdown: artifactContent }, messageId: msg.id });
+                    }
                   }
                 }
                 
@@ -430,6 +444,21 @@ const ConversationPanel = ({
                   }
                 }
 
+                // Add report_artifact message at the end (after text content) for proper ordering
+                const msgArtifact = artifactsFound.find(a => a.messageId === msg.id);
+                if (msgArtifact && msgArtifact.type !== "markdown") {
+                  processedMessages.push({
+                    id: `${msg.id}-artifact`,
+                    sender: "llm",
+                    type: "report_artifact",
+                    apiMessageId: msg.id,
+                    data: {
+                      reportType: msgArtifact.type,
+                      reportData: msgArtifact.data,
+                    },
+                  });
+                }
+
                 // Return array of messages (will be flattened later)
                 return processedMessages.length > 0 ? processedMessages : null;
               }
@@ -453,7 +482,8 @@ const ConversationPanel = ({
           });
           historyFetchedRef.current = true;
 
-          // Restore the latest artifact in the preview panel
+          // Restore the latest artifact in the preview panel (last one in the array)
+          const latestArtifact = artifactsFound.length > 0 ? artifactsFound[artifactsFound.length - 1] : null;
           if (latestArtifact) {
             // For markdown artifacts, also call onArtifactUpdate with the markdown content
             if (latestArtifact.type === "markdown" && latestArtifact.data?.markdown && onArtifactUpdate) {
@@ -463,6 +493,7 @@ const ConversationPanel = ({
               onStructuredArtifactUpdate(
                 latestArtifact.type,
                 latestArtifact.data,
+                latestArtifact.messageId,
               );
             }
           }
@@ -583,6 +614,34 @@ const ConversationPanel = ({
     loadChat();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId]);
+
+  // Extract Google Docs action data and pass to parent when messages change
+  const prevGoogleDocsDataRef = useRef(null);
+  useEffect(() => {
+    if (!onGoogleDocsActionUpdate) return;
+    
+    const lastLLMWithActions = [...messages].reverse().find(
+      (msg) => msg.sender === "llm" && msg.type === "text" && msg.data?.actions?.length > 0
+    );
+    
+    if (lastLLMWithActions && !isThinking) {
+      const googleDocsAction = lastLLMWithActions.data.actions?.find(
+        (a) => a.action_type === "google_docs"
+      );
+      if (googleDocsAction?.payload) {
+        const newData = {
+          doc_title: googleDocsAction.payload.doc_title || "",
+          content_summary: googleDocsAction.payload.content_summary || "",
+        };
+        // Only call if data actually changed
+        if (JSON.stringify(newData) !== JSON.stringify(prevGoogleDocsDataRef.current)) {
+          prevGoogleDocsDataRef.current = newData;
+          onGoogleDocsActionUpdate(newData);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, isThinking]);
 
   const sendMessage = useCallback(
     async (content, attachments = []) => {
@@ -1199,6 +1258,22 @@ const ConversationPanel = ({
             message.sender === "llm" &&
             index === lastLLMMessageIndex;
 
+          // Find artifact that belongs to this message (same apiMessageId)
+          let artifactData = null;
+          if (message.sender === "llm" && message.type === "text") {
+            const relatedArtifact = messages.find(
+              (m) => m.type === "report_artifact" && m.apiMessageId === message.apiMessageId
+            );
+            if (relatedArtifact) {
+              artifactData = {
+                reportType: relatedArtifact.data?.reportType,
+                reportData: relatedArtifact.data?.reportData,
+                isOpen: message.apiMessageId === currentArtifactMessageId,
+                messageId: message.apiMessageId,
+              };
+            }
+          }
+
           return (
             <Message
               key={message.id}
@@ -1219,6 +1294,9 @@ const ConversationPanel = ({
               onFetchSlackChannels={fetchSlackChannels}
               onFetchJiraProjects={fetchJiraProjects}
               onActionSend={handleActionSend}
+              // Artifact props
+              artifactData={artifactData}
+              onArtifactClick={handleArtifactClick}
             />
           );
         })}
