@@ -1,9 +1,11 @@
-import React, { useState, Fragment } from "react";
+import React, { useState, useEffect, Fragment } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { MenuDots, PlugCircle } from "@solar-icons/react";
 import { Loader2 } from "lucide-react";
 import ConnectorModal from "../../../components/ConnectorModal";
+import BigQueryConnectionModal from "../../../components/BigQueryConnectionModal";
 import useComposioConnections from "../../../../hooks/useComposioConnections";
+import { listBqConnections } from "../../../../services/bigqueryApi";
 
 // Connector icon URLs - same as ChatInput integrations
 const CONNECTOR_ICONS = {
@@ -199,6 +201,27 @@ const ConnectionsSettings = ({ studioData }) => {
   const [selectedConnector, setSelectedConnector] = useState(null);
   const [disconnectingId, setDisconnectingId] = useState(null);
 
+  // BigQuery state
+  const [showBqModal, setShowBqModal] = useState(false);
+  const [bqConnection, setBqConnection] = useState(null);
+  const [bqLoading, setBqLoading] = useState(true);
+
+  const fetchBqConnection = async () => {
+    setBqLoading(true);
+    try {
+      const res = await listBqConnections();
+      setBqConnection(res.data?.[0] || null);
+    } catch {
+      setBqConnection(null);
+    } finally {
+      setBqLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBqConnection();
+  }, []);
+
   // Get installed connectors from API connections
   const installedConnectors = ALL_CONNECTORS.filter((connector) => {
     return isConnected(connector.slug);
@@ -324,6 +347,58 @@ const ConnectionsSettings = ({ studioData }) => {
         </div>
       </div>
 
+      {/* BigQuery Section */}
+      <div className="flex flex-col gap-4">
+        <h3 className="font-urbanist font-semibold text-[18px] text-[#141414]">
+          Data Connections
+        </h3>
+        <div className="border border-[#f6f6f6] rounded-lg px-6">
+          <div className="flex items-center justify-between py-4">
+            <div className="flex items-center gap-4">
+              <div className="size-[50px] rounded-lg border border-[#dfdfdf] rounded-[2px] flex items-center justify-center overflow-hidden shrink-0">
+                <img
+                  src="https://cdn.worldvectorlogo.com/logos/google-bigquery-logo-1.svg"
+                  alt="BigQuery"
+                  className="size-[30px] object-contain"
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="font-urbanist font-medium text-sm text-[#141414]">
+                  Google BigQuery
+                </span>
+                <span className="font-urbanist text-sm font-medium text-[#b0b0b0]">
+                  Connect your BigQuery data warehouse for analytics
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {bqLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-[#6d6d6d]" />
+              ) : bqConnection ? (
+                <>
+                  <span className="font-urbanist font-medium text-[14px] text-[#1F6744]">
+                    Connected
+                  </span>
+                  <button
+                    onClick={() => setShowBqModal(true)}
+                    className="p-1 hover:bg-[#f6f6f6] rounded transition-colors"
+                  >
+                    <MenuDots weight="Bold" size={20} color="#6D6D6D" />
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setShowBqModal(true)}
+                  className="px-6 py-2 border border-[#141414] rounded-lg font-urbanist font-medium text-[14px] text-[#141414] hover:bg-[#f6f6f6] transition-colors"
+                >
+                  Connect
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Connector Modal */}
       <ConnectorModal
         integration={selectedConnector}
@@ -331,6 +406,13 @@ const ConnectionsSettings = ({ studioData }) => {
         onClose={handleCloseModal}
         onConnect={handleConnect}
         isConnecting={isConnecting}
+      />
+
+      {/* BigQuery Modal */}
+      <BigQueryConnectionModal
+        isOpen={showBqModal}
+        onClose={() => setShowBqModal(false)}
+        onConnectionChange={fetchBqConnection}
       />
     </div>
   );

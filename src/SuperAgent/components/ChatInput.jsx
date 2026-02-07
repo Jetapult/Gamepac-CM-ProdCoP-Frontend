@@ -34,7 +34,9 @@ import { useSelector, useDispatch } from "react-redux";
 import { setSelectedTemplate } from "../../store/reducer/superAgent";
 import ConnectorModal from "./ConnectorModal";
 import AddConnectorsModal from "./AddConnectorsModal";
+import BigQueryConnectionModal from "./BigQueryConnectionModal";
 import useComposioConnections from "../../hooks/useComposioConnections";
+import { listBqConnections } from "../../services/bigqueryApi";
 import pdfIcon from "../../assets/file-icons/pdf.png";
 import wordIcon from "../../assets/file-icons/word.png";
 import excelIcon from "../../assets/file-icons/excel.png";
@@ -106,6 +108,16 @@ const integrations = [
     website: "https://slack.com",
     privacyPolicy: "https://slack.com/trust/privacy/privacy-policy",
   },
+  {
+    id: 8,
+    name: "BigQuery",
+    slug: "bigquery",
+    icon: "https://cdn.worldvectorlogo.com/logos/google-bigquery-logo-1.svg",
+    description: "Connect your BigQuery data warehouse for analytics",
+    website: "https://cloud.google.com/bigquery",
+    privacyPolicy: "https://policies.google.com/privacy",
+    isBigQuery: true,
+  },
 ];
 
 const getIntegrationBySlug = (slug) => {
@@ -119,11 +131,14 @@ const IntegrationDropdown = ({
   onToggleConnection,
   onAddConnectors,
   isLoading = false,
+  bqConnected = false,
 }) => {
   const handleConnect = (integration) => {
-    const isConnected = connectedIntegrations?.length
-      ? connectedIntegrations?.includes(integration.slug)
-      : false;
+    const isConnected = integration.isBigQuery
+      ? bqConnected
+      : connectedIntegrations?.length
+        ? connectedIntegrations?.includes(integration.slug)
+        : false;
     if (!isConnected) {
       onIntegrationClick(integration);
       onClose();
@@ -139,9 +154,11 @@ const IntegrationDropdown = ({
     <div className="absolute bottom-full left-0 mb-2 w-[250px] bg-white border border-[#f1f1f1] rounded-[8px] shadow-lg z-50">
       <div className="p-1.5">
         {integrations.map((integration) => {
-          const isConnected = connectedIntegrations?.length
-            ? connectedIntegrations?.includes(integration.slug)
-            : false;
+          const isConnected = integration.isBigQuery
+            ? bqConnected
+            : connectedIntegrations?.length
+              ? connectedIntegrations?.includes(integration.slug)
+              : false;
           return (
             <button
               key={integration.id}
@@ -161,12 +178,17 @@ const IntegrationDropdown = ({
               </div>
               {isConnected ? (
                 <div
-                  className="relative inline-flex items-center cursor-pointer"
-                  onClick={(e) => handleToggle(e, integration)}
+                  className="relative inline-flex items-center cursor-pointer group"
+                  onClick={(e) => { if (!integration.isBigQuery) handleToggle(e, integration); else e.stopPropagation(); }}
                 >
                   <div className="w-[36px] h-[20px] bg-[#1f6744] rounded-full transition-colors relative">
                     <div className="absolute top-[2px] right-[2px] w-[16px] h-[16px] bg-white rounded-full transition-transform" />
                   </div>
+                  {integration.isBigQuery && (
+                    <div className="absolute bottom-full right-0 mb-1.5 px-2.5 py-1.5 bg-[#141414] text-white text-[11px] font-urbanist rounded-[6px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      Visit Settings to disconnect
+                    </div>
+                  )}
                 </div>
               ) : (
                 <span className="font-urbanist font-medium text-[12px] text-[#1f6744]">
@@ -360,6 +382,14 @@ const ChatInput = ({
   const [attachments, setAttachments] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
+  const [showBqModal, setShowBqModal] = useState(false);
+  const [bqConnected, setBqConnected] = useState(false);
+
+  useEffect(() => {
+    listBqConnections()
+      .then((res) => setBqConnected(res.data?.length > 0))
+      .catch(() => setBqConnected(false));
+  }, []);
 
   // Use Composio connections hook for API integration
   const {
@@ -394,6 +424,10 @@ const ChatInput = ({
   }, [agentSessionId]);
 
   const handleIntegrationClick = (integration) => {
+    if (integration.isBigQuery) {
+      setShowBqModal(true);
+      return;
+    }
     setSelectedIntegration(integration);
     setShowConnectorModal(true);
   };
@@ -968,6 +1002,7 @@ const ChatInput = ({
                     setShowAddConnectorsModal(true);
                   }}
                   isLoading={isConnecting}
+                  bqConnected={bqConnected}
                 />
               )}
             </div>
@@ -1046,6 +1081,15 @@ const ChatInput = ({
           onClose={() => setShowAddConnectorsModal(false)}
           connectedIntegrations={connectedIntegrations}
           onAddIntegration={handleAddIntegration}
+        />
+      )}
+
+      {/* BigQuery Modal */}
+      {!hideConnectors && (
+        <BigQueryConnectionModal
+          isOpen={showBqModal}
+          onClose={() => setShowBqModal(false)}
+          onConnectionChange={() => setBqConnected(true)}
         />
       )}
     </div>
