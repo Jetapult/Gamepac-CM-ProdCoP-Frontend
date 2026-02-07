@@ -1,29 +1,10 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { extractMarkdownFromData } from "@/SuperAgent/utils/markdownExtractor";
 
 const MarkdownContent = ({ data }) => {
-  // Try to extract markdown content from various possible fields
-  const getMarkdownContent = () => {
-    if (!data) return "";
-    
-    // If data is a string, use it directly
-    if (typeof data === "string") return data;
-    
-    // Check common markdown field names
-    if (data.markdown) return data.markdown;
-    if (data.content) return data.content;
-    if (data.text) return data.text;
-    if (data.body) return data.body;
-    
-    // If data is an object, try to stringify it nicely
-    try {
-      return "```json\n" + JSON.stringify(data, null, 2) + "\n```";
-    } catch {
-      return "";
-    }
-  };
-
-  const content = getMarkdownContent();
+  const content = extractMarkdownFromData(data);
 
   if (!content) {
     return null;
@@ -36,6 +17,7 @@ const MarkdownContent = ({ data }) => {
         style={{ fontFamily: "Urbanist, sans-serif" }}
       >
         <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
           components={{
             h1: ({ children }) => (
               <h1 className="text-2xl font-bold text-[#141414] mb-4">
@@ -85,6 +67,30 @@ const MarkdownContent = ({ data }) => {
               <pre className="bg-[#f5f5f5] p-4 rounded-lg overflow-x-auto text-xs mb-4">
                 {children}
               </pre>
+            ),
+            table: ({ children }) => (
+              <div className="overflow-x-auto mb-4">
+                <table className="w-full border-collapse text-sm">
+                  {children}
+                </table>
+              </div>
+            ),
+            thead: ({ children }) => (
+              <thead className="bg-[#f5f5f5]">{children}</thead>
+            ),
+            tbody: ({ children }) => <tbody>{children}</tbody>,
+            tr: ({ children }) => (
+              <tr className="border-b border-[#e5e5e5]">{children}</tr>
+            ),
+            th: ({ children }) => (
+              <th className="px-3 py-2 text-left font-semibold text-[#141414] border border-[#e0e0e0] bg-[#f5f5f5]">
+                {children}
+              </th>
+            ),
+            td: ({ children }) => (
+              <td className="px-3 py-2 text-[#333] border border-[#e0e0e0]">
+                {children}
+              </td>
             ),
           }}
         >

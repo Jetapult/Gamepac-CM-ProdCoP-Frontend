@@ -7,6 +7,7 @@ import docsIcon from "@/assets/docs.png";
 import GoogleDocsExportCard from "../ExportToGoogleDocs";
 import { createGoogleDoc } from "@/services/composioApi";
 import useComposioConnections from "@/hooks/useComposioConnections";
+import { exportMarkdownPdf } from "@/services/superAgentApi";
 
 const A4_WIDTH_PX = 794; // 210mm at 96 DPI
 const A4_WIDTH_MM = 210;
@@ -18,6 +19,7 @@ const ReportWrapper = ({
   children,
   containerClassName = "review-report-container bg-white shadow-xl",
   googleDocsActionData = null,
+  markdownString = null,
 }) => {
   const { isConnected, connect } = useComposioConnections();
   const containerRef = useRef(null);
@@ -148,8 +150,33 @@ const ReportWrapper = ({
     setShowDocsDialog(true);
   };
 
-  // Download as PDF
-  const handlePdfDownload = async () => {
+  // Download markdown artifact as PDF via backend (text-based, small, selectable)
+  const handleMarkdownPdfDownload = async () => {
+    if (!markdownString || isDownloading) return;
+
+    setIsDownloading(true);
+    setDownloadType("pdf");
+    setShowDropdown(false);
+    try {
+      const blob = await exportMarkdownPdf(markdownString, title || "Report");
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(title || "Report").replace(/[^a-z0-9]/gi, "_")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Markdown PDF download failed:", error);
+    } finally {
+      setIsDownloading(false);
+      setDownloadType(null);
+    }
+  };
+
+  // Download as PDF (image-based for structured reports)
+  const handleImagePdfDownload = async () => {
     if (!contentRef.current || isDownloading) return;
 
     setIsDownloading(true);
@@ -221,6 +248,9 @@ const ReportWrapper = ({
       setDownloadType(null);
     }
   };
+
+  // Route to the appropriate PDF handler
+  const handlePdfDownload = markdownString ? handleMarkdownPdfDownload : handleImagePdfDownload;
 
   useEffect(() => {
     const handleResize = () => {

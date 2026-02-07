@@ -75,6 +75,40 @@ const getActionResultLink = (actionType, result) => {
   return null;
 };
 
+// Normalize agent action_type to frontend card types
+const normalizeActionType = (type) => {
+  const map = {
+    gmail_draft: "gmail",
+    email_draft: "gmail",
+    jira_production_tasks: "jira_issue",
+    jira_ticket: "jira_issue",
+  };
+  return map[type] || type;
+};
+
+// Normalize payload to match what card components expect
+const normalizePayload = (actionType, payload) => {
+  if (!payload) return payload;
+  const normalized = { ...payload };
+
+  // gmail_draft: recipients → to
+  if ((actionType === "gmail_draft" || actionType === "email_draft") && normalized.recipients && !normalized.to) {
+    normalized.to = normalized.recipients;
+  }
+
+  // jira_production_tasks: flatten parent_issue into top-level fields
+  if (actionType === "jira_production_tasks" && normalized.parent_issue) {
+    const parent = normalized.parent_issue;
+    normalized.issue_type = parent.issue_type || "Epic";
+    normalized.summary = parent.summary || "";
+    normalized.description = parent.description || "";
+    normalized.priority = parent.priority || "Medium";
+    normalized.labels = parent.labels || [];
+  }
+
+  return normalized;
+};
+
 // Action type config for icons and labels
 const actionTypeConfig = {
   slack_message: {
@@ -194,7 +228,8 @@ const SuggestedActionsMessage = ({
   };
 
   const renderCollapsedCard = (action, index) => {
-    const config = actionTypeConfig[action.action_type] || { icon: null, label: action.action_type };
+    const normalizedType = normalizeActionType(action.action_type);
+    const config = actionTypeConfig[normalizedType] || actionTypeConfig[action.action_type] || { icon: null, label: action.action_type };
     
     return (
       <div
@@ -243,7 +278,8 @@ const SuggestedActionsMessage = ({
   };
 
   const renderExpandedCard = (action, index) => {
-    const { action_type, payload } = action;
+    const action_type = normalizeActionType(action.action_type);
+    const payload = normalizePayload(action.action_type, action.payload);
     const isActionLoading = loadingActions[index] || false;
     const isActionConnecting = connectingActions[index] || false;
     const actionResult = completedActions[index];
@@ -471,6 +507,7 @@ const SuggestedActionsMessage = ({
       case "slack_message":
         return !payload.message || payload.message.trim() === "";
       case "jira":
+      case "jira_issue":
       case "jira_ticket":
         return !payload.summary || payload.summary.trim() === "";
       case "calendar":
@@ -489,12 +526,16 @@ const SuggestedActionsMessage = ({
   };
 
   // Filter out dismissed actions, hidden action types, and actions with empty payloads
-  const hiddenActionTypes = ["google_sheets", "google_docs"];
-  const visibleActions = actions.filter((action, index) => 
-    !dismissedActions.includes(index) && 
-    !hiddenActionTypes.includes(action.action_type) &&
-    !isPayloadEmpty(action.payload, action.action_type)
-  );
+  const hiddenActionTypes = ["google_sheets", "google_docs", "gmail", "email"];
+  const visibleActions = actions.filter((action, index) => {
+    const normalizedType = normalizeActionType(action.action_type);
+    return (
+      !dismissedActions.includes(index) && 
+      !hiddenActionTypes.includes(normalizedType) &&
+      !hiddenActionTypes.includes(action.action_type) &&
+      !isPayloadEmpty(normalizePayload(action.action_type, action.payload), normalizedType)
+    );
+  });
 
   if (visibleActions.length === 0) {
     return null;
@@ -509,9 +550,10 @@ const SuggestedActionsMessage = ({
         Suggested Actions
       </div>
       {actions.map((action, index) => {
+        const normalizedType = normalizeActionType(action.action_type);
         if (dismissedActions.includes(index)) return null;
-        if (hiddenActionTypes.includes(action.action_type)) return null;
-        if (isPayloadEmpty(action.payload, action.action_type)) return null;
+        if (hiddenActionTypes.includes(normalizedType) || hiddenActionTypes.includes(action.action_type)) return null;
+        if (isPayloadEmpty(normalizePayload(action.action_type, action.payload), normalizedType)) return null;
         return expandedActions.includes(index)
           ? renderExpandedCard(action, index)
           : renderCollapsedCard(action, index);

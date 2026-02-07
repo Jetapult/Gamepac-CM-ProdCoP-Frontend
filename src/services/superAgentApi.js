@@ -292,4 +292,138 @@ export const uploadFinopsAttachment = async (
   return response.data;
 };
 
+// ============================================================
+// SCALEPAC (CREATIVE BREAKDOWN) SESSION MANAGEMENT
+// ============================================================
+
+// ScalePac agent supported file types (video and image)
+export const SCALEPAC_SUPPORTED_EXTENSIONS = [
+  "mp4",
+  "mov",
+  "avi",
+  "webm",
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+];
+
+export const isScalepacSupported = (fileType) => {
+  return SCALEPAC_SUPPORTED_EXTENSIONS.includes(fileType?.toLowerCase());
+};
+
+/**
+ * Create a new creative breakdown session
+ * @param {number} gameId
+ * @param {string} gameName
+ * @param {string} studioName
+ * @returns {Promise<{session_id: string, created_at: string, config: object}>}
+ */
+export const createCreativeBreakdownSession = async (
+  gameId,
+  gameName,
+  studioName,
+) => {
+  const response = await api.post("/v1/superagent/creative-breakdown/session", {
+    game_id: gameId,
+    game_name: gameName,
+    studio_name: studioName,
+  });
+  return response.data;
+};
+
+/**
+ * Upload attachment for creative breakdown (ScalePac) agent
+ * Supports video and image files
+ *
+ * @param {File} file - The file to upload
+ * @param {object} options - Either { chatId } or { sessionId }
+ * @param {function} onProgress - Progress callback
+ * @returns {Promise<{attachment: object, creative_breakdown_uploaded: boolean}>}
+ */
+export const uploadCreativeBreakdownAttachment = async (
+  file,
+  { chatId, sessionId },
+  onProgress,
+) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  // Use chatId if available (chat page), otherwise use sessionId directly (index page)
+  if (chatId) {
+    formData.append("chat_id", chatId);
+  } else if (sessionId) {
+    formData.append("creative_breakdown_session_id", sessionId);
+  }
+
+  const response = await api.post(
+    "/v1/superagent/creative-breakdown/attachments",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total,
+          );
+          onProgress(percentCompleted);
+        }
+      },
+    },
+  );
+
+  return response.data;
+};
+
+// ============================================================
+// EXPORT HELPERS
+// ============================================================
+
+/**
+ * Export markdown content as PDF via backend
+ * @param {string} markdown - Raw markdown string
+ * @param {string} title - PDF filename title
+ * @returns {Promise<Blob>} PDF blob for download
+ */
+export const exportMarkdownPdf = async (markdown, title = "report") => {
+  const response = await api.post(
+    "/v1/superagent/export/markdown-pdf",
+    { markdown, title },
+    { responseType: "blob" },
+  );
+  return response.data;
+};
+
+// ============================================================
+// GENERIC SESSION HELPERS
+// ============================================================
+
+/**
+ * Map agent slug to the backend session ID key name
+ */
+export const sessionKeyMap = {
+  liveops: "liveops_session_id",
+  finops: "finops_session_id",
+  creative_breakdown: "creative_breakdown_session_id",
+};
+
+/**
+ * Get the session key for a given agent slug
+ * @param {string} agentSlug
+ * @returns {string|null}
+ */
+export const getSessionKey = (agentSlug) => {
+  return sessionKeyMap[agentSlug] || null;
+};
+
+/**
+ * Check if an agent requires a session
+ * @param {string} agentSlug
+ * @returns {boolean}
+ */
+export const agentRequiresSession = (agentSlug) => {
+  return agentSlug in sessionKeyMap;
+};
+
 export { MAX_ATTACHMENTS, MAX_FILE_SIZE, ALLOWED_EXTENSIONS };
