@@ -88,8 +88,15 @@ const ConversationPanel = ({
   } = useActionCardData();
 
   // Handle action card send
-  const handleActionSend = useCallback(async (action, payload) => {
-    console.log("[ConversationPanel] Action send:", action.action_type, payload);
+  const handleActionSend = useCallback(async (action, payload, actionIndex, apiMessageId) => {
+    console.log("[ConversationPanel] Action send:", action.action_type, payload, "index:", actionIndex, "msgId:", apiMessageId);
+    
+    // Build tracking fields to pass through to backend
+    const tracking = {
+      message_id: apiMessageId,
+      action_index: actionIndex,
+      action_type: action.action_type,
+    };
     
     try {
       let result;
@@ -100,6 +107,7 @@ const ConversationPanel = ({
           result = await sendSlackMessage({
             channel: payload.channel,
             text: payload.text,
+            ...tracking,
           });
           break;
           
@@ -111,6 +119,7 @@ const ConversationPanel = ({
             priority: payload.priority,
             assignee: payload.assignee,
             dueDate: payload.due_date,
+            ...tracking,
           });
           break;
           
@@ -125,6 +134,7 @@ const ConversationPanel = ({
             priority: payload.priority,
             assignee: payload.assignee,
             labels: payload.labels,
+            ...tracking,
           });
           break;
           
@@ -142,6 +152,7 @@ const ConversationPanel = ({
             endDateTime,
             timeZone: payload.time_zone || Intl.DateTimeFormat().resolvedOptions().timeZone,
             attendees: payload.attendees,
+            ...tracking,
           });
           break;
           
@@ -150,6 +161,7 @@ const ConversationPanel = ({
           result = await createGoogleDoc({
             title: payload.doc_title,
             content: payload.content_summary,
+            ...tracking,
           });
           break;
           
@@ -157,6 +169,7 @@ const ConversationPanel = ({
         case "google_sheets":
           result = await createGoogleSheet({
             title: payload.sheet_title,
+            ...tracking,
           });
           break;
           
@@ -412,6 +425,7 @@ const ConversationPanel = ({
                       sender: "llm",
                       type: "text",
                       apiMessageId: msg.id,
+                      action_executions: msg.action_executions || [],
                       data: {
                         content: regularContent.trim(),
                         feedback: msg.data?.feedback || null,
@@ -427,6 +441,7 @@ const ConversationPanel = ({
                   const lastTextMsg = [...processedMessages].reverse().find(m => m.type === "text");
                   if (lastTextMsg && !lastTextMsg.data.actions) {
                     lastTextMsg.data.actions = actionsFromEvents;
+                    lastTextMsg.action_executions = msg.action_executions || [];
                   } else if (!lastTextMsg) {
                     // No text message exists (artifact response), create one to hold actions
                     processedMessages.push({
@@ -434,6 +449,7 @@ const ConversationPanel = ({
                       sender: "llm",
                       type: "text",
                       apiMessageId: msg.id,
+                      action_executions: msg.action_executions || [],
                       data: {
                         content: "",
                         actions: actionsFromEvents,
@@ -1307,9 +1323,21 @@ const ConversationPanel = ({
             (msg) => msg.sender === "llm" && msg.type === "text" && msg.data?.actions?.length > 0
           );
           if (lastLLMWithActions && !isThinking && chatPermission !== "read") {
+            // Build initialCompletedActions from action_executions in history
+            const initialCompleted = {};
+            const executions = lastLLMWithActions.action_executions || [];
+            for (const exec of executions) {
+              initialCompleted[exec.action_index] = {
+                success: exec.status === "executed",
+                ...(exec.status === "failed" && { error: exec.error_message || "Action failed" }),
+                ...(exec.status === "executed" && { result: exec.response_data }),
+              };
+            }
             return (
               <SuggestedActionsMessage
                 actions={lastLLMWithActions.data.actions}
+                apiMessageId={lastLLMWithActions.apiMessageId}
+                initialCompletedActions={initialCompleted}
                 isConnected={isConnected}
                 onConnect={connect}
                 slackChannels={slackChannels}

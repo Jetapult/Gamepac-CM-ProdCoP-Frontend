@@ -269,6 +269,9 @@ export const sendSlackMessage = async (data) => {
     channel: data.channel,
     text: data.text,
     ...(data.threadTs && { threadTs: data.threadTs }),
+    ...(data.message_id && { message_id: data.message_id }),
+    ...(data.action_index !== undefined && { action_index: data.action_index }),
+    ...(data.action_type && { action_type: data.action_type }),
   });
   return response.data;
 };
@@ -301,6 +304,9 @@ export const sendSlackTaskNotification = async (data) => {
     ...(data.additionalMessage && { additionalMessage: data.additionalMessage }),
     ...(data.sendInThread !== undefined && { sendInThread: data.sendInThread }),
     ...(data.threadTs && { threadTs: data.threadTs }),
+    ...(data.message_id && { message_id: data.message_id }),
+    ...(data.action_index !== undefined && { action_index: data.action_index }),
+    ...(data.action_type && { action_type: data.action_type }),
   });
   return response.data;
 };
@@ -372,6 +378,9 @@ export const createJiraIssue = async (data) => {
     ...(data.priority && { priority: data.priority }),
     ...(data.assignee && { assignee: data.assignee }),
     ...(data.labels?.length > 0 && { labels: data.labels }),
+    ...(data.message_id && { message_id: data.message_id }),
+    ...(data.action_index !== undefined && { action_index: data.action_index }),
+    ...(data.action_type && { action_type: data.action_type }),
   });
   return response.data;
 };
@@ -403,6 +412,9 @@ export const createCalendarEvent = async (data) => {
     ...(data.timeZone && { timeZone: data.timeZone }),
     ...(data.attendees?.length > 0 && { attendees: data.attendees }),
     ...(data.location && { location: data.location }),
+    ...(data.message_id && { message_id: data.message_id }),
+    ...(data.action_index !== undefined && { action_index: data.action_index }),
+    ...(data.action_type && { action_type: data.action_type }),
   });
   return response.data;
 };
@@ -447,6 +459,9 @@ export const createGoogleDoc = async (data) => {
     title: data.title,
     ...(data.content && { content: data.content }),
     ...(data.folderId && { folderId: data.folderId }),
+    ...(data.message_id && { message_id: data.message_id }),
+    ...(data.action_index !== undefined && { action_index: data.action_index }),
+    ...(data.action_type && { action_type: data.action_type }),
   });
   return response.data;
 };
@@ -487,6 +502,9 @@ export const createGoogleSheet = async (data) => {
   const response = await api.post("/v1/composio/sheets/create", {
     userId,
     title: data.title,
+    ...(data.message_id && { message_id: data.message_id }),
+    ...(data.action_index !== undefined && { action_index: data.action_index }),
+    ...(data.action_type && { action_type: data.action_type }),
   });
   return response.data;
 };
