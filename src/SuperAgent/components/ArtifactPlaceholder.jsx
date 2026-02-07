@@ -6,6 +6,7 @@ import BugReportShortContent from "@/SuperAgent/components/artifacts/BugReportSh
 import ReviewReportContent from "@/SuperAgent/components/artifacts/ReviewReportContent";
 import ReviewReportShortContent from "@/SuperAgent/components/artifacts/ReviewReportShortContent";
 import MarkdownContent from "@/SuperAgent/components/artifacts/MarkdownContent";
+import { extractMarkdownFromData } from "@/SuperAgent/utils/markdownExtractor";
 
 const ArtifactPlaceholder = ({ type, data, googleDocsActionData }) => {
   // Don't render anything if no type or no data
@@ -46,8 +47,9 @@ const ArtifactPlaceholder = ({ type, data, googleDocsActionData }) => {
   }
 
   // Unknown type - render as markdown content
+  const markdownString = extractMarkdownFromData(data);
   return (
-    <ReportWrapper title="Report" googleDocsActionData={googleDocsActionData}>
+    <ReportWrapper title="Report" googleDocsActionData={googleDocsActionData} markdownString={markdownString}>
       <MarkdownContent data={data} />
     </ReportWrapper>
   );

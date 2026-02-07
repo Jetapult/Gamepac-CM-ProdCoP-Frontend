@@ -26,6 +26,9 @@ import GameDropdown from "./components/GameDropdown";
 import {
   createLiveopsSession,
   createFinopsSession,
+  createCreativeBreakdownSession,
+  getSessionKey,
+  agentRequiresSession,
 } from "../services/superAgentApi";
 
 export const agents = [
@@ -53,7 +56,7 @@ export const agents = [
   {
     id: "3",
     name: "ScalePac",
-    slug: "scalepac",
+    slug: "creative_breakdown",
     icon: <GraphUp weight={"Linear"} className="w-6 h-6" />,
   },
   {
@@ -112,8 +115,7 @@ const SuperAgent = () => {
   );
   const [activeTab, setActiveTab] = useState("chat");
   const [activeFilter, setActiveFilter] = useState("recommended");
-  const [finopsSessionId, setFinopsSessionId] = useState(null);
-  const [liveopsSessionId, setLiveopsSessionId] = useState(null);
+  const [agentSessionId, setAgentSessionId] = useState(null);
   const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
   const selectedGame = useSelector((state) => state.superAgent.selectedGame);
   const ContextStudioData = useSelector(
@@ -128,38 +130,36 @@ const SuperAgent = () => {
     try {
       const title = query?.trim().slice(0, 50) || "";
 
-      // Use session IDs passed from ChatInput (more reliable than state due to async updates)
+      // Use session ID passed from ChatInput (more reliable than state due to async updates)
       // Fall back to state if not provided
-      let currentLiveopsSessionId =
-        sessionIds.liveopsSessionId || liveopsSessionId;
-      let currentFinopsSessionId =
-        sessionIds.finopsSessionId || finopsSessionId;
+      let currentSessionId = sessionIds.agentSessionId || agentSessionId;
 
-      // Create session for liveops/finops agents if not exists
-      if (selectedAgent.slug === "liveops" && !currentLiveopsSessionId) {
-        const sessionResponse = await createLiveopsSession();
-        if (sessionResponse.success && sessionResponse.data?.session_id) {
-          currentLiveopsSessionId = sessionResponse.data.session_id;
-          setLiveopsSessionId(currentLiveopsSessionId);
+      // Create session for agents that require one
+      if (agentRequiresSession(selectedAgent.slug) && !currentSessionId) {
+        let sessionResponse;
+        if (selectedAgent.slug === "liveops") {
+          sessionResponse = await createLiveopsSession();
+        } else if (selectedAgent.slug === "finops") {
+          sessionResponse = await createFinopsSession();
+        } else if (selectedAgent.slug === "creative_breakdown") {
+          sessionResponse = await createCreativeBreakdownSession(
+            selectedGame?.id,
+            selectedGame?.name,
+            ContextStudioData?.studio_name || ContextStudioData?.name,
+          );
+        }
+        if (sessionResponse?.success && sessionResponse?.data?.session_id) {
+          currentSessionId = sessionResponse.data.session_id;
+          setAgentSessionId(currentSessionId);
         }
       }
 
-      if (selectedAgent.slug === "finops" && !currentFinopsSessionId) {
-        const sessionResponse = await createFinopsSession();
-        if (sessionResponse.success && sessionResponse.data?.session_id) {
-          currentFinopsSessionId = sessionResponse.data.session_id;
-          setFinopsSessionId(currentFinopsSessionId);
-        }
-      }
-
-      // Build chat data with session ID included
+      // Build chat data with session ID using the correct backend key
+      const sessionKey = getSessionKey(selectedAgent.slug);
       const chatData = {
         agent_slug: selectedAgent.slug,
-        ...(currentLiveopsSessionId && {
-          liveops_session_id: currentLiveopsSessionId,
-        }),
-        ...(currentFinopsSessionId && {
-          finops_session_id: currentFinopsSessionId,
+        ...(currentSessionId && sessionKey && {
+          [sessionKey]: currentSessionId,
         }),
       };
 
@@ -182,8 +182,7 @@ const SuperAgent = () => {
             initialAttachments: attachments,
             agentSlug: selectedAgent.slug,
             gameId: selectedGame?.id,
-            finopsSessionId: currentFinopsSessionId,
-            liveopsSessionId: currentLiveopsSessionId,
+            agentSessionId: currentSessionId,
           },
         });
       }
@@ -280,10 +279,8 @@ const SuperAgent = () => {
           <ChatInput
             onSendMessage={onSendMessage}
             agentSlug={selectedAgent?.slug}
-            finopsSessionId={finopsSessionId}
-            onFinopsSessionCreated={setFinopsSessionId}
-            liveopsSessionId={liveopsSessionId}
-            onLiveopsSessionCreated={setLiveopsSessionId}
+            agentSessionId={agentSessionId}
+            onAgentSessionCreated={setAgentSessionId}
             hideConnectors={true}
           />
         </div>

@@ -48,6 +48,7 @@ const agentNameMap = {
   commpac: "CommPac",
   liveops: "LiveOps",
   finops: "FinOps",
+  creative_breakdown: "ScalePac",
 };
 
 // Helper to get agent display name
@@ -149,6 +150,14 @@ const toolTitleMap = {
   check_financial_alerts: "Checking Financial Alerts",
   generate_slack_summary: "Generating Slack Summary",
   load_financial_data: "Loading Financial Data",
+  // ScalePac (Creative Breakdown) agent tools
+  capture_persona: "Capturing Persona",
+  analyze_creative_media: "Analyzing Creative Media",
+  estimate_download_intent: "Estimating Download Intent",
+  fetch_game_details: "Fetching Game Details",
+  analyze_trend_alignment: "Analyzing Trend Alignment",
+  generate_creative_brief: "Generating Creative Brief",
+  generate_sprint_summary: "Generating Sprint Summary",
 };
 
 // Report tool name to artifact type mapping
