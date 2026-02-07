@@ -377,6 +377,8 @@ const ChatInput = ({
     (state) => state.superAgent.selectedTemplate,
   );
   const selectedAgent = useSelector((state) => state.superAgent.selectedAgent);
+  const selectedGame = useSelector((state) => state.superAgent.selectedGame);
+  const ContextStudioData = useSelector((state) => state.admin.ContextStudioData);
   const userRef = useRef(null);
   const dropdownRef = useRef(null);
   const integrationDropdownRef = useRef(null);
@@ -526,7 +528,11 @@ const ChatInput = ({
         } else if (agentSlug === "finops") {
           sessionResponse = await createFinopsSession();
         } else if (agentSlug === "creative_breakdown") {
-          sessionResponse = await createCreativeBreakdownSession();
+          sessionResponse = await createCreativeBreakdownSession(
+            selectedGame?.id,
+            selectedGame?.name,
+            ContextStudioData?.studio_name || ContextStudioData?.name,
+          );
         }
         if (sessionResponse?.success && sessionResponse?.data?.session_id) {
           currentSession = sessionResponse.data.session_id;
