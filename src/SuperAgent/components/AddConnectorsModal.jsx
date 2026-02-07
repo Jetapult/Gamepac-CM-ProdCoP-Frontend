@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Search, Plus, Check } from "lucide-react";
+import BigQueryConnectionModal from "./BigQueryConnectionModal";
+import { listBqConnections } from "../../services/bigqueryApi";
 
 const allIntegrations = [
   {
@@ -72,10 +74,31 @@ const allIntegrations = [
     website: "https://slack.com",
     privacyPolicy: "https://slack.com/trust/privacy/privacy-policy",
   },
+  {
+    id: 8,
+    name: "Google BigQuery",
+    slug: "bigquery",
+    icon: "https://cdn.worldvectorlogo.com/logos/google-bigquery-logo-1.svg",
+    description:
+      "Connect your BigQuery data warehouse for analytics and reporting",
+    website: "https://cloud.google.com/bigquery",
+    privacyPolicy: "https://policies.google.com/privacy",
+    isBigQuery: true,
+  },
 ];
 
 const AddConnectorsModal = ({ isOpen, onClose, connectedIntegrations, onAddIntegration }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showBqModal, setShowBqModal] = useState(false);
+  const [bqConnected, setBqConnected] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      listBqConnections()
+        .then((res) => setBqConnected(res.data?.length > 0))
+        .catch(() => setBqConnected(false));
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -84,6 +107,10 @@ const AddConnectorsModal = ({ isOpen, onClose, connectedIntegrations, onAddInteg
   );
 
   const handleAddIntegration = (integration) => {
+    if (integration.isBigQuery) {
+      setShowBqModal(true);
+      return;
+    }
     if (!connectedIntegrations.includes(integration.slug)) {
       onAddIntegration(integration);
     }
@@ -139,7 +166,7 @@ const AddConnectorsModal = ({ isOpen, onClose, connectedIntegrations, onAddInteg
           {/* Row 1 */}
           <div className="grid grid-cols-2 gap-5">
             {filteredIntegrations.slice(0, 2).map((integration) => {
-              const isConnected = connectedIntegrations.includes(integration.slug);
+              const isConnected = integration.isBigQuery ? bqConnected : connectedIntegrations.includes(integration.slug);
               return (
                 <IntegrationCard
                   key={integration.id}
@@ -154,7 +181,7 @@ const AddConnectorsModal = ({ isOpen, onClose, connectedIntegrations, onAddInteg
           {/* Row 2 */}
           <div className="grid grid-cols-2 gap-5">
             {filteredIntegrations.slice(2, 4).map((integration) => {
-              const isConnected = connectedIntegrations.includes(integration.slug);
+              const isConnected = integration.isBigQuery ? bqConnected : connectedIntegrations.includes(integration.slug);
               return (
                 <IntegrationCard
                   key={integration.id}
@@ -169,7 +196,7 @@ const AddConnectorsModal = ({ isOpen, onClose, connectedIntegrations, onAddInteg
           {/* Row 3 */}
           <div className="grid grid-cols-2 gap-5">
             {filteredIntegrations.slice(4, 6).map((integration) => {
-              const isConnected = connectedIntegrations.includes(integration.slug);
+              const isConnected = integration.isBigQuery ? bqConnected : connectedIntegrations.includes(integration.slug);
               return (
                 <IntegrationCard
                   key={integration.id}
@@ -184,7 +211,7 @@ const AddConnectorsModal = ({ isOpen, onClose, connectedIntegrations, onAddInteg
           {/* Row 4 */}
           <div className="grid grid-cols-2 gap-5">
             {filteredIntegrations.slice(6, 8).map((integration) => {
-              const isConnected = connectedIntegrations.includes(integration.slug);
+              const isConnected = integration.isBigQuery ? bqConnected : connectedIntegrations.includes(integration.slug);
               return (
                 <IntegrationCard
                   key={integration.id}
@@ -196,6 +223,12 @@ const AddConnectorsModal = ({ isOpen, onClose, connectedIntegrations, onAddInteg
             })}
           </div>
         </div>
+      {/* BigQuery Modal */}
+      <BigQueryConnectionModal
+        isOpen={showBqModal}
+        onClose={() => setShowBqModal(false)}
+        onConnectionChange={() => setBqConnected(true)}
+      />
       </div>
     </div>
   );
