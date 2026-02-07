@@ -151,6 +151,8 @@ const actionTypeConfig = {
  */
 const SuggestedActionsMessage = ({
   actions = [],
+  apiMessageId,
+  initialCompletedActions = {},
   // Connection status
   isConnected,
   onConnect,
@@ -171,10 +173,12 @@ const SuggestedActionsMessage = ({
   onCancel,
 }) => {
   const [dismissedActions, setDismissedActions] = useState([]);
-  const [expandedActions, setExpandedActions] = useState([]);
+  const [expandedActions, setExpandedActions] = useState(() => 
+    Object.keys(initialCompletedActions).map(Number)
+  );
   const [loadingActions, setLoadingActions] = useState({});
   const [connectingActions, setConnectingActions] = useState({});
-  const [completedActions, setCompletedActions] = useState({});
+  const [completedActions, setCompletedActions] = useState(initialCompletedActions);
 
   const handleCancel = (actionIndex) => {
     setDismissedActions((prev) => [...prev, actionIndex]);
@@ -197,7 +201,7 @@ const SuggestedActionsMessage = ({
     setLoadingActions((prev) => ({ ...prev, [index]: true }));
     
     try {
-      const result = await onSend?.(action, payload);
+      const result = await onSend?.(action, payload, index, apiMessageId);
       console.log("[SuggestedActions] Action completed:", result);
       
       // Check if successful is false or null (indicates failure)
