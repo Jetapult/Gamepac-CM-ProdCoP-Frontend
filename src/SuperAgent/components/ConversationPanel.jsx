@@ -15,7 +15,7 @@ import {
   resetContentChunkState,
 } from "../utils/eventHandlers";
 import api from "@/api";
-import { updateChat, getAttachment } from "../../services/superAgentApi";
+import { updateChat, getAttachment, getSessionKey } from "../../services/superAgentApi";
 import useComposioConnections from "../../hooks/useComposioConnections";
 import useActionCardData from "../../hooks/useActionCardData";
 import {
@@ -32,8 +32,7 @@ const ConversationPanel = ({
   initialQuery,
   initialAttachments = [],
   agentSlug: propAgentSlug = "",
-  initialFinopsSessionId = null,
-  initialLiveopsSessionId = null,
+  initialAgentSessionId = null,
   onTaskUpdate,
   onThinkingChange,
   onArtifactUpdate,
@@ -56,12 +55,9 @@ const ConversationPanel = ({
   const [accessDenied, setAccessDenied] = useState(false);
   const [chatPermission, setChatPermission] = useState(null); // "read" or "write"
   const [messageVersions, setMessageVersions] = useState({}); // { parentId: { versions: [msg1, msg2], activeIndex: 1 } }
-  const [liveopsSessionId, setLiveopsSessionId] = useState(
-    initialLiveopsSessionId,
-  ); // Liveops agent session ID
-  const [finopsSessionId, setFinopsSessionId] = useState(
-    initialFinopsSessionId,
-  ); // Finops agent session ID
+  const [agentSessionId, setAgentSessionId] = useState(
+    initialAgentSessionId,
+  ); // Generic agent session ID (liveops, finops, scalepac, etc.)
   const [cashBalance, setCashBalance] = useState(425000.0); // Finops cash balance
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -215,13 +211,13 @@ const ConversationPanel = ({
           onFavouriteUpdate(result.data.is_favourite || false);
         }
         
-        // Restore session IDs if available
-        if (result.data.finops_session_id) setFinopsSessionId(result.data.finops_session_id);
-        if (result.data.liveops_session_id) setLiveopsSessionId(result.data.liveops_session_id);
-        
-        // Also check inside data bag just in case
-        if (result.data.data?.finops_session_id) setFinopsSessionId(result.data.data.finops_session_id);
-        if (result.data.data?.liveops_session_id) setLiveopsSessionId(result.data.data.liveops_session_id);
+        // Restore session ID if available (using agent-specific key derived from slug)
+        const effectiveSlug = agentSlugFromApi || propAgentSlug;
+        const sessionKey = getSessionKey(effectiveSlug);
+        if (sessionKey) {
+          const restoredSessionId = result.data[sessionKey] || result.data.data?.[sessionKey];
+          if (restoredSessionId) setAgentSessionId(restoredSessionId);
+        }
 
         // Track permission for shared chats
         if (result.data.permission) {
@@ -599,8 +595,7 @@ const ConversationPanel = ({
       setAccessDenied(false);
       setChatPermission(null);
       setMessageVersions({});
-      setLiveopsSessionId(initialLiveopsSessionId);
-      setFinopsSessionId(initialFinopsSessionId);
+      setAgentSessionId(initialAgentSessionId);
       setCashBalance(425000.0);
       historyFetchedRef.current = false;
       initialQuerySentRef.current = false;
@@ -1383,10 +1378,8 @@ const ConversationPanel = ({
             onStop={stopRequest}
             agentSlug={agentSlug}
             chatId={chatId}
-            liveopsSessionId={liveopsSessionId}
-            onLiveopsSessionCreated={setLiveopsSessionId}
-            finopsSessionId={finopsSessionId}
-            onFinopsSessionCreated={setFinopsSessionId}
+            agentSessionId={agentSessionId}
+            onAgentSessionCreated={setAgentSessionId}
             hasMessages={messages.length > 0}
           />
         )}

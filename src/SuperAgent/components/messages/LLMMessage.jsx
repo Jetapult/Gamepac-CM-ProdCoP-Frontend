@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import ReactDOM from "react-dom";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Like,
   Dislike,
@@ -276,7 +277,26 @@ const LLMMessage = ({
             );
           }
           
-          return <ReactMarkdown>{strippedContent}</ReactMarkdown>;
+          return <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
+            table: ({ children }) => (
+              <div className="overflow-x-auto my-3">
+                <table className="w-full border-collapse text-sm">{children}</table>
+              </div>
+            ),
+            thead: ({ children }) => (
+              <thead className="bg-[#f5f5f5]">{children}</thead>
+            ),
+            tbody: ({ children }) => <tbody>{children}</tbody>,
+            tr: ({ children }) => (
+              <tr className="border-b border-[#e5e5e5]">{children}</tr>
+            ),
+            th: ({ children }) => (
+              <th className="px-3 py-2 text-left font-semibold text-[#141414] border border-[#e0e0e0] bg-[#f5f5f5]">{children}</th>
+            ),
+            td: ({ children }) => (
+              <td className="px-3 py-2 text-[#333] border border-[#e0e0e0]">{children}</td>
+            ),
+          }}>{strippedContent}</ReactMarkdown>;
         })()}
       </div>
 

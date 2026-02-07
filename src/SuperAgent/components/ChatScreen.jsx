@@ -11,8 +11,7 @@ const ChatScreen = ({
   initialQuery = "",
   initialAttachments = [],
   agentSlug = "",
-  initialFinopsSessionId = null,
-  initialLiveopsSessionId = null,
+  initialAgentSessionId = null,
 }) => {
   const navigate = useNavigate();
 
@@ -134,8 +133,7 @@ const ChatScreen = ({
           initialQuery={initialQuery}
           initialAttachments={initialAttachments}
           agentSlug={agentSlug}
-          initialFinopsSessionId={initialFinopsSessionId}
-          initialLiveopsSessionId={initialLiveopsSessionId}
+          initialAgentSessionId={initialAgentSessionId}
           onTaskUpdate={(task, index, time, tasks) => {
             setCurrentTask(task);
             setCurrentTaskIndex(index);

@@ -13,17 +13,22 @@ import {
   uploadAttachment,
   uploadLiveopsAttachment,
   uploadFinopsAttachment,
+  uploadCreativeBreakdownAttachment,
   createLiveopsSession,
   createFinopsSession,
+  createCreativeBreakdownSession,
   validateFile,
   getFileTypeFromName,
   isImageFile,
   isVideoFile,
   isLiveopsSupported,
+  isScalepacSupported,
+  agentRequiresSession,
   MAX_ATTACHMENTS,
   ALLOWED_EXTENSIONS,
   LIVEOPS_SUPPORTED_EXTENSIONS,
   FINOPS_SUPPORTED_EXTENSIONS,
+  SCALEPAC_SUPPORTED_EXTENSIONS,
 } from "../../services/superAgentApi";
 import { useSelector, useDispatch } from "react-redux";
 import { setSelectedTemplate } from "../../store/reducer/superAgent";
@@ -340,10 +345,8 @@ const ChatInput = ({
   onStop,
   agentSlug = "",
   chatId = null,
-  liveopsSessionId = null,
-  onLiveopsSessionCreated = null,
-  finopsSessionId = null,
-  onFinopsSessionCreated = null,
+  agentSessionId = null,
+  onAgentSessionCreated = null,
   hasMessages = false,
   hideConnectors = false,
 }) => {
@@ -378,22 +381,15 @@ const ChatInput = ({
   const dropdownRef = useRef(null);
   const integrationDropdownRef = useRef(null);
   const uploadQueueRef = useRef([]);
-  // Track session IDs locally to avoid React prop timing issues
-  const liveopsSessionRef = useRef(liveopsSessionId);
-  const finopsSessionRef = useRef(finopsSessionId);
+  // Track session ID locally to avoid React prop timing issues
+  const agentSessionRef = useRef(agentSessionId);
 
-  // Keep refs in sync with props when they change from parent
+  // Keep ref in sync with prop when it changes from parent
   useEffect(() => {
-    if (liveopsSessionId) {
-      liveopsSessionRef.current = liveopsSessionId;
+    if (agentSessionId) {
+      agentSessionRef.current = agentSessionId;
     }
-  }, [liveopsSessionId]);
-
-  useEffect(() => {
-    if (finopsSessionId) {
-      finopsSessionRef.current = finopsSessionId;
-    }
-  }, [finopsSessionId]);
+  }, [agentSessionId]);
 
   const handleIntegrationClick = (integration) => {
     setSelectedIntegration(integration);
@@ -468,6 +464,16 @@ const ChatInput = ({
         }
       }
 
+      // For creative_breakdown (ScalePac) agent, only allow video and image files
+      if (agentSlug === "creative_breakdown") {
+        if (!isScalepacSupported(ext)) {
+          setUploadError(
+            `ScalePac agent only accepts: ${SCALEPAC_SUPPORTED_EXTENSIONS.join(", ")}`,
+          );
+          continue;
+        }
+      }
+
       const validation = validateFile(file);
       if (!validation.valid) {
         setUploadError(validation.error);
@@ -509,53 +515,35 @@ const ChatInput = ({
 
     // If chatId exists (chat page), backend will auto-fetch session from chat data
     // Only create session on index page (no chatId) when uploading for first time
-    let currentLiveopsSession = liveopsSessionId || liveopsSessionRef.current;
-    let currentFinopsSession = finopsSessionId || finopsSessionRef.current;
+    let currentSession = agentSessionId || agentSessionRef.current;
 
     // Only create sessions if we're on the index page (no chatId) and no session exists yet
-    if (!chatId) {
-      if (agentSlug === "liveops" && !currentLiveopsSession) {
-        try {
-          const sessionResponse = await createLiveopsSession();
-          if (sessionResponse.success && sessionResponse.data?.session_id) {
-            currentLiveopsSession = sessionResponse.data.session_id;
-            liveopsSessionRef.current = currentLiveopsSession;
-            if (onLiveopsSessionCreated) {
-              onLiveopsSessionCreated(currentLiveopsSession);
-            }
-            console.log(
-              "[Liveops] Created session for upload:",
-              currentLiveopsSession,
-            );
-          }
-        } catch (err) {
-          console.error("[Liveops] Failed to create session:", err);
-          setUploadError("Failed to create liveops session for upload");
-          setIsUploading(false);
-          return;
+    if (!chatId && agentRequiresSession(agentSlug) && !currentSession) {
+      try {
+        let sessionResponse;
+        if (agentSlug === "liveops") {
+          sessionResponse = await createLiveopsSession();
+        } else if (agentSlug === "finops") {
+          sessionResponse = await createFinopsSession();
+        } else if (agentSlug === "creative_breakdown") {
+          sessionResponse = await createCreativeBreakdownSession();
         }
-      }
-
-      if (agentSlug === "finops" && !currentFinopsSession) {
-        try {
-          const sessionResponse = await createFinopsSession();
-          if (sessionResponse.success && sessionResponse.data?.session_id) {
-            currentFinopsSession = sessionResponse.data.session_id;
-            finopsSessionRef.current = currentFinopsSession;
-            if (onFinopsSessionCreated) {
-              onFinopsSessionCreated(currentFinopsSession);
-            }
-            console.log(
-              "[Finops] Created session for upload:",
-              currentFinopsSession,
-            );
+        if (sessionResponse?.success && sessionResponse?.data?.session_id) {
+          currentSession = sessionResponse.data.session_id;
+          agentSessionRef.current = currentSession;
+          if (onAgentSessionCreated) {
+            onAgentSessionCreated(currentSession);
           }
-        } catch (err) {
-          console.error("[Finops] Failed to create session:", err);
-          setUploadError("Failed to create finops session for upload");
-          setIsUploading(false);
-          return;
+          console.log(
+            `[${agentSlug}] Created session for upload:`,
+            currentSession,
+          );
         }
+      } catch (err) {
+        console.error(`[${agentSlug}] Failed to create session:`, err);
+        setUploadError(`Failed to create ${agentSlug} session for upload`);
+        setIsUploading(false);
+        return;
       }
     }
 
@@ -572,12 +560,12 @@ const ChatInput = ({
           );
         };
 
-        // Use liveops upload endpoint for liveops agent
+        // Use agent-specific upload endpoint based on agentSlug
         // Pass chatId if available (backend fetches session), otherwise pass sessionId
-        if (agentSlug === "liveops" && (chatId || currentLiveopsSession)) {
+        if (agentSlug === "liveops" && (chatId || currentSession)) {
           response = await uploadLiveopsAttachment(
             file,
-            { chatId, sessionId: currentLiveopsSession },
+            { chatId, sessionId: currentSession },
             progressCallback,
           );
           if (response.success && response.data) {
@@ -600,12 +588,10 @@ const ChatInput = ({
           } else {
             throw new Error("Upload failed");
           }
-        } else if (agentSlug === "finops" && (chatId || currentFinopsSession)) {
-          // Use finops upload endpoint for finops agent (CSV only)
-          // Pass chatId if available (backend fetches session), otherwise pass sessionId
+        } else if (agentSlug === "finops" && (chatId || currentSession)) {
           response = await uploadFinopsAttachment(
             file,
-            { chatId, sessionId: currentFinopsSession },
+            { chatId, sessionId: currentSession },
             progressCallback,
           );
           if (response.success && response.data) {
@@ -621,6 +607,31 @@ const ChatInput = ({
                       file_url: attachment.file_url,
                       finops_uploaded,
                       finops_files,
+                    }
+                  : att,
+              ),
+            );
+          } else {
+            throw new Error("Upload failed");
+          }
+        } else if (agentSlug === "creative_breakdown" && (chatId || currentSession)) {
+          response = await uploadCreativeBreakdownAttachment(
+            file,
+            { chatId, sessionId: currentSession },
+            progressCallback,
+          );
+          if (response.success && response.data) {
+            const { attachment, creative_breakdown_uploaded } = response.data;
+            setAttachments((prev) =>
+              prev.map((att) =>
+                att.tempId === tempId
+                  ? {
+                      ...att,
+                      status: "uploaded",
+                      progress: 100,
+                      id: attachment.id,
+                      file_url: attachment.file_url,
+                      creative_breakdown_uploaded,
                     }
                   : att,
               ),
@@ -694,7 +705,7 @@ const ChatInput = ({
     // Check ref instead of prop to avoid timing issues
     if (
       agentSlug === "finops" &&
-      !finopsSessionRef.current &&
+      !agentSessionRef.current &&
       !hasUploadedFiles &&
       !hasMessages
     ) {
@@ -722,10 +733,9 @@ const ChatInput = ({
           size: att.size,
         }));
 
-      // Pass session IDs from refs (not props) to avoid React state timing issues
+      // Pass session ID from ref (not prop) to avoid React state timing issues
       onSendMessage(inputValue, uploadedAttachments, {
-        liveopsSessionId: liveopsSessionRef.current,
-        finopsSessionId: finopsSessionRef.current,
+        agentSessionId: agentSessionRef.current,
       });
       setInputValue("");
       attachments.forEach((att) => {
@@ -829,7 +839,7 @@ const ChatInput = ({
       />
 
       {agentSlug === "finops" &&
-        !finopsSessionId &&
+        !agentSessionId &&
         !attachments.some((att) => att.status === "uploaded") &&
         !hasMessages && (
           <p className="text-xs text-amber-600 font-urbanist mb-2">
@@ -978,7 +988,7 @@ const ChatInput = ({
               !selectedAgent?.id ||
               isUploading ||
               (agentSlug === "finops" &&
-                !finopsSessionId &&
+                !agentSessionId &&
                 !attachments.some((att) => att.status === "uploaded"))
                 ? "bg-[#E6E6E6]"
                 : "bg-[linear-gradient(333deg,#11A85F_13.46%,#1F6744_103.63%)]"
@@ -989,7 +999,7 @@ const ChatInput = ({
               !selectedAgent?.id ||
               isUploading ||
               (agentSlug === "finops" &&
-                !finopsSessionId &&
+                !agentSessionId &&
                 !attachments.some((att) => att.status === "uploaded"))
             }
           >
@@ -1002,7 +1012,7 @@ const ChatInput = ({
                 !selectedAgent?.id ||
                 isUploading ||
                 (agentSlug === "finops" &&
-                  !finopsSessionId &&
+                  !agentSessionId &&
                   !attachments.some((att) => att.status === "uploaded"))
                   ? "#B0B0B0"
                   : "#FFFFFF"
