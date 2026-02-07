@@ -115,6 +115,8 @@ const ConversationPanel = ({
           break;
           
         case "jira_issue":
+        case "jira_production_tasks":
+        case "jira_ticket":
           result = await createJiraIssue({
             projectKey: payload.project_key,
             summary: payload.summary,
