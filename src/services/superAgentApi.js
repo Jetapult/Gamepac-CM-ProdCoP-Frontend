@@ -377,6 +377,124 @@ export const uploadCreativeBreakdownAttachment = async (
 };
 
 // ============================================================
+// DATAPAC SESSION MANAGEMENT
+// ============================================================
+
+/**
+ * Create a new datapac session
+ * @param {number} gameId
+ * @param {string} gameCode
+ * @param {string} studioSlug
+ * @returns {Promise<{session_id: string, status: string, game_id: number, game_code: string}>}
+ */
+export const createDatapacSession = async (gameId, gameCode, studioSlug) => {
+  const response = await api.post("/v1/superagent/datapac/session", {
+    game_id: gameId,
+    game_code: gameCode,
+    studio_slug: studioSlug,
+  });
+  return response.data;
+};
+
+/**
+ * Get datapac session details
+ * @param {string} sessionId
+ * @returns {Promise<object>}
+ */
+export const getDatapacSession = async (sessionId) => {
+  const response = await api.get(`/v1/superagent/datapac/session/${sessionId}`);
+  return response.data;
+};
+
+/**
+ * Delete a datapac session
+ * @param {string} sessionId
+ */
+export const deleteDatapacSession = async (sessionId) => {
+  const response = await api.delete(`/v1/superagent/datapac/session/${sessionId}`);
+  return response.data;
+};
+
+/**
+ * Get datapac report
+ * @param {string} sessionId - Optional session ID
+ * @returns {Promise<object>}
+ */
+export const getDatapacReport = async (sessionId) => {
+  const params = sessionId ? { session_id: sessionId } : {};
+  const response = await api.get("/v1/superagent/datapac/report", { params });
+  return response.data;
+};
+
+/**
+ * Get datapac suggested actions
+ * @param {string} sessionId - Optional session ID
+ * @returns {Promise<object>}
+ */
+export const getDatapacActions = async (sessionId) => {
+  const params = sessionId ? { session_id: sessionId } : {};
+  const response = await api.get("/v1/superagent/datapac/actions", { params });
+  return response.data;
+};
+
+// ============================================================
+// STUDIO-PAC SESSION MANAGEMENT
+// ============================================================
+
+/**
+ * Create a new studio-pac session
+ * @param {string} gameId
+ * @param {string} gameName
+ * @param {number} studioId
+ * @returns {Promise<{session_id: string, thread_id: string, game_id: string, game_name: string, scope: string}>}
+ */
+export const createStudioPacSession = async (gameId, gameName, studioId) => {
+  const response = await api.post("/v1/superagent/studio-pac/session", {
+    game_id: gameId,
+    game_name: gameName,
+    studio_id: studioId,
+  });
+  return response.data;
+};
+
+/**
+ * Get studio-pac session details
+ * @param {string} sessionId
+ * @returns {Promise<object>}
+ */
+export const getStudioPacSession = async (sessionId) => {
+  const response = await api.get(`/v1/superagent/studio-pac/session/${sessionId}`);
+  return response.data;
+};
+
+/**
+ * Delete a studio-pac session
+ * @param {string} sessionId
+ */
+export const deleteStudioPacSession = async (sessionId) => {
+  const response = await api.delete(`/v1/superagent/studio-pac/session/${sessionId}`);
+  return response.data;
+};
+
+/**
+ * Get studio-pac report
+ * @returns {Promise<object>}
+ */
+export const getStudioPacReport = async () => {
+  const response = await api.get("/v1/superagent/studio-pac/report");
+  return response.data;
+};
+
+/**
+ * Get studio-pac suggested actions
+ * @returns {Promise<object>}
+ */
+export const getStudioPacActions = async () => {
+  const response = await api.get("/v1/superagent/studio-pac/actions");
+  return response.data;
+};
+
+// ============================================================
 // EXPORT HELPERS
 // ============================================================
 
@@ -406,6 +524,8 @@ export const sessionKeyMap = {
   liveops: "liveops_session_id",
   finops: "finops_session_id",
   creative_breakdown: "creative_breakdown_session_id",
+  datapac: "datapac_session_id",
+  studio_pac: "studio_pac_session_id",
 };
 
 /**
