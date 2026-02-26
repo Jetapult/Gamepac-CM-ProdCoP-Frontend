@@ -27,6 +27,8 @@ import {
   createLiveopsSession,
   createFinopsSession,
   createCreativeBreakdownSession,
+  createDatapacSession,
+  createStudioPacSession,
   getSessionKey,
   agentRequiresSession,
 } from "../services/superAgentApi";
@@ -50,7 +52,7 @@ export const agents = [
   {
     id: "2",
     name: "Game Director Report",
-    slug: "toyagent",
+    slug: "studio_pac",
     icon: <Notebook2 weight={"Linear"} className="size-[24px]" />,
   },
   {
@@ -61,14 +63,14 @@ export const agents = [
   },
   {
     id: "4",
-    name: "Finanacial Reporting",
+    name: "Financial Reporting",
     slug: "finops",
     icon: <Book2 weight={"Linear"} className="size-[24px]" />,
   },
   {
     id: "5",
     name: "DataPac",
-    slug: "ua-playbook",
+    slug: "datapac",
     icon: <Lightbulb weight={"Linear"} className="size-[24px]" />,
   },
   {
@@ -146,6 +148,18 @@ const SuperAgent = () => {
             selectedGame?.id,
             selectedGame?.name,
             ContextStudioData?.studio_name || ContextStudioData?.name,
+          );
+        } else if (selectedAgent.slug === "datapac") {
+          sessionResponse = await createDatapacSession(
+            selectedGame?.id,
+            selectedGame?.game_code || selectedGame?.code,
+            ContextStudioData?.slug,
+          );
+        } else if (selectedAgent.slug === "studio_pac") {
+          sessionResponse = await createStudioPacSession(
+            selectedGame?.id,
+            selectedGame?.name,
+            ContextStudioData?.id,
           );
         }
         if (sessionResponse?.success && sessionResponse?.data?.session_id) {
