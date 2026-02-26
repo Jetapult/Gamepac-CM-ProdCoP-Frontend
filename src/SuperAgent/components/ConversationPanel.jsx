@@ -806,6 +806,7 @@ const ConversationPanel = ({
               message: messageToSend,
               agent_slug: agentSlug,
               game_id: selectedGame?.id || null,
+              studio_id: ContextStudioData?.id || null,
               studio_slug: ContextStudioData?.slug || null,
               ...(attachmentIds.length > 0 && {
                 attachment_ids: attachmentIds,
@@ -842,7 +843,6 @@ const ConversationPanel = ({
           if (done) break;
 
           const chunk = decoder.decode(value, { stream: true });
-          console.log("[SSE] Received chunk:", chunk.length, "chars");
           buffer += chunk;
 
           // SSE events are separated by double newlines
@@ -857,7 +857,6 @@ const ConversationPanel = ({
                 try {
                   const jsonStr = trimmedLine.slice(6);
                   const event = JSON.parse(jsonStr);
-                  console.log("[SSE] Event received:", event.type, event);
                   processEvent(event);
                 } catch (e) {
                   console.warn("Failed to parse event:", trimmedLine, e);
@@ -876,7 +875,6 @@ const ConversationPanel = ({
               try {
                 const jsonStr = trimmedLine.slice(6);
                 const event = JSON.parse(jsonStr);
-                console.log("[SSE] Final event received:", event.type, event);
                 processEvent(event);
               } catch (e) {
                 console.warn("Failed to parse final event:", trimmedLine, e);

@@ -49,6 +49,8 @@ const agentNameMap = {
   liveops: "LiveOps",
   finops: "FinOps",
   creative_breakdown: "ScalePac",
+  datapac: "DataPac",
+  studio_pac: "Game Director Report",
 };
 
 // Helper to get agent display name
@@ -158,6 +160,28 @@ const toolTitleMap = {
   analyze_trend_alignment: "Analyzing Trend Alignment",
   generate_creative_brief: "Generating Creative Brief",
   generate_sprint_summary: "Generating Sprint Summary",
+  // DataPac agent tools
+  query_analytics: "Querying Analytics",
+  fetch_metrics: "Fetching Metrics",
+  analyze_data: "Analyzing Data",
+  generate_insights: "Generating Insights",
+  // StudioPac (Game Director Report) agent tools
+  fetch_daily_kpis: "Fetching Daily KPIs",
+  fetch_ad_revenue_by_network: "Fetching Ad Revenue by Network",
+  fetch_ad_revenue_by_type: "Fetching Ad Revenue by Type",
+  fetch_ad_revenue_by_country: "Fetching Ad Revenue by Country",
+  fetch_iap_revenue: "Fetching IAP Revenue",
+  fetch_store_performance: "Fetching Store Performance",
+  fetch_crash_data: "Fetching Crash Data",
+  fetch_session_metrics: "Fetching Session Metrics",
+  fetch_ua_installs: "Fetching UA Installs",
+  fetch_ua_campaigns: "Fetching UA Campaigns",
+  fetch_crashlytics_summary: "Fetching Crashlytics Summary",
+  fetch_portfolio_kpis: "Fetching Portfolio KPIs",
+  fetch_experiment_assignments: "Fetching Experiment Assignments",
+  fetch_player_ltv_summary: "Fetching Player LTV Summary",
+  fetch_retention_cohorts: "Fetching Retention Cohorts",
+  fetch_game_identifiers: "Fetching Game Identifiers",
 };
 
 // Report tool name to artifact type mapping
