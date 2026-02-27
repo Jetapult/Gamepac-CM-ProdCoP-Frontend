@@ -82,6 +82,8 @@ const normalizeActionType = (type) => {
     email_draft: "gmail",
     jira_production_tasks: "jira_issue",
     jira_ticket: "jira_issue",
+    jira_tickets: "jira_issue",
+    schedule_report: "slack_message", // Schedule reports are sent as Slack messages
   };
   return map[type] || type;
 };
@@ -104,6 +106,28 @@ const normalizePayload = (actionType, payload) => {
     normalized.description = parent.description || "";
     normalized.priority = parent.priority || "Medium";
     normalized.labels = parent.labels || [];
+  }
+
+  // jira_tickets: extract first issue from issues array
+  if (actionType === "jira_tickets" && normalized.issues && Array.isArray(normalized.issues) && normalized.issues.length > 0) {
+    const firstIssue = normalized.issues[0];
+    normalized.issue_type = firstIssue.issue_type || "Task";
+    normalized.summary = firstIssue.summary || "";
+    normalized.description = firstIssue.description || "";
+    normalized.priority = firstIssue.priority || "Medium";
+    normalized.labels = firstIssue.labels || [];
+    // Keep project_key if it exists
+    if (!normalized.project_key && normalized.project_key) {
+      normalized.project_key = normalized.project_key;
+    }
+  }
+
+  // schedule_report: convert to slack message format
+  if (actionType === "schedule_report") {
+    normalized.text = normalized.notification_message || "Scheduled report";
+    if (!normalized.channel && normalized.channel) {
+      normalized.channel = normalized.channel;
+    }
   }
 
   return normalized;
@@ -444,7 +468,7 @@ const SuggestedActionsMessage = ({
         );
 
       case "google_docs":
-        return <></>
+        return null;
         // return (
         //   <GoogleDocsCard
         //     key={index}
