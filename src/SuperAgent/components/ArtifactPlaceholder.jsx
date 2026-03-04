@@ -46,6 +46,15 @@ const ArtifactPlaceholder = ({ type, data, googleDocsActionData }) => {
     );
   }
 
+  if (type === "trend_analysis") {
+    const markdownString = extractMarkdownFromData(data);
+    return (
+      <ReportWrapper title="Trend Analysis Report" googleDocsActionData={googleDocsActionData} markdownString={markdownString}>
+        <MarkdownContent data={data} />
+      </ReportWrapper>
+    );
+  }
+
   // Unknown type - render as markdown content
   const markdownString = extractMarkdownFromData(data);
   return (

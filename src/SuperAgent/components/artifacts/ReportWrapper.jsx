@@ -376,8 +376,8 @@ const ReportWrapper = ({
             </div>
             <div className="p-4">
               <GoogleDocsExportCard
-                doc_title={googleDocsActionData?.doc_title || ""}
-                content_summary={googleDocsActionData?.content_summary || ""}
+                doc_title={googleDocsActionData?.doc_title || title || "Document"}
+                content_summary={googleDocsActionData?.content_summary || markdownString || ""}
                 onSend={handleDocsSend}
                 onCancel={() => {
                   setShowDocsDialog(false);
