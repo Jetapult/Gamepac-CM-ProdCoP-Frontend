@@ -88,6 +88,28 @@ const normalizeActionType = (type) => {
   return map[type] || type;
 };
 
+// Normalize priority values to Jira-compatible values
+const normalizeJiraPriority = (priority) => {
+  if (!priority) return "Medium";
+
+  // Map common priority names to Jira's accepted values
+  const priorityMap = {
+    "critical": "Highest",
+    "urgent": "Highest",
+    "blocker": "Highest",
+    "highest": "Highest",
+    "high": "High",
+    "normal": "Medium",
+    "medium": "Medium",
+    "low": "Low",
+    "lowest": "Lowest",
+    "trivial": "Lowest",
+  };
+
+  const normalized = priorityMap[priority.toLowerCase()];
+  return normalized || "Medium"; // Default to Medium if unknown
+};
+
 // Normalize payload to match what card components expect
 const normalizePayload = (actionType, payload) => {
   if (!payload) return payload;
@@ -104,7 +126,7 @@ const normalizePayload = (actionType, payload) => {
     normalized.issue_type = parent.issue_type || "Epic";
     normalized.summary = parent.summary || "";
     normalized.description = parent.description || "";
-    normalized.priority = parent.priority || "Medium";
+    normalized.priority = normalizeJiraPriority(parent.priority);
     normalized.labels = parent.labels || [];
   }
 
@@ -114,9 +136,14 @@ const normalizePayload = (actionType, payload) => {
     normalized.issue_type = firstIssue.issue_type || "Task";
     normalized.summary = firstIssue.summary || "";
     normalized.description = firstIssue.description || "";
-    normalized.priority = firstIssue.priority || "Medium";
+    normalized.priority = normalizeJiraPriority(firstIssue.priority);
     normalized.labels = firstIssue.labels || [];
     // project_key is already at top level via spread, no need to copy
+  }
+
+  // For all Jira-related actions, ensure priority is normalized
+  if (actionType.includes("jira") && normalized.priority) {
+    normalized.priority = normalizeJiraPriority(normalized.priority);
   }
 
   // schedule_report: convert to slack message format
@@ -439,7 +466,7 @@ const SuggestedActionsMessage = ({
         return (
           <JiraIssueCard
             key={index}
-            project_key={payload?.project_key || ""}
+            project_key=""
             issue_type={payload?.issue_type || "Task"}
             summary={payload?.summary || ""}
             description={payload?.description || ""}
