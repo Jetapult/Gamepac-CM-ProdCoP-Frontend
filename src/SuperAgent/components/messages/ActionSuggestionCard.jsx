@@ -71,14 +71,19 @@ const ActionSuggestionCard = ({
   // Validation for required fields
   const isJiraAction = integration === "jira" || actionType === "jira_issue" || actionType === "jira_production_tasks" || actionType === "jira_ticket" || actionType === "jira_tickets";
   const isSlackAction = integration === "slack" || actionType === "slack_message" || actionType === "slack_task" || actionType === "schedule_report";
+  const isCalendarAction = integration === "google-calendar" || actionType === "calendar_event";
 
-  const isMissingRequiredField =
-    (isJiraAction && !payload?.project_key) ||
-    (isSlackAction && !payload?.channel);
+  // Check if required fields are missing
+  const isSlackMissingChannel = isSlackAction && (!payload?.channel || payload.channel.trim() === "");
+  const isJiraMissingProject = isJiraAction && (!payload?.project_key || payload.project_key.trim() === "");
+  const isCalendarMissingAttendees = isCalendarAction && (!payload?.attendees || (Array.isArray(payload.attendees) && payload.attendees.length === 0) || (typeof payload.attendees === "string" && payload.attendees.trim() === ""));
+
+  const isMissingRequiredField = isSlackMissingChannel || isJiraMissingProject || isCalendarMissingAttendees;
 
   const getMissingFieldMessage = () => {
-    if (isJiraAction && !payload?.project_key) return "Project is required";
-    if (isSlackAction && !payload?.channel) return "Channel is required";
+    if (isJiraMissingProject) return "Project is required";
+    if (isSlackMissingChannel) return "Channel is required";
+    if (isCalendarMissingAttendees) return "At least one attendee is required";
     return null;
   };
 
