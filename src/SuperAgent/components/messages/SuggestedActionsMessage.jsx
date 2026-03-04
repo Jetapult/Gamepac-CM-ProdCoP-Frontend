@@ -116,10 +116,7 @@ const normalizePayload = (actionType, payload) => {
     normalized.description = firstIssue.description || "";
     normalized.priority = firstIssue.priority || "Medium";
     normalized.labels = firstIssue.labels || [];
-    // Keep project_key if it exists
-    if (!normalized.project_key && normalized.project_key) {
-      normalized.project_key = normalized.project_key;
-    }
+    // project_key is already at top level via spread, no need to copy
   }
 
   // schedule_report: convert to slack message format
@@ -227,16 +224,25 @@ const SuggestedActionsMessage = ({
     try {
       const result = await onSend?.(action, payload, index, apiMessageId);
       console.log("[SuggestedActions] Action completed:", result);
-      
-      // Check if successful is false or null (indicates failure)
-      if (result?.successful === false || result?.successful === null) {
-        setCompletedActions((prev) => ({ 
-          ...prev, 
-          [index]: { success: false, error: result?.error || result?.message || "Action failed" } 
+
+      // Check if onSend was not called or returned nothing
+      if (!result) {
+        setCompletedActions((prev) => ({
+          ...prev,
+          [index]: { success: false, error: "No response from action handler" }
         }));
         return;
       }
-      
+
+      // Check if success is false or null (indicates failure)
+      if (result?.success === false || result?.success === null) {
+        setCompletedActions((prev) => ({
+          ...prev,
+          [index]: { success: false, error: result?.error || result?.message || "Action failed" }
+        }));
+        return;
+      }
+
       setCompletedActions((prev) => ({ ...prev, [index]: { success: true, result } }));
     } catch (err) {
       console.error("[SuggestedActions] Action failed:", err);
@@ -433,7 +439,7 @@ const SuggestedActionsMessage = ({
         return (
           <JiraIssueCard
             key={index}
-            project_key=""
+            project_key={payload?.project_key || ""}
             issue_type={payload?.issue_type || "Task"}
             summary={payload?.summary || ""}
             description={payload?.description || ""}
@@ -533,7 +539,7 @@ const SuggestedActionsMessage = ({
         return !payload.data_summary || payload.data_summary.trim() === "";
       case "slack":
       case "slack_message":
-        return !payload.message || payload.message.trim() === "";
+        return !payload.text || payload.text.trim() === "";
       case "jira":
       case "jira_issue":
       case "jira_ticket":
