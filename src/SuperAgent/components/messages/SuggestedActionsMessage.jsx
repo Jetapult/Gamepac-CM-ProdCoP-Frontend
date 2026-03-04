@@ -110,6 +110,29 @@ const normalizeJiraPriority = (priority) => {
   return normalized || "Medium"; // Default to Medium if unknown
 };
 
+// Normalize issue type values to Jira-compatible values
+const normalizeJiraIssueType = (issueType) => {
+  if (!issueType) return "Task";
+
+  // Map common issue type names to Jira's accepted values
+  const issueTypeMap = {
+    "epic": "Epic",
+    "story": "Story",
+    "user story": "Story",
+    "feature": "Story",
+    "task": "Task",
+    "bug": "Bug",
+    "defect": "Bug",
+    "issue": "Bug",
+    "sub-task": "Sub-task",
+    "subtask": "Sub-task",
+    "sub task": "Sub-task",
+  };
+
+  const normalized = issueTypeMap[issueType.toLowerCase()];
+  return normalized || "Task"; // Default to Task if unknown
+};
+
 // Normalize payload to match what card components expect
 const normalizePayload = (actionType, payload) => {
   if (!payload) return payload;
@@ -123,7 +146,7 @@ const normalizePayload = (actionType, payload) => {
   // jira_production_tasks: flatten parent_issue into top-level fields
   if (actionType === "jira_production_tasks" && normalized.parent_issue) {
     const parent = normalized.parent_issue;
-    normalized.issue_type = parent.issue_type || "Epic";
+    normalized.issue_type = normalizeJiraIssueType(parent.issue_type);
     normalized.summary = parent.summary || "";
     normalized.description = parent.description || "";
     normalized.priority = normalizeJiraPriority(parent.priority);
@@ -133,7 +156,7 @@ const normalizePayload = (actionType, payload) => {
   // jira_tickets: extract first issue from issues array
   if (actionType === "jira_tickets" && normalized.issues && Array.isArray(normalized.issues) && normalized.issues.length > 0) {
     const firstIssue = normalized.issues[0];
-    normalized.issue_type = firstIssue.issue_type || "Task";
+    normalized.issue_type = normalizeJiraIssueType(firstIssue.issue_type);
     normalized.summary = firstIssue.summary || "";
     normalized.description = firstIssue.description || "";
     normalized.priority = normalizeJiraPriority(firstIssue.priority);
@@ -141,9 +164,14 @@ const normalizePayload = (actionType, payload) => {
     // project_key is already at top level via spread, no need to copy
   }
 
-  // For all Jira-related actions, ensure priority is normalized
-  if (actionType.includes("jira") && normalized.priority) {
-    normalized.priority = normalizeJiraPriority(normalized.priority);
+  // For all Jira-related actions, ensure priority and issue_type are normalized
+  if (actionType.includes("jira")) {
+    if (normalized.priority) {
+      normalized.priority = normalizeJiraPriority(normalized.priority);
+    }
+    if (normalized.issue_type) {
+      normalized.issue_type = normalizeJiraIssueType(normalized.issue_type);
+    }
   }
 
   // schedule_report: convert to slack message format
@@ -261,8 +289,10 @@ const SuggestedActionsMessage = ({
         return;
       }
 
-      // Check if success is false or null (indicates failure)
-      if (result?.success === false || result?.success === null) {
+      // Check both "success" and "successful" fields (APIs are inconsistent)
+      // Also check for explicit false or null values
+      const successField = result?.success !== undefined ? result.success : result?.successful;
+      if (successField === false || successField === null) {
         setCompletedActions((prev) => ({
           ...prev,
           [index]: { success: false, error: result?.error || result?.message || "Action failed" }
