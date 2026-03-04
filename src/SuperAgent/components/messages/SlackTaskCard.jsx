@@ -117,6 +117,9 @@ const SlackTaskCard = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Validation - channel is required
+  const isChannelMissing = !channel || channel.trim() === "";
+
   return (
     <div className="bg-white border border-[#f1f1f1] rounded-xl max-w-[600px] overflow-hidden">
       {/* Header */}
@@ -307,6 +310,23 @@ const SlackTaskCard = ({
         </div>
       )}
 
+      {/* Missing channel warning */}
+      {isConnected && isChannelMissing && (
+        <div className="px-4 py-3 bg-[#fffbeb] border-b border-[#f1f1f1]">
+          <p
+            className="text-[13px] text-[#f59e0b] flex items-center gap-1"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Channel is required
+          </p>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="flex items-center justify-end gap-2 p-4">
         <button
@@ -320,8 +340,13 @@ const SlackTaskCard = ({
         {isConnected ? (
           <button
             onClick={() => onSend?.({ channel, task_title: taskTitle, task_description: taskDescription, priority })}
-            disabled={isLoading}
-            className="px-4 py-2 text-[14px] font-medium text-white bg-[#1f6744] rounded-lg hover:bg-[#185a3a] transition-colors disabled:opacity-50"
+            disabled={isLoading || isChannelMissing}
+            title={isChannelMissing ? "Channel is required" : undefined}
+            className={`px-4 py-2 text-[14px] font-medium text-white rounded-lg transition-colors ${
+              isChannelMissing
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-[#1f6744] hover:bg-[#185a3a] disabled:opacity-50"
+            }`}
             style={{ fontFamily: "Urbanist, sans-serif" }}
           >
             {isLoading ? "Creating..." : "Create Task"}
