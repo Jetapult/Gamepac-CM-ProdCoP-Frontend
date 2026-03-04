@@ -87,17 +87,56 @@ const ConversationPanel = ({
     fetchJiraProjects,
   } = useActionCardData();
 
+  // Normalize Jira priority to valid values
+  const normalizeJiraPriority = (priority) => {
+    if (!priority) return "Medium";
+    const priorityMap = {
+      "critical": "Highest",
+      "urgent": "Highest",
+      "blocker": "Highest",
+      "highest": "Highest",
+      "high": "High",
+      "normal": "Medium",
+      "medium": "Medium",
+      "low": "Low",
+      "lowest": "Lowest",
+      "trivial": "Lowest",
+    };
+    return priorityMap[priority.toLowerCase()] || "Medium";
+  };
+
+  // Normalize Jira issue type to valid values
+  const normalizeJiraIssueType = (issueType) => {
+    if (!issueType) return "Task";
+    const issueTypeMap = {
+      "epic": "Epic",
+      "story": "Story",
+      "user story": "Story",
+      "feature": "Story",
+      "task": "Task",
+      "bug": "Bug",
+      "defect": "Bug",
+      "issue": "Bug",
+      "critical": "Bug", 
+      "blocker": "Bug",
+      "sub-task": "Sub-task",
+      "subtask": "Sub-task",
+      "sub task": "Sub-task",
+    };
+    return issueTypeMap[issueType.toLowerCase()] || "Task";
+  };
+
   // Handle action card send
   const handleActionSend = useCallback(async (action, payload, actionIndex, apiMessageId) => {
     console.log("[ConversationPanel] Action send:", action.action_type, payload, "index:", actionIndex, "msgId:", apiMessageId);
-    
+
     // Build tracking fields to pass through to backend
     const tracking = {
       message_id: apiMessageId,
       action_index: actionIndex,
       action_type: action.action_type,
     };
-    
+
     try {
       let result;
       const actionType = action.action_type;
@@ -127,12 +166,21 @@ const ConversationPanel = ({
         case "jira_production_tasks":
         case "jira_ticket":
         case "jira_tickets":
+          // Sanitize Jira payload - normalize priority and issue type to valid values
+          const sanitizedIssueType = normalizeJiraIssueType(payload.issue_type);
+          const sanitizedPriority = normalizeJiraPriority(payload.priority);
+
+          console.log("[ConversationPanel] Jira payload sanitization:", {
+            original: { issueType: payload.issue_type, priority: payload.priority },
+            sanitized: { issueType: sanitizedIssueType, priority: sanitizedPriority }
+          });
+
           result = await createJiraIssue({
             projectKey: payload.project_key,
             summary: payload.summary,
             description: payload.description,
-            issueType: payload.issue_type,
-            priority: payload.priority,
+            issueType: sanitizedIssueType,
+            priority: sanitizedPriority,
             assignee: payload.assignee,
             labels: payload.labels,
             ...tracking,
