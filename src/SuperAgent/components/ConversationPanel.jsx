@@ -143,9 +143,10 @@ const ConversationPanel = ({
       
       switch (actionType) {
         case "slack_message":
+        case "schedule_report":
           result = await sendSlackMessage({
             channel: payload.channel,
-            text: payload.text,
+            text: payload.text || payload.notification_message,
             ...tracking,
           });
           break;

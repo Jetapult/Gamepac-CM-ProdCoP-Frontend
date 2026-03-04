@@ -26,6 +26,7 @@ const integrationNames = {
 const actionTypeConfig = {
   slack_message: { integration: "slack", label: "Post Message" },
   slack_task: { integration: "slack", label: "Create Task" },
+  schedule_report: { integration: "slack", label: "Schedule Report" },
   jira_issue: { integration: "jira", label: "Create Issue" },
   calendar_event: { integration: "google-calendar", label: "Create Event" },
   google_docs: { integration: "google-docs", label: "Create Doc" },
@@ -68,15 +69,15 @@ const ActionSuggestionCard = ({
   const integrationName = integrationNames[integration] || integration;
 
   // Validation for required fields
-  const isJiraAction = integration === "jira" || actionType === "jira_issue";
-  const isSlackAction = integration === "slack" || actionType === "slack_message" || actionType === "slack_task";
+  const isJiraAction = integration === "jira" || actionType === "jira_issue" || actionType === "jira_production_tasks" || actionType === "jira_ticket" || actionType === "jira_tickets";
+  const isSlackAction = integration === "slack" || actionType === "slack_message" || actionType === "slack_task" || actionType === "schedule_report";
 
   const isMissingRequiredField =
-    (isJiraAction && !payload?.project) ||
+    (isJiraAction && !payload?.project_key) ||
     (isSlackAction && !payload?.channel);
 
   const getMissingFieldMessage = () => {
-    if (isJiraAction && !payload?.project) return "Project is required";
+    if (isJiraAction && !payload?.project_key) return "Project is required";
     if (isSlackAction && !payload?.channel) return "Channel is required";
     return null;
   };
