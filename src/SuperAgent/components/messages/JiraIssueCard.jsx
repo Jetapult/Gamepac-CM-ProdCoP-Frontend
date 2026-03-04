@@ -68,6 +68,9 @@ const JiraIssueCard = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Validation - project is required
+  const isProjectMissing = !projectKey || projectKey.trim() === "";
+
   const handleAddLabel = (e) => {
     if (e.key === "Enter" && labelInput.trim()) {
       e.preventDefault();
@@ -296,6 +299,23 @@ const JiraIssueCard = ({
         </div>
       )}
 
+      {/* Missing project warning */}
+      {isConnected && isProjectMissing && (
+        <div className="px-4 py-3 bg-[#fffbeb] border-b border-[#f1f1f1]">
+          <p
+            className="text-[13px] text-[#f59e0b] flex items-center gap-1"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Project is required
+          </p>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="flex items-center justify-end gap-2 p-4">
         <button
@@ -309,8 +329,13 @@ const JiraIssueCard = ({
         {isConnected ? (
           <button
             onClick={() => onSend?.({ project_key: projectKey, issue_type: issueType, summary, description, priority, labels })}
-            disabled={isLoading}
-            className="px-4 py-2 text-[14px] font-medium text-white bg-[#1f6744] rounded-lg hover:bg-[#185a3a] transition-colors disabled:opacity-50"
+            disabled={isLoading || isProjectMissing}
+            title={isProjectMissing ? "Project is required" : undefined}
+            className={`px-4 py-2 text-[14px] font-medium text-white rounded-lg transition-colors ${
+              isProjectMissing
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-[#1f6744] hover:bg-[#185a3a] disabled:opacity-50"
+            }`}
             style={{ fontFamily: "Urbanist, sans-serif" }}
           >
             {isLoading ? "Creating..." : "Create Issue"}
