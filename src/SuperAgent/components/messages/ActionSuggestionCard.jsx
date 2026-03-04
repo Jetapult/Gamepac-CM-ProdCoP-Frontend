@@ -63,9 +63,23 @@ const ActionSuggestionCard = ({
   const config = actionType ? actionTypeConfig[actionType] : null;
   const integration = config?.integration || integrationProp || "gmail";
   const actionLabel = config?.label || defaultActionLabels[integration] || defaultActionLabels.default;
-  
+
   const iconUrl = integrationIcons[integration] || integrationIcons.gmail;
   const integrationName = integrationNames[integration] || integration;
+
+  // Validation for required fields
+  const isJiraAction = integration === "jira" || actionType === "jira_issue";
+  const isSlackAction = integration === "slack" || actionType === "slack_message" || actionType === "slack_task";
+
+  const isMissingRequiredField =
+    (isJiraAction && !payload?.project) ||
+    (isSlackAction && !payload?.channel);
+
+  const getMissingFieldMessage = () => {
+    if (isJiraAction && !payload?.project) return "Project is required";
+    if (isSlackAction && !payload?.channel) return "Channel is required";
+    return null;
+  };
 
   return (
     <div className="flex items-start gap-3 p-4 bg-white border border-[#f1f1f1] rounded-xl max-w-[600px]">
@@ -100,6 +114,20 @@ const ActionSuggestionCard = ({
             You're not connected to {integrationName}
           </p>
         )}
+        {/* Missing required field hint */}
+        {isConnected && isMissingRequiredField && (
+          <p
+            className="text-[13px] text-[#f59e0b] mt-2 flex items-center gap-1"
+            style={{ fontFamily: "Urbanist, sans-serif" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            {getMissingFieldMessage()}
+          </p>
+        )}
       </div>
 
       {/* Action Buttons */}
@@ -115,8 +143,13 @@ const ActionSuggestionCard = ({
         {isConnected ? (
           <button
             onClick={onAction}
-            disabled={isLoading}
-            className="px-4 py-2 text-[14px] font-medium text-white bg-[#1f6744] rounded-lg hover:bg-[#185a3a] transition-colors disabled:opacity-50 flex items-center gap-2"
+            disabled={isLoading || isMissingRequiredField}
+            title={isMissingRequiredField ? getMissingFieldMessage() : undefined}
+            className={`px-4 py-2 text-[14px] font-medium text-white rounded-lg transition-colors flex items-center gap-2 ${
+              isMissingRequiredField
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-[#1f6744] hover:bg-[#185a3a] disabled:opacity-50"
+            }`}
             style={{ fontFamily: "Urbanist, sans-serif" }}
           >
             {userAvatar && (
