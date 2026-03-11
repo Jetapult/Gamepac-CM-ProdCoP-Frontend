@@ -55,7 +55,7 @@ const ChatScreen = ({
     setAccessDenied(false);
     setCurrentTask(null);
     setAllTasks([]);
-    setIsThinking(false);
+    setIsThinking(!!initialQuery);
   }, [chatId]);
 
   const handleTitleChange = (newTitle) => {
