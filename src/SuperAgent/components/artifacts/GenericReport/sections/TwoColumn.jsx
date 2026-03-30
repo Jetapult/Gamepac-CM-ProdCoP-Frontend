@@ -1,5 +1,12 @@
+// Handles both schemas:
+// Designed: section.left/right = {title, items: [string | {label, description}]}
+// Agent:    section.content.left/right = {type, title, content: {items: [{text, tag, tag_color}]}}
 const Column = ({ col }) => {
   if (!col) return null;
+
+  // Support both flat items and nested content.items
+  const items = col.content?.items || col.items || [];
+
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
       {col.title && (
@@ -17,19 +24,21 @@ const Column = ({ col }) => {
         </div>
       )}
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {(col.items || []).map((item, i) => {
-          const label = typeof item === "string" ? item : item.label;
+        {items.map((item, i) => {
+          const label = typeof item === "string" ? item : (item.text || item.label);
           const description = typeof item === "object" ? item.description : null;
           return (
             <li key={i} style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
               <span
                 style={{
-                  marginTop: "5px",
+                  display: "inline-block",
                   width: "5px",
                   height: "5px",
                   borderRadius: "50%",
                   background: "#141414",
                   flexShrink: 0,
+                  alignSelf: "flex-start",
+                  marginTop: "8px",
                 }}
               />
               <div>
@@ -47,13 +56,16 @@ const Column = ({ col }) => {
 };
 
 const TwoColumn = ({ section }) => {
-  if (!section?.left && !section?.right) return null;
+  // Support both section.left/right and section.content.left/right
+  const left = section?.content?.left || section?.left;
+  const right = section?.content?.right || section?.right;
+  if (!left && !right) return null;
 
   return (
     <div style={{ display: "flex", gap: "32px", marginTop: "16pt" }}>
-      <Column col={section.left} />
+      <Column col={left} />
       <div style={{ width: "1px", background: "#e5e5e5", flexShrink: 0 }} />
-      <Column col={section.right} />
+      <Column col={right} />
     </div>
   );
 };

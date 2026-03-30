@@ -23,8 +23,8 @@ const ReportHeader = ({ header }) => {
         />
       </div>
 
-      {header.game && (
-        <div className="main-title">{header.game}</div>
+      {(header.game || header.game_name) && (
+        <div className="main-title">{header.game || header.game_name}</div>
       )}
 
       {(header.agent || header.summary) && (

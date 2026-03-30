@@ -20,6 +20,7 @@ const ReportWrapper = ({
   containerClassName = "review-report-container bg-white shadow-xl",
   googleDocsActionData = null,
   markdownString = null,
+  pdfMode = "canvas", // "canvas" = html2canvas (existing), "print" = window.print()
 }) => {
   const { isConnected, connect } = useComposioConnections();
   const containerRef = useRef(null);
@@ -249,8 +250,36 @@ const ReportWrapper = ({
     }
   };
 
+  // Print-based PDF for generic reports (avoids html2canvas page-break issues)
+  const handlePrintPdfDownload = () => {
+    if (!contentRef.current) return;
+    setShowDropdown(false);
+
+    const style = document.createElement("style");
+    style.id = "__report_print_override__";
+    style.innerHTML = `
+      @media print {
+        @page { size: A4; margin: 15mm; }
+        body * { visibility: hidden !important; }
+        #__report_print_target__, #__report_print_target__ * { visibility: visible !important; }
+        #__report_print_target__ { position: fixed; top: 0; left: 0; width: 100%; }
+      }
+    `;
+    document.head.appendChild(style);
+    contentRef.current.id = "__report_print_target__";
+
+    window.print();
+
+    contentRef.current.id = "";
+    document.getElementById("__report_print_override__")?.remove();
+  };
+
   // Route to the appropriate PDF handler
-  const handlePdfDownload = markdownString ? handleMarkdownPdfDownload : handleImagePdfDownload;
+  const handlePdfDownload = markdownString
+    ? handleMarkdownPdfDownload
+    : pdfMode === "print"
+    ? handlePrintPdfDownload
+    : handleImagePdfDownload;
 
   useEffect(() => {
     const handleResize = () => {

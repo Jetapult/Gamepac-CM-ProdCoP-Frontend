@@ -1,10 +1,14 @@
+// Handles both schemas:
+// Designed: section.items[string | {label, description}]
+// Agent:    section.content.items[{text, tag, tag_color} | {label, description}]
 const List = ({ section }) => {
-  if (!section?.items?.length) return null;
+  const items = section?.content?.items || section?.items || [];
+  if (!items.length) return null;
 
   return (
     <ul style={{ marginTop: "16pt", paddingLeft: "0", listStyle: "none" }}>
-      {section.items.map((item, i) => {
-        const label = typeof item === "string" ? item : item.label;
+      {items.map((item, i) => {
+        const label = typeof item === "string" ? item : (item.text || item.label);
         const description = typeof item === "object" ? item.description : null;
 
         return (
@@ -14,17 +18,19 @@ const List = ({ section }) => {
               display: "flex",
               gap: "10px",
               padding: "8px 0",
-              borderBottom: i < section.items.length - 1 ? "1px solid #f0f0f0" : "none",
+              borderBottom: i < items.length - 1 ? "1px solid #f0f0f0" : "none",
             }}
           >
             <span
               style={{
-                marginTop: "3px",
+                display: "inline-block",
                 width: "6px",
                 height: "6px",
                 borderRadius: "50%",
                 background: "#141414",
                 flexShrink: 0,
+                alignSelf: "flex-start",
+                marginTop: "7px",
               }}
             />
             <div>
