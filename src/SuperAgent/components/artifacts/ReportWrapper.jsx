@@ -18,6 +18,7 @@ const ReportWrapper = ({
   containerClassName = "review-report-container bg-white shadow-xl",
   googleDocsActionData = null,
   markdownString = null,
+  pdfFilename = null,
 }) => {
   const { isConnected, connect } = useComposioConnections();
   const containerRef = useRef(null);
@@ -99,7 +100,7 @@ const ReportWrapper = ({
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${(title || "Report").replace(/[^a-z0-9]/gi, "_")}.pdf`;
+      a.download = `${(pdfFilename || title || "Report").replace(/[^a-z0-9]/gi, "_")}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -140,7 +141,7 @@ const ReportWrapper = ({
       const pdf = new jsPDF("p", "mm", [A4_WIDTH_MM, totalImgHeight]);
       pdf.addImage(imgData, "JPEG", 0, 0, A4_WIDTH_MM, totalImgHeight);
 
-      pdf.save(`${(title || "report").replace(/[^a-z0-9]/gi, "_")}.pdf`);
+      pdf.save(`${(pdfFilename || title || "report").replace(/[^a-z0-9]/gi, "_")}.pdf`);
     } catch (error) {
       console.error("PDF download failed:", error);
     } finally {
