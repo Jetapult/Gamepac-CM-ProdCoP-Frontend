@@ -1,4 +1,5 @@
 import React from "react";
+import { useSelector } from "react-redux";
 import "@/pages/ReviewReport/ReportStyles.css";
 import ReportWrapper from "@/SuperAgent/components/artifacts/ReportWrapper";
 import BugReportContent from "@/SuperAgent/components/artifacts/BugReportContent";
@@ -9,7 +10,10 @@ import MarkdownContent from "@/SuperAgent/components/artifacts/MarkdownContent";
 import GenericReportContent from "@/SuperAgent/components/artifacts/GenericReportContent";
 import { extractMarkdownFromData } from "@/SuperAgent/utils/markdownExtractor";
 
+const truncate = (str, n) => (str || "").slice(0, n).trim();
+
 const ArtifactPlaceholder = ({ type, data, googleDocsActionData }) => {
+  const selectedGame = useSelector((state) => state.superAgent.selectedGame);
   // Don't render anything if no type or no data
   if (!type || !data) {
     return null;
@@ -48,11 +52,21 @@ const ArtifactPlaceholder = ({ type, data, googleDocsActionData }) => {
   }
 
   if (type === "generic-report") {
+    const agentName = truncate(data?.agent_slug || data?.header?.agent, 20);
+    const gameName = truncate(
+      data?.header?.game || data?.header?.game_name || selectedGame?.game_name,
+      25,
+    );
+    const reportTitle = truncate(data?.header?.report_title, 30);
+    const pdfFilename = [agentName, gameName || reportTitle]
+      .filter(Boolean)
+      .join("_");
+
     return (
       <ReportWrapper
         title={data?.header?.report_title || "Report"}
+        pdfFilename={pdfFilename || undefined}
         googleDocsActionData={googleDocsActionData}
-
       >
         <GenericReportContent data={data} />
       </ReportWrapper>
