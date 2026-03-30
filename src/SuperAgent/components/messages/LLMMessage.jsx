@@ -342,14 +342,16 @@ const LLMMessage = ({
                   className="text-[14px] font-medium text-[#141414] truncate"
                   style={{ fontFamily: "Urbanist, sans-serif" }}
                 >
-                  {artifactData.reportData?.header?.reportTitle || "Report"}
+                  {artifactData.reportData?.header?.reportTitle || artifactData.reportData?.header?.report_title || "Report"}
                 </span>
                 <span
                   className="text-[12px] text-[#6d6d6d]"
                   style={{ fontFamily: "Urbanist, sans-serif" }}
                 >
-                  {artifactData.reportData?.header?.analysisPeriodStart && artifactData.reportData?.header?.analysisPeriodEnd
+                  {(artifactData.reportData?.header?.analysisPeriodStart && artifactData.reportData?.header?.analysisPeriodEnd)
                     ? `${artifactData.reportData.header.analysisPeriodStart} - ${artifactData.reportData.header.analysisPeriodEnd}`
+                    : (artifactData.reportData?.header?.period_start && artifactData.reportData?.header?.period_end)
+                    ? `${artifactData.reportData.header.period_start} - ${artifactData.reportData.header.period_end}`
                     : "Report"}
                 </span>
               </div>

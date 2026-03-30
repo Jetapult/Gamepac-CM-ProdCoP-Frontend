@@ -41,32 +41,10 @@ const PreviewPanel = ({
   // Also ensure data exists before showing structured artifact
   const hasStructuredArtifact = artifactType && artifactData && artifactType !== "markdown";
   
-  // Show loading if thinking OR if we have artifact type but no data yet (still loading)
-  const isLoading = isThinking || (artifactType && !artifactData && artifactType !== "markdown");
-
   return (
     <div className="flex-1 bg-[#f8f8f7] border-l border-[#f6f6f6] flex flex-col relative">
-      {/* Building State - Show animation */}
-      <div
-        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 pointer-events-none ${
-          isLoading ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <div className="text-center">
-          <div className="mb-6">
-            <ZeroStateAnimation />
-          </div>
-          <p
-            className="text-sm text-black"
-            style={{ fontFamily: "Urbanist, sans-serif", lineHeight: "21px" }}
-          >
-            {agentName} is building the document. Hang tight ✌️
-          </p>
-        </div>
-      </div>
-
-      {/* Artifact Content - Rendered Markdown */}
-      {hasArtifact && !isLoading && (
+      {/* Artifact Content - Rendered Markdown (hidden while thinking) */}
+      {hasArtifact && !isThinking && (
         <div className="absolute inset-0 overflow-y-auto p-6 pb-24">
           <div
             className="prose prose-sm max-w-none"
@@ -126,8 +104,8 @@ const PreviewPanel = ({
         </div>
       )}
 
-      {/* Structured Artifact (Review Reports) */}
-      {hasStructuredArtifact && !isLoading && (
+      {/* Structured Artifact (Review Reports) - hidden while thinking */}
+      {hasStructuredArtifact && !isThinking && (
         <div className="absolute inset-0 z-10">
           <ArtifactPlaceholder
             type={artifactType}
@@ -136,6 +114,25 @@ const PreviewPanel = ({
           />
         </div>
       )}
+
+      {/* Building State - Loader: isThinking = show, else hide. z-30 to stay on top of everything */}
+      <div
+        className={`absolute inset-0 z-30 flex items-center justify-center transition-opacity duration-500 pointer-events-none ${
+          isThinking ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <div className="text-center">
+          <div className="mb-6">
+            <ZeroStateAnimation />
+          </div>
+          <p
+            className="text-sm text-black"
+            style={{ fontFamily: "Urbanist, sans-serif", lineHeight: "21px" }}
+          >
+            {agentName} is building the document. Hang tight ✌️
+          </p>
+        </div>
+      </div>
 
       {/* Task Progress Footer - Overlay */}
       <div className="absolute bottom-0 left-0 right-0 z-20">
