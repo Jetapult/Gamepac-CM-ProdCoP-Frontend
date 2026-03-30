@@ -190,6 +190,7 @@ const reportToolToArtifactType = {
   generate_bug_report_short: "bug-report-short",
   generate_review_report_detailed: "review-report",
   generate_review_report_short: "review-report-short",
+  generate_generic_report: "generic-report",
 };
 
 // Handler for 'action' event
@@ -295,6 +296,7 @@ export const handleResponseEvent = (eventData, context) => {
         review_report_detailed: "review-report",
         bug_report_short: "bug-report-short",
         bug_report_detailed: "bug-report",
+        generic_report: "generic-report",
       };
       const mappedType = reportTypeToArtifactType[artifact.artifact_type] || artifact.artifact_type;
       

@@ -6,6 +6,7 @@ import BugReportShortContent from "@/SuperAgent/components/artifacts/BugReportSh
 import ReviewReportContent from "@/SuperAgent/components/artifacts/ReviewReportContent";
 import ReviewReportShortContent from "@/SuperAgent/components/artifacts/ReviewReportShortContent";
 import MarkdownContent from "@/SuperAgent/components/artifacts/MarkdownContent";
+import GenericReportContent from "@/SuperAgent/components/artifacts/GenericReportContent";
 import { extractMarkdownFromData } from "@/SuperAgent/utils/markdownExtractor";
 
 const ArtifactPlaceholder = ({ type, data, googleDocsActionData }) => {
@@ -42,6 +43,17 @@ const ArtifactPlaceholder = ({ type, data, googleDocsActionData }) => {
     return (
       <ReportWrapper title="Review Report v1" googleDocsActionData={googleDocsActionData}>
         <ReviewReportContent data={data} />
+      </ReportWrapper>
+    );
+  }
+
+  if (type === "generic-report") {
+    return (
+      <ReportWrapper
+        title={data?.header?.report_title || "Report"}
+        googleDocsActionData={googleDocsActionData}
+      >
+        <GenericReportContent data={data} />
       </ReportWrapper>
     );
   }

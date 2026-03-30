@@ -375,6 +375,7 @@ const ConversationPanel = ({
                           review_report_detailed: "review-report",
                           bug_report_short: "bug-report-short",
                           bug_report_detailed: "bug-report",
+                          generic_report: "generic-report",
                         };
                         const mappedType = reportTypeMap[artifact.artifact_type] || artifact.artifact_type;
                         artifactsFound.push({ type: mappedType, data: artifact.data, messageId: msg.id });
