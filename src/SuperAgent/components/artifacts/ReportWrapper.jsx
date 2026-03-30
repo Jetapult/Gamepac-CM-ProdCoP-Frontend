@@ -11,8 +11,6 @@ import { exportMarkdownPdf } from "@/services/superAgentApi";
 
 const A4_WIDTH_PX = 794; // 210mm at 96 DPI
 const A4_WIDTH_MM = 210;
-const A4_HEIGHT_MM = 297;
-const PAGE_MARGIN_MM = 10;
 
 const ReportWrapper = ({
   title,
@@ -20,7 +18,6 @@ const ReportWrapper = ({
   containerClassName = "review-report-container bg-white shadow-xl",
   googleDocsActionData = null,
   markdownString = null,
-  pdfMode = "canvas", // "canvas" = html2canvas (existing), "print" = window.print()
 }) => {
   const { isConnected, connect } = useComposioConnections();
   const containerRef = useRef(null);
@@ -84,67 +81,6 @@ const ReportWrapper = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const findPageBreaks = (container, pageHeightPx, canvasScale) => {
-    const breakPoints = [0];
-    let currentPageEnd = pageHeightPx;
-    const containerRect = container.getBoundingClientRect();
-    const totalHeight = container.scrollHeight * canvasScale;
-
-    const sectionTitles = container.querySelectorAll(".section-title");
-    const titleBounds = [];
-    sectionTitles.forEach((el) => {
-      const rect = el.getBoundingClientRect();
-      const top = (rect.top - containerRect.top) * canvasScale;
-      titleBounds.push({ top });
-    });
-
-    const avoidBreakElements = container.querySelectorAll(
-      ".data-table, .metadata-table, table, .metric-card, .chart-container",
-    );
-    const elementBounds = [];
-    avoidBreakElements.forEach((el) => {
-      const rect = el.getBoundingClientRect();
-      const top = (rect.top - containerRect.top) * canvasScale;
-      const bottom = (rect.bottom - containerRect.top) * canvasScale;
-      elementBounds.push({ top, bottom });
-    });
-
-    while (currentPageEnd < totalHeight) {
-      let bestBreak = currentPageEnd;
-      const prevBreak = breakPoints[breakPoints.length - 1];
-      const minPageContent = pageHeightPx * 0.25;
-
-      for (const title of titleBounds) {
-        if (title.top > prevBreak && title.top < currentPageEnd) {
-          const spaceAfterTitle = currentPageEnd - title.top;
-          if (spaceAfterTitle < 150 * canvasScale) {
-            if (title.top - prevBreak > minPageContent) {
-              bestBreak = title.top - 5;
-              break;
-            }
-          }
-        }
-      }
-
-      if (bestBreak === currentPageEnd) {
-        for (const bound of elementBounds) {
-          if (bound.top < currentPageEnd && bound.bottom > currentPageEnd) {
-            if (bound.top - prevBreak > minPageContent) {
-              bestBreak = bound.top - 5;
-            }
-            break;
-          }
-        }
-      }
-
-      breakPoints.push(bestBreak);
-      currentPageEnd = bestBreak + pageHeightPx;
-    }
-
-    breakPoints.push(totalHeight);
-    return breakPoints;
-  };
-
   // Save to Google Docs
   const handleSaveToGoogleDocs = () => {
     setShowDropdown(false);
@@ -176,7 +112,7 @@ const ReportWrapper = ({
     }
   };
 
-  // Download as PDF (image-based for structured reports)
+  // Download as PDF (image-based, continuous — no margins between pages)
   const handleImagePdfDownload = async () => {
     if (!contentRef.current || isDownloading) return;
 
@@ -184,64 +120,27 @@ const ReportWrapper = ({
     setDownloadType("pdf");
     setShowDropdown(false);
     try {
-      const canvasScale = 2;
-      const canvas = await html2canvas(contentRef.current, {
-        scale: canvasScale,
+      // Temporarily remove display scaling so html2canvas captures at natural 1:1 size
+      const el = contentRef.current;
+      const prevTransform = el.style.transform;
+      el.style.transform = "none";
+
+      const canvas = await html2canvas(el, {
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
         logging: false,
       });
 
-      const pdf = new jsPDF("p", "mm", "a4");
-      const imgWidth = A4_WIDTH_MM;
-      const pageHeightPx = (A4_HEIGHT_MM / A4_WIDTH_MM) * canvas.width;
+      el.style.transform = prevTransform;
 
-      const breakPoints = findPageBreaks(
-        contentRef.current,
-        pageHeightPx,
-        canvasScale,
-      );
+      const imgData = canvas.toDataURL("image/jpeg", 0.92);
+      const totalImgHeight = (canvas.height * A4_WIDTH_MM) / canvas.width;
+      const pdf = new jsPDF("p", "mm", [A4_WIDTH_MM, totalImgHeight]);
+      pdf.addImage(imgData, "JPEG", 0, 0, A4_WIDTH_MM, totalImgHeight);
 
-      for (let i = 0; i < breakPoints.length - 1; i++) {
-        if (i > 0) {
-          pdf.addPage();
-        }
-
-        const sourceY = breakPoints[i];
-        const sourceHeight = breakPoints[i + 1] - breakPoints[i];
-
-        if (sourceHeight <= 0) continue;
-
-        const pageCanvas = document.createElement("canvas");
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = Math.min(sourceHeight, pageHeightPx);
-
-        const ctx = pageCanvas.getContext("2d");
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-        ctx.drawImage(
-          canvas,
-          0,
-          sourceY,
-          canvas.width,
-          sourceHeight,
-          0,
-          0,
-          canvas.width,
-          Math.min(sourceHeight, pageHeightPx),
-        );
-
-        const pageImgData = pageCanvas.toDataURL("image/png");
-        const pageImgHeight =
-          (Math.min(sourceHeight, pageHeightPx) * imgWidth) / canvas.width;
-
-        const topMargin = i === 0 ? 0 : PAGE_MARGIN_MM;
-        pdf.addImage(pageImgData, "PNG", 0, topMargin, imgWidth, pageImgHeight);
-      }
-
-      const filename = `${title?.replace(/[^a-z0-9]/gi, "_") || "report"}.pdf`;
-      pdf.save(filename);
+      pdf.save(`${(title || "report").replace(/[^a-z0-9]/gi, "_")}.pdf`);
     } catch (error) {
       console.error("PDF download failed:", error);
     } finally {
@@ -250,35 +149,8 @@ const ReportWrapper = ({
     }
   };
 
-  // Print-based PDF for generic reports (avoids html2canvas page-break issues)
-  const handlePrintPdfDownload = () => {
-    if (!contentRef.current) return;
-    setShowDropdown(false);
-
-    const style = document.createElement("style");
-    style.id = "__report_print_override__";
-    style.innerHTML = `
-      @media print {
-        @page { size: A4; margin: 15mm; }
-        body * { visibility: hidden !important; }
-        #__report_print_target__, #__report_print_target__ * { visibility: visible !important; }
-        #__report_print_target__ { position: fixed; top: 0; left: 0; width: 100%; }
-      }
-    `;
-    document.head.appendChild(style);
-    contentRef.current.id = "__report_print_target__";
-
-    window.print();
-
-    contentRef.current.id = "";
-    document.getElementById("__report_print_override__")?.remove();
-  };
-
-  // Route to the appropriate PDF handler
   const handlePdfDownload = markdownString
     ? handleMarkdownPdfDownload
-    : pdfMode === "print"
-    ? handlePrintPdfDownload
     : handleImagePdfDownload;
 
   useEffect(() => {

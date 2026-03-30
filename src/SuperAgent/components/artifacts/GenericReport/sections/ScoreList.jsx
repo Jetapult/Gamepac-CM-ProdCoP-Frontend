@@ -28,6 +28,8 @@ const ScoreList = ({ section }) => {
             style={{
               padding: "10px 0",
               borderBottom: i < items.length - 1 ? "1px solid #f0f0f0" : "none",
+              breakInside: "avoid",
+              pageBreakInside: "avoid",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>

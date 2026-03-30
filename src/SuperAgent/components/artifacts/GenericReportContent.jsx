@@ -106,7 +106,7 @@ const GenericReportContent = ({ data }) => {
       <ReportHeader header={header} />
 
       {visibleSections.map((section, i) => (
-        <div key={i}>
+        <div key={i} style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
           {section.title && (
             <div className="section-title" style={{ marginTop: "37.5pt" }}>
               {section.title}

@@ -31,6 +31,8 @@ const AlertList = ({ section }) => {
               display: "flex",
               gap: "12px",
               alignItems: "flex-start",
+              breakInside: "avoid",
+              pageBreakInside: "avoid",
             }}
           >
             <div
