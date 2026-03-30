@@ -12,6 +12,7 @@ const ChatScreen = ({
   initialAttachments = [],
   agentSlug = "",
   initialAgentSessionId = null,
+  initialCashBalance = null,
 }) => {
   const navigate = useNavigate();
 
@@ -134,6 +135,7 @@ const ChatScreen = ({
           initialAttachments={initialAttachments}
           agentSlug={agentSlug}
           initialAgentSessionId={initialAgentSessionId}
+          initialCashBalance={initialCashBalance}
           onTaskUpdate={(task, index, time, tasks) => {
             setCurrentTask(task);
             setCurrentTaskIndex(index);
