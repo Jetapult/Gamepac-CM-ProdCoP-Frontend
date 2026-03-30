@@ -1,16 +1,20 @@
+// Handles both schemas:
+// Designed: section.items[{key, value}]
+// Agent:    section.content.pairs[{key, value, status}]
 const KVPairs = ({ section }) => {
-  if (!section?.items?.length) return null;
+  const items = section?.content?.pairs || section?.content?.items || section?.items || [];
+  if (!items.length) return null;
 
   return (
     <div style={{ marginTop: "16pt" }}>
-      {section.items.map((item, i) => (
+      {items.map((item, i) => (
         <div
           key={i}
           style={{
             display: "flex",
             gap: "16px",
             padding: "10px 0",
-            borderBottom: i < section.items.length - 1 ? "1px solid #f0f0f0" : "none",
+            borderBottom: i < items.length - 1 ? "1px solid #f0f0f0" : "none",
             alignItems: "flex-start",
           }}
         >
