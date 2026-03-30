@@ -1,11 +1,12 @@
+import SectionRenderer from "../SectionRenderer";
+
 // Handles both schemas:
-// Designed: section.left/right = {title, items: [string | {label, description}]}
-// Agent:    section.content.left/right = {type, title, content: {items: [{text, tag, tag_color}]}}
+// Designed: col = {title, items: [string | {label, description}]}
+// Agent:    col = {type, title, content: {items: [...]}} — delegates to SectionRenderer
 const Column = ({ col }) => {
   if (!col) return null;
 
-  // Support both flat items and nested content.items
-  const items = col.content?.items || col.items || [];
+  const items = col.items || [];
 
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
@@ -23,34 +24,40 @@ const Column = ({ col }) => {
           {col.title}
         </div>
       )}
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {items.map((item, i) => {
-          const label = typeof item === "string" ? item : (item.text || item.label);
-          const description = typeof item === "object" ? item.description : null;
-          return (
-            <li key={i} style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
-              <span
-                style={{
-                  display: "inline-block",
-                  width: "5px",
-                  height: "5px",
-                  borderRadius: "50%",
-                  background: "#141414",
-                  flexShrink: 0,
-                  alignSelf: "flex-start",
-                  marginTop: "8px",
-                }}
-              />
-              <div>
-                <div style={{ fontSize: "14px", color: "#141414", lineHeight: "21px" }}>{label}</div>
-                {description && (
-                  <div style={{ fontSize: "12px", color: "#6d6d6d", marginTop: "2px" }}>{description}</div>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      {col.type ? (
+        // Column has a section type — render it properly (alert_list, list, score_list, etc.)
+        <SectionRenderer section={col} />
+      ) : (
+        // Flat items fallback (designed schema)
+        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+          {items.map((item, i) => {
+            const label = typeof item === "string" ? item : (item.text || item.label);
+            const description = typeof item === "object" ? item.description : null;
+            return (
+              <li key={i} style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: "5px",
+                    height: "5px",
+                    borderRadius: "50%",
+                    background: "#141414",
+                    flexShrink: 0,
+                    alignSelf: "flex-start",
+                    marginTop: "8px",
+                  }}
+                />
+                <div>
+                  <div style={{ fontSize: "14px", color: "#141414", lineHeight: "21px" }}>{label}</div>
+                  {description && (
+                    <div style={{ fontSize: "12px", color: "#6d6d6d", marginTop: "2px" }}>{description}</div>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 };
