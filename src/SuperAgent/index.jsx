@@ -135,6 +135,7 @@ const SuperAgent = () => {
       // Use session ID passed from ChatInput (more reliable than state due to async updates)
       // Fall back to state if not provided
       let currentSessionId = sessionIds.agentSessionId || agentSessionId;
+      let initialCashBalance;
 
       // Create session for agents that require one
       if (agentRequiresSession(selectedAgent.slug) && !currentSessionId) {
@@ -144,18 +145,37 @@ const SuperAgent = () => {
         } else if (selectedAgent.slug === "finops") {
           sessionResponse = await createFinopsSession();
         } else if (selectedAgent.slug === "creative_breakdown") {
+          console.log("[SESSION] creative_breakdown params:", {
+            game_id: selectedGame?.id,
+            game_name: selectedGame?.name,
+            studio_name: ContextStudioData?.studio_name || ContextStudioData?.name,
+          });
           sessionResponse = await createCreativeBreakdownSession(
             selectedGame?.id,
             selectedGame?.name,
             ContextStudioData?.studio_name || ContextStudioData?.name,
           );
         } else if (selectedAgent.slug === "datapac") {
+          console.log("[SESSION] datapac params:", {
+            game_id: selectedGame?.id,
+            game_code: selectedGame?.game_code || selectedGame?.code,
+            studio_slug: ContextStudioData?.slug,
+            package_name: selectedGame?.package_name,
+            apple_app_id: selectedGame?.apple_app_id,
+          });
           sessionResponse = await createDatapacSession(
             selectedGame?.id,
             selectedGame?.game_code || selectedGame?.code,
             ContextStudioData?.slug,
+            selectedGame?.package_name,
+            selectedGame?.apple_app_id,
           );
         } else if (selectedAgent.slug === "studio_pac") {
+          console.log("[SESSION] studio_pac params:", {
+            game_id: selectedGame?.id,
+            game_name: selectedGame?.name,
+            studio_id: ContextStudioData?.id,
+          });
           sessionResponse = await createStudioPacSession(
             selectedGame?.id,
             selectedGame?.name,
@@ -165,6 +185,9 @@ const SuperAgent = () => {
         if (sessionResponse?.success && sessionResponse?.data?.session_id) {
           currentSessionId = sessionResponse.data.session_id;
           setAgentSessionId(currentSessionId);
+        }
+        if (selectedAgent.slug === "finops" && sessionResponse?.data?.cash_balance !== undefined) {
+          initialCashBalance = sessionResponse.data.cash_balance;
         }
       }
 
@@ -197,6 +220,7 @@ const SuperAgent = () => {
             agentSlug: selectedAgent.slug,
             gameId: selectedGame?.id,
             agentSessionId: currentSessionId,
+            initialCashBalance,
           },
         });
       }

@@ -14,6 +14,7 @@ const Chat = () => {
     initialAttachments: location.state?.initialAttachments || [],
     agentSlug: location.state?.agentSlug || "",
     agentSessionId: location.state?.agentSessionId || null,
+    initialCashBalance: location.state?.initialCashBalance ?? null,
   });
 
   // Clear the navigation state after first render to prevent re-sending on refresh
@@ -22,7 +23,8 @@ const Chat = () => {
       location.state?.initialQuery ||
       location.state?.agentSlug ||
       location.state?.initialAttachments ||
-      location.state?.agentSessionId
+      location.state?.agentSessionId ||
+      location.state?.initialCashBalance !== undefined
     ) {
       navigate(location.pathname, { replace: true, state: {} });
     }
@@ -38,6 +40,7 @@ const Chat = () => {
           initialAttachments={initialValuesRef.current.initialAttachments}
           agentSlug={initialValuesRef.current.agentSlug}
           initialAgentSessionId={initialValuesRef.current.agentSessionId}
+          initialCashBalance={initialValuesRef.current.initialCashBalance}
         />
       </div>
     </div>

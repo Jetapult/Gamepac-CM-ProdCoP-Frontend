@@ -387,11 +387,13 @@ export const uploadCreativeBreakdownAttachment = async (
  * @param {string} studioSlug
  * @returns {Promise<{session_id: string, status: string, game_id: number, game_code: string}>}
  */
-export const createDatapacSession = async (gameId, gameCode, studioSlug) => {
+export const createDatapacSession = async (gameId, gameCode, studioSlug, packageName, appleAppId) => {
   const response = await api.post("/v1/superagent/datapac/session", {
     game_id: gameId,
     game_code: gameCode,
     studio_slug: studioSlug,
+    ...(packageName && { package_name: packageName }),
+    ...(appleAppId && { apple_app_id: appleAppId }),
   });
   return response.data;
 };

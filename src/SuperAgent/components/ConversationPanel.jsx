@@ -33,6 +33,7 @@ const ConversationPanel = ({
   initialAttachments = [],
   agentSlug: propAgentSlug = "",
   initialAgentSessionId = null,
+  initialCashBalance = null,
   onTaskUpdate,
   onThinkingChange,
   onArtifactUpdate,
@@ -58,7 +59,7 @@ const ConversationPanel = ({
   const [agentSessionId, setAgentSessionId] = useState(
     initialAgentSessionId,
   ); // Generic agent session ID (liveops, finops, scalepac, etc.)
-  const [cashBalance, setCashBalance] = useState(425000.0); // Finops cash balance
+  const [cashBalance, setCashBalance] = useState(initialCashBalance ?? 425000.0); // Finops cash balance
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const userHasScrolledUpRef = useRef(false);
@@ -843,6 +844,16 @@ const ConversationPanel = ({
 
       try {
         const token = getAuthToken()?.token;
+        console.log("[MESSAGE] sending params:", {
+          agent_slug: agentSlug,
+          game_id: selectedGame?.id,
+          game_name: selectedGame?.name,
+          studio_id: ContextStudioData?.id,
+          studio_slug: ContextStudioData?.slug,
+          studio_name: ContextStudioData?.studio_name || ContextStudioData?.name,
+          jwt_token: token ? "set" : "NOT SET",
+          ...(agentSlug === "finops" && { cash_balance: cashBalance }),
+        });
         const response = await fetch(
           `${api.defaults.baseURL}v1/superagent/chats/${chatId}/messages`,
           {
@@ -859,11 +870,12 @@ const ConversationPanel = ({
               game_id: selectedGame?.id || null,
               studio_id: ContextStudioData?.id || null,
               studio_slug: ContextStudioData?.slug || null,
+              game_name: selectedGame?.name || null,
+              studio_name: ContextStudioData?.studio_name || ContextStudioData?.name || null,
               ...(attachmentIds.length > 0 && {
                 attachment_ids: attachmentIds,
               }),
               // Backend will auto-fetch session IDs from chat data using chatId
-              // Only pass cash_balance for finops if needed
               ...(agentSlug === "finops" && {
                 cash_balance: cashBalance,
               }),
