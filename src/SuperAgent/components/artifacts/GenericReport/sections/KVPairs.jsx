@@ -16,6 +16,8 @@ const KVPairs = ({ section }) => {
             padding: "10px 0",
             borderBottom: i < items.length - 1 ? "1px solid #f0f0f0" : "none",
             alignItems: "flex-start",
+            breakInside: "avoid",
+            pageBreakInside: "avoid",
           }}
         >
           <div

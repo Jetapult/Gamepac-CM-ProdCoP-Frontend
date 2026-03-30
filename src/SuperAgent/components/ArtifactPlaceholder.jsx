@@ -52,7 +52,7 @@ const ArtifactPlaceholder = ({ type, data, googleDocsActionData }) => {
       <ReportWrapper
         title={data?.header?.report_title || "Report"}
         googleDocsActionData={googleDocsActionData}
-        pdfMode="print"
+
       >
         <GenericReportContent data={data} />
       </ReportWrapper>

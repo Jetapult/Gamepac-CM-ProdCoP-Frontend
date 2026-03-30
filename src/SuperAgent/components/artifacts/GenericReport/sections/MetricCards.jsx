@@ -35,6 +35,8 @@ const MetricCards = ({ section }) => {
               border: "1px solid #e5e5e5",
               borderRadius: "8px",
               padding: "20px",
+              breakInside: "avoid",
+              pageBreakInside: "avoid",
             }}
           >
             <div
