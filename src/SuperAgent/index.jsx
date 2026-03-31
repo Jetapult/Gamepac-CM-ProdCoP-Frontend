@@ -158,17 +158,17 @@ const SuperAgent = () => {
         } else if (selectedAgent.slug === "datapac") {
           console.log("[SESSION] datapac params:", {
             game_id: selectedGame?.id,
-            game_code: selectedGame?.game_code || selectedGame?.code,
+            game_code: selectedGame?.short_names,
             studio_slug: ContextStudioData?.slug,
             package_name: selectedGame?.package_name,
-            apple_app_id: selectedGame?.apple_app_id,
+            apple_app_id: selectedGame?.app_id,
           });
           sessionResponse = await createDatapacSession(
             selectedGame?.id,
-            selectedGame?.game_code || selectedGame?.code,
+            selectedGame?.short_names,
             ContextStudioData?.slug,
             selectedGame?.package_name,
-            selectedGame?.apple_app_id,
+            selectedGame?.app_id,
           );
         } else if (selectedAgent.slug === "studio_pac") {
           console.log("[SESSION] studio_pac params:", {
